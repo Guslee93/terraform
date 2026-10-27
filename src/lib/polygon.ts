@@ -43,6 +43,18 @@ function orientation(a: Vec2, b: Vec2, c: Vec2): number {
   return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
 }
 
+/** True when p lies on the closed segment a–b (exact arithmetic, no tolerance). */
+function pointOnSegment(p: Vec2, a: Vec2, b: Vec2): boolean {
+  return (
+    orientation(a, b, p) === 0 &&
+    p[0] >= Math.min(a[0], b[0]) &&
+    p[0] <= Math.max(a[0], b[0]) &&
+    p[1] >= Math.min(a[1], b[1]) &&
+    p[1] <= Math.max(a[1], b[1])
+  )
+}
+
+/** Rejects crossings, collinear overlaps, vertex-on-edge touches and fold-backs. */
 export function isSimpleRing(points: readonly Vec2[]): boolean {
   const count = points.length
   if (count < 3) return false
@@ -56,10 +68,18 @@ export function isSimpleRing(points: readonly Vec2[]): boolean {
     const b = points[(i + 1) % count]
     if (!a || !b) continue
     for (let j = i + 1; j < count; j += 1) {
-      if (j === i || (j + 1) % count === i || (i + 1) % count === j) continue
       const c = points[j]
       const d = points[(j + 1) % count]
       if (!c || !d) continue
+      // Adjacent edges share one vertex; they may only meet there.
+      if (j === i + 1) {
+        if (pointOnSegment(d, a, b) || pointOnSegment(a, c, d)) return false
+        continue
+      }
+      if ((j + 1) % count === i) {
+        if (pointOnSegment(c, a, b) || pointOnSegment(b, c, d)) return false
+        continue
+      }
       const o1 = orientation(a, b, c)
       const o2 = orientation(a, b, d)
       const o3 = orientation(c, d, a)
@@ -67,6 +87,14 @@ export function isSimpleRing(points: readonly Vec2[]): boolean {
       if (
         ((o1 > 0 && o2 < 0) || (o1 < 0 && o2 > 0)) &&
         ((o3 > 0 && o4 < 0) || (o3 < 0 && o4 > 0))
+      ) {
+        return false
+      }
+      if (
+        pointOnSegment(c, a, b) ||
+        pointOnSegment(d, a, b) ||
+        pointOnSegment(a, c, d) ||
+        pointOnSegment(b, c, d)
       ) {
         return false
       }

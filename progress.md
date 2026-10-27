@@ -108,3 +108,20 @@
 | What's the goal? | Terraform v1: credible interactive architectural site-planning portfolio prototype |
 | What have I learned? | See `findings.md` — versions, data provenance, bundle sizes, review findings |
 | What have I done? | See Phase 0/1/2 above, `docs/reviews/M1-*.md`, and `git log` |
+
+## Session: 2026-10-27 — M2 checkpoint and domain fixtures
+
+- **Status:** complete (M2 still in progress; no gate)
+- Actions taken:
+  - Committed the M2 domain WIP as checkpoint `5e92e12` (ADR-0004, `src/features/massing/*`, `src/lib/polygon.ts`).
+  - Added fixture tests from `docs/qa/fixtures.md` §2–3: rectangle, L-shape, stepped mass (union 200 m², GFA 760, volume 2 432, max height 16), 2 000 m² parcel coverage, bow-tie / 2-point / zero-area rejection, negative width, storeys 0/41/non-integer, field-specific issue paths.
+  - Envelope rows of §3 (within/exceeds/not evaluated) left for M3.
+- Files created: `src/features/massing/aggregate.test.ts`, `src/features/massing/validation.test.ts`.
+- Tests: lint ✅ · test 50/50 ✅ (8 files) · build ✅.
+
+### Bug fixes (test-first)
+
+- `volumeMaxHeight`/`scenarioMaxHeight` reduced from 0, so masses below the site origin on Sloped Edge reported 0. Now reduce from `-Infinity` (empty scenario → 0); semantics stay ADR-0004 `max(tier.top)` relative to origin. Grade-vs-datum height reference is FR-073, owned by M3.
+- `isSimpleRing` only caught proper crossings. Now also rejects collinear overlaps, vertex-on-edge touches and adjacent fold-backs. `src/features/sites/package.ts` had a duplicate copy; it now imports the shared one. All 170 real package footprints and both study boundaries still validate.
+- Files: `src/lib/polygon.ts`, `src/lib/polygon.test.ts` (new), `src/features/massing/aggregate.ts`, `src/features/massing/aggregate.test.ts`, `src/features/sites/package.ts`.
+- Tests: 4 new tests failed before the fix; after: lint ✅ · test 56/56 ✅ (9 files) · build ✅.

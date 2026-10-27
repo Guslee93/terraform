@@ -4,6 +4,7 @@ import {
   type SiteManifest,
   type Vec2Tuple,
 } from './manifest'
+import { isSimpleRing } from '../../lib/polygon'
 
 export type TerrainData = {
   schemaVersion: 1
@@ -142,40 +143,6 @@ function polygonArea(points: readonly Vec2Tuple[]): number {
   }
   return Math.abs(area) / 2
 }
-
-function orientation(a: Vec2Tuple, b: Vec2Tuple, c: Vec2Tuple): number {
-  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-}
-
-function isSimpleRing(points: readonly Vec2Tuple[]): boolean {
-  const count = points.length
-  if (count < 3) return false
-  for (let index = 0; index < count; index += 1) {
-    const point = points[index]
-    const next = points[(index + 1) % count]
-    if (!point || !next || (point[0] === next[0] && point[1] === next[1])) return false
-  }
-  for (let i = 0; i < count; i += 1) {
-    const a = points[i]
-    const b = points[(i + 1) % count]
-    if (!a || !b) continue
-    for (let j = i + 1; j < count; j += 1) {
-      if (j === i || (j + 1) % count === i || (i + 1) % count === j) continue
-      const c = points[j]
-      const d = points[(j + 1) % count]
-      if (!c || !d) continue
-      const o1 = orientation(a, b, c)
-      const o2 = orientation(a, b, d)
-      const o3 = orientation(c, d, a)
-      const o4 = orientation(c, d, b)
-      if (((o1 > 0 && o2 < 0) || (o1 < 0 && o2 > 0)) && ((o3 > 0 && o4 < 0) || (o3 < 0 && o4 > 0))) {
-        return false
-      }
-    }
-  }
-  return true
-}
-
 
 export function parseTerrain(value: unknown): TerrainData {
   const root = asRecord(value, 'terrain')

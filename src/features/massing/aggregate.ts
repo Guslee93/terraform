@@ -90,7 +90,7 @@ export function volumeVolume(volume: MassVolume): number {
 }
 
 export function volumeMaxHeight(volume: MassVolume): number {
-  return volume.tiers.reduce((maximum, tier) => Math.max(maximum, tierTop(tier)), 0)
+  return volume.tiers.reduce((maximum, tier) => Math.max(maximum, tierTop(tier)), -Infinity)
 }
 
 export function scenarioGfa(document: ScenarioDocument): number {
@@ -101,8 +101,13 @@ export function scenarioVolume(document: ScenarioDocument): number {
   return document.volumes.reduce((total, volume) => total + volumeVolume(volume), 0)
 }
 
+/** Highest tier top relative to the site origin; may be negative on sloped sites. 0 when empty. */
 export function scenarioMaxHeight(document: ScenarioDocument): number {
-  return document.volumes.reduce((maximum, volume) => Math.max(maximum, volumeMaxHeight(volume)), 0)
+  if (document.volumes.length === 0) return 0
+  return document.volumes.reduce(
+    (maximum, volume) => Math.max(maximum, volumeMaxHeight(volume)),
+    -Infinity,
+  )
 }
 
 export function scenarioGroundFootprintArea(document: ScenarioDocument): number {
