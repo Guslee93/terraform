@@ -2,7 +2,7 @@ import { featureCollection, polygon, union } from '@turf/turf'
 import { polygonArea } from '../../lib/polygon'
 import type { Footprint, MassTier, MassVolume, ScenarioDocument } from './types'
 
-export function tierHeight(tier: MassTier): number {
+export function tierHeight(tier: Pick<MassTier, 'storeys' | 'storeyHeight'>): number {
   return tier.storeys * tier.storeyHeight
 }
 

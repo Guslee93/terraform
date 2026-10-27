@@ -163,3 +163,15 @@
 - Gestures: `moveGesture` (optional grid step via D1 `snapValue`), `roofGesture` (vertical metres → whole storeys). Ghost preview carries live validation issues.
 - Draw tool: click adds a point (with terrain elevation), Backspace removes, Enter creates `Mass N` at the lowest clicked elevation with 3 storeys at the scenario default height and returns to select, Esc discards. Self-intersecting drawings are rejected with points kept (QA-04).
 - 18 new tests (module absent before); lint ✅ · test 135/135 ✅ (16 files) · build ✅.
+
+### Mass scene adapter and studio wiring
+
+- `src/scene/massGeometry.ts` (tested): tier → `ExtrudeGeometry` in (east, north), rotated into (east, up, −north); roof handle at the top-face centroid.
+- `src/scene/MassLayer.tsx`: one mesh per visible tier, clay `#F2EFE7`, selection outline `#355E79`, invalid previews tinted; roof handle is a focusable DOM button (`<Html>`) with a live "N storeys · H m" label; drags follow a plane with window listeners (vertical camera-facing plane for the roof, horizontal at base for moves) and switch OrbitControls off for the gesture.
+- `StudioShell` owns `useReducer(reduceEditor)` with an empty `Concept A` per site (keyed by site). Draw footprint tool in the rail; Esc/Enter/Backspace routed to the reducer; status line for draw hints and errors. Editing is off below 640 px (read-only preview).
+- Reducer additions (test-first): `select` event; plain-language errors ("Footprint edges must not cross."); Esc and tool changes clear errors. Validation message changed from "must be a simple ring without crossings" to "edges must not cross".
+- Inspector selection card no longer claims massing is unavailable: it shows the selected mass with geometry-derived storeys/height, or how to add one, or the small-screen read-only note.
+- Browser verification (Compact Infill + Sloped Edge, ~800 px pane and 375 px mobile): draw → mass created and selected (QA-03); roof drag preview 18 storeys → Esc restores exact 3 storeys with camera unchanged (QA-07); roof drag 3 → 5 storeys · 16.0 m committed (QA-05); body drag moves the mass without orbiting; bow-tie → friendly error, points kept (QA-04); mobile shows no draw tool. Found and fixed during verification: selection outline hidden by `polygonOffset`, passive-listener `preventDefault` console error, raw developer error text, stale inspector copy.
+- Evidence: `docs/screenshots/m2-*.jpg` (8 images).
+- Tests: lint ✅ · test 142/142 ✅ (17 files) · e2e 2/2 ✅ · build ✅ (studio 272.5 kB gzip).
+- Open: undo/redo shortcuts wait for D7; rotate/scale/vertex-edit gestures; numeric inspector; clearance warnings (masses can overlap context buildings or embed in slopes).

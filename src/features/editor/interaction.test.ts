@@ -111,7 +111,7 @@ describe('drag transactions', () => {
     const released = run(dragging, up)
     expect(released.history.document).toBe(base)
     expect(released.history.undoStack).toHaveLength(0)
-    expect(released.error).toMatch(/storeys/)
+    expect(released.error).toBe('Storeys must be an integer between 1 and 40.')
   })
 
   it('refuses to start a gesture on a locked mass', () => {
@@ -142,6 +142,17 @@ describe('drag transactions', () => {
     const failed = run(start, down([0, 9.6], { gesture: roofGesture('v1', 't1') }), move([0, 140]), up)
     const recovered = run(failed, down([0, 0], { gesture: moveGesture('v1') }), move([1, 0]), up)
     expect(recovered.error).toBeNull()
+  })
+})
+
+describe('selection', () => {
+  it('selects without a history entry and is ignored mid-gesture', () => {
+    const selected = run(start, { type: 'select', selection: { volumeId: 'v1', tierId: 't1' } })
+    expect(selected.history.selection).toEqual({ volumeId: 'v1', tierId: 't1' })
+    expect(selected.history.undoStack).toHaveLength(0)
+
+    const dragging = run(selected, down([0, 0], { gesture: moveGesture('v1') }))
+    expect(run(dragging, { type: 'select', selection: { volumeId: null, tierId: null } })).toBe(dragging)
   })
 })
 
@@ -194,8 +205,14 @@ describe('draw footprint', () => {
       key('Enter'),
     )
     expect(state.history.document).toBe(base)
-    expect(state.error).toMatch(/simple ring/)
+    expect(state.error).toBe('Footprint edges must not cross.')
     expect(state.interaction.kind === 'drawing' && state.interaction.vertices).toHaveLength(4)
+  })
+
+  it('clears an error on Esc or a tool change', () => {
+    const failed = run(drawing, down([0, 20]), down([10, 20]), key('Enter'))
+    expect(run(failed, key('Escape')).error).toBeNull()
+    expect(run(failed, { type: 'setTool', tool: 'select' }).error).toBeNull()
   })
 
   it('discards the drawing on Esc', () => {

@@ -2,7 +2,7 @@ import type { IconName } from '../ui/Icon'
 import { Icon } from '../ui/Icon'
 import { cn } from '../../lib/cn'
 
-export type ToolId = 'select' | 'layers'
+export type ToolId = 'select' | 'draw' | 'layers'
 
 type Tool = {
   id: ToolId
@@ -12,6 +12,7 @@ type Tool = {
 
 const TOOLS: readonly Tool[] = [
   { id: 'select', label: 'Select', icon: 'cursor' },
+  { id: 'draw', label: 'Draw footprint', icon: 'polygon' },
   { id: 'layers', label: 'Site notes', icon: 'layers' },
 ]
 
@@ -31,7 +32,7 @@ export function ToolRail({ activeTool, onSelect, onOpenLayers }: ToolRailProps) 
         <button
           key={tool.id}
           type="button"
-          aria-pressed={tool.id === 'select' ? activeTool === 'select' : undefined}
+          aria-pressed={tool.id === 'layers' ? undefined : activeTool === tool.id}
           aria-label={tool.label}
           title={tool.label}
           onClick={() => {
@@ -42,6 +43,7 @@ export function ToolRail({ activeTool, onSelect, onOpenLayers }: ToolRailProps) 
             onSelect(tool.id)
           }}
           className={cn(
+            tool.id === 'draw' && 'max-sm:hidden',
             'relative grid size-9 place-items-center rounded-[var(--radius-control)] border border-transparent text-ink-secondary transition-colors duration-150 sm:size-10',
             'hover:bg-surface-muted hover:text-ink',
             tool.id === activeTool &&

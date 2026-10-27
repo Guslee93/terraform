@@ -39,6 +39,7 @@ export function StudioPage() {
 
   return (
     <StudioShell
+      key={site.id}
       site={site}
       sitePackage={data}
       packageStatus={packageStatus}

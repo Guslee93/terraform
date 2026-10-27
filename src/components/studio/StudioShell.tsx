@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useReducer, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { createHistory } from '../../features/editor/history'
+import { createEditorState, reduceEditor } from '../../features/editor/interaction'
+import { tierHeight } from '../../features/massing/aggregate'
+import { createScenario } from '../../features/massing/factories'
 import type { CameraPresetId } from '../../features/sites/manifest'
 import type { SitePackage } from '../../features/sites/package'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
@@ -29,12 +33,16 @@ export function StudioShell({
   packageError,
   onRetry,
 }: StudioShellProps) {
-  const [activeTool, setActiveTool] = useState<ToolId>('select')
+  const [editor, dispatch] = useReducer(reduceEditor, site.id, (siteId) =>
+    createEditorState(createHistory(createScenario({ siteId }))),
+  )
   const [activeTab, setActiveTab] = useState<InspectorTab>('model')
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const [isDesktop, setIsDesktop] = useState(() =>
     window.matchMedia('(min-width: 1100px)').matches,
   )
+  // Below 640 px the studio is a read-only preview (M0 visual gate).
+  const [editable, setEditable] = useState(() => window.matchMedia('(min-width: 640px)').matches)
   const [layers, setLayers] = useState<SceneLayers>({
     terrain: true,
     context: true,
@@ -42,7 +50,20 @@ export function StudioShell({
   })
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
-  const scenario = 'Concept A'
+  const scenario = editor.history.document.name
+  const selectedVolume = editor.history.document.volumes.find(
+    (volume) => volume.id === editor.history.selection.volumeId,
+  )
+  const selectedTier = selectedVolume?.tiers.find(
+    (tier) => tier.id === editor.history.selection.tierId,
+  )
+  const selectedSummary =
+    selectedVolume && selectedTier
+      ? {
+          name: selectedVolume.name,
+          detail: `${selectedTier.storeys} storeys · ${tierHeight(selectedTier).toFixed(1)} m`,
+        }
+      : null
 
   const requestCamera = useCallback((preset: CameraPresetId) => {
     setCameraPreset(preset)
@@ -61,6 +82,20 @@ export function StudioShell({
   }, [])
 
   useEffect(() => {
+    const query = window.matchMedia('(min-width: 640px)')
+    const update = () => {
+      setEditable(query.matches)
+      if (!query.matches) dispatch({ type: 'setTool', tool: 'select' })
+    }
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+
+  const selectTool = (tool: ToolId) => {
+    if (tool === 'select' || tool === 'draw') dispatch({ type: 'setTool', tool })
+  }
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (target?.closest('input, select, textarea, [contenteditable="true"]')) return
@@ -72,6 +107,13 @@ export function StudioShell({
 
       if (event.key === 'Escape') {
         setInspectorOpen(false)
+        dispatch({ type: 'key', key: 'Escape' })
+      }
+
+      if (event.key === 'Enter' || event.key === 'Backspace') {
+        if (target?.closest('button, a')) return
+        event.preventDefault()
+        dispatch({ type: 'key', key: event.key })
       }
     }
 
@@ -92,8 +134,8 @@ export function StudioShell({
 
       <div className="flex min-h-0 flex-1">
         <ToolRail
-          activeTool={activeTool}
-          onSelect={setActiveTool}
+          activeTool={editor.tool}
+          onSelect={selectTool}
           onOpenLayers={() => setInspectorOpen(true)}
         />
 
@@ -105,6 +147,9 @@ export function StudioShell({
                 layers={layers}
                 presetId={cameraPreset}
                 cameraNonce={cameraNonce}
+                editor={editor}
+                dispatch={dispatch}
+                editable={editable}
               />
               <CameraHud />
               <CameraPresets active={cameraPreset} onSelect={requestCamera} />
@@ -148,6 +193,23 @@ export function StudioShell({
             </span>
           </div>
 
+          {packageStatus === 'ready' && (editor.error || editor.tool === 'draw') && (
+            <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-16 sm:top-4">
+              <p
+                role="status"
+                aria-live="polite"
+                className={
+                  editor.error
+                    ? 'max-w-[44ch] rounded-[6px] border border-danger/40 bg-surface/95 px-3 py-1.5 text-center text-[11px] text-danger shadow-sm backdrop-blur-sm'
+                    : 'max-w-[44ch] rounded-[6px] border border-line bg-surface/95 px-3 py-1.5 text-center text-[11px] text-ink-secondary shadow-sm backdrop-blur-sm'
+                }
+              >
+                {editor.error ??
+                  'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'}
+              </p>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => setInspectorOpen(true)}
@@ -170,6 +232,8 @@ export function StudioShell({
           isOpen={inspectorOpen}
           onClose={() => setInspectorOpen(false)}
           isDrawer={!isDesktop}
+          selected={selectedSummary}
+          canEdit={editable}
         />
       </div>
 

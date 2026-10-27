@@ -39,6 +39,9 @@ type InspectorProps = {
   isOpen: boolean
   onClose: () => void
   isDrawer: boolean
+  /** Summary of the selected mass, derived from geometry by the caller. */
+  selected: { name: string; detail: string } | null
+  canEdit: boolean
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -61,6 +64,8 @@ export function Inspector({
   isOpen,
   onClose,
   isDrawer,
+  selected,
+  canEdit,
 }: InspectorProps) {
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -174,7 +179,7 @@ export function Inspector({
                 Selection
               </h2>
               <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-ink-secondary">
-                Nothing selected
+                {selected ? '1 selected' : 'Nothing selected'}
               </span>
             </div>
 
@@ -182,11 +187,17 @@ export function Inspector({
               <span className="mx-auto grid size-8 place-items-center rounded-full border border-line bg-surface text-ink-secondary">
                 <Icon name="cube" size={16} />
               </span>
-              <p className="mt-2.5 text-[12.5px] font-medium text-ink">No mass selected</p>
-              <p className="mx-auto mt-1 max-w-[30ch] text-[11.5px] leading-relaxed text-ink-secondary">
-                {packageStatus === 'ready'
-                  ? 'Massing tools are not available in this preview.'
-                  : 'Massing tools appear when the site package is ready.'}
+              <p className="mt-2.5 text-[12.5px] font-medium text-ink">
+                {selected ? selected.name : 'No mass selected'}
+              </p>
+              <p className="mx-auto mt-1 max-w-[30ch] text-[11.5px] leading-relaxed text-ink-secondary tabular-nums">
+                {selected
+                  ? selected.detail
+                  : packageStatus !== 'ready'
+                    ? 'Massing tools appear when the site package is ready.'
+                    : canEdit
+                      ? 'Use Draw footprint to add a mass, or click a mass to select it.'
+                      : 'Massing is read-only on small screens.'}
               </p>
             </div>
           </section>

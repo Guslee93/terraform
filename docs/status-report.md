@@ -9,7 +9,7 @@
 | **Date** | 2026-10-27 |
 | **Source of truth** | `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026) |
 | **Headline state** | **M0 complete · M1 complete · M2 in progress — domain, validation, serialization, commands and undo/redo committed and tested; tools/scene/inspector not started** |
-| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 135/135 ✅ (16 files) · `build` ✅ (re-run 2026-10-27 after the interaction state machine — see §10) |
+| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 142/142 ✅ (17 files) · `test:e2e` 2/2 ✅ · `build` ✅ (re-run 2026-10-27 after the mass scene adapter — see §10) |
 
 > **How to read this report.** Every claim below is traceable to a file in this repository, a command output, or a review record. Sections 4–6 are history; section 7 is the state of the in-progress milestone; sections 8–11 describe the architecture, evidence and debt; section 13 tells you exactly what to verify and do next. If anything here contradicts the PRD, the PRD wins.
 
@@ -150,10 +150,10 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 |---|---|---|---|
 | 1 | Immutable domain model | ✅ | — |
 | 2 | Factories + validation | ✅ (winding is normalised by factories but not enforced on load) | — |
-| 3 | Tools (add, draw, move/rotate/scale, roof handle, vertex edit) | 🟡 draw, move (grid snap) and roof gestures in the state machine; rotate/scale/vertex edit and all scene handles ❌ | Claude |
+| 3 | Tools (add, draw, move/rotate/scale, roof handle, vertex edit) | 🟡 draw, move (1 m grid snap) and roof handle live in the studio; rotate/scale/vertex edit ❌ | Claude |
 | 4 | Tier volumes + double-count-free aggregation | ✅ domain | — |
 | 5 | Numeric inspector | ❌ | Claude |
-| 6 | Interaction state machine | ✅ renderer-free (`interaction.ts`); scene wiring ❌ | Claude |
+| 6 | Interaction state machine | ✅ `interaction.ts`, wired to the scene via `MassLayer` | — |
 | 7 | Undo/redo | ✅ domain; keyboard/UI wiring ❌ | Claude |
 | 8 | Snapping | 🟡 grid maths merged (D1, `snapping.ts`); wiring + P1 edge/vertex ❌ | Claude |
 | 9 | Clearance feedback | ❌ | Claude |
@@ -162,12 +162,12 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 
 | QA | Domain | Scene/UI |
 |---|---|---|
-| QA-03 create polygon | ✅ factories + validation | ❌ visible/selectable |
-| QA-04 self-intersection | ✅ rejected in commands and draw tool, points kept | ❌ message in UI |
-| QA-05 storeys 3→5 | ✅ 16 m / 1 080 m² | ❌ |
+| QA-03 create polygon | ✅ factories + validation | ✅ draw tool → visible, selectable mass (persistence is M4) |
+| QA-04 self-intersection | ✅ rejected in commands and draw tool, points kept | ✅ "Footprint edges must not cross." status, model unchanged |
+| QA-05 storeys 3→5 | ✅ 16 m / 1 080 m² | ✅ roof drag 3 → 5 storeys · 16.0 m (GFA card is M3) |
 | QA-06 boundary warning | ❌ | ❌ |
-| QA-07 drag + Esc | ✅ roof gesture + Esc/pointer loss restore exact base, no entry | ❌ scene handle |
-| QA-08 undo/redo dup/delete/rotate | ✅ geometry + selection | ❌ shortcuts |
+| QA-07 drag + Esc | ✅ roof gesture + Esc/pointer loss restore exact base, no entry | ✅ roof drag to 18 storeys, Esc → exact 3 storeys, camera unchanged |
+| QA-08 undo/redo dup/delete/rotate | ✅ geometry + selection | ❌ shortcuts (waiting on D7) and duplicate/delete/rotate controls |
 | QA-16 numeric rejection | ✅ invalid storeys rejected, no entry | ❌ inspector keeps prior value |
 
 ### 7.4 Open decisions (Claude-owned)
@@ -200,9 +200,9 @@ Repository map that must be preserved (`AGENTS.md` §3): `src/app`, `src/compone
 |---|---|
 | `npm run typecheck` | ✅ no errors |
 | `npm run lint` | ✅ no errors/warnings |
-| `npm run test` | ✅ **135/135 across 16 files** |
-| `npm run build` | ✅ landing 91.87 kB gzip; studio 263.94 kB gzip (known >500 kB raw warning, lazy route) |
-| `npm run test:e2e` | ✅ 2/2 at M1 sign-off; not re-run (no UI change since) |
+| `npm run test` | ✅ **142/142 across 17 files** |
+| `npm run build` | ✅ landing ~92 kB gzip; studio 272.5 kB gzip (+8.6 kB for massing; known >500 kB raw warning, lazy route) |
+| `npm run test:e2e` | ✅ 2/2 re-run after the mass scene adapter |
 | `npm run capture` | 26 reference images; no UI change since M1 |
 
 ### 10.1 The one change made while preparing this report
@@ -357,7 +357,7 @@ When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `de
 **Claude (now, on `main`) — files that don't overlap with D7–D9:**
 1. ~~Locked-volume rule~~ — done (enforced in commands).
 2. ~~Renderer-free tool/pointer state machine~~ — done (`interaction.ts`).
-3. Mass scene adapter (ENU → mesh per tier, selection highlight), then the roof-height handle → QA-07 in the real scene; wire D1 grid snapping.
+3. ~~Mass scene adapter, roof handle, QA-07 in the studio, D1 grid snapping~~ — done; evidence in `docs/screenshots/m2-*.jpg`.
 4. Numeric inspector on `updateTier`/`updateVolume`, using D8 parsing and D9 dimensions, keeping the prior value on invalid input (QA-16); metric-card formatting.
 5. Undo/redo wiring with D7; boundary/clearance warnings (QA-06); fix §12 #13 (legend overlap).
 6. M2 gate: code review record, QA-03–08 table, fixed-camera screenshots of flat/L/stepped masses.

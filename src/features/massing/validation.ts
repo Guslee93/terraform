@@ -64,7 +64,7 @@ export function validateFootprint(
   }
   if (issues.length > 0) return issues
   if (!isSimpleRing(vertices)) {
-    issues.push(issue(`${path}.vertices`, 'must be a simple ring without crossings'))
+    issues.push(issue(`${path}.vertices`, 'edges must not cross'))
   }
   if (polygonArea(vertices) < MIN_FOOTPRINT_AREA) {
     issues.push(issue(`${path}.vertices`, `area must be at least ${MIN_FOOTPRINT_AREA} m²`))

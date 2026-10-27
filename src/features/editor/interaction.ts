@@ -1,13 +1,18 @@
 import type { Vec2 } from '../../lib/coordinates'
 import { createFootprint, createTier, createVolume } from '../massing/factories'
 import type { MassSelection, ScenarioDocument } from '../massing/types'
-import { validateScenario, type ValidationIssue } from '../massing/validation'
+import {
+  MassingValidationError,
+  validateScenario,
+  type ValidationIssue,
+} from '../massing/validation'
 import { addVolume, moveVolume, updateTier } from './commands'
 import {
   beginPreview,
   commitPreview,
   execute,
   redo,
+  select,
   undo,
   updatePreview,
   type MassingHistory,
@@ -74,6 +79,7 @@ export type EditorEvent =
   | { readonly type: 'pointerUp' }
   | { readonly type: 'pointerCancel' }
   | { readonly type: 'key'; readonly key: 'Escape' | 'Enter' | 'Backspace' }
+  | { readonly type: 'select'; readonly selection: MassSelection }
   | { readonly type: 'undo' }
   | { readonly type: 'redo' }
 
@@ -120,7 +126,24 @@ export function roofGesture(volumeId: string, tierId: string): Gesture {
   }
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  vertices: 'Footprint',
+  storeys: 'Storeys',
+  storeyHeight: 'Storey height',
+  baseElevation: 'Base elevation',
+  name: 'Name',
+  tiers: 'A mass',
+}
+
+/** User-facing sentence for the first validation issue, e.g. "Storeys must be …". */
 function message(error: unknown): string {
+  if (error instanceof MassingValidationError) {
+    const first = error.issues[0]
+    if (first) {
+      const field = first.path.split('.').pop()?.replace(/\[\d+\]$/, '') ?? ''
+      return `${FIELD_LABELS[field] ?? 'This edit'} ${first.message}.`
+    }
+  }
   return error instanceof Error ? error.message : 'The edit could not be applied.'
 }
 
@@ -207,7 +230,7 @@ export function reduceEditor(state: EditorState, event: EditorEvent): EditorStat
   switch (event.type) {
     case 'setTool':
       // Switching tools cancels any gesture or drawing in progress.
-      return { ...state, tool: event.tool, interaction: IDLE }
+      return { ...state, tool: event.tool, interaction: IDLE, error: null }
 
     case 'pointerDown':
       if (interaction.kind === 'dragging') return state
@@ -242,7 +265,9 @@ export function reduceEditor(state: EditorState, event: EditorEvent): EditorStat
 
     case 'key':
       if (event.key === 'Escape') {
-        return interaction.kind === 'idle' ? state : { ...state, interaction: IDLE }
+        return interaction.kind === 'idle' && !state.error
+          ? state
+          : { ...state, interaction: IDLE, error: null }
       }
       if (interaction.kind !== 'drawing') return state
       if (event.key === 'Enter') return finishDrawing(state, interaction)
@@ -254,6 +279,10 @@ export function reduceEditor(state: EditorState, event: EditorEvent): EditorStat
           elevations: interaction.elevations.slice(0, -1),
         },
       }
+
+    case 'select':
+      if (interaction.kind === 'dragging') return state
+      return { ...state, history: select(state.history, event.selection) }
 
     case 'undo':
     case 'redo':

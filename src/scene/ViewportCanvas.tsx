@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
+import type { ThreeEvent } from '@react-three/fiber'
 import { DoubleSide } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import { sampleTerrainHeight } from '../features/sites/geometry'
-import { enuToThreeXyz } from '../lib/coordinates'
+import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
+import { EMPTY_SELECTION } from '../features/massing/types'
+import { cameraLocked, type EditorEvent, type EditorState } from '../features/editor/interaction'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
+import { MassLayer } from './MassLayer'
 import { SceneErrorBoundary } from './SceneErrorBoundary'
 import {
   createContextGeometry,
@@ -27,9 +31,24 @@ type ViewportProps = {
   layers: SceneLayers
   presetId: CameraPresetId
   cameraNonce: number
+  editor: EditorState
+  dispatch: (event: EditorEvent) => void
+  editable: boolean
 }
 
-function TerrainMesh({ terrain }: { terrain: SitePackage['terrain'] }) {
+/** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
+const CLICK_TOLERANCE_PX = 4
+
+type GroundHandlers = {
+  onGroundClick?: (point: Vec2, elevation: number) => void
+  onGroundMove?: (point: Vec2) => void
+}
+
+function TerrainMesh({
+  terrain,
+  onGroundClick,
+  onGroundMove,
+}: { terrain: SitePackage['terrain'] } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
   const skirt = useMemo(() => createTerrainSkirtGeometry(terrain), [terrain])
@@ -45,7 +64,17 @@ function TerrainMesh({ terrain }: { terrain: SitePackage['terrain'] }) {
 
   return (
     <group>
-      <mesh geometry={geometry} receiveShadow>
+      <mesh
+        geometry={geometry}
+        receiveShadow
+        onClick={(event: ThreeEvent<MouseEvent>) => {
+          if (!onGroundClick || event.delta > CLICK_TOLERANCE_PX) return
+          onGroundClick([event.point.x, -event.point.z], event.point.y)
+        }}
+        onPointerMove={(event: ThreeEvent<PointerEvent>) =>
+          onGroundMove?.([event.point.x, -event.point.z])
+        }
+      >
         <meshStandardMaterial vertexColors roughness={0.97} metalness={0} />
       </mesh>
       <mesh geometry={skirt} receiveShadow>
@@ -130,12 +159,28 @@ function SiteLights() {
   )
 }
 
-export function ViewportCanvas({ sitePackage, layers, presetId, cameraNonce }: ViewportProps) {
+export function ViewportCanvas({
+  sitePackage,
+  layers,
+  presetId,
+  cameraNonce,
+  editor,
+  dispatch,
+  editable,
+}: ViewportProps) {
   const controlsRef = useRef<OrbitControlsHandle>(null)
   const { manifest, terrain, buildings } = sitePackage
   const initialPreset = manifest.cameraPresets.isometric
   const initialPosition = enuToThreeXyz(initialPreset.position)
   const initialTarget = enuToThreeXyz(initialPreset.target)
+  const heightAt = (east: number, north: number) => sampleTerrainHeight(terrain, east, north)
+  const drawing = editable && editor.tool === 'draw'
+
+  const onGroundClick = (point: Vec2, elevation: number) => {
+    if (!editable) return
+    if (drawing) dispatch({ type: 'pointerDown', point, elevation })
+    else dispatch({ type: 'select', selection: EMPTY_SELECTION })
+  }
 
   return (
     <div
@@ -160,9 +205,27 @@ export function ViewportCanvas({ sitePackage, layers, presetId, cameraNonce }: V
           <fog attach="fog" args={['#E8EBE7', 520, 1250]} />
           <SiteLights />
 
-          {layers.terrain && <TerrainMesh terrain={terrain} />}
+          {layers.terrain && (
+            <TerrainMesh
+              terrain={terrain}
+              onGroundClick={onGroundClick}
+              onGroundMove={
+                drawing && editor.interaction.kind === 'drawing'
+                  ? (point) => dispatch({ type: 'pointerMove', point })
+                  : undefined
+              }
+            />
+          )}
           {layers.context && <ContextBuildings buildings={buildings.buildings} />}
           {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
+
+          <MassLayer
+            editor={editor}
+            dispatch={dispatch}
+            editable={editable}
+            controlsRef={controlsRef}
+            heightAt={heightAt}
+          />
 
           <CameraRig
             presetId={presetId}
@@ -175,6 +238,7 @@ export function ViewportCanvas({ sitePackage, layers, presetId, cameraNonce }: V
           <OrbitControls
             ref={controlsRef}
             makeDefault
+            enabled={!cameraLocked(editor)}
             enableDamping
             dampingFactor={0.075}
             minDistance={20}

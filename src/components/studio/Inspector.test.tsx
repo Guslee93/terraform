@@ -29,6 +29,8 @@ const baseProps: ComponentProps<typeof Inspector> = {
   isOpen: false,
   onClose: () => undefined,
   isDrawer: false,
+  selected: null,
+  canEdit: true,
 }
 
 function DrawerHarness() {
@@ -79,5 +81,20 @@ describe('Inspector drawer', () => {
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByText('No mass selected')).toBeInTheDocument()
+    expect(screen.getByText(/Draw footprint/)).toBeInTheDocument()
+  })
+
+  it('summarises the selected mass', () => {
+    render(<Inspector {...baseProps} selected={{ name: 'Mass 1', detail: '5 storeys · 16.0 m' }} />)
+
+    expect(screen.getByText('1 selected')).toBeInTheDocument()
+    expect(screen.getByText('Mass 1')).toBeInTheDocument()
+    expect(screen.getByText('5 storeys · 16.0 m')).toBeInTheDocument()
+  })
+
+  it('states that massing is read-only on small screens', () => {
+    render(<Inspector {...baseProps} canEdit={false} />)
+
+    expect(screen.getByText(/read-only on small screens/)).toBeInTheDocument()
   })
 })

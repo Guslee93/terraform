@@ -23,7 +23,7 @@ describe('massing validation fixtures', () => {
     const footprint = Object.freeze({ vertices: Object.freeze([...vertices]) })
     const issues = validateFootprint(footprint)
     expect(issues.map((issue) => issue.message)).toContain(
-      'must be a simple ring without crossings',
+      'edges must not cross',
     )
     expect(footprint.vertices).toEqual(vertices)
   })
