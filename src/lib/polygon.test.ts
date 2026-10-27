@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Vec2 } from './coordinates'
-import { isSimpleRing } from './polygon'
+import { isSimpleRing, segmentsIntersect } from './polygon'
 
 describe('isSimpleRing', () => {
   it('accepts a rectangle and an L-shape', () => {
@@ -24,5 +24,14 @@ describe('isSimpleRing', () => {
 
   it('rejects adjacent edges folding back on themselves', () => {
     expect(isSimpleRing([[0, 0], [10, 0], [10, 10], [10, 4]])).toBe(false)
+  })
+})
+
+describe('segmentsIntersect', () => {
+  it('detects proper crossings and touches, not separate segments', () => {
+    expect(segmentsIntersect([0, 0], [10, 10], [0, 10], [10, 0])).toBe(true)
+    expect(segmentsIntersect([0, 0], [10, 0], [5, 0], [5, 5])).toBe(true)
+    expect(segmentsIntersect([0, 0], [10, 0], [0, 1], [10, 1])).toBe(false)
+    expect(segmentsIntersect([0, 0], [4, 0], [5, 0], [9, 0])).toBe(false)
   })
 })

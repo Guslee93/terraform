@@ -18,6 +18,8 @@ import { createTierGeometry, roofHandlePosition } from './massGeometry'
 
 const MASS_COLOR = '#F2EFE7'
 const INVALID_COLOR = '#EBC9C4'
+/** Amber tint for clearance warnings (design contract: amber = warning). */
+const WARNING_COLOR = '#EFD9AC'
 const SELECTION_COLOR = '#355E79'
 
 type MassLayerProps = {
@@ -26,6 +28,8 @@ type MassLayerProps = {
   editable: boolean
   controlsRef: RefObject<OrbitControlsHandle | null>
   heightAt: (east: number, north: number) => number
+  /** Ids of volumes with clearance warnings. */
+  warnedVolumes: ReadonlySet<string>
 }
 
 type StartDrag = (plane: Plane, toPoint: (hit: Vector3) => Vec2) => void
@@ -85,11 +89,13 @@ function TierMesh({
   tier,
   selected,
   invalid,
+  warning,
   onPointerDown,
 }: {
   tier: MassTier
   selected: boolean
   invalid: boolean
+  warning: boolean
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void
 }) {
   // Keyed on values, so a preview that keeps a tier's shape does not rebuild it.
@@ -109,7 +115,7 @@ function TierMesh({
       onClick={(event) => event.stopPropagation()}
     >
       <meshStandardMaterial
-        color={invalid ? INVALID_COLOR : MASS_COLOR}
+        color={invalid ? INVALID_COLOR : warning ? WARNING_COLOR : MASS_COLOR}
         roughness={0.85}
         metalness={0}
       />
@@ -165,7 +171,14 @@ function DrawOverlay({
   return <Line points={points} color={SELECTION_COLOR} lineWidth={2} dashed={false} />
 }
 
-export function MassLayer({ editor, dispatch, editable, controlsRef, heightAt }: MassLayerProps) {
+export function MassLayer({
+  editor,
+  dispatch,
+  editable,
+  controlsRef,
+  heightAt,
+  warnedVolumes,
+}: MassLayerProps) {
   const document = displayedDocument(editor)
   const { selection } = editor.history
   const { interaction } = editor
@@ -228,6 +241,7 @@ export function MassLayer({ editor, dispatch, editable, controlsRef, heightAt }:
               tier={tier}
               selected={selection.volumeId === volume.id}
               invalid={invalidPreview && selection.volumeId === volume.id}
+              warning={warnedVolumes.has(volume.id)}
               onPointerDown={editable ? startMove(volume, tier) : undefined}
             />
           )),

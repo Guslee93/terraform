@@ -187,3 +187,15 @@
 - Evidence: `docs/screenshots/m2-inspector-fields.jpg`, `m2-inspector-locked.jpg`, `m2-qa16-not-a-number.png`, `m2-qa16-out-of-range.png` (replaces the old `m2-inspector-selection.jpg`).
 - Tests: lint ✅ · test 167/167 ✅ (19 files) · e2e 2/2 ✅ · build ✅ (studio 273.9 kB gzip).
 - Open: hidden masses cannot be reselected once deselected (needs a mass list); width/depth/rotation readouts after D9.
+
+### Clearance and boundary feedback (QA-06, test-first)
+
+- `src/lib/polygon.ts`: exported `segmentsIntersect` (crossings and touches); `isSimpleRing` now reuses it — real package footprints still validate.
+- `src/features/massing/clearance.ts`: `checkClearance(document, { studyArea, heightAt })` → warnings per volume id. Boundary: every tier classified inside / crossing / outside (a tier sticking out makes the mass "crosses"). Terrain, ground tiers only: samples corners, edges and an interior grid; floats when the base is > 0.5 m above the lowest ground, cuts when the slope buries more than one storey of the tier. Illustrative warnings, never validation errors; nothing auto-corrects.
+- Threshold decision from browser testing: a 1.0 m cut threshold flagged almost every drawn mass on Compact Infill (relief −4…+6 m) — a normal plinth. Changed to "more than one storey" (test-first), so the warning keeps its meaning.
+- UI: amber tint `#EFD9AC` on flagged masses (red still wins for an invalid preview); inspector lists the selected mass's warnings with "Illustrative check · not planning advice"; viewport status line summarises when no error or drawing hint is showing. Computed on the displayed document, so warnings follow a drag live.
+- Flaky test fixed: `App.test.tsx` unknown-site test waited 1 s for the lazy studio route; it failed 1 run in 3 under full-suite load. Given a 5 s budget; 4/4 full runs pass.
+- Browser verification: Compact Infill mass inside → clear; dragged across the boundary → amber, "crosses the study boundary · floats up to 1.8 m above the ground" (moved onto lower ground, base kept); inspector lists both. Sloped Edge mass across the slope → "cuts up to 14.2 m into the slope". No new console errors.
+- Evidence: `docs/screenshots/m2-qa06-*.jpg`, `m2-slope-cut-warning.jpg`.
+- Tests: lint ✅ · test 181/181 ✅ (20 files) · e2e 2/2 ✅ · build ✅ (studio 275.0 kB gzip).
+- Open: excluding outside area from coverage is M3 (fixtures §3); terrain sampling is a fixed-density grid (`ponytail:` note in code).

@@ -43,8 +43,9 @@ describe('application routes', () => {
   it('shows a recoverable state for an unknown site package', async () => {
     renderRoute('/studio/unknown-site')
 
+    // The studio route is lazy; its first import can exceed the 1 s default under a full parallel run.
     expect(
-      await screen.findByRole('heading', { name: /not part of this study/i }),
+      await screen.findByRole('heading', { name: /not part of this study/i }, { timeout: 5000 }),
     ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /back to the sites/i })).toHaveAttribute('href', '/')
   })

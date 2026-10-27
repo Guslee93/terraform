@@ -6,6 +6,7 @@ import type { SceneLayers } from '../../scene/ViewportCanvas'
 import { cn } from '../../lib/cn'
 import { Icon } from '../ui/Icon'
 import type { MassingCommand } from '../../features/editor/history'
+import type { ClearanceIssue } from '../../features/massing/clearance'
 import type { MassTier, MassVolume } from '../../features/massing/types'
 import { MassFields } from './MassFields'
 
@@ -42,7 +43,7 @@ type InspectorProps = {
   isOpen: boolean
   onClose: () => void
   isDrawer: boolean
-  selected: { volume: MassVolume; tier: MassTier } | null
+  selected: { volume: MassVolume; tier: MassTier; warnings?: readonly ClearanceIssue[] } | null
   canEdit: boolean
   /** Editing allowed right now (false on small screens or during a gesture). */
   editingEnabled: boolean
@@ -198,6 +199,7 @@ export function Inspector({
                   tier={selected.tier}
                   disabled={!editingEnabled}
                   onCommand={onCommand}
+                  warnings={selected.warnings}
                 />
                 {!canEdit && (
                   <p className="mt-2 text-[10px] text-ink-secondary">Massing is read-only on small screens.</p>

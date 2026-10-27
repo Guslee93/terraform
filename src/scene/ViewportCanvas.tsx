@@ -34,6 +34,7 @@ type ViewportProps = {
   editor: EditorState
   dispatch: (event: EditorEvent) => void
   editable: boolean
+  warnedVolumes: ReadonlySet<string>
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
@@ -167,6 +168,7 @@ export function ViewportCanvas({
   editor,
   dispatch,
   editable,
+  warnedVolumes,
 }: ViewportProps) {
   const controlsRef = useRef<OrbitControlsHandle>(null)
   const { manifest, terrain, buildings } = sitePackage
@@ -225,6 +227,7 @@ export function ViewportCanvas({
             editable={editable}
             controlsRef={controlsRef}
             heightAt={heightAt}
+            warnedVolumes={warnedVolumes}
           />
 
           <CameraRig

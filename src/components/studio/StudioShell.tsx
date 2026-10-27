@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { createHistory } from '../../features/editor/history'
 import type { MassingCommand } from '../../features/editor/history'
@@ -8,7 +8,10 @@ import {
   displayedDocument,
   reduceEditor,
 } from '../../features/editor/interaction'
+import { checkClearance, type ClearanceIssue } from '../../features/massing/clearance'
 import { createScenario } from '../../features/massing/factories'
+import { sampleTerrainHeight } from '../../features/sites/geometry'
+import { normalizeRing } from '../../lib/polygon'
 import type { CameraPresetId } from '../../features/sites/manifest'
 import type { SitePackage } from '../../features/sites/package'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
@@ -56,14 +59,39 @@ export function StudioShell({
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
   const scenario = editor.history.document.name
-  // The displayed document follows a live drag, so the inspector shows preview values.
-  const selectedVolume = displayedDocument(editor).volumes.find(
+  // The displayed document follows a live drag, so the inspector and warnings show preview values.
+  const shown = displayedDocument(editor)
+  const clearance = useMemo(
+    () =>
+      sitePackage
+        ? checkClearance(shown, {
+            studyArea: normalizeRing(sitePackage.studyArea.polygon),
+            heightAt: (east, north) => sampleTerrainHeight(sitePackage.terrain, east, north),
+          })
+        : new Map<string, readonly ClearanceIssue[]>(),
+    [shown, sitePackage],
+  )
+  const warnedVolumes = useMemo(() => new Set(clearance.keys()), [clearance])
+  const warningSummary = (() => {
+    if (clearance.size === 0) return null
+    if (clearance.size > 1) return `${clearance.size} masses need attention`
+    const first = clearance.entries().next().value
+    if (!first) return null
+    const [volumeId, issues] = first
+    const name = shown.volumes.find((volume) => volume.id === volumeId)?.name ?? 'A mass'
+    return `${name}: ${issues.map((issue) => issue.message.toLowerCase()).join(' · ')}`
+  })()
+
+  const selectedVolume = shown.volumes.find(
     (volume) => volume.id === editor.history.selection.volumeId,
   )
   const selectedTier = selectedVolume?.tiers.find(
     (tier) => tier.id === editor.history.selection.tierId,
   )
-  const selected = selectedVolume && selectedTier ? { volume: selectedVolume, tier: selectedTier } : null
+  const selected =
+    selectedVolume && selectedTier
+      ? { volume: selectedVolume, tier: selectedTier, warnings: clearance.get(selectedVolume.id) }
+      : null
 
   const runCommand = (command: MassingCommand) => {
     const problem = commandError(editor, command)
@@ -156,6 +184,7 @@ export function StudioShell({
                 editor={editor}
                 dispatch={dispatch}
                 editable={editable}
+                warnedVolumes={warnedVolumes}
               />
               <CameraHud />
               <CameraPresets active={cameraPreset} onSelect={requestCamera} />
@@ -199,7 +228,7 @@ export function StudioShell({
             </span>
           </div>
 
-          {packageStatus === 'ready' && (editor.error || editor.tool === 'draw') && (
+          {packageStatus === 'ready' && (editor.error || editor.tool === 'draw' || warningSummary) && (
             <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-16 sm:top-4">
               <p
                 role="status"
@@ -207,11 +236,15 @@ export function StudioShell({
                 className={
                   editor.error
                     ? 'max-w-[44ch] rounded-[6px] border border-danger/40 bg-surface/95 px-3 py-1.5 text-center text-[11px] text-danger shadow-sm backdrop-blur-sm'
-                    : 'max-w-[44ch] rounded-[6px] border border-line bg-surface/95 px-3 py-1.5 text-center text-[11px] text-ink-secondary shadow-sm backdrop-blur-sm'
+                    : editor.tool === 'draw'
+                      ? 'max-w-[44ch] rounded-[6px] border border-line bg-surface/95 px-3 py-1.5 text-center text-[11px] text-ink-secondary shadow-sm backdrop-blur-sm'
+                      : 'max-w-[44ch] rounded-[6px] border border-warning/40 bg-surface/95 px-3 py-1.5 text-center text-[11px] text-warning-ink shadow-sm backdrop-blur-sm'
                 }
               >
                 {editor.error ??
-                  'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'}
+                  (editor.tool === 'draw'
+                    ? 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'
+                    : `${warningSummary} · illustrative check`)}
               </p>
             </div>
           )}

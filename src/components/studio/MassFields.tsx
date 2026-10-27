@@ -1,6 +1,7 @@
 import { useId, useState, type ReactNode } from 'react'
 import { parseMetres } from '../../lib/coordinates'
 import { tierFootprintArea, tierHeight } from '../../features/massing/aggregate'
+import type { ClearanceIssue } from '../../features/massing/clearance'
 import type { MassTier, MassUse, MassVolume } from '../../features/massing/types'
 import { USES } from '../../features/massing/validation'
 import { updateTier, updateVolume } from '../../features/editor/commands'
@@ -14,6 +15,8 @@ type MassFieldsProps = {
   disabled: boolean
   /** Applies a command, or returns why it was refused (the document stays unchanged). */
   onCommand: (command: MassingCommand) => string | null
+  /** Clearance warnings for this mass (boundary, slope). */
+  warnings?: readonly ClearanceIssue[]
 }
 
 const USE_LABELS: Record<MassUse, string> = {
@@ -145,7 +148,7 @@ function Readout({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-export function MassFields({ volume, tier, disabled, onCommand }: MassFieldsProps) {
+export function MassFields({ volume, tier, disabled, onCommand, warnings = [] }: MassFieldsProps) {
   const [panelError, setPanelError] = useState<string | null>(null)
   // A locked mass keeps rename, visibility and unlock (ADR-0004 §3 amendment).
   const geometryDisabled = disabled || volume.locked
@@ -238,6 +241,17 @@ export function MassFields({ volume, tier, disabled, onCommand }: MassFieldsProp
         <p aria-live="polite" className="text-[10.5px] leading-snug text-danger">
           {panelError}
         </p>
+      )}
+
+      {warnings.length > 0 && (
+        <div className="rounded-[6px] border border-warning/40 bg-warning/10 px-2.5 py-2">
+          <ul aria-label="Clearance warnings" className="space-y-0.5 text-[11px] leading-snug text-warning-ink">
+            {warnings.map((warning) => (
+              <li key={warning.kind}>{warning.message}</li>
+            ))}
+          </ul>
+          <p className="mt-1 text-[10px] text-warning-ink/80">Illustrative check · not planning advice</p>
+        </div>
       )}
 
       <dl>

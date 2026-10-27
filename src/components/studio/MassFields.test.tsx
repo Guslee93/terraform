@@ -115,6 +115,24 @@ describe('MassFields', () => {
     expect(screen.getByLabelText('Locked')).toBeEnabled()
   })
 
+  it('lists clearance warnings for the mass as an illustrative check', () => {
+    setup({
+      warnings: [
+        { kind: 'boundary-crossing', message: 'Crosses the study boundary' },
+        { kind: 'cut', amount: 3.2, message: 'Cuts up to 3.2 m into the slope' },
+      ],
+    })
+    const list = screen.getByRole('list', { name: 'Clearance warnings' })
+    expect(list).toHaveTextContent('Crosses the study boundary')
+    expect(list).toHaveTextContent('Cuts up to 3.2 m into the slope')
+    expect(screen.getByText(/Illustrative check/)).toBeInTheDocument()
+  })
+
+  it('shows no warning list when the mass is clear', () => {
+    setup()
+    expect(screen.queryByRole('list', { name: 'Clearance warnings' })).not.toBeInTheDocument()
+  })
+
   it('disables everything when editing is off', () => {
     setup({ disabled: true })
     for (const label of ['Name', 'Storeys', 'Storey height', 'Base elevation', 'Use', 'Visible', 'Locked']) {

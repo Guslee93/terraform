@@ -54,6 +54,23 @@ function pointOnSegment(p: Vec2, a: Vec2, b: Vec2): boolean {
   )
 }
 
+/** True when segments a–b and c–d cross or touch (shared points count). */
+export function segmentsIntersect(a: Vec2, b: Vec2, c: Vec2, d: Vec2): boolean {
+  const o1 = orientation(a, b, c)
+  const o2 = orientation(a, b, d)
+  const o3 = orientation(c, d, a)
+  const o4 = orientation(c, d, b)
+  if (((o1 > 0 && o2 < 0) || (o1 < 0 && o2 > 0)) && ((o3 > 0 && o4 < 0) || (o3 < 0 && o4 > 0))) {
+    return true
+  }
+  return (
+    pointOnSegment(c, a, b) ||
+    pointOnSegment(d, a, b) ||
+    pointOnSegment(a, c, d) ||
+    pointOnSegment(b, c, d)
+  )
+}
+
 /** Rejects crossings, collinear overlaps, vertex-on-edge touches and fold-backs. */
 export function isSimpleRing(points: readonly Vec2[]): boolean {
   const count = points.length
@@ -80,24 +97,7 @@ export function isSimpleRing(points: readonly Vec2[]): boolean {
         if (pointOnSegment(c, a, b) || pointOnSegment(b, c, d)) return false
         continue
       }
-      const o1 = orientation(a, b, c)
-      const o2 = orientation(a, b, d)
-      const o3 = orientation(c, d, a)
-      const o4 = orientation(c, d, b)
-      if (
-        ((o1 > 0 && o2 < 0) || (o1 < 0 && o2 > 0)) &&
-        ((o3 > 0 && o4 < 0) || (o3 < 0 && o4 > 0))
-      ) {
-        return false
-      }
-      if (
-        pointOnSegment(c, a, b) ||
-        pointOnSegment(d, a, b) ||
-        pointOnSegment(a, c, d) ||
-        pointOnSegment(b, c, d)
-      ) {
-        return false
-      }
+      if (segmentsIntersect(a, b, c, d)) return false
     }
   }
   return true
