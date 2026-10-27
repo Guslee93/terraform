@@ -11,7 +11,8 @@ import type { MassingCommand } from './history'
 
 /**
  * Command factories (ADR-0004 §3). Each returns a pure document transform; `execute`
- * validates the result. Unknown ids throw so history is never touched.
+ * validates the result. Unknown ids and edits to locked masses throw so history is
+ * never touched. A locked mass can still be renamed, hidden, unlocked or duplicated.
  */
 
 type VolumePatch = Partial<Pick<MassVolume, 'name' | 'visible' | 'locked'>>
@@ -35,6 +36,22 @@ function mapVolume(
   }
 }
 
+function assertUnlocked(volume: MassVolume): void {
+  if (volume.locked) throw new Error(`Mass is locked: ${volume.name}`)
+}
+
+/** Like mapVolume, but refuses geometry edits to a locked mass. */
+function mapUnlockedVolume(
+  document: ScenarioDocument,
+  volumeId: string,
+  transform: (volume: MassVolume) => MassVolume,
+): ScenarioDocument {
+  return mapVolume(document, volumeId, (volume) => {
+    assertUnlocked(volume)
+    return transform(volume)
+  })
+}
+
 function mapTiers(volume: MassVolume, transform: (tier: MassTier) => MassTier): MassVolume {
   return { ...volume, tiers: volume.tiers.map(transform) }
 }
@@ -51,7 +68,7 @@ export function removeVolume(volumeId: string): MassingCommand {
   return {
     label: 'Delete mass',
     apply: (document) => {
-      requireVolume(document, volumeId)
+      assertUnlocked(requireVolume(document, volumeId))
       return { ...document, volumes: document.volumes.filter((volume) => volume.id !== volumeId) }
     },
     selectionAfter: EMPTY_SELECTION,
@@ -72,6 +89,7 @@ export function duplicateVolume(
         ...source,
         id,
         name: `${source.name} copy`,
+        locked: false,
         tiers: source.tiers.map((tier, index) => ({
           ...tier,
           id: tierId(index),
@@ -88,7 +106,7 @@ export function moveVolume(volumeId: string, east: number, north: number): Massi
   return {
     label: 'Move mass',
     apply: (document) =>
-      mapVolume(document, volumeId, (volume) =>
+      mapUnlockedVolume(document, volumeId, (volume) =>
         mapTiers(volume, (tier) => ({
           ...tier,
           footprint: { vertices: translateRing(tier.footprint.vertices, east, north) },
@@ -102,7 +120,7 @@ export function rotateVolume(volumeId: string, radians: number, pivot?: Vec2): M
   return {
     label: 'Rotate mass',
     apply: (document) =>
-      mapVolume(document, volumeId, (volume) => {
+      mapUnlockedVolume(document, volumeId, (volume) => {
         const origin = pivot ?? ringCentroid(volume.tiers[0]?.footprint.vertices ?? [])
         return mapTiers(volume, (tier) => ({
           ...tier,
@@ -123,7 +141,7 @@ export function addTier(volumeId: string, tier: MassTier): MassingCommand {
   return {
     label: 'Add tier',
     apply: (document) =>
-      mapVolume(document, volumeId, (volume) => ({ ...volume, tiers: [...volume.tiers, tier] })),
+      mapUnlockedVolume(document, volumeId, (volume) => ({ ...volume, tiers: [...volume.tiers, tier] })),
     selectionAfter: { volumeId, tierId: tier.id },
   }
 }
@@ -132,7 +150,7 @@ export function updateTier(volumeId: string, tierId: string, patch: TierPatch): 
   return {
     label: 'Edit tier',
     apply: (document) =>
-      mapVolume(document, volumeId, (volume) => {
+      mapUnlockedVolume(document, volumeId, (volume) => {
         if (!volume.tiers.some((tier) => tier.id === tierId)) {
           throw new Error(`Unknown tier: ${tierId}`)
         }
@@ -145,7 +163,7 @@ export function removeTier(volumeId: string, tierId: string): MassingCommand {
   return {
     label: 'Delete tier',
     apply: (document) =>
-      mapVolume(document, volumeId, (volume) => {
+      mapUnlockedVolume(document, volumeId, (volume) => {
         if (!volume.tiers.some((tier) => tier.id === tierId)) {
           throw new Error(`Unknown tier: ${tierId}`)
         }

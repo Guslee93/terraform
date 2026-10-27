@@ -151,3 +151,8 @@
 - Visual follow-up from D5: at 1024×800 the "Site notes" drawer button overlaps the study-boundary legend label.
 - Wrote round-2 DeepSeek cards D7–D9 in the status report.
 - Tests: lint ✅ · test 108/108 ✅ (15 files) · build ✅.
+
+### Locked masses (test-first)
+
+- Decision with the user: lock is enforced in `src/features/editor/commands.ts`. Move, rotate, tier edit/add/remove and delete throw on a locked mass before any history entry; rename, show/hide, unlock and duplicate stay allowed, and duplicates come out unlocked. Recorded as an ADR-0004 §3 amendment.
+- 9 new tests (7 failed before the change); lint ✅ · test 117/117 ✅ · build ✅.

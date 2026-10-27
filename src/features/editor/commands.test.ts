@@ -190,3 +190,37 @@ describe('other commands', () => {
     )
   })
 })
+
+describe('locked masses', () => {
+  const locked = execute(selectedHistory, updateVolume('v1', { locked: true }))
+  const top = createTier({ id: 't4', footprint: createRectangleFootprint(6, 6), baseElevation: 16 })
+
+  it.each([
+    ['move', moveVolume('v1', 1, 0)],
+    ['rotate', rotateVolume('v1', Math.PI / 4)],
+    ['edit tier', updateTier('v1', 't1', { storeys: 5 })],
+    ['add tier', addTier('v1', top)],
+    ['remove tier', removeTier('v1', 't2')],
+    ['delete', removeVolume('v1')],
+  ])('blocks %s without a history entry', (_name, command) => {
+    expect(() => execute(locked, command)).toThrow('locked')
+    expect(locked.undoStack).toHaveLength(1)
+  })
+
+  it('still allows rename, hide and unlock', () => {
+    const renamed = execute(locked, updateVolume('v1', { name: 'Kept', visible: false }))
+    expect(renamed.document.volumes[0]).toMatchObject({ name: 'Kept', visible: false, locked: true })
+    const unlocked = execute(locked, updateVolume('v1', { locked: false }))
+    expect(execute(unlocked, moveVolume('v1', 1, 0)).undoStack).toHaveLength(3)
+  })
+
+  it('duplicates a locked mass as an unlocked copy', () => {
+    const duplicated = execute(locked, duplicateVolume('v1', { id: 'v1-copy' }))
+    expect(duplicated.document.volumes[0]?.locked).toBe(true)
+    expect(duplicated.document.volumes[2]?.locked).toBe(false)
+  })
+
+  it('leaves other masses editable', () => {
+    expect(execute(locked, moveVolume('v2', 1, 0)).undoStack).toHaveLength(2)
+  })
+})

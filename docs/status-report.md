@@ -9,7 +9,7 @@
 | **Date** | 2026-10-27 |
 | **Source of truth** | `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026) |
 | **Headline state** | **M0 complete · M1 complete · M2 in progress — domain, validation, serialization, commands and undo/redo committed and tested; tools/scene/inspector not started** |
-| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 108/108 ✅ (15 files) · `build` ✅ (re-run 2026-10-27 after merging DeepSeek round 1 — see §10) |
+| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 117/117 ✅ (15 files) · `build` ✅ (re-run 2026-10-27 after the locked-mass rule — see §10) |
 
 > **How to read this report.** Every claim below is traceable to a file in this repository, a command output, or a review record. Sections 4–6 are history; section 7 is the state of the in-progress milestone; sections 8–11 describe the architecture, evidence and debt; section 13 tells you exactly what to verify and do next. If anything here contradicts the PRD, the PRD wins.
 
@@ -172,7 +172,7 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 
 ### 7.4 Open decisions (Claude-owned)
 
-1. **Locked volumes** are still editable through commands. Decide: enforce in commands (safer) or only in tools/inspector.
+1. ~~Locked volumes~~ **Decided 2026-10-27:** enforced in the command layer (ADR-0004 §3 amendment). Locked masses refuse move/rotate/tier edits/add/remove/delete; rename, hide, unlock and duplicate (copy is unlocked) stay allowed.
 2. **Height reference** — `maxHeight` is top elevation relative to site origin (ADR-0004). Grade vs datum for the demo limit is PRD FR-073, owned by M3.
 3. **Floor-level GFA** — PRD line 403 asks for level-indexed occupied polygons before FR-051 ships. Current GFA is Σ(footprint × storeys) per tier, correct for set-back stacks but double-counts tiers that overlap at the same level. ADR-0004 revisit trigger; decide before M3.
 
@@ -200,7 +200,7 @@ Repository map that must be preserved (`AGENTS.md` §3): `src/app`, `src/compone
 |---|---|
 | `npm run typecheck` | ✅ no errors |
 | `npm run lint` | ✅ no errors/warnings |
-| `npm run test` | ✅ **108/108 across 15 files** |
+| `npm run test` | ✅ **117/117 across 15 files** |
 | `npm run build` | ✅ landing 91.87 kB gzip; studio 263.94 kB gzip (known >500 kB raw warning, lazy route) |
 | `npm run test:e2e` | ✅ 2/2 at M1 sign-off; not re-run (no UI change since) |
 | `npm run capture` | 26 reference images; no UI change since M1 |
@@ -355,7 +355,7 @@ When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `de
 **DeepSeek (now, in parallel):** D7 → D9 on `deepseek/round2` (§15.3b).
 
 **Claude (now, on `main`) — files that don't overlap with D7–D9:**
-1. Locked-volume rule (§7.4.1) — waiting on the user's call.
+1. ~~Locked-volume rule~~ — done (enforced in commands).
 2. Renderer-free tool/pointer state machine in `src/features/editor/` (navigation vs edit, begin/preview/commit/cancel, `Esc`), test-first.
 3. Mass scene adapter (ENU → mesh per tier, selection highlight), then the roof-height handle → QA-07 in the real scene; wire D1 grid snapping.
 4. Numeric inspector on `updateTier`/`updateVolume`, using D8 parsing and D9 dimensions, keeping the prior value on invalid input (QA-16); metric-card formatting.

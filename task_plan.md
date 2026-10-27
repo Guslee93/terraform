@@ -96,7 +96,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 3. Which polygon clipping library survives the M2 benchmark for union/difference?
 4. What independent solar reference is authoritative enough for the M3 fixture?
 5. Which static host best supports a clean HTTPS portfolio deployment with no secrets?
-6. Locked volumes: enforce read-only in commands (safer) or only in tools/inspector? (§7.4.1)
+6. ~~Locked volumes: enforce in commands or only in UI?~~ **Decided:** enforced in commands (ADR-0004 §3 amendment).
 7. Max-height reference: top elevation relative to site origin vs grade level for the demo limit? (M3 / PRD FR-073)
 8. Floor-level GFA: count overlapping tiers floor by floor before FR-051? (ADR-0004 revisit trigger)
 
