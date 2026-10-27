@@ -9,7 +9,7 @@
 | **Date** | 2026-10-27 |
 | **Source of truth** | `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026) |
 | **Headline state** | **M0 complete · M1 complete · M2 in progress — domain, validation, serialization, commands and undo/redo committed and tested; tools/scene/inspector not started** |
-| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 117/117 ✅ (15 files) · `build` ✅ (re-run 2026-10-27 after the locked-mass rule — see §10) |
+| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 135/135 ✅ (16 files) · `build` ✅ (re-run 2026-10-27 after the interaction state machine — see §10) |
 
 > **How to read this report.** Every claim below is traceable to a file in this repository, a command output, or a review record. Sections 4–6 are history; section 7 is the state of the in-progress milestone; sections 8–11 describe the architecture, evidence and debt; section 13 tells you exactly what to verify and do next. If anything here contradicts the PRD, the PRD wins.
 
@@ -150,10 +150,10 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 |---|---|---|---|
 | 1 | Immutable domain model | ✅ | — |
 | 2 | Factories + validation | ✅ (winding is normalised by factories but not enforced on load) | — |
-| 3 | Tools (add, draw, move/rotate/scale, roof handle, vertex edit) | ❌ | Claude |
+| 3 | Tools (add, draw, move/rotate/scale, roof handle, vertex edit) | 🟡 draw, move (grid snap) and roof gestures in the state machine; rotate/scale/vertex edit and all scene handles ❌ | Claude |
 | 4 | Tier volumes + double-count-free aggregation | ✅ domain | — |
 | 5 | Numeric inspector | ❌ | Claude |
-| 6 | Interaction state machine | 🟡 transactions done; pointer/tool state machine ❌ | Claude |
+| 6 | Interaction state machine | ✅ renderer-free (`interaction.ts`); scene wiring ❌ | Claude |
 | 7 | Undo/redo | ✅ domain; keyboard/UI wiring ❌ | Claude |
 | 8 | Snapping | 🟡 grid maths merged (D1, `snapping.ts`); wiring + P1 edge/vertex ❌ | Claude |
 | 9 | Clearance feedback | ❌ | Claude |
@@ -163,10 +163,10 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 | QA | Domain | Scene/UI |
 |---|---|---|
 | QA-03 create polygon | ✅ factories + validation | ❌ visible/selectable |
-| QA-04 self-intersection | ✅ rejected, model unchanged | ❌ message in UI |
+| QA-04 self-intersection | ✅ rejected in commands and draw tool, points kept | ❌ message in UI |
 | QA-05 storeys 3→5 | ✅ 16 m / 1 080 m² | ❌ |
 | QA-06 boundary warning | ❌ | ❌ |
-| QA-07 drag + Esc | ✅ exact base, no entry | ❌ pointer wiring |
+| QA-07 drag + Esc | ✅ roof gesture + Esc/pointer loss restore exact base, no entry | ❌ scene handle |
 | QA-08 undo/redo dup/delete/rotate | ✅ geometry + selection | ❌ shortcuts |
 | QA-16 numeric rejection | ✅ invalid storeys rejected, no entry | ❌ inspector keeps prior value |
 
@@ -200,7 +200,7 @@ Repository map that must be preserved (`AGENTS.md` §3): `src/app`, `src/compone
 |---|---|
 | `npm run typecheck` | ✅ no errors |
 | `npm run lint` | ✅ no errors/warnings |
-| `npm run test` | ✅ **117/117 across 15 files** |
+| `npm run test` | ✅ **135/135 across 16 files** |
 | `npm run build` | ✅ landing 91.87 kB gzip; studio 263.94 kB gzip (known >500 kB raw warning, lazy route) |
 | `npm run test:e2e` | ✅ 2/2 at M1 sign-off; not re-run (no UI change since) |
 | `npm run capture` | 26 reference images; no UI change since M1 |
@@ -356,7 +356,7 @@ When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `de
 
 **Claude (now, on `main`) — files that don't overlap with D7–D9:**
 1. ~~Locked-volume rule~~ — done (enforced in commands).
-2. Renderer-free tool/pointer state machine in `src/features/editor/` (navigation vs edit, begin/preview/commit/cancel, `Esc`), test-first.
+2. ~~Renderer-free tool/pointer state machine~~ — done (`interaction.ts`).
 3. Mass scene adapter (ENU → mesh per tier, selection highlight), then the roof-height handle → QA-07 in the real scene; wire D1 grid snapping.
 4. Numeric inspector on `updateTier`/`updateVolume`, using D8 parsing and D9 dimensions, keeping the prior value on invalid input (QA-16); metric-card formatting.
 5. Undo/redo wiring with D7; boundary/clearance warnings (QA-06); fix §12 #13 (legend overlap).

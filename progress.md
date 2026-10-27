@@ -156,3 +156,10 @@
 
 - Decision with the user: lock is enforced in `src/features/editor/commands.ts`. Move, rotate, tier edit/add/remove and delete throw on a locked mass before any history entry; rename, show/hide, unlock and duplicate stay allowed, and duplicates come out unlocked. Recorded as an ADR-0004 §3 amendment.
 - 9 new tests (7 failed before the change); lint ✅ · test 117/117 ✅ · build ✅.
+
+### Tool/pointer state machine (test-first)
+
+- New `src/features/editor/interaction.ts`: pure reducer `reduceEditor(state, event)` over `{ history, tool, interaction, error }`. Tools `select` | `draw`; pointer-down without a gesture is navigation (camera), with a gesture it captures the pointer (`cameraLocked`). Drag previews always apply to the gesture base; release commits one entry; Esc / pointer loss / tool switch cancel with zero entries; undo/redo ignored mid-gesture; invalid commits, locked masses and bad drawings set `error` and never throw.
+- Gestures: `moveGesture` (optional grid step via D1 `snapValue`), `roofGesture` (vertical metres → whole storeys). Ghost preview carries live validation issues.
+- Draw tool: click adds a point (with terrain elevation), Backspace removes, Enter creates `Mass N` at the lowest clicked elevation with 3 storeys at the scenario default height and returns to select, Esc discards. Self-intersecting drawings are rejected with points kept (QA-04).
+- 18 new tests (module absent before); lint ✅ · test 135/135 ✅ (16 files) · build ✅.
