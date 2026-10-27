@@ -94,7 +94,9 @@ cancelPreview(preview)            -> base       // zero history entries
 commitPreview(history, preview)   -> history    // exactly one entry
 ```
 
-Pointer movement may update a preview document; it must never call `history.execute`. `Esc` cancels the preview. Pointer release commits once. History is bounded to 100 entries; the oldest entry is dropped first.
+Pointer movement may update a preview document; it must never call `history.execute`.
+
+*Amendment (2026-10-27, implementation):* the preview API is `beginPreview(document)` + `updatePreview(preview, transform)`. Every update applies `transform` to the gesture's **base** document, not the previous preview, so repeated pointer moves cannot accumulate floating-point drift and `cancelPreview` returns the base by reference. `commitPreview` refuses a preview whose base is no longer the history's current document (stale gesture). Commands that return the same document reference record no entry. `Esc` cancels the preview. Pointer release commits once. History is bounded to 100 entries; the oldest entry is dropped first.
 
 Selection is `{ volumeId: string | null; tierId: string | null }`, stored by id. Undo restores the selection captured before the command; redo restores the selection after it. Objects are never stored by reference.
 

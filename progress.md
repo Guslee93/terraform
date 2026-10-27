@@ -132,3 +132,12 @@
 - `serialize.ts` (new): `serializeScenario` refuses invalid documents; `parseScenarioDocument` decodes untrusted JSON structurally (path-specific type errors), rejects unknown schema versions without guessing, drops unknown fields, then runs `validateScenario`. Migrations remain M4.
 - Files: `src/features/massing/{validation,validation.test,serialize,serialize.test}.ts`.
 - Tests: 14 new tests failed before implementation; after: lint ✅ · test 70/70 ✅ (10 files) · build ✅.
+
+### Command layer and history (test-first)
+
+- `src/features/editor/history.ts`: snapshot history per ADR-0003/0004 §3 — `createHistory`, `execute` (validates, throws without touching history, no-op on same document), `undo`/`redo` with selection restore, `select`, 100-entry bound dropping oldest. Preview transactions: `beginPreview`, `updatePreview` (always from base — no drift), `cancelPreview` (exact base by reference, zero entries), `commitPreview` (one entry; rejects stale previews). Recorded as an amendment in ADR-0004 §3.
+- `src/features/editor/commands.ts`: `addVolume`, `removeVolume`, `duplicateVolume` (fresh ids, optional offset), `moveVolume`, `rotateVolume` (all tiers about one pivot), `updateVolume`, `addTier`, `updateTier`, `removeTier`. Unknown ids throw.
+- QA coverage: QA-05 (3→5 storeys → 16 m, 1 080 m² GFA), QA-07 (roof drag + Esc → identical document, no entry), QA-08 (duplicate/delete/rotate undo+redo with exact geometry and selection), QA-16 domain side (negative/NaN/0/41 storeys rejected, no entry).
+- Not yet enforced: `locked` volumes are still editable at the command level — decide in the tool/inspector layer.
+- Files: `src/features/editor/{history,history.test,commands,commands.test}.ts`, `src/features/massing/factories.ts` (exported `createId`), ADR-0004 amendment.
+- Tests: both new suites failed before implementation; after: lint ✅ · test 94/94 ✅ (12 files) · build ✅.

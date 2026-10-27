@@ -11,7 +11,7 @@ import {
   type ScenarioDocument,
 } from './types'
 
-function createId(prefix: string): string {
+export function createId(prefix: string): string {
   const random = globalThis.crypto?.randomUUID?.()
   if (random) return `${prefix}-${random}`
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
