@@ -193,6 +193,35 @@ def parse_osm(path: Path, origin: tuple[float, float]) -> list[dict]:
     return buildings
 
 
+SHA256SUMS = RAW / "SHA256SUMS"
+
+
+def verify_cache_checksums() -> None:
+    """Verify every cached raw file against SHA256SUMS before offline use.
+
+    Raises RuntimeError naming the first missing or mismatched file so the
+    pipeline can never silently rebuild from corrupted caches.
+    """
+    if not SHA256SUMS.exists():
+        raise RuntimeError(f"Missing checksum file: {SHA256SUMS}")
+    expected: dict[str, str] = {}
+    for line in SHA256SUMS.read_text().splitlines():
+        parts = line.split()
+        if len(parts) != 2:
+            continue
+        digest, name = parts
+        expected[name] = digest
+    missing = [name for name in expected if not (RAW / name).exists()]
+    if missing:
+        raise RuntimeError(f"Missing cached raw file(s): {', '.join(missing)}")
+    for name, digest in expected.items():
+        actual = hashlib.sha256((RAW / name).read_bytes()).hexdigest()
+        if actual != digest:
+            raise RuntimeError(
+                f"Checksum mismatch for {RAW / name}: expected {digest}, got {actual}"
+            )
+
+
 def fetch_elevations(points: list[tuple[float, float]], cache_path: Path, offline: bool):
     if cache_path.exists():
         cached = json.loads(cache_path.read_text())
@@ -618,6 +647,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--offline", action="store_true")
     args = parser.parse_args()
+    if args.offline:
+        verify_cache_checksums()
     for site_id in SITES:
         build_site(site_id, args.offline)
 
