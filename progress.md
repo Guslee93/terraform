@@ -90,7 +90,16 @@
 | 2026-10-27 | 12 simplified OSM footprints self-intersected | 1 | Ring repair + runtime simple-ring validation; QA re-check clean |
 | 2026-10-27 | Old slope bbox included the Ekeberg cliff (−91 m relief) | 1 | Moved to a 31 m-relief hillside with 33 context buildings |
 
-## 5-question reboot check
+## Session: 2026-10-27 — Status report handover
+
+- **Status:** complete (reporting only; no milestone work)
+- Actions taken:
+  - Audited the full repo: milestone briefs, ADRs, review records, QA fixtures, git log, screenshots, package manifests, the M2 WIP working tree.
+  - Re-ran `typecheck`, `lint`, `test` and `build`; found the M2 WIP had broken the build via an unused `SCENARIO_SCHEMA_VERSION` import in `src/features/massing/validation.ts`.
+  - Removed that single unused import (behaviour-preserving); full suite green again: 33/33 tests, build OK (landing 91.87 kB gzip, studio 263.94 kB gzip).
+  - Wrote `docs/status-report.md` — the handover/status report for Claude Code Opus 5.5: exec summary, milestone table, M0/M1 gate history, detailed M2 WIP inventory and gap list, ADRs, data/provenance, fresh verification state, open follow-ups, risks/error log, DoD standing, suggested brief and assessment focus.
+- Files created/modified: `docs/status-report.md` (new), `src/features/massing/validation.ts` (removed unused import).
+- Tests: typecheck/lint/test/build all pass at handover (see `docs/status-report.md` §10).
 
 | Question | Answer |
 |---|---|
