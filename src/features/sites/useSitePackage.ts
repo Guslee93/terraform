@@ -2,18 +2,23 @@ import { useCallback, useEffect, useState } from 'react'
 import { loadSitePackage, type SitePackage } from './package'
 
 type PackageState =
+  | { status: 'idle'; data: null; error: null }
   | { status: 'loading'; data: null; error: null }
   | { status: 'ready'; data: SitePackage; error: null }
   | { status: 'error'; data: null; error: string }
 
+const IDLE: PackageState = { status: 'idle', data: null, error: null }
 const INITIAL: PackageState = { status: 'loading', data: null, error: null }
 
 export function useSitePackage(siteId: string | null) {
-  const [state, setState] = useState<PackageState>(INITIAL)
+  const [state, setState] = useState<PackageState>(() => (siteId ? INITIAL : IDLE))
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
-    if (!siteId) return
+    if (!siteId) {
+      setState(IDLE)
+      return
+    }
     const controller = new AbortController()
     let active = true
 

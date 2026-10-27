@@ -248,12 +248,47 @@ function assetUrl(siteId: string, relative: string): string {
   return `/sites/${encodeURIComponent(siteId)}/${relative}`
 }
 
+const REQUEST_TIMEOUT_MS = 15_000
+
 async function fetchJson(url: string, signal?: AbortSignal): Promise<unknown> {
-  const response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
-  if (!response.ok) {
-    throw new SitePackageError(`request failed with HTTP ${response.status}`, url)
+  const controller = new AbortController()
+  let timedOut = false
+
+  const onCallerAbort = () => controller.abort()
+  if (signal) {
+    if (signal.aborted) {
+      controller.abort()
+    } else {
+      signal.addEventListener('abort', onCallerAbort, { once: true })
+    }
   }
-  return response.json() as Promise<unknown>
+
+  const timer = setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, REQUEST_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    })
+    if (!response.ok) {
+      throw new SitePackageError(`request failed with HTTP ${response.status}`, url)
+    }
+    return response.json() as Promise<unknown>
+  } catch (error) {
+    if (timedOut) {
+      throw new SitePackageError(
+        `request to ${url} timed out after ${REQUEST_TIMEOUT_MS} ms`,
+        url,
+      )
+    }
+    throw error
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', onCallerAbort)
+  }
 }
 
 export async function loadSitePackage(siteId: string, signal?: AbortSignal): Promise<SitePackage> {

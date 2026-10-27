@@ -33,11 +33,15 @@ export function StudioPage() {
     )
   }
 
+  // `idle` only occurs when no site is chosen, which the branch above already
+  // renders as the missing-site page; StudioShell never sees it.
+  const packageStatus = status === 'idle' ? 'loading' : status
+
   return (
     <StudioShell
       site={site}
       sitePackage={data}
-      packageStatus={status}
+      packageStatus={packageStatus}
       packageError={error}
       onRetry={retry}
     />

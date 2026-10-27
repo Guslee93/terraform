@@ -10,6 +10,7 @@ const OUT = 'docs/screenshots'
 const viewports = [
   { name: '1440x900', width: 1440, height: 900 },
   { name: '1280x800', width: 1280, height: 800 },
+  { name: '1024x800', width: 1024, height: 800 },
   { name: '1920x1080', width: 1920, height: 1080 },
   { name: '390x844', width: 390, height: 844 },
 ]
