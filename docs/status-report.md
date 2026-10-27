@@ -9,7 +9,7 @@
 | **Date** | 2026-10-27 |
 | **Source of truth** | `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026) |
 | **Headline state** | **M0 complete · M1 complete · M2 in progress — domain, validation, serialization, commands and undo/redo committed and tested; tools/scene/inspector not started** |
-| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 94/94 ✅ (12 files) · `build` ✅ (re-run 2026-10-27 after commit `4c054cd` — see §10) |
+| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 108/108 ✅ (15 files) · `build` ✅ (re-run 2026-10-27 after merging DeepSeek round 1 — see §10) |
 
 > **How to read this report.** Every claim below is traceable to a file in this repository, a command output, or a review record. Sections 4–6 are history; section 7 is the state of the in-progress milestone; sections 8–11 describe the architecture, evidence and debt; section 13 tells you exactly what to verify and do next. If anything here contradicts the PRD, the PRD wins.
 
@@ -155,7 +155,7 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 | 5 | Numeric inspector | ❌ | Claude |
 | 6 | Interaction state machine | 🟡 transactions done; pointer/tool state machine ❌ | Claude |
 | 7 | Undo/redo | ✅ domain; keyboard/UI wiring ❌ | Claude |
-| 8 | Snapping | ❌ grid maths → **DeepSeek D1**; wiring + P1 edge/vertex → Claude | split |
+| 8 | Snapping | 🟡 grid maths merged (D1, `snapping.ts`); wiring + P1 edge/vertex ❌ | Claude |
 | 9 | Clearance feedback | ❌ | Claude |
 
 ### 7.3 QA status
@@ -194,13 +194,13 @@ Repository map that must be preserved (`AGENTS.md` §3): `src/app`, `src/compone
 - **Fixtures** (`docs/qa/fixtures.md`): coordinate cases, area/height/volume fixtures incl. the stepped mass, validation cases, M1 package baselines, and the **solar verification protocol for M3** (independent NOAA reference vs SunCalc, Δ ≤ 0.5°; DST boundary case; night state).
 - **Files added during the collection run** show no drift: manifest statistics, building count, origin elevation, relief ranges and attribution text match the QA record in `docs/reviews/M1-geometry-qa.md`.
 
-## 10. Verification state (re-run 2026-10-27 after `4c054cd`)
+## 10. Verification state (re-run 2026-10-27 after DeepSeek round 1 merge)
 
 | Command | Result |
 |---|---|
 | `npm run typecheck` | ✅ no errors |
 | `npm run lint` | ✅ no errors/warnings |
-| `npm run test` | ✅ **94/94 across 12 files** |
+| `npm run test` | ✅ **108/108 across 15 files** |
 | `npm run build` | ✅ landing 91.87 kB gzip; studio 263.94 kB gzip (known >500 kB raw warning, lazy route) |
 | `npm run test:e2e` | ✅ 2/2 at M1 sign-off; not re-run (no UI change since) |
 | `npm run capture` | 26 reference images; no UI change since M1 |
@@ -243,7 +243,7 @@ error TS6133: 'SCENARIO_SCHEMA_VERSION' is declared but its value is never read.
 11. Terrain is coarse at 13 × 13 — increase to 17 × 17 if M2 clearance checks need finer grade (`M1-geometry-qa.md` #4, M1 brief follow-up).
 12. Add a checksum for the Kartverket terrain response (`M1-geometry-qa.md` #7, M1 brief follow-up).
 
-Follow-ups delegated to DeepSeek are tagged in §15.3 (D2 = #5, D3 = #8, D4 = #9, D5 = #4 partial, D6 = #12). The rest stay with Claude.
+**Closed by DeepSeek round 1 (merged):** #5 (D2), #8 (D3, with Claude fix), #9 (D4), #12 (D6); #4 partly (D5 — 1024×800 captured; hover/focus/layer-off states still open). New: **#13** at 1024×800 the "Site notes" drawer button overlaps the study-boundary legend label (Claude, visual).
 
 **Cross-cutting next-milestone note:** M3 owns the sun-independent reference, DST and night-state fixtures; M4 owns persistence/migrations. M2 must not start either.
 
@@ -321,20 +321,45 @@ The goal is to save Claude tokens on work where a mistake is cheap and easy to s
 - In `--offline` mode, verify each cached file against `SHA256SUMS` before use and exit non-zero naming the file on mismatch.
 - Run `python3 scripts/build_site_packages.py --offline`, then `git status public/sites` — it **must be clean**. If anything under `public/sites/` changed, revert it and report; packages are immutable.
 
+### 15.3a Round 1 result (D1–D6)
+
+All six merged into `main` (merge `9ebb4e4`) after review. Five accepted as delivered; **D3 accepted with a fix** — `response.json()` was returned un-awaited, so the timeout and caller abort no longer covered the body read (fixed test-first by Claude). Rows in `docs/agent-log.md` are marked accepted.
+
+### 15.3b Round 2 cards (D7–D9)
+
+Same rules as §15.1. Branch: `deepseek/round2` from current `main`. The don't-touch list now also includes `src/features/editor/snapping.ts` and `src/features/sites/**`.
+
+**D7 — Undo/redo shortcut matcher** · commit `feat(m2): add undo/redo shortcut matcher`
+- New files only: `src/features/editor/shortcuts.ts` + `.test.ts`. Not wired into the UI.
+- Export `type ShortcutEvent = { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; targetTag?: string; targetEditable?: boolean }` (plain object, no DOM types) and `matchHistoryShortcut(event: ShortcutEvent): 'undo' | 'redo' | null`.
+- Rules: mod = `metaKey || ctrlKey`. Undo = mod + `z` without Shift. Redo = mod + Shift + `z`, or Ctrl + `y` (not Meta + `y`). Key comparison is case-insensitive. Alt held → `null`. `targetTag` of `INPUT`, `TEXTAREA` or `SELECT`, or `targetEditable: true` → `null`, so native text undo keeps working.
+- Done when: a test per rule, including Shift + `Z` arriving as uppercase `key`.
+
+**D8 — Inspector input parsing and formatting** · commit `feat(m2): add inspector input parsing and formatting`
+- New files only: `src/features/editor/inspectorInput.ts` + `.test.ts`. Read `parseMetres` in `src/lib/coordinates.ts` first; reuse it, do not modify it.
+- Export `parseStoreys(text: string): number | null` — trims; digits only → integer; anything else (`''`, `'3.5'`, `'-1'`, `'3 storeys'`, `'1e2'`) → `null`. Range checks stay in `validateTier`.
+- Export `formatInputValue(value: number): string` — 2 decimal places with a `.` separator, no unit (the design contract puts the unit as a suffix inside the field): `9.6 → '9.60'`, `-0.001 → '0.00'` (never `'-0.00'`), non-finite → `''`.
+- Done when: tests cover every listed input; pure module.
+
+**D9 — Footprint dimensions** · commit `feat(m2): add footprint dimension helper`
+- New files only: `src/lib/dimensions.ts` + `.test.ts`. Import `Vec2` from `src/lib/coordinates.ts`; do not modify `polygon.ts`.
+- Export `footprintDimensions(vertices: readonly Vec2[]): { width: number; depth: number; rotation: number }` — the minimum-area bounding rectangle, testing each convex-hull edge direction (O(n²) is fine for ≤ 200 vertices). `width ≥ depth`; `rotation` is the angle of the width axis from east, counter-clockwise, normalised to `[0, π)`; on ties prefer the smallest rotation. Fewer than 3 vertices → `{ width: 0, depth: 0, rotation: 0 }`.
+- Tests: 18 × 12 rectangle → `18, 12, 0`; the same rotated 30° about its centre → `18, 12, π/6` (±1e-9); the 20 × 10 L-shape from `docs/qa/fixtures.md` → `20, 10, 0`; a 10 × 10 square → `10, 10, 0`; a 12 × 18 rectangle (taller than wide) → `18, 12, π/2`.
+
 ### 15.4 Handoff back to Claude
 
-When DeepSeek finishes, tell Claude "review `deepseek/followups`". Claude will diff it against `main`, check the work against the task cards and AGENTS.md, re-run the suite, merge accepted commits, fix or reject the rest, mark the rows in `docs/agent-log.md` and update `progress.md` and this report.
+When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `deepseek/followups`). Claude will diff it against `main`, check the work against the task cards and AGENTS.md, re-run the suite, merge accepted commits, fix or reject the rest, mark the rows in `docs/agent-log.md` and update `progress.md` and this report.
 
 ## 16. Next actions
 
-**DeepSeek (now, in parallel):** D1 → D6 on `deepseek/followups`.
+**DeepSeek (now, in parallel):** D7 → D9 on `deepseek/round2` (§15.3b).
 
-**Claude (now, on `main`) — files that don't overlap with D1–D6:**
-1. Decide the locked-volume rule (§7.4.1) with the user.
+**Claude (now, on `main`) — files that don't overlap with D7–D9:**
+1. Locked-volume rule (§7.4.1) — waiting on the user's call.
 2. Renderer-free tool/pointer state machine in `src/features/editor/` (navigation vs edit, begin/preview/commit/cancel, `Esc`), test-first.
-3. Mass scene adapter (ENU → mesh per tier, selection highlight), then roof-height handle → first QA-07 in the real scene.
-4. Numeric inspector bound to `updateTier`/`updateVolume`, keeping the prior value on invalid input (QA-16).
-5. Undo/redo shortcuts; boundary/clearance warnings (QA-06); wire D1 grid snapping after review.
+3. Mass scene adapter (ENU → mesh per tier, selection highlight), then the roof-height handle → QA-07 in the real scene; wire D1 grid snapping.
+4. Numeric inspector on `updateTier`/`updateVolume`, using D8 parsing and D9 dimensions, keeping the prior value on invalid input (QA-16); metric-card formatting.
+5. Undo/redo wiring with D7; boundary/clearance warnings (QA-06); fix §12 #13 (legend overlap).
 6. M2 gate: code review record, QA-03–08 table, fixed-camera screenshots of flat/L/stepped masses.
 
 ## 17. Appendix — key artifact index

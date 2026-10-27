@@ -46,6 +46,26 @@ function installStallingFetch() {
   return fetchMock
 }
 
+/** Mock fetch whose headers arrive but whose body stalls until the request is aborted. */
+function installStallingBodyFetch() {
+  const fetchMock = vi.fn(
+    (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const body = new ReadableStream({
+        start(stream) {
+          init?.signal?.addEventListener(
+            'abort',
+            () => stream.error(new DOMException('The operation was aborted.', 'AbortError')),
+            { once: true },
+          )
+        },
+      })
+      return Promise.resolve(new Response(body, { status: 200 }))
+    },
+  )
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
 describe('site package request timeout', () => {
   afterEach(() => {
     vi.useRealTimers()
@@ -68,6 +88,19 @@ describe('site package request timeout', () => {
       expect(error.message).toContain('timed out')
       expect(error.message).toContain('compact-infill/manifest.json')
     }
+  })
+
+  it('times out when the response body stalls after the headers arrive', async () => {
+    vi.useFakeTimers()
+    installStallingBodyFetch()
+
+    const promise = loadSitePackage('compact-infill')
+    const settled = promise.catch((value: unknown) => value)
+    await vi.advanceTimersByTimeAsync(15_000)
+
+    const error = await settled
+    expect(error instanceof SitePackageError).toBe(true)
+    if (error instanceof SitePackageError) expect(error.message).toContain('timed out')
   })
 
   it('still honours a caller abort', async () => {

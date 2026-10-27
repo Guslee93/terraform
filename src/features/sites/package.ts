@@ -276,7 +276,9 @@ async function fetchJson(url: string, signal?: AbortSignal): Promise<unknown> {
     if (!response.ok) {
       throw new SitePackageError(`request failed with HTTP ${response.status}`, url)
     }
-    return response.json() as Promise<unknown>
+    // Await the body inside the try so the timeout and caller abort still cover it.
+    const body: unknown = await response.json()
+    return body
   } catch (error) {
     if (timedOut) {
       throw new SitePackageError(

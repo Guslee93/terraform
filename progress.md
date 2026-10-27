@@ -141,3 +141,13 @@
 - Not yet enforced: `locked` volumes are still editable at the command level — decide in the tool/inspector layer.
 - Files: `src/features/editor/{history,history.test,commands,commands.test}.ts`, `src/features/massing/factories.ts` (exported `createId`), ADR-0004 amendment.
 - Tests: both new suites failed before implementation; after: lint ✅ · test 94/94 ✅ (12 files) · build ✅.
+
+## Session: 2026-10-27 — DeepSeek round 1 review and merge
+
+- **Status:** complete
+- Reviewed D1–D6 on `deepseek/followups` against status report §15.3: scope clean (no protected files), offline rebuild leaves `public/sites` unchanged, 107/107 on the branch.
+- Merged with `--no-ff` (`main` had diverged by the M6 docs commit).
+- **D3 defect fixed:** `fetchJson` returned `response.json()` un-awaited, so `finally` cleared the timeout and dropped the caller-abort listener before the body was read. Added a stalled-body test (failed: hung), then awaited the body inside `try`.
+- Visual follow-up from D5: at 1024×800 the "Site notes" drawer button overlaps the study-boundary legend label.
+- Wrote round-2 DeepSeek cards D7–D9 in the status report.
+- Tests: lint ✅ · test 108/108 ✅ (15 files) · build ✅.
