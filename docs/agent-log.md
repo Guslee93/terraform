@@ -26,4 +26,5 @@ Record every meaningful agent engagement. The point is to preserve **why** an ou
 | 2026-10-27 | M1 | `agency-gis-qa-engineer` | CRS, topology, provenance and camera QA | `docs/reviews/M1-geometry-qa.md` | **PASS with follow-ups** | Found 12 self-intersecting simplified footprints; repair and runtime validation fixed them. |
 | 2026-10-27 | M1 | `agency-code-reviewer` | Review M1 implementation | `docs/reviews/M1-code-review.md` | **PASS with follow-ups** | No blockers after QA fix; loader, camera and geometry disposal verified. |
 | 2026-10-27 | M1 | Lead visual pass | Review both site scenes and HUD | `docs/reviews/M1-visual-review.md` | **PASS with follow-ups** | Compact/slope scenes read correctly; remaining façade z-fighting and mobile framing are follow-ups. |
+| 2026-10-27 | M2 | DeepSeek V4 Flash (Antigravity) | D1 grid snapping helpers (new files only, not wired) | `src/features/editor/snapping.ts`, `src/features/editor/snapping.test.ts` | **Pending Claude review** | Pure module; 6 tests cover step/ties/origin/`-0`/invalid input per report §15.3 D1. |
 |  |  |  |  |  |  |  |
