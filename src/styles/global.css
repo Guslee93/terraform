@@ -5,14 +5,20 @@
   --color-app: var(--bg-app);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-sunken: var(--surface-sunken);
   --color-viewport: var(--surface-viewport);
   --color-ink: var(--ink-primary);
   --color-ink-secondary: var(--ink-secondary);
+  --color-ink-hover: var(--ink-hover);
   --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-line-dashed: var(--border-dashed);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-positive: var(--positive);
   --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
   --color-danger: var(--danger);
   --color-focus: var(--focus);
 

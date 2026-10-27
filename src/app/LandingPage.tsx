@@ -18,14 +18,14 @@ export function LandingPage() {
       <SiteHeader />
 
       <main id="main">
-        <section className="tf-measure grid gap-12 pb-14 pt-10 lg:grid-cols-[1.04fr_0.96fr] lg:items-center lg:gap-16 lg:pb-16 lg:pt-14">
+        <section className="tf-measure grid gap-12 pb-14 pt-10 lg:grid-cols-[1.18fr_0.82fr] lg:items-center lg:gap-12 lg:pb-16 lg:pt-14">
           <div className="max-w-[36rem]">
             <p className="flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.22em] text-ink-secondary">
               <span aria-hidden="true" className="h-px w-8 bg-accent/60" />
               Oslo · Architectural site study
             </p>
 
-            <h1 className="mt-6 font-display text-[clamp(2.8rem,5.6vw,4.1rem)] font-normal leading-[0.97] tracking-[-0.025em] text-ink">
+            <h1 className="mt-6 font-display text-[clamp(2.8rem,5.2vw,3.6rem)] font-normal leading-[0.98] tracking-[-0.025em] text-ink">
               Explore a site.
               <br />
               <span className="italic text-accent">Shape</span> a concept.
@@ -70,8 +70,8 @@ export function LandingPage() {
             </dl>
           </div>
 
-          <figure className="relative">
-            <div className="overflow-hidden rounded-[14px] border border-line bg-surface shadow-[var(--shadow-soft)]">
+          <figure className="relative isolate">
+            <div className="relative z-10 overflow-hidden rounded-[14px] border border-line bg-surface shadow-[var(--shadow-soft)]">
               <div className="flex items-center justify-between border-b border-line px-4 py-3">
                 <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary">
                   Site study · Concept A
@@ -90,12 +90,12 @@ export function LandingPage() {
             </div>
             <div
               aria-hidden="true"
-              className="absolute -bottom-3 -right-3 -z-10 hidden h-28 w-28 rounded-[14px] border border-line bg-accent-soft/60 lg:block"
+              className="absolute -bottom-3 -right-3 z-0 hidden h-28 w-28 rounded-[14px] border border-line bg-accent-soft/60 lg:block"
             />
           </figure>
         </section>
 
-        <section id="sites" className="border-t border-line bg-[#f1f2ec]">
+        <section id="sites" className="border-t border-line bg-surface-sunken">
           <div className="tf-measure py-14 lg:py-20">
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <div>

@@ -2,7 +2,7 @@
 
 An interactive architectural site-planning portfolio prototype. Explore a curated Oslo site, shape a conceptual massing, test sunlight and shadow, read geometry-derived metrics, and compare two concepts.
 
-> **Status:** M0 shell. The 3D viewport, studio layout and design system are in place. Curated site packages arrive in M1; the studio intentionally shows no invented site geometry.
+> **Status:** M0 complete. The 3D viewport, studio layout and design system are in place and have passed the code and visual gates. Curated site packages arrive in M1; the studio intentionally shows no invented site geometry.
 
 ## Quick start
 

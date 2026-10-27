@@ -6,7 +6,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 
 ## Current Phase
 
-**M0 — Foundation and visual shell** (shell implemented; design, visual and code gates pending)
+**M0 complete — M1 site packages and camera next**
 
 ## Phases
 
@@ -32,11 +32,12 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [x] Vitest/RTL/Playwright configuration
 - [x] Chromium smoke path passing
 - [x] Reference screenshots at 1440×900, 1280×800, 1920×1080 and 390×844
-- [ ] `ux-architect` layout/CSS review
-- [ ] `ui-designer` token/component review
-- [ ] `ui-finish-gate-reviewer` visual gate
-- [ ] `code-reviewer` gate
-- **Status:** in_progress
+- [x] `ux-architect` layout/CSS review
+- [x] `ui-designer` token/component review
+- [x] Review findings applied (fabricated control removed, drawer hardened, chrome condensed, hero/grid/thumbnail polish)
+- [x] `code-reviewer` gate — pass with follow-ups
+- [x] `ui-finish-gate-reviewer` visual gate — pass with follow-ups
+- **Status:** complete
 
 ### Phase 2 — M1 Site packages and camera
 
@@ -104,6 +105,8 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 | Studio route lazy-loaded | Keeps landing at ~91 kB gzip instead of loading Three.js |
 | TypeScript 6.0.3, not 7 | `typescript-eslint` 8.72 supports `<6.1.0` |
 | AI excluded until M6 | PRD non-goal for v1 |
+| Static Concept A chip in M0 | Avoid fabricated scenario switching before M4 |
+| 1100 px drawer breakpoint | Matches the design contract; canvas stays dominant |
 
 ## Errors encountered
 
@@ -113,10 +116,13 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 | Vitest DOM leaked between tests | 1 | Added explicit `cleanup()` in `src/test/setup.ts` |
 | Lazy studio route made a synchronous test fail | 1 | Switched the unknown-site assertion to `findByRole` |
 | Studio chunk >500 kB warning | 1 | Accepted for M0; route is lazy-loaded; vendor splitting scheduled for M1 |
+| E2E asserted old milestone copy after the UI copy change | 1 | Updated the smoke test to the product-facing empty-state heading |
+| Full-screen empty-state overlay blocked canvas pointer events | 1 | Added `pointer-events-none` to the overlay; card keeps `pointer-events-auto` |
 
 ## Next actions
 
-1. Run `design-ux-architect` and `design-ui-designer` reviews of the M0 shell.
-2. Apply visual fixes and capture reference screenshots.
-3. Run `code-reviewer` and `ui-finish-gate-reviewer`; record both in `docs/reviews/`.
-4. Only then start M1: provenance first, geometry second.
+1. Run `research-synthesist` on site licensing and provenance before any geometry work.
+2. Build the offline preprocessing pipeline with `gis-spatial-data-engineer`.
+3. Validate the first package with `gis-qa-engineer`; then add camera presets and layers.
+4. Keep the inspector's open M2 hardening follow-ups (`inert` background, focus-on-resize) on the M2 checklist.
+5. Split the Three.js vendor chunk during M1 performance work.

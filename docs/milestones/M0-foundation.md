@@ -1,11 +1,12 @@
 # M0 — Foundation and visual shell
 
-- **Status:** In progress — shell implemented, design/visual gate pending
+- **Status:** Complete — visual gate passed with follow-ups (2026-10-27)
 - **PRD gate:** Interface looks cohesive at target viewport; navigation and accessibility basics work (§13)
 - **Lead agent:** `engineering-software-architect`
 - **Design agents:** `design-ux-architect`, `design-ui-designer`
 - **Implementers:** `engineering-frontend-developer`, `engineering-developer-tooling-engineer`
 - **Gates:** `engineering-code-reviewer`, `design-ui-finish-gate-reviewer`
+- **Evidence:** `docs/reviews/M0-{ux-review,ui-review,code-review,visual-gate}.md`; `docs/screenshots/m0-*`
 
 ## Goal
 
@@ -24,17 +25,17 @@ Establish a credible, calm, light-mode studio shell with routing, design tokens,
 - [x] Reusable primitives: `Button`, `ButtonLink`, `Icon`, `IconButton`
 - [x] Coordinate utilities and ENU↔Three tests
 - [x] Vitest + RTL + Playwright configuration
-- [x] Empty state that explicitly awaits M1 site geometry
+- [x] Empty state that honestly explains the missing site model
 
-## Remaining
+## Gate work completed
 
-- [ ] Run `design-ux-architect` review of layout/CSS and record findings
-- [ ] Run `design-ui-designer` review of tokens, type scale and components
-- [ ] Run `ui-finish-gate-reviewer` against `docs/design/design-contract.md`
-- [ ] Fix visual findings (spacing, hierarchy, density, states)
-- [ ] Keyboard pass: skip link, tab order, focus rings, inspector drawer focus
-- [ ] Capture 1440×900, 1280×800 and 1920×1080 screenshots
-- [ ] Run `code-reviewer` and record `docs/reviews/M0-code-review.md`
+- [x] `design-ux-architect` review recorded in `docs/reviews/M0-ux-review.md`
+- [x] `design-ui-designer` review recorded in `docs/reviews/M0-ui-review.md`
+- [x] `ui-finish-gate-reviewer` gate passed with follow-ups
+- [x] Visual findings applied: hero composition, grid, thumbnails, overlay density, micro-type, token cleanup
+- [x] Keyboard pass: skip link, focus rings, 1100 px drawer, focus trap and restore
+- [x] Screenshots at 1440×900, 1280×800, 1920×1080 and 390×844
+- [x] `code-reviewer` gate passed with follow-ups
 
 ## Out of scope
 
@@ -42,14 +43,15 @@ Site geometry, terrain, context buildings, massing tools, analysis, persistence,
 
 ## Acceptance evidence
 
-- Landing and studio screenshots at 1440×900, 1280×800 and 1920×1080.
+- Landing and studio screenshots at 1440×900, 1280×800, 1920×1080 and 390×844.
 - `npm run lint`, `npm run test`, `npm run build` pass.
-- 14 unit/component tests passing; Playwright smoke path defined.
-- Accessibility notes: focus visible, reduced-motion CSS, canvas instructions, labelled controls.
+- 17 unit/component tests and 1 Playwright smoke test passing.
+- Accessibility notes: focus visible, reduced-motion CSS, canvas instructions, labelled controls, focus-managed drawer.
 - Code review and visual gate records linked from `docs/agent-log.md`.
 
 ## Risks / notes
 
 - The studio empty-state card is intentional. Do not replace it with invented site geometry to make screenshots look fuller.
-- The tool rail and inspector expose disabled future controls with milestone tooltips. Before M5, every main-path control must either work or leave the release UI.
+- The M0 tool rail exposes only working Select and Site notes actions; future massing tools stay out of the UI until they work.
+- Open M2 hardening follow-ups: inert the background for assistive technology and guard focus restoration on resize (`docs/reviews/M0-code-review.md`).
 - The studio chunk is large; vendor splitting belongs to M1 performance work.

@@ -9,6 +9,8 @@ test('landing page opens the primary studio', async ({ page }) => {
   await page.getByRole('link', { name: /open compact infill in the studio/i }).click()
 
   await expect(page).toHaveURL(/\/studio\/compact-infill$/)
-  await expect(page.getByText(/site geometry arrives in milestone m1/i)).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: /does not include the site model/i }),
+  ).toBeVisible()
   await expect(page.getByRole('navigation', { name: 'Studio tools' })).toBeVisible()
 })

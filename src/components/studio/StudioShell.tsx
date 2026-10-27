@@ -9,8 +9,18 @@ import { ToolRail, type ToolId } from './ToolRail'
 export function StudioShell({ site }: { site: SiteSummary }) {
   const [activeTool, setActiveTool] = useState<ToolId>('select')
   const [activeTab, setActiveTab] = useState<InspectorTab>('model')
-  const [scenario, setScenario] = useState('Concept A')
   const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(() =>
+    window.matchMedia('(min-width: 1100px)').matches,
+  )
+  const scenario = 'Concept A'
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 1100px)')
+    const update = () => setIsDesktop(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -40,7 +50,6 @@ export function StudioShell({ site }: { site: SiteSummary }) {
       <StudioTopBar
         site={site}
         scenario={scenario}
-        onScenarioChange={setScenario}
         onFitSite={fitSite}
         onToggleInspector={() => setInspectorOpen((open) => !open)}
         inspectorOpen={inspectorOpen}
@@ -57,45 +66,30 @@ export function StudioShell({ site }: { site: SiteSummary }) {
           <ViewportCanvas />
 
           <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
-            <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
+            <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
               Curated demo
             </span>
-            <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
-              {scenario}
+            <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm sm:hidden">
+              Read-only preview
             </span>
           </div>
 
-          <div className="pointer-events-none absolute right-3 top-3 z-10 hidden items-center gap-2.5 rounded-[10px] border border-line bg-surface/85 px-3 py-2 shadow-sm backdrop-blur-sm sm:flex">
-            <span
-              aria-hidden="true"
-              className="grid size-7 place-items-center rounded-full border border-line text-ink-secondary"
-            >
-              <Icon name="move" size={13} />
-            </span>
-            <div className="leading-tight">
-              <p className="text-[10px] font-medium text-ink">Oslo</p>
-              <p className="text-[8.5px] uppercase tracking-[0.12em] text-ink-secondary">
-                Local ENU · metres
-              </p>
-            </div>
-          </div>
-
-          <div className="absolute inset-0 z-10 grid place-items-center p-4">
+          <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center p-4">
             <div className="pointer-events-auto w-full max-w-[22rem] rounded-[14px] border border-line bg-surface/92 p-6 text-center shadow-[var(--shadow-soft)] backdrop-blur-md">
               <p className="text-[9px] font-medium uppercase tracking-[0.18em] text-accent">
-                Viewport ready
+                {site.title} · Preview
               </p>
               <h1 className="mt-2.5 text-balance font-display text-[26px] leading-[1.05] tracking-[-0.01em] text-ink">
-                Site geometry arrives in milestone M1.
+                This preview does not include the site model.
               </h1>
               <p className="mx-auto mt-3 max-w-[34ch] text-[11.5px] leading-relaxed text-ink-secondary">
-                The camera, coordinate frame and studio shell are in place. Curated terrain, context
-                buildings and parcel linework are next — no invented site data is shown here.
+                The camera, coordinate frame and studio shell are ready. Curated terrain, context and
+                parcel geometry are part of the full demonstration build.
               </p>
               <button
                 type="button"
                 onClick={() => setInspectorOpen(true)}
-                className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-line bg-surface px-3.5 text-[11.5px] font-medium text-ink transition-colors hover:bg-surface-muted"
+                className="mt-4 inline-flex min-h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-line bg-surface px-3.5 text-[11.5px] font-medium text-ink transition-colors hover:bg-surface-muted min-[1100px]:hidden"
               >
                 Inspect the site notes
                 <Icon name="arrow-up-right" size={13} />
@@ -103,28 +97,10 @@ export function StudioShell({ site }: { site: SiteSummary }) {
             </div>
           </div>
 
-          <div className="pointer-events-none absolute bottom-3 left-3 z-10 hidden items-center gap-2 md:flex">
-            {[
-              ['Drag', 'Orbit'],
-              ['Middle', 'Pan'],
-              ['Scroll', 'Zoom'],
-            ].map(([key, action]) => (
-              <span
-                key={key}
-                className="inline-flex items-center gap-1.5 rounded-full border border-line/80 bg-surface/85 px-2 py-1 text-[9px] text-ink-secondary shadow-sm backdrop-blur-sm"
-              >
-                <kbd className="rounded border border-line bg-app px-1 py-px text-[8px] uppercase tracking-[0.08em] text-ink">
-                  {key}
-                </kbd>
-                {action}
-              </span>
-            ))}
-          </div>
-
           <button
             type="button"
             onClick={fitSite}
-            className="absolute bottom-3 right-3 z-10 inline-flex min-h-8 items-center gap-1.5 rounded-[6px] border border-line bg-surface/90 px-2.5 text-[10px] font-medium text-ink-secondary shadow-sm backdrop-blur-sm transition-colors hover:text-ink"
+            className="absolute bottom-3 right-3 z-10 inline-flex min-h-8 items-center gap-1.5 rounded-[6px] border border-line bg-surface/90 px-2.5 text-[10px] font-medium text-ink-secondary shadow-sm backdrop-blur-sm transition-colors hover:text-ink md:hidden"
           >
             <Icon name="fit" size={13} />
             Fit site
@@ -138,17 +114,20 @@ export function StudioShell({ site }: { site: SiteSummary }) {
           onTabChange={setActiveTab}
           isOpen={inspectorOpen}
           onClose={() => setInspectorOpen(false)}
+          isDrawer={!isDesktop}
         />
       </div>
 
-      <footer className="flex h-9 shrink-0 items-center justify-between gap-4 border-t border-line bg-surface px-3 text-[8.5px] uppercase tracking-[0.12em] text-ink-secondary">
+      <footer className="flex h-9 shrink-0 items-center justify-between gap-4 border-t border-line bg-surface px-3 text-[10px] uppercase tracking-[0.12em] text-ink-secondary">
         <span className="truncate">
-          {site.title} · {scenario}
+          {site.title}
+          <span className="hidden sm:inline"> · {scenario}</span>
         </span>
         <span className="hidden sm:inline">Illustrative constraints · not planning advice</span>
-        <span className="inline-flex shrink-0 items-center gap-1.5">
+        <span className="sm:hidden">Not planning advice</span>
+        <span className="hidden shrink-0 items-center gap-1.5 lg:inline-flex">
           <span aria-hidden="true" className="size-1.5 rounded-full bg-warning" />
-          M0 shell · site packages pending
+          Preview · site model pending
         </span>
       </footer>
     </div>

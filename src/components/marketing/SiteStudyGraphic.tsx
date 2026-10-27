@@ -44,9 +44,9 @@ function IsoBlock({ x, y, width, depth, height, top, left, right }: IsoBlockProp
 
   return (
     <g>
-      <polygon points={leftFace} fill={left} />
-      <polygon points={rightFace} fill={right} />
-      <polygon points={topFace} fill={top} />
+      <polygon points={leftFace} fill={left} stroke="#202521" strokeOpacity={0.08} strokeWidth={0.75} />
+      <polygon points={rightFace} fill={right} stroke="#202521" strokeOpacity={0.08} strokeWidth={0.75} />
+      <polygon points={topFace} fill={top} stroke="#202521" strokeOpacity={0.08} strokeWidth={0.75} />
     </g>
   )
 }

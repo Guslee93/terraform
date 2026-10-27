@@ -11,14 +11,14 @@ export function SiteCard({ site, index }: SiteCardProps) {
   return (
     <Link
       to={`/studio/${site.id}`}
-      className="group overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface shadow-[0_1px_0_rgb(255_255_255/0.9)_inset] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:border-[#c8cec5] hover:shadow-[var(--shadow-soft)]"
+      className="group overflow-hidden rounded-[var(--radius-card)] border border-line bg-surface shadow-[0_1px_0_rgb(255_255_255/0.9)_inset] transition-[border-color,box-shadow,transform] duration-300 hover:border-line-strong hover:shadow-[var(--shadow-soft)] motion-safe:hover:-translate-y-0.5"
       aria-label={`Open ${site.title} in the studio`}
     >
       <div className="relative aspect-[16/10] overflow-hidden border-b border-line bg-viewport">
         <img
           src={site.thumbnail}
           alt=""
-          className="h-full w-full object-cover transition-transform duration-700 ease-[var(--ease-out)] group-hover:scale-[1.025]"
+          className="h-full w-full object-cover transition-transform duration-700 ease-[var(--ease-out)] motion-safe:group-hover:scale-[1.025]"
           loading="lazy"
         />
         <span className="absolute left-4 top-4 rounded-full border border-ink/10 bg-app/85 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary backdrop-blur-sm">

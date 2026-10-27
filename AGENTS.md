@@ -1,6 +1,6 @@
 # Terraform — Agent Operating Guide
 
-**Status:** M0 shell implemented · visual and accessibility gates pending
+**Status:** M0 complete · M1 site packages next
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
 **Product type:** architectural portfolio prototype, not a commercial SaaS
 
@@ -239,6 +239,6 @@ Update `task_plan.md` after each phase and `progress.md` after each session. Log
 
 ## 10. Current state and next action
 
-**Done:** git repository, Vite 8 + React 19 + TypeScript 6 scaffold, pinned dependencies, Tailwind 4 tokens from PRD §7.2, landing page, About page, responsive studio shell, R3F ground/grid/camera, inspector scaffold, coordinate utilities and tests, ADR-0001–0003, milestone briefs, design contract, site package spec, QA fixtures, planning files.
+**Done:** M0 gate complete — git repository, Vite 8 + React 19 + TypeScript 6 scaffold, pinned dependencies, Tailwind 4 tokens from PRD §7.2, landing page, About page, responsive studio shell, R3F ground/grid/camera, inspector scaffold with focus-managed drawer, coordinate utilities and tests, ADR-0001–0003, milestone briefs, design contract, site package spec, QA fixtures, planning files, UX/UI/code/visual review records, reference screenshots.
 
-**Next:** run the M0 design review — `software-architect` (structure), `ux-architect` (layout/CSS), `ui-designer` (tokens/components), then `code-reviewer` + `ui-finish-gate-reviewer`. Fix findings before starting M1 site packages. The studio still shows an explicit empty state because no curated site geometry exists yet; that is intentional and must not be replaced with invented geometry.
+**Next:** start M1 with provenance, not geometry. Use `research-synthesist` to confirm licences and record sources, then `gis-spatial-data-engineer` to build the offline preprocessing pipeline, then `gis-qa-engineer` to validate the package. Do not replace the honest M0 empty state with invented site data before the package exists. Keep the open M2 hardening follow-ups from `docs/reviews/M0-code-review.md` on the M2 checklist.

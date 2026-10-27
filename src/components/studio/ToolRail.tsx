@@ -2,24 +2,17 @@ import type { IconName } from '../ui/Icon'
 import { Icon } from '../ui/Icon'
 import { cn } from '../../lib/cn'
 
-export type ToolId = 'select' | 'add-mass' | 'draw-footprint' | 'move' | 'rotate' | 'measure' | 'layers'
+export type ToolId = 'select' | 'layers'
 
 type Tool = {
   id: ToolId
   label: string
   icon: IconName
-  available: boolean
-  note?: string
 }
 
 const TOOLS: readonly Tool[] = [
-  { id: 'select', label: 'Select', icon: 'cursor', available: true },
-  { id: 'add-mass', label: 'Add mass', icon: 'cube', available: false, note: 'M2' },
-  { id: 'draw-footprint', label: 'Draw footprint', icon: 'polygon', available: false, note: 'M2' },
-  { id: 'move', label: 'Move', icon: 'move', available: false, note: 'M2' },
-  { id: 'rotate', label: 'Rotate', icon: 'rotate', available: false, note: 'M2' },
-  { id: 'measure', label: 'Measure', icon: 'ruler', available: false, note: 'M3' },
-  { id: 'layers', label: 'Site layers', icon: 'layers', available: false, note: 'M1' },
+  { id: 'select', label: 'Select', icon: 'cursor' },
+  { id: 'layers', label: 'Site notes', icon: 'layers' },
 ]
 
 type ToolRailProps = {
@@ -38,14 +31,9 @@ export function ToolRail({ activeTool, onSelect, onOpenLayers }: ToolRailProps) 
         <button
           key={tool.id}
           type="button"
-          disabled={!tool.available}
-          aria-pressed={tool.id === activeTool}
-          aria-label={
-            tool.available ? tool.label : `${tool.label} — available in ${tool.note ?? 'a later milestone'}`
-          }
-          title={
-            tool.available ? tool.label : `${tool.label} — available in ${tool.note ?? 'a later milestone'}`
-          }
+          aria-pressed={tool.id === 'select' ? activeTool === 'select' : undefined}
+          aria-label={tool.label}
+          title={tool.label}
           onClick={() => {
             if (tool.id === 'layers') {
               onOpenLayers()
@@ -55,7 +43,7 @@ export function ToolRail({ activeTool, onSelect, onOpenLayers }: ToolRailProps) 
           }}
           className={cn(
             'relative grid size-9 place-items-center rounded-[var(--radius-control)] border border-transparent text-ink-secondary transition-colors duration-150 sm:size-10',
-            'hover:bg-surface-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent',
+            'hover:bg-surface-muted hover:text-ink',
             tool.id === activeTool &&
               'border-line bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
           )}
@@ -63,6 +51,10 @@ export function ToolRail({ activeTool, onSelect, onOpenLayers }: ToolRailProps) 
           <Icon name={tool.icon} size={17} />
         </button>
       ))}
+
+      <span className="mt-2 text-[9px] uppercase tracking-[0.12em] text-ink-secondary [writing-mode:vertical-rl]">
+        Tools
+      </span>
 
       <div className="mt-auto flex flex-col items-center gap-2 pb-1">
         <span aria-hidden="true" className="h-px w-6 bg-line" />

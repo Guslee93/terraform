@@ -1,7 +1,7 @@
+import { useEffect, useRef } from 'react'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
 import { cn } from '../../lib/cn'
 import { Icon } from '../ui/Icon'
-import { IconButton } from '../ui/IconButton'
 
 export type InspectorTab = 'model' | 'sun' | 'constraints' | 'compare'
 
@@ -25,6 +25,7 @@ type InspectorProps = {
   onTabChange: (tab: InspectorTab) => void
   isOpen: boolean
   onClose: () => void
+  isDrawer: boolean
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -36,39 +37,89 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function Inspector({ site, activeTab, onTabChange, isOpen, onClose }: InspectorProps) {
+export function Inspector({
+  site,
+  activeTab,
+  onTabChange,
+  isOpen,
+  onClose,
+  isDrawer,
+}: InspectorProps) {
+  const panelRef = useRef<HTMLElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!isDrawer || !isOpen) return
+
+    const previous =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    closeRef.current?.focus()
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return
+      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusable || focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (!first || !last) return
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      previous?.focus()
+    }
+  }, [isDrawer, isOpen])
+
+  if (isDrawer && !isOpen) return null
+
   return (
     <>
-      {isOpen && (
+      {isDrawer && isOpen && (
         <button
           type="button"
-          aria-label="Close inspector"
+          aria-label="Dismiss inspector"
           onClick={onClose}
-          className="fixed inset-x-0 bottom-0 top-14 z-30 bg-ink/20 backdrop-blur-[1px] lg:hidden"
+          className="fixed inset-x-0 bottom-0 top-14 z-30 bg-ink/20 backdrop-blur-[1px]"
         />
       )}
 
       <aside
+        ref={panelRef}
         aria-label="Inspector"
+        role={isDrawer ? 'dialog' : undefined}
+        aria-modal={isDrawer ? true : undefined}
         className={cn(
-          'fixed bottom-0 right-0 top-14 z-40 flex w-[min(360px,92vw)] flex-col border-l border-line bg-surface transition-transform duration-300 ease-[var(--ease-out)] lg:static lg:z-auto lg:w-[336px] lg:translate-x-0',
-          isOpen ? 'translate-x-0' : 'translate-x-full',
+          'flex flex-col border-l border-line bg-surface',
+          isDrawer
+            ? 'fixed bottom-0 right-0 top-14 z-40 w-[min(360px,92vw)]'
+            : 'static w-[336px]',
         )}
       >
         <div className="flex items-center justify-between border-b border-line px-3 py-2">
           <div role="tablist" aria-label="Inspector sections" className="flex gap-0.5">
-            {TABS.map((tab) => (
+            {TABS.filter((tab) => tab.available).map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 role="tab"
+                id={`inspector-tab-${tab.id}`}
+                aria-controls="inspector-panel"
                 aria-selected={tab.id === activeTab}
-                disabled={!tab.available}
-                title={tab.available ? tab.label : `${tab.label} — available in ${tab.note}`}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
                   'relative rounded-[6px] px-2.5 py-1.5 text-[11px] font-medium text-ink-secondary transition-colors',
-                  'hover:bg-surface-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent',
+                  'hover:bg-surface-muted hover:text-ink',
                   tab.id === activeTab &&
                     'bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
                 )}
@@ -77,12 +128,26 @@ export function Inspector({ site, activeTab, onTabChange, isOpen, onClose }: Ins
               </button>
             ))}
           </div>
-          <IconButton label="Close inspector" className="lg:hidden" onClick={onClose}>
-            <Icon name="close" size={16} />
-          </IconButton>
+          {isDrawer && (
+            <button
+              ref={closeRef}
+              type="button"
+              aria-label="Close inspector"
+              title="Close inspector"
+              onClick={onClose}
+              className="inline-grid size-9 shrink-0 place-items-center rounded-[var(--radius-control)] border border-transparent text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink"
+            >
+              <Icon name="close" size={16} />
+            </button>
+          )}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div
+          role="tabpanel"
+          id="inspector-panel"
+          aria-labelledby={`inspector-tab-${activeTab}`}
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
+        >
           <section aria-labelledby="selection-heading">
             <div className="flex items-center justify-between">
               <h2
@@ -91,40 +156,19 @@ export function Inspector({ site, activeTab, onTabChange, isOpen, onClose }: Ins
               >
                 Selection
               </h2>
-              <span className="rounded-full border border-line px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-ink-secondary">
+              <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-ink-secondary">
                 Nothing selected
               </span>
             </div>
 
-            <div className="mt-3 rounded-[var(--radius-card)] border border-dashed border-[#cdd2ca] bg-[#fbfbf8] px-4 py-5 text-center">
-              <span className="mx-auto grid size-9 place-items-center rounded-full border border-line bg-surface text-ink-secondary">
-                <Icon name="cube" size={17} />
+            <div className="mt-3 rounded-[var(--radius-card)] border border-dashed border-line-dashed bg-surface-subtle px-4 py-4 text-center">
+              <span className="mx-auto grid size-8 place-items-center rounded-full border border-line bg-surface text-ink-secondary">
+                <Icon name="cube" size={16} />
               </span>
-              <p className="mt-3 text-[12.5px] font-medium text-ink">No mass selected</p>
-              <p className="mx-auto mt-1.5 max-w-[28ch] text-[11.5px] leading-relaxed text-ink-secondary">
-                Massing tools and numeric properties arrive with the M2 engine. This panel is wired
-                to the domain model, not placeholder values.
+              <p className="mt-2.5 text-[12.5px] font-medium text-ink">No mass selected</p>
+              <p className="mx-auto mt-1 max-w-[30ch] text-[11.5px] leading-relaxed text-ink-secondary">
+                Massing tools appear when a site model is loaded.
               </p>
-              <div className="mt-4 flex justify-center gap-2">
-                <button
-                  type="button"
-                  disabled
-                  title="Add mass — available in M2"
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-[6px] border border-line bg-surface px-2.5 text-[11px] font-medium text-ink-secondary opacity-50"
-                >
-                  <Icon name="cube" size={13} />
-                  Add mass
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  title="Draw footprint — available in M2"
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-[6px] border border-line bg-surface px-2.5 text-[11px] font-medium text-ink-secondary opacity-50"
-                >
-                  <Icon name="polygon" size={13} />
-                  Draw
-                </button>
-              </div>
             </div>
           </section>
 
@@ -140,7 +184,7 @@ export function Inspector({ site, activeTab, onTabChange, isOpen, onClose }: Ins
               <Row label="Morphology" value={site.morphology} />
               <Row label="Data" value="Curated demo" />
               <Row label="Frame" value="Local ENU · metres" />
-              <Row label="Context" value="Pending M1 package" />
+              <Row label="Context" value="Not loaded in preview" />
               <Row label="Constraints" value="Illustrative only" />
             </dl>
           </section>
@@ -150,7 +194,7 @@ export function Inspector({ site, activeTab, onTabChange, isOpen, onClose }: Ins
               id="assumptions-heading"
               className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
             >
-              Planned assumptions
+              Assumptions
             </h2>
             <dl className="mt-2">
               <Row label="Storey height" value="3.2 m" />
@@ -158,28 +202,23 @@ export function Inspector({ site, activeTab, onTabChange, isOpen, onClose }: Ins
               <Row label="Units" value="Metres · 2 dp" />
             </dl>
             <p className="mt-2 text-[10.5px] leading-relaxed text-ink-secondary">
-              Defaults from the PRD. Editable controls are introduced with the massing engine.
+              Storey height and display units used by the massing model.
             </p>
           </section>
 
-          <section className="mt-6 rounded-[var(--radius-card)] border border-warning/25 bg-warning/[0.06] p-3.5">
-            <div className="flex gap-2.5">
-              <Icon name="info" size={15} className="mt-px shrink-0 text-warning" />
-              <div>
-                <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-warning">
-                  Illustrative constraint
-                </p>
-                <p className="mt-1.5 text-[10.5px] leading-relaxed text-ink-secondary">
-                  Envelope statuses are demonstration checks, not planning advice, legal setbacks or
-                  a compliance determination.
-                </p>
-              </div>
-            </div>
+          <section className="mt-5 flex gap-2.5 border-t border-line pt-3">
+            <Icon name="info" size={14} className="mt-px shrink-0 text-warning" />
+            <p className="text-[10px] leading-relaxed text-ink-secondary">
+              <span className="font-medium uppercase tracking-[0.1em] text-warning-ink">
+                Illustrative constraint.
+              </span>{' '}
+              Envelope checks are not planning advice or a compliance determination.
+            </p>
           </section>
 
         </div>
 
-        <div className="border-t border-line px-4 py-2.5 text-[9px] uppercase tracking-[0.12em] text-ink-secondary">
+        <div className="border-t border-line px-4 py-2.5 text-[10px] uppercase tracking-[0.12em] text-ink-secondary">
           {site.dataStatus === 'curated-demo' ? 'Curated Oslo demonstration' : 'Licensed source'}
         </div>
       </aside>

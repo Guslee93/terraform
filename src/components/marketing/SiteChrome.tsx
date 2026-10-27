@@ -76,6 +76,14 @@ export function SiteFooter() {
           </p>
         </div>
         <div className="flex flex-col gap-2 text-[11px] uppercase tracking-[0.14em] text-ink-secondary md:items-end">
+          <nav aria-label="Footer" className="flex gap-4">
+            <Link to="/" className="transition-colors hover:text-ink">
+              Sites
+            </Link>
+            <Link to="/about" className="transition-colors hover:text-ink">
+              About
+            </Link>
+          </nav>
           <span>Oslo, Norway</span>
           <span>Desktop-first · No login</span>
           <span>© 2026 Terraform study</span>

@@ -20,7 +20,7 @@
     <path d="M444 0V400"/>
   </g>
 
-  <g fill="#D2D6CD" stroke="#BCC2B8" stroke-width="1" filter="url(#soft)">
+  <g fill="#C7CEC3" stroke="#AEB7AA" stroke-width="1" filter="url(#soft)">
     <rect x="20" y="16" width="118" height="82" rx="1"/>
     <rect x="180" y="16" width="244" height="82" rx="1"/>
     <rect x="466" y="16" width="154" height="82" rx="1"/>
@@ -32,7 +32,7 @@
     <rect x="466" y="320" width="154" height="66" rx="1"/>
   </g>
 
-  <g fill="#BFC5BB" opacity="0.5">
+  <g fill="#B5BDB1" opacity="0.55">
     <rect x="34" y="30" width="26" height="18"/>
     <rect x="72" y="30" width="26" height="18"/>
     <rect x="196" y="30" width="40" height="18"/>
@@ -41,10 +41,10 @@
   </g>
 
   <g>
-    <polygon points="306,152 430,150 442,282 318,288" fill="#E1EBF0" fill-opacity="0.72" stroke="#355E79" stroke-width="2" stroke-dasharray="8 5"/>
-    <rect x="330" y="186" width="84" height="62" fill="#F4F1E9" stroke="#355E79" stroke-width="1.6"/>
-    <rect x="352" y="201" width="42" height="30" fill="#E9EDF0" stroke="#355E79" stroke-width="1.2"/>
-    <path d="M330 186v-52M330 186l84 62" stroke="#355E79" stroke-width="1" stroke-dasharray="3 4" opacity="0.65"/>
+    <polygon points="306,152 430,150 442,282 318,288" fill="#E1EBF0" fill-opacity="0.9" stroke="#2E5670" stroke-width="2.5" stroke-dasharray="8 5"/>
+    <rect x="330" y="186" width="84" height="62" fill="#FBF8F0" stroke="#2E5670" stroke-width="2"/>
+    <rect x="352" y="201" width="42" height="30" fill="#DCE6EC" stroke="#2E5670" stroke-width="1.5"/>
+    <path d="M330 186v-52M330 186l84 62" stroke="#2E5670" stroke-width="1" stroke-dasharray="3 4" opacity="0.75"/>
   </g>
 
   <g font-family="Inter, ui-sans-serif, system-ui, sans-serif" fill="#202521">

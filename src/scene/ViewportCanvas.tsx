@@ -36,7 +36,7 @@ export function ViewportCanvas() {
     <div
       className="relative h-full w-full bg-viewport"
       role="region"
-      aria-label="3D site viewport. Drag to orbit, middle-drag to pan, scroll to zoom. Site geometry is delivered in milestone M1."
+      aria-label="3D site viewport. Drag to orbit, middle-drag to pan, scroll to zoom. The site model is not included in this preview."
     >
       <SceneErrorBoundary>
         <Canvas
@@ -66,8 +66,8 @@ export function ViewportCanvas() {
           />
 
           <Ground />
-          <gridHelper args={[600, 60, '#8F9B8E', '#B4BDB2']} position={[0, 0.01, 0]} />
-          <gridHelper args={[600, 12, '#7E8C81', '#A2AC9F']} position={[0, 0.02, 0]} />
+          <gridHelper args={[600, 60, '#A6B0A3', '#C5CCC2']} position={[0, 0.01, 0]} />
+          <gridHelper args={[600, 12, '#8A968B', '#B4BDB2']} position={[0, 0.02, 0]} />
 
           <FitSiteHandler />
           <OrbitControls

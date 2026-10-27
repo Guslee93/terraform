@@ -29,12 +29,18 @@
 
 ### Phase 1: M0 shell
 
-- **Status:** in progress (gates pending)
+- **Status:** complete
+- **Started:** 2026-10-27
 - Actions taken:
   - Built the responsive studio frame and explicit empty state.
   - Lazy-loaded the studio route to keep the landing bundle small.
   - Verified typecheck, lint, unit/component tests and production build.
-- Files created/modified: see Phase 0.
+  - Ran `agency-ux-architect` and `agency-ui-designer` audits; consolidated 30 findings.
+  - Applied blocker/major fixes with `agency-minimal-change-engineer`.
+  - Ran `agency-code-reviewer`; fixed the pointer-event blocker and added drawer tests.
+  - Ran `agency-ui-finish-gate-reviewer`; final decision **PASS with follow-ups**.
+  - Added the mobile read-only notice and mobile disclaimer before sign-off.
+- Files created/modified: see Phase 0 plus `docs/reviews/M0-*.md`, `src/components/studio/Inspector.test.tsx`, `e2e/smoke.spec.ts`.
 
 ## Test results
 
@@ -42,11 +48,12 @@
 |---|---|---|---|---|
 | Typecheck | `npm run typecheck` | No errors | No errors | pass |
 | Lint | `npm run lint` | No errors | No errors | pass |
-| Unit/component | `npm run test` | All pass | 14/14 pass | pass |
-| Production build | `npm run build` | Success | Success; landing 91 kB gzip, studio 253 kB gzip | pass |
+| Unit/component | `npm run test` | All pass | 17/17 pass | pass |
+| Production build | `npm run build` | Success | Success; landing ~91 kB gzip, studio ~251 kB gzip | pass |
 | E2E smoke | `npm run test:e2e` | Landing → studio | 1/1 pass | pass |
 | Reference screenshots | `npm run capture` | 8 images at 4 viewports | 8 images in `docs/screenshots/` | pass |
-| Visual review | screenshot inspection | Cohesive, readable, canvas-first | Hero/cards fit; grid legible; mobile header fixed; minor polish remains | pass with findings |
+| Visual review | `agency-ui-finish-gate-reviewer` | PASS with follow-ups | PASS with follow-ups | pass |
+| Code review | `agency-code-reviewer` | No blockers | 1 blocker found and fixed; pass with follow-ups | pass |
 
 ## Error log
 
@@ -58,13 +65,15 @@
 | 2026-10-27 | Build warning: studio chunk >500 kB | 1 | Accepted for M0; route lazy-loaded; vendor split scheduled M1 |
 | 2026-10-27 | ESLint `no-undef` in `scripts/capture.mjs` | 1 | Added Node globals for JS/MJS/CJS files in flat config |
 | 2026-10-27 | Wide studio screenshots showed an illegible grid | 1 | Replaced Drei Grid with two `gridHelper` layers and stronger contrast |
+| 2026-10-27 | Full-screen empty-state overlay blocked OrbitControls | 1 | Added `pointer-events-none` to the overlay; card keeps `pointer-events-auto` |
+| 2026-10-27 | E2E asserted removed milestone copy | 1 | Updated the smoke test to the product-facing empty-state heading |
 
 ## 5-question reboot check
 
 | Question | Answer |
 |---|---|
-| Where am I? | M0 shell implemented; design, visual and code gates pending |
-| Where am I going? | Finish M0 gates, then M1 site packages and camera |
+| Where am I? | M0 complete; M1 site packages next |
+| Where am I going? | M1 provenance → preprocessing → package validation → layers/camera; then M2 massing |
 | What's the goal? | Terraform v1: credible interactive architectural site-planning portfolio prototype |
-| What have I learned? | See `findings.md` — versions, bundle sizes, skill roster and constraints |
-| What have I done? | See Phase 0/1 above and `git status` |
+| What have I learned? | See `findings.md` — versions, bundle sizes, skill roster, review findings |
+| What have I done? | See Phase 0/1 above, `docs/reviews/M0-*.md`, and `git log` |

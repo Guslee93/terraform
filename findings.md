@@ -66,6 +66,15 @@
 - Design contract: `docs/design/design-contract.md`
 - QA fixtures: `docs/qa/fixtures.md`
 
+## M0 gate outcome (2026-10-27)
+
+- `agency-ux-architect`: 16 findings, 3 blockers; resolved.
+- `agency-ui-designer`: 14 findings, 6 majors; resolved.
+- `agency-code-reviewer`: 1 blocker (empty-state overlay blocked canvas pointer events); fixed, 3 drawer tests added; pass with follow-ups.
+- `agency-ui-finish-gate-reviewer`: **PASS with follow-ups**.
+- Final suite: typecheck, lint, 17 unit/component tests, production build and 1 Playwright smoke test all pass.
+- Remaining follow-ups: inert the drawer background for assistive technology, guard focus restoration on resize, capture focus/hover states, add a 1024 px breakpoint screenshot, replace the static scenario chip in M4.
+
 ## Visual notes
 
 - Landing: warm off-white paper, serif hero, two site cards with diagrammatic SVG thumbnails, thin rules, restrained blue-grey accent.

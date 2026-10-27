@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom'
 type StudioTopBarProps = {
   site: SiteSummary
   scenario: string
-  onScenarioChange: (scenario: string) => void
   onFitSite: () => void
   onToggleInspector: () => void
   inspectorOpen: boolean
@@ -16,7 +15,6 @@ type StudioTopBarProps = {
 export function StudioTopBar({
   site,
   scenario,
-  onScenarioChange,
   onFitSite,
   onToggleInspector,
   inspectorOpen,
@@ -40,39 +38,19 @@ export function StudioTopBar({
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <label htmlFor="scenario-select" className="sr-only">
-          Scenario
-        </label>
-        <div className="relative">
-          <select
-            id="scenario-select"
-            value={scenario}
-            onChange={(event) => onScenarioChange(event.target.value)}
-            className="h-9 appearance-none rounded-[var(--radius-control)] border border-line bg-surface py-0 pl-3 pr-8 text-[12px] font-medium text-ink transition-colors hover:bg-[#fbfbf8]"
-          >
-            <option>Concept A</option>
-            <option>Concept B</option>
-          </select>
-          <Icon
-            name="chevron-down"
-            size={13}
-            className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-secondary"
-          />
-        </div>
+        <span
+          title="Scenario switching is not available in this preview"
+          className="inline-flex h-9 items-center rounded-[var(--radius-control)] border border-line bg-surface px-3 text-[12px] font-medium text-ink"
+        >
+          {scenario}
+        </span>
 
-        <span className="hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-[9px] uppercase tracking-[0.12em] text-ink-secondary xl:inline-flex">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-warning" />
-          Session only
+        <span className="hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-ink-secondary xl:inline-flex">
+          <span aria-hidden="true" className="size-1.5 rounded-full bg-ink-secondary" />
+          Local session
         </span>
 
         <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-line sm:block" />
-
-        <IconButton label="Undo (available in M2)" disabled className="hidden sm:grid">
-          <Icon name="undo" size={16} />
-        </IconButton>
-        <IconButton label="Redo (available in M2)" disabled className="hidden sm:grid">
-          <Icon name="redo" size={16} />
-        </IconButton>
 
         <button
           type="button"
@@ -84,16 +62,6 @@ export function StudioTopBar({
           <kbd className="ml-0.5 rounded border border-line px-1 py-px text-[9px] text-ink-secondary">
             F
           </kbd>
-        </button>
-
-        <button
-          type="button"
-          disabled
-          title="PNG export arrives in M5"
-          className="hidden min-h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-line px-2.5 text-[11px] font-medium text-ink-secondary opacity-45 xl:inline-flex"
-        >
-          <Icon name="download" size={15} />
-          Export
         </button>
 
         <Link
@@ -109,7 +77,7 @@ export function StudioTopBar({
           label={inspectorOpen ? 'Close inspector' : 'Open inspector'}
           onClick={onToggleInspector}
           active={inspectorOpen}
-          className="lg:hidden"
+          className="min-[1100px]:hidden"
         >
           <Icon name={inspectorOpen ? 'close' : 'menu'} size={17} />
         </IconButton>
