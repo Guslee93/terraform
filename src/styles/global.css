@@ -1,0 +1,110 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme inline {
+  --color-app: var(--bg-app);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-viewport: var(--surface-viewport);
+  --color-ink: var(--ink-primary);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-line: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-focus: var(--focus);
+
+  --font-sans: var(--typeface-sans);
+  --font-display: var(--typeface-display);
+}
+
+@layer base {
+  html {
+    height: 100%;
+    background: var(--bg-app);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100%;
+    background: var(--bg-app);
+    color: var(--ink-primary);
+    font-family: var(--typeface-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p {
+    margin: 0;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--ink-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .tf-measure {
+    max-width: 68rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+
+  .tf-hairline {
+    border-color: color-mix(in srgb, var(--border) 88%, transparent);
+  }
+
+  .tf-paper-grid {
+    background-image:
+      linear-gradient(to right, rgb(32 37 33 / 4%) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(32 37 33 / 4%) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .tf-vignette {
+    box-shadow: inset 0 0 0 1px rgb(32 37 33 / 6%), inset 0 -80px 80px -80px rgb(32 37 33 / 12%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -1,0 +1,64 @@
+import { spawn } from 'node:child_process'
+import { mkdir } from 'node:fs/promises'
+import { chromium } from '@playwright/test'
+
+const HOST = '127.0.0.1'
+const PORT = 5173
+const BASE = `http://${HOST}:${PORT}`
+const OUT = 'docs/screenshots'
+
+const viewports = [
+  { name: '1440x900', width: 1440, height: 900 },
+  { name: '1280x800', width: 1280, height: 800 },
+  { name: '1920x1080', width: 1920, height: 1080 },
+  { name: '390x844', width: 390, height: 844 },
+]
+
+async function waitForServer() {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    try {
+      const response = await fetch(BASE)
+      if (response.ok) return
+    } catch {
+      // Server not ready yet.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  throw new Error(`Dev server did not start at ${BASE}`)
+}
+
+await mkdir(OUT, { recursive: true })
+
+const server = spawn('npm', ['run', 'dev', '--', '--host', HOST, '--port', String(PORT)], {
+  stdio: 'ignore',
+  env: { ...process.env, BROWSER: 'none' },
+})
+
+try {
+  await waitForServer()
+
+  const browser = await chromium.launch()
+  const page = await browser.newPage({ deviceScaleFactor: 1 })
+
+  for (const viewport of viewports) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height })
+
+    await page.goto(`${BASE}/`, { waitUntil: 'networkidle' })
+    await page.screenshot({
+      path: `${OUT}/m0-landing-${viewport.name}.png`,
+      fullPage: false,
+    })
+
+    await page.goto(`${BASE}/studio/compact-infill`, { waitUntil: 'networkidle' })
+    await page.waitForTimeout(700)
+    await page.screenshot({
+      path: `${OUT}/m0-studio-${viewport.name}.png`,
+      fullPage: false,
+    })
+  }
+
+  await browser.close()
+  console.log(`Captured ${viewports.length * 2} screenshots in ${OUT}`)
+} finally {
+  server.kill('SIGTERM')
+}
