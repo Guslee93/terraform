@@ -125,3 +125,10 @@
 - `isSimpleRing` only caught proper crossings. Now also rejects collinear overlaps, vertex-on-edge touches and adjacent fold-backs. `src/features/sites/package.ts` had a duplicate copy; it now imports the shared one. All 170 real package footprints and both study boundaries still validate.
 - Files: `src/lib/polygon.ts`, `src/lib/polygon.test.ts` (new), `src/features/massing/aggregate.ts`, `src/features/massing/aggregate.test.ts`, `src/features/sites/package.ts`.
 - Tests: 4 new tests failed before the fix; after: lint ✅ · test 56/56 ✅ (9 files) · build ✅.
+
+### Document validation and serialization (test-first)
+
+- `validation.ts`: added `validateAssumptions`, `validateVolume`, `validateScenario` per ADR-0004 §4 — schema version, non-empty id/site/name, volume name and ≥1 tier, unique volume ids, unique tier ids within and across volumes, assumption ranges bounded by the global 1–40 storeys and 2.2–6.0 m storey height, scenario storey range applied to every tier. Issue paths are document-relative (`volumes[1].tiers[0].id`).
+- `serialize.ts` (new): `serializeScenario` refuses invalid documents; `parseScenarioDocument` decodes untrusted JSON structurally (path-specific type errors), rejects unknown schema versions without guessing, drops unknown fields, then runs `validateScenario`. Migrations remain M4.
+- Files: `src/features/massing/{validation,validation.test,serialize,serialize.test}.ts`.
+- Tests: 14 new tests failed before implementation; after: lint ✅ · test 70/70 ✅ (10 files) · build ✅.

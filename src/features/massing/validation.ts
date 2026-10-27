@@ -5,9 +5,12 @@ import {
   MIN_FOOTPRINT_AREA,
   MIN_STOREYS,
   MIN_STOREY_HEIGHT,
+  SCENARIO_SCHEMA_VERSION,
   type MassTier,
   type MassUse,
+  type MassVolume,
   type ScenarioAssumptions,
+  type ScenarioDocument,
 } from './types'
 
 export type ValidationIssue = {
@@ -26,7 +29,7 @@ export class MassingValidationError extends Error {
   }
 }
 
-const USES: readonly MassUse[] = ['residential', 'commercial', 'mixed', 'civic', 'other']
+export const USES: readonly MassUse[] = ['residential', 'commercial', 'mixed', 'civic', 'other']
 
 function issue(path: string, message: string): ValidationIssue {
   return { path, message }
@@ -103,5 +106,87 @@ export function validateTier(
   }
   if (!USES.includes(tier.use)) issues.push(issue(`${path}.use`, 'must be a known use'))
   issues.push(...validateFootprint(tier.footprint, `${path}.footprint`))
+  return issues
+}
+
+function isStoreyCount(value: number): boolean {
+  return Number.isInteger(value) && value >= MIN_STOREYS && value <= MAX_STOREYS
+}
+
+export function validateAssumptions(
+  assumptions: ScenarioAssumptions,
+  path = 'assumptions',
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = []
+  const { defaultStoreyHeight, minStoreys, maxStoreys } = assumptions
+  if (
+    !Number.isFinite(defaultStoreyHeight) ||
+    defaultStoreyHeight < MIN_STOREY_HEIGHT ||
+    defaultStoreyHeight > MAX_STOREY_HEIGHT
+  ) {
+    issues.push(
+      issue(
+        `${path}.defaultStoreyHeight`,
+        `must be between ${MIN_STOREY_HEIGHT} and ${MAX_STOREY_HEIGHT} m`,
+      ),
+    )
+  }
+  const range = `must be an integer between ${MIN_STOREYS} and ${MAX_STOREYS}`
+  if (!isStoreyCount(minStoreys)) issues.push(issue(`${path}.minStoreys`, range))
+  if (!isStoreyCount(maxStoreys)) issues.push(issue(`${path}.maxStoreys`, range))
+  else if (isStoreyCount(minStoreys) && maxStoreys < minStoreys) {
+    issues.push(issue(`${path}.maxStoreys`, 'must not be less than minStoreys'))
+  }
+  return issues
+}
+
+export function validateVolume(
+  volume: MassVolume,
+  path = 'volume',
+  assumptions?: ScenarioAssumptions,
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = []
+  nonEmpty(volume.id, `${path}.id`, issues)
+  nonEmpty(volume.name, `${path}.name`, issues)
+  if (volume.tiers.length === 0) issues.push(issue(`${path}.tiers`, 'must have at least one tier'))
+  const tierIds = new Set<string>()
+  volume.tiers.forEach((tier, index) => {
+    const tierPath = `${path}.tiers[${index}]`
+    if (tierIds.has(tier.id)) issues.push(issue(`${tierPath}.id`, 'must be unique'))
+    tierIds.add(tier.id)
+    issues.push(...validateTier(tier, tierPath, assumptions))
+  })
+  return issues
+}
+
+export function validateScenario(document: ScenarioDocument): ValidationIssue[] {
+  const issues: ValidationIssue[] = []
+  if (document.schemaVersion !== SCENARIO_SCHEMA_VERSION) {
+    issues.push(issue('schemaVersion', `must be ${SCENARIO_SCHEMA_VERSION}`))
+  }
+  nonEmpty(document.id, 'id', issues)
+  nonEmpty(document.siteId, 'siteId', issues)
+  nonEmpty(document.name, 'name', issues)
+  const assumptionIssues = validateAssumptions(document.assumptions)
+  issues.push(...assumptionIssues)
+  // Only bound tiers by the scenario's storey range once that range is itself valid.
+  const assumptions = assumptionIssues.length === 0 ? document.assumptions : undefined
+
+  const volumeIds = new Set<string>()
+  const tierOwners = new Map<string, number>()
+  document.volumes.forEach((volume, volumeIndex) => {
+    const path = `volumes[${volumeIndex}]`
+    if (volumeIds.has(volume.id)) issues.push(issue(`${path}.id`, 'must be unique'))
+    volumeIds.add(volume.id)
+    issues.push(...validateVolume(volume, path, assumptions))
+    // Duplicates inside one volume are reported by validateVolume.
+    volume.tiers.forEach((tier, tierIndex) => {
+      const owner = tierOwners.get(tier.id)
+      if (owner !== undefined && owner !== volumeIndex) {
+        issues.push(issue(`${path}.tiers[${tierIndex}].id`, 'must be unique across the scenario'))
+      }
+      if (owner === undefined) tierOwners.set(tier.id, volumeIndex)
+    })
+  })
   return issues
 }
