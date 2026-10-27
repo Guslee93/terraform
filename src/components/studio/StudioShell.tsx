@@ -8,6 +8,7 @@ import {
   displayedDocument,
   reduceEditor,
 } from '../../features/editor/interaction'
+import { tierHeight } from '../../features/massing/aggregate'
 import { checkClearance, type ClearanceIssue } from '../../features/massing/clearance'
 import { createScenario } from '../../features/massing/factories'
 import { sampleTerrainHeight } from '../../features/sites/geometry'
@@ -93,6 +94,23 @@ export function StudioShell({
       ? { volume: selectedVolume, tier: selectedTier, warnings: clearance.get(selectedVolume.id) }
       : null
 
+  const masses = shown.volumes.map((volume) => {
+    const base = volume.tiers[0]
+    const tiers = volume.tiers.length > 1 ? ` · ${volume.tiers.length} tiers` : ''
+    return {
+      id: volume.id,
+      name: volume.name,
+      detail: base ? `${base.storeys} storeys · ${tierHeight(base).toFixed(1)} m${tiers}` : '',
+      hidden: !volume.visible,
+      warning: clearance.has(volume.id),
+    }
+  })
+  const selectMass = (volumeId: string) => {
+    const tierId = shown.volumes.find((volume) => volume.id === volumeId)?.tiers[0]?.id ?? null
+    dispatch({ type: 'select', selection: { volumeId, tierId } })
+  }
+  const idle = editor.interaction.kind === 'idle'
+
   const runCommand = (command: MassingCommand) => {
     const problem = commandError(editor, command)
     if (!problem) dispatch({ type: 'command', command })
@@ -170,6 +188,10 @@ export function StudioShell({
         <ToolRail
           activeTool={editor.tool}
           onSelect={selectTool}
+          canUndo={editable && idle && editor.history.undoStack.length > 0}
+          canRedo={editable && idle && editor.history.redoStack.length > 0}
+          onUndo={() => dispatch({ type: 'undo' })}
+          onRedo={() => dispatch({ type: 'redo' })}
           onOpenLayers={() => setInspectorOpen(true)}
         />
 
@@ -273,8 +295,10 @@ export function StudioShell({
           isDrawer={!isDesktop}
           selected={selected}
           canEdit={editable}
-          editingEnabled={editable && editor.interaction.kind === 'idle'}
+          editingEnabled={editable && idle}
           onCommand={runCommand}
+          masses={masses}
+          onSelectMass={selectMass}
         />
       </div>
 

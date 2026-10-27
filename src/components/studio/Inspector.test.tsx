@@ -34,6 +34,8 @@ const baseProps: ComponentProps<typeof Inspector> = {
   canEdit: true,
   editingEnabled: true,
   onCommand: () => null,
+  masses: [],
+  onSelectMass: () => undefined,
 }
 
 function DrawerHarness() {

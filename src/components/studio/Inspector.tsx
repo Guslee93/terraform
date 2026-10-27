@@ -9,6 +9,7 @@ import type { MassingCommand } from '../../features/editor/history'
 import type { ClearanceIssue } from '../../features/massing/clearance'
 import type { MassTier, MassVolume } from '../../features/massing/types'
 import { MassFields } from './MassFields'
+import { MassList, type MassListItem } from './MassList'
 
 export type InspectorTab = 'model' | 'sun' | 'constraints' | 'compare'
 
@@ -48,6 +49,8 @@ type InspectorProps = {
   /** Editing allowed right now (false on small screens or during a gesture). */
   editingEnabled: boolean
   onCommand: (command: MassingCommand) => string | null
+  masses: readonly MassListItem[]
+  onSelectMass: (volumeId: string) => void
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -74,6 +77,8 @@ export function Inspector({
   canEdit,
   editingEnabled,
   onCommand,
+  masses,
+  onSelectMass,
 }: InspectorProps) {
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -178,6 +183,24 @@ export function Inspector({
           aria-labelledby={`inspector-tab-${activeTab}`}
           className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
         >
+          {masses.length > 0 && (
+            <section aria-labelledby="masses-heading" className="mb-6">
+              <h2
+                id="masses-heading"
+                className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
+              >
+                Masses
+              </h2>
+              <div className="mt-2">
+                <MassList
+                  items={masses}
+                  selectedId={selected?.volume.id ?? null}
+                  onSelect={onSelectMass}
+                />
+              </div>
+            </section>
+          )}
+
           <section aria-labelledby="selection-heading">
             <div className="flex items-center justify-between">
               <h2

@@ -20,9 +20,24 @@ type ToolRailProps = {
   activeTool: ToolId
   onSelect: (tool: ToolId) => void
   onOpenLayers: () => void
+  canUndo: boolean
+  canRedo: boolean
+  onUndo: () => void
+  onRedo: () => void
 }
 
-export function ToolRail({ activeTool, onSelect, onOpenLayers }: ToolRailProps) {
+const historyButtonClass =
+  'grid size-9 place-items-center rounded-[var(--radius-control)] text-ink-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent sm:size-10'
+
+export function ToolRail({
+  activeTool,
+  onSelect,
+  onOpenLayers,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+}: ToolRailProps) {
   return (
     <nav
       aria-label="Studio tools"
@@ -57,6 +72,16 @@ export function ToolRail({ activeTool, onSelect, onOpenLayers }: ToolRailProps) 
       <span className="mt-2 text-[9px] uppercase tracking-[0.12em] text-ink-secondary [writing-mode:vertical-rl]">
         Tools
       </span>
+
+      {/* Editing is read-only below 640 px, so history controls are hidden there too. */}
+      <div className="mt-3 flex flex-col items-center gap-1 border-t border-line pt-3 max-sm:hidden">
+        <button type="button" aria-label="Undo" title="Undo" disabled={!canUndo} onClick={onUndo} className={historyButtonClass}>
+          <Icon name="undo" size={17} />
+        </button>
+        <button type="button" aria-label="Redo" title="Redo" disabled={!canRedo} onClick={onRedo} className={historyButtonClass}>
+          <Icon name="redo" size={17} />
+        </button>
+      </div>
 
       <div className="mt-auto flex flex-col items-center gap-2 pb-1">
         <span aria-hidden="true" className="h-px w-6 bg-line" />

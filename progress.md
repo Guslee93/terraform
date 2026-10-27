@@ -199,3 +199,12 @@
 - Evidence: `docs/screenshots/m2-qa06-*.jpg`, `m2-slope-cut-warning.jpg`.
 - Tests: lint ✅ · test 181/181 ✅ (20 files) · e2e 2/2 ✅ · build ✅ (studio 275.0 kB gzip).
 - Open: excluding outside area from coverage is M3 (fixtures §3); terrain sampling is a fixed-density grid (`ponytail:` note in code).
+
+### Mass list and undo/redo UI (QA-08, test-first)
+
+- `MassList` (new, tested): every mass incl. hidden ones, with a geometry-derived summary, "Hidden" and "Needs attention" tags; click selects (first tier). Shown above Selection in the inspector when the scenario has masses.
+- `MassFields`: Duplicate (copy placed east of the original, widest tier + 5 m), Rotate 15° counter-clockwise / clockwise, Delete. Locked masses keep Duplicate only; all actions off when editing is off.
+- `ToolRail`: Undo/Redo buttons (tested), disabled when the stack is empty, during a gesture, or below 640 px. Keyboard shortcuts still wait on DeepSeek D7.
+- Browser verification (Compact Infill): duplicate → list shows "Mass 1 copy" selected → Undo removes it and reselects Mass 1 → Redo restores it selected and disables Redo; rotate 3 × 15° clockwise (footprint stays 900 m²) → 3 × Undo matches the pre-rotate screenshot; Delete → list "Mass 1", nothing selected → Undo restores the copy at its index, selected; hidden copy → deselect → selected again from the list. No new console errors.
+- Evidence: `docs/screenshots/m2-qa08-*.jpg`, `m2-hidden-mass-from-list.jpg`.
+- Tests: lint ✅ · test 190/190 ✅ (22 files) · e2e 2/2 ✅ · build ✅ (studio 276.0 kB gzip).

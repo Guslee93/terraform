@@ -9,7 +9,7 @@
 | **Date** | 2026-10-27 |
 | **Source of truth** | `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026) |
 | **Headline state** | **M0 complete · M1 complete · M2 in progress — domain, validation, serialization, commands and undo/redo committed and tested; tools/scene/inspector not started** |
-| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 181/181 ✅ (20 files) · `test:e2e` 2/2 ✅ · `build` ✅ (re-run 2026-10-28 after clearance feedback — see §10) |
+| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 190/190 ✅ (22 files) · `test:e2e` 2/2 ✅ · `build` ✅ (re-run 2026-10-28 after the mass list and undo/redo UI — see §10) |
 
 > **How to read this report.** Every claim below is traceable to a file in this repository, a command output, or a review record. Sections 4–6 are history; section 7 is the state of the in-progress milestone; sections 8–11 describe the architecture, evidence and debt; section 13 tells you exactly what to verify and do next. If anything here contradicts the PRD, the PRD wins.
 
@@ -154,7 +154,7 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 | 4 | Tier volumes + double-count-free aggregation | ✅ domain | — |
 | 5 | Numeric inspector | ✅ name, storeys, storey height, base elevation, use, visible, locked + height/footprint readouts; width/depth/rotation readouts wait for D9 | — |
 | 6 | Interaction state machine | ✅ `interaction.ts`, wired to the scene via `MassLayer` | — |
-| 7 | Undo/redo | ✅ domain; keyboard/UI wiring ❌ | Claude |
+| 7 | Undo/redo | ✅ domain + tool-rail buttons; keyboard shortcuts wait for D7 | DeepSeek (D7) → Claude wiring |
 | 8 | Snapping | 🟡 grid maths merged (D1, `snapping.ts`); wiring + P1 edge/vertex ❌ | Claude |
 | 9 | Clearance feedback | ✅ `clearance.ts`: boundary inside/crossing/outside per tier; floating > 0.5 m and cuts deeper than one storey on ground tiers; amber highlight, inspector list, viewport line; no auto-warp | — |
 
@@ -167,7 +167,7 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 | QA-05 storeys 3→5 | ✅ 16 m / 1 080 m² | ✅ roof drag 3 → 5 storeys · 16.0 m (GFA card is M3) |
 | QA-06 boundary warning | ✅ crossing/outside/inside fixtures, stepped tiers, slope + interior hump | ✅ drag across boundary → amber mass + "crosses the study boundary" warning, live during drag |
 | QA-07 drag + Esc | ✅ roof gesture + Esc/pointer loss restore exact base, no entry | ✅ roof drag to 18 storeys, Esc → exact 3 storeys, camera unchanged |
-| QA-08 undo/redo dup/delete/rotate | ✅ geometry + selection | ❌ shortcuts (waiting on D7) and duplicate/delete/rotate controls |
+| QA-08 undo/redo dup/delete/rotate | ✅ geometry + selection | ✅ inspector Duplicate/Delete/Rotate ±15° + rail Undo/Redo: duplicate→undo→redo, rotate 45°→3× undo, delete→undo all restore geometry and selection (shortcuts still wait on D7) |
 | QA-16 numeric rejection | ✅ invalid storeys rejected, no entry | ✅ "-1" and "abc" refused with field errors, "41" refused with the domain message; field reverts to the prior value |
 
 ### 7.4 Open decisions (Claude-owned)
@@ -200,9 +200,9 @@ Repository map that must be preserved (`AGENTS.md` §3): `src/app`, `src/compone
 |---|---|
 | `npm run typecheck` | ✅ no errors |
 | `npm run lint` | ✅ no errors/warnings |
-| `npm run test` | ✅ **181/181 across 20 files** |
-| `npm run build` | ✅ landing ~92 kB gzip; studio 275.0 kB gzip (+11 kB for massing since M1; known >500 kB raw warning, lazy route) |
-| `npm run test:e2e` | ✅ 2/2 re-run after clearance feedback |
+| `npm run test` | ✅ **190/190 across 22 files** |
+| `npm run build` | ✅ landing ~92 kB gzip; studio 276.0 kB gzip (+12 kB for massing since M1; known >500 kB raw warning, lazy route) |
+| `npm run test:e2e` | ✅ 2/2 re-run after the mass list and undo/redo UI |
 | `npm run capture` | 26 reference images; no UI change since M1 |
 
 ### 10.1 The one change made while preparing this report
@@ -361,7 +361,7 @@ When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `de
 2. ~~Renderer-free tool/pointer state machine~~ — done (`interaction.ts`).
 3. ~~Mass scene adapter, roof handle, QA-07 in the studio, D1 grid snapping~~ — done; evidence in `docs/screenshots/m2-*.jpg`.
 4. ~~Numeric inspector~~ — done (QA-16 verified in the browser). Still open: width/depth/rotation readouts once D9 lands; metric-card formatting (M3); a mass list so hidden masses can be reselected.
-5. Undo/redo wiring with D7; ~~boundary/clearance warnings (QA-06)~~ done; fix §12 #13 (legend overlap); mass list so hidden masses can be reselected.
+5. Wire D7 keyboard shortcuts into the rail's undo/redo; ~~QA-06~~ done; ~~mass list~~ done; fix §12 #13 (legend overlap).
 6. M2 gate: code review record, QA-03–08 table, fixed-camera screenshots of flat/L/stepped masses.
 
 ## 17. Appendix — key artifact index

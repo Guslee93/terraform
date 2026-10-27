@@ -8,6 +8,7 @@ import {
   createTier,
   createVolume,
 } from '../../features/massing/factories'
+import { rotateRing } from '../../lib/polygon'
 import { MassFields } from './MassFields'
 
 const tier = createTier({ id: 't1', footprint: createRectangleFootprint(18, 12), storeys: 3 })
@@ -131,6 +132,44 @@ describe('MassFields', () => {
   it('shows no warning list when the mass is clear', () => {
     setup()
     expect(screen.queryByRole('list', { name: 'Clearance warnings' })).not.toBeInTheDocument()
+  })
+
+  it('duplicates the mass beside the original', async () => {
+    const { onCommand, user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Duplicate' }))
+    const next = onCommand.mock.lastCall?.[0].apply(document)
+    expect(next?.volumes).toHaveLength(2)
+    // 18 m wide, so the copy shifts 18 + 5 m east.
+    expect(next?.volumes[1]?.tiers[0]?.footprint.vertices[0]).toEqual([14, -6])
+  })
+
+  it('deletes the mass', async () => {
+    const { onCommand, user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(onCommand.mock.lastCall?.[0].apply(document).volumes).toHaveLength(0)
+  })
+
+  it('rotates by 15° steps (clockwise is negative in ENU)', async () => {
+    const { onCommand, user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Rotate 15° clockwise' }))
+    const vertices = applied(onCommand).tier?.footprint.vertices ?? []
+    const expected = rotateRing(tier.footprint.vertices, -Math.PI / 12, [0, 0])
+    vertices.forEach((vertex, index) => {
+      expect(vertex[0]).toBeCloseTo(expected[index]?.[0] ?? Number.NaN, 9)
+      expect(vertex[1]).toBeCloseTo(expected[index]?.[1] ?? Number.NaN, 9)
+    })
+    await user.click(screen.getByRole('button', { name: 'Rotate 15° counter-clockwise' }))
+    expect(applied(onCommand).tier?.footprint.vertices[0]?.[0]).toBeCloseTo(
+      rotateRing(tier.footprint.vertices, Math.PI / 12, [0, 0])[0]?.[0] ?? Number.NaN,
+      9,
+    )
+  })
+
+  it('keeps duplicate available on a locked mass but not rotate or delete', () => {
+    setup({ volume: { ...volume, locked: true } })
+    expect(screen.getByRole('button', { name: 'Duplicate' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Rotate 15° clockwise' })).toBeDisabled()
   })
 
   it('disables everything when editing is off', () => {

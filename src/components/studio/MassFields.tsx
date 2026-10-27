@@ -4,9 +4,16 @@ import { tierFootprintArea, tierHeight } from '../../features/massing/aggregate'
 import type { ClearanceIssue } from '../../features/massing/clearance'
 import type { MassTier, MassUse, MassVolume } from '../../features/massing/types'
 import { USES } from '../../features/massing/validation'
-import { updateTier, updateVolume } from '../../features/editor/commands'
+import {
+  duplicateVolume,
+  removeVolume,
+  rotateVolume,
+  updateTier,
+  updateVolume,
+} from '../../features/editor/commands'
 import type { MassingCommand } from '../../features/editor/history'
 import { formatInputValue, parseStoreys } from '../../features/editor/inspectorInput'
+import { Icon } from '../ui/Icon'
 
 type MassFieldsProps = {
   volume: MassVolume
@@ -28,6 +35,11 @@ const USE_LABELS: Record<MassUse, string> = {
 }
 
 const labelClass = 'text-[10px] uppercase tracking-[0.12em] text-ink-secondary'
+const actionClass =
+  'inline-flex h-7 items-center justify-center gap-1 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-[11px] text-ink transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-45'
+const ROTATE_STEP = Math.PI / 12
+/** Gap between an original and its duplicate, in metres. */
+const DUPLICATE_GAP_M = 5
 const controlClass =
   'h-8 w-full rounded-[var(--radius-control)] border border-line bg-surface px-2 text-[12px] tabular-nums text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-45 aria-[invalid=true]:border-danger'
 
@@ -163,8 +175,53 @@ export function MassFields({ volume, tier, disabled, onCommand, warnings = [] }:
     return value === null ? 'Enter a number in metres.' : apply(value)
   }
 
+  // Place the copy east of the original, clear of its widest tier.
+  const easts = volume.tiers.flatMap((candidate) => candidate.footprint.vertices.map(([east]) => east))
+  const duplicateOffset = Math.max(...easts) - Math.min(...easts) + DUPLICATE_GAP_M
+
   return (
     <div className="space-y-3 text-left">
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setPanelError(onCommand(duplicateVolume(volume.id, { offset: [duplicateOffset, 0] })))}
+          className={actionClass}
+        >
+          Duplicate
+        </button>
+        <button
+          type="button"
+          aria-label="Rotate 15° counter-clockwise"
+          title="Rotate 15° counter-clockwise"
+          disabled={geometryDisabled}
+          onClick={() => setPanelError(onCommand(rotateVolume(volume.id, ROTATE_STEP)))}
+          className={actionClass}
+        >
+          <Icon name="rotate" size={13} className="-scale-x-100" />
+          15°
+        </button>
+        <button
+          type="button"
+          aria-label="Rotate 15° clockwise"
+          title="Rotate 15° clockwise"
+          disabled={geometryDisabled}
+          onClick={() => setPanelError(onCommand(rotateVolume(volume.id, -ROTATE_STEP)))}
+          className={actionClass}
+        >
+          <Icon name="rotate" size={13} />
+          15°
+        </button>
+        <button
+          type="button"
+          disabled={geometryDisabled}
+          onClick={() => setPanelError(onCommand(removeVolume(volume.id)))}
+          className={`${actionClass} ml-auto`}
+        >
+          Delete
+        </button>
+      </div>
+
       <Field
         label="Name"
         value={volume.name}
