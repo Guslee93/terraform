@@ -175,3 +175,15 @@
 - Evidence: `docs/screenshots/m2-*.jpg` (8 images).
 - Tests: lint ✅ · test 142/142 ✅ (17 files) · e2e 2/2 ✅ · build ✅ (studio 272.5 kB gzip).
 - Open: undo/redo shortcuts wait for D7; rotate/scale/vertex-edit gestures; numeric inspector; clearance warnings (masses can overlap context buildings or embed in slopes).
+
+## Session: 2026-10-28 — Numeric inspector
+
+- **Status:** complete
+- DeepSeek round 2 had not started, so Claude implemented D8 to its card spec (`src/features/editor/inspectorInput.ts`: `parseStoreys`, `formatInputValue`) and marked D8 done in the report; D7 and D9 stay with DeepSeek.
+- Reducer (test-first): `command` event and `commandError(state, command)`, so a form field can learn why an edit would be refused and keep its prior value; both refuse while a gesture or drawing is open.
+- `src/components/studio/MassFields.tsx` (test-first): name, storeys, storey height, base elevation, use, visible, locked; commit on Enter/blur, revert on Escape; invalid text or refused commands show an error under the field and restore the last valid value (QA-16). Locked masses disable geometry fields but keep name/visible/lock. Height and footprint readouts derive from geometry.
+- Inspector shows `MassFields` for the selected mass (live during drags); drawer focus trap now skips disabled inputs/selects. Roof handle hidden for invisible masses.
+- Browser verification (Compact Infill): fields show real values (base −1.19 m from terrain, 2 058 m² footprint); "-1" → "Enter a whole number of storeys.", "41" → "Storeys must be an integer between 1 and 40.", both revert to 3 with the model unchanged; 5 storeys × "3,5" m → 17.5 m; Locked disables storeys and removes the roof handle; Visible off hides the mass. No new console errors.
+- Evidence: `docs/screenshots/m2-inspector-fields.jpg`, `m2-inspector-locked.jpg`, `m2-qa16-not-a-number.png`, `m2-qa16-out-of-range.png` (replaces the old `m2-inspector-selection.jpg`).
+- Tests: lint ✅ · test 167/167 ✅ (19 files) · e2e 2/2 ✅ · build ✅ (studio 273.9 kB gzip).
+- Open: hidden masses cannot be reselected once deselected (needs a mass list); width/depth/rotation readouts after D9.

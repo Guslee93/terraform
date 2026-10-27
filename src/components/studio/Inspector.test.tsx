@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { SITES, type SiteSummary } from '../../features/sites/siteCatalog'
 import { Inspector } from './Inspector'
+import { createRectangleFootprint, createTier, createVolume } from '../../features/massing/factories'
 
 function render(ui: ReactNode) {
   return rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
@@ -31,6 +32,8 @@ const baseProps: ComponentProps<typeof Inspector> = {
   isDrawer: false,
   selected: null,
   canEdit: true,
+  editingEnabled: true,
+  onCommand: () => null,
 }
 
 function DrawerHarness() {
@@ -84,12 +87,15 @@ describe('Inspector drawer', () => {
     expect(screen.getByText(/Draw footprint/)).toBeInTheDocument()
   })
 
-  it('summarises the selected mass', () => {
-    render(<Inspector {...baseProps} selected={{ name: 'Mass 1', detail: '5 storeys · 16.0 m' }} />)
+  it('shows editable fields for the selected mass', () => {
+    const tier = createTier({ id: 't1', footprint: createRectangleFootprint(18, 12), storeys: 5 })
+    const volume = createVolume({ id: 'v1', name: 'Mass 1', tiers: [tier] })
+    render(<Inspector {...baseProps} selected={{ volume, tier }} />)
 
     expect(screen.getByText('1 selected')).toBeInTheDocument()
-    expect(screen.getByText('Mass 1')).toBeInTheDocument()
-    expect(screen.getByText('5 storeys · 16.0 m')).toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('Mass 1')
+    expect(screen.getByLabelText('Storeys')).toHaveValue('5')
+    expect(screen.getByText('16.0 m')).toBeInTheDocument()
   })
 
   it('states that massing is read-only on small screens', () => {

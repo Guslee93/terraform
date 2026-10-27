@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { createHistory } from '../../features/editor/history'
-import { createEditorState, reduceEditor } from '../../features/editor/interaction'
-import { tierHeight } from '../../features/massing/aggregate'
+import type { MassingCommand } from '../../features/editor/history'
+import {
+  commandError,
+  createEditorState,
+  displayedDocument,
+  reduceEditor,
+} from '../../features/editor/interaction'
 import { createScenario } from '../../features/massing/factories'
 import type { CameraPresetId } from '../../features/sites/manifest'
 import type { SitePackage } from '../../features/sites/package'
@@ -51,19 +56,20 @@ export function StudioShell({
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
   const scenario = editor.history.document.name
-  const selectedVolume = editor.history.document.volumes.find(
+  // The displayed document follows a live drag, so the inspector shows preview values.
+  const selectedVolume = displayedDocument(editor).volumes.find(
     (volume) => volume.id === editor.history.selection.volumeId,
   )
   const selectedTier = selectedVolume?.tiers.find(
     (tier) => tier.id === editor.history.selection.tierId,
   )
-  const selectedSummary =
-    selectedVolume && selectedTier
-      ? {
-          name: selectedVolume.name,
-          detail: `${selectedTier.storeys} storeys · ${tierHeight(selectedTier).toFixed(1)} m`,
-        }
-      : null
+  const selected = selectedVolume && selectedTier ? { volume: selectedVolume, tier: selectedTier } : null
+
+  const runCommand = (command: MassingCommand) => {
+    const problem = commandError(editor, command)
+    if (!problem) dispatch({ type: 'command', command })
+    return problem
+  }
 
   const requestCamera = useCallback((preset: CameraPresetId) => {
     setCameraPreset(preset)
@@ -232,8 +238,10 @@ export function StudioShell({
           isOpen={inspectorOpen}
           onClose={() => setInspectorOpen(false)}
           isDrawer={!isDesktop}
-          selected={selectedSummary}
+          selected={selected}
           canEdit={editable}
+          editingEnabled={editable && editor.interaction.kind === 'idle'}
+          onCommand={runCommand}
         />
       </div>
 

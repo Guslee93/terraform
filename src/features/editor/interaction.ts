@@ -11,6 +11,7 @@ import {
   beginPreview,
   commitPreview,
   execute,
+  type MassingCommand,
   redo,
   select,
   undo,
@@ -80,6 +81,8 @@ export type EditorEvent =
   | { readonly type: 'pointerCancel' }
   | { readonly type: 'key'; readonly key: 'Escape' | 'Enter' | 'Backspace' }
   | { readonly type: 'select'; readonly selection: MassSelection }
+  /** A discrete edit from the inspector; check it with `commandError` first. */
+  | { readonly type: 'command'; readonly command: MassingCommand }
   | { readonly type: 'undo' }
   | { readonly type: 'redo' }
 
@@ -224,6 +227,22 @@ function finishDrawing(
   }
 }
 
+const BUSY = 'Finish the current edit first.'
+
+/**
+ * Why `command` would be rejected right now, in plain language, or null if it would apply.
+ * Lets a form field show its own error and keep its prior value (QA-16).
+ */
+export function commandError(state: EditorState, command: MassingCommand): string | null {
+  if (state.interaction.kind !== 'idle') return BUSY
+  try {
+    execute(state.history, command)
+    return null
+  } catch (error) {
+    return message(error)
+  }
+}
+
 export function reduceEditor(state: EditorState, event: EditorEvent): EditorState {
   const { interaction } = state
 
@@ -283,6 +302,15 @@ export function reduceEditor(state: EditorState, event: EditorEvent): EditorStat
     case 'select':
       if (interaction.kind === 'dragging') return state
       return { ...state, history: select(state.history, event.selection) }
+
+    case 'command':
+      if (interaction.kind !== 'idle') return state
+      try {
+        return { ...state, history: execute(state.history, event.command), error: null }
+      } catch {
+        // Callers check commandError first; a rejected command leaves everything as it was.
+        return state
+      }
 
     case 'undo':
     case 'redo':

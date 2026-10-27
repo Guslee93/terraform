@@ -7,10 +7,11 @@ import {
   createTier,
   createVolume,
 } from '../massing/factories'
-import { updateVolume } from './commands'
+import { updateTier, updateVolume } from './commands'
 import { createHistory, execute } from './history'
 import {
   cameraLocked,
+  commandError,
   createEditorState,
   displayedDocument,
   moveGesture,
@@ -153,6 +154,28 @@ describe('selection', () => {
 
     const dragging = run(selected, down([0, 0], { gesture: moveGesture('v1') }))
     expect(run(dragging, { type: 'select', selection: { volumeId: null, tierId: null } })).toBe(dragging)
+  })
+})
+
+describe('inspector commands', () => {
+  it('applies a command as one history entry', () => {
+    const state = run(start, { type: 'command', command: updateTier('v1', 't1', { storeys: 5 }) })
+    expect(state.history.document.volumes[0]?.tiers[0]?.storeys).toBe(5)
+    expect(state.history.undoStack).toHaveLength(1)
+  })
+
+  it('reports why a command would fail without changing state', () => {
+    const command = updateTier('v1', 't1', { storeys: 41 })
+    expect(commandError(start, command)).toBe('Storeys must be an integer between 1 and 40.')
+    expect(commandError(start, updateTier('v1', 't1', { storeys: 4 }))).toBeNull()
+    expect(run(start, { type: 'command', command })).toBe(start)
+  })
+
+  it('is ignored while a gesture is open', () => {
+    const dragging = run(start, down([0, 0], { gesture: moveGesture('v1') }))
+    const command = updateVolume('v1', { name: 'Renamed' })
+    expect(commandError(dragging, command)).toBe('Finish the current edit first.')
+    expect(run(dragging, { type: 'command', command })).toBe(dragging)
   })
 })
 

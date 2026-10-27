@@ -5,6 +5,9 @@ import type { SiteSummary } from '../../features/sites/siteCatalog'
 import type { SceneLayers } from '../../scene/ViewportCanvas'
 import { cn } from '../../lib/cn'
 import { Icon } from '../ui/Icon'
+import type { MassingCommand } from '../../features/editor/history'
+import type { MassTier, MassVolume } from '../../features/massing/types'
+import { MassFields } from './MassFields'
 
 export type InspectorTab = 'model' | 'sun' | 'constraints' | 'compare'
 
@@ -39,9 +42,11 @@ type InspectorProps = {
   isOpen: boolean
   onClose: () => void
   isDrawer: boolean
-  /** Summary of the selected mass, derived from geometry by the caller. */
-  selected: { name: string; detail: string } | null
+  selected: { volume: MassVolume; tier: MassTier } | null
   canEdit: boolean
+  /** Editing allowed right now (false on small screens or during a gesture). */
+  editingEnabled: boolean
+  onCommand: (command: MassingCommand) => string | null
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -66,6 +71,8 @@ export function Inspector({
   isDrawer,
   selected,
   canEdit,
+  editingEnabled,
+  onCommand,
 }: InspectorProps) {
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -80,7 +87,7 @@ export function Inspector({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') return
       const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
       )
       if (!focusable || focusable.length === 0) return
       const first = focusable[0]
@@ -183,23 +190,34 @@ export function Inspector({
               </span>
             </div>
 
-            <div className="mt-3 rounded-[var(--radius-card)] border border-dashed border-line-dashed bg-surface-subtle px-4 py-4 text-center">
-              <span className="mx-auto grid size-8 place-items-center rounded-full border border-line bg-surface text-ink-secondary">
-                <Icon name="cube" size={16} />
-              </span>
-              <p className="mt-2.5 text-[12.5px] font-medium text-ink">
-                {selected ? selected.name : 'No mass selected'}
-              </p>
-              <p className="mx-auto mt-1 max-w-[30ch] text-[11.5px] leading-relaxed text-ink-secondary tabular-nums">
-                {selected
-                  ? selected.detail
-                  : packageStatus !== 'ready'
+            {selected ? (
+              <div className="mt-3">
+                <MassFields
+                  key={selected.tier.id}
+                  volume={selected.volume}
+                  tier={selected.tier}
+                  disabled={!editingEnabled}
+                  onCommand={onCommand}
+                />
+                {!canEdit && (
+                  <p className="mt-2 text-[10px] text-ink-secondary">Massing is read-only on small screens.</p>
+                )}
+              </div>
+            ) : (
+              <div className="mt-3 rounded-[var(--radius-card)] border border-dashed border-line-dashed bg-surface-subtle px-4 py-4 text-center">
+                <span className="mx-auto grid size-8 place-items-center rounded-full border border-line bg-surface text-ink-secondary">
+                  <Icon name="cube" size={16} />
+                </span>
+                <p className="mt-2.5 text-[12.5px] font-medium text-ink">No mass selected</p>
+                <p className="mx-auto mt-1 max-w-[30ch] text-[11.5px] leading-relaxed text-ink-secondary">
+                  {packageStatus !== 'ready'
                     ? 'Massing tools appear when the site package is ready.'
                     : canEdit
                       ? 'Use Draw footprint to add a mass, or click a mass to select it.'
                       : 'Massing is read-only on small screens.'}
-              </p>
-            </div>
+                </p>
+              </div>
+            )}
           </section>
 
           <section aria-labelledby="site-heading" className="mt-6">

@@ -233,7 +233,11 @@ export function MassLayer({ editor, dispatch, editable, controlsRef, heightAt }:
           )),
         )}
 
-      {editable && selectedTier && !selectedTier.volume.locked && editor.tool === 'select' && (
+      {editable &&
+        selectedTier &&
+        selectedTier.volume.visible &&
+        !selectedTier.volume.locked &&
+        editor.tool === 'select' && (
         <RoofHandle tier={selectedTier.tier} dragLabel={dragLabel} onPointerDown={startRoof} />
       )}
 

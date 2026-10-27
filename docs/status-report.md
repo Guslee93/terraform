@@ -9,7 +9,7 @@
 | **Date** | 2026-10-27 |
 | **Source of truth** | `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026) |
 | **Headline state** | **M0 complete · M1 complete · M2 in progress — domain, validation, serialization, commands and undo/redo committed and tested; tools/scene/inspector not started** |
-| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 142/142 ✅ (17 files) · `test:e2e` 2/2 ✅ · `build` ✅ (re-run 2026-10-27 after the mass scene adapter — see §10) |
+| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 167/167 ✅ (19 files) · `test:e2e` 2/2 ✅ · `build` ✅ (re-run 2026-10-28 after the numeric inspector — see §10) |
 
 > **How to read this report.** Every claim below is traceable to a file in this repository, a command output, or a review record. Sections 4–6 are history; section 7 is the state of the in-progress milestone; sections 8–11 describe the architecture, evidence and debt; section 13 tells you exactly what to verify and do next. If anything here contradicts the PRD, the PRD wins.
 
@@ -152,7 +152,7 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 | 2 | Factories + validation | ✅ (winding is normalised by factories but not enforced on load) | — |
 | 3 | Tools (add, draw, move/rotate/scale, roof handle, vertex edit) | 🟡 draw, move (1 m grid snap) and roof handle live in the studio; rotate/scale/vertex edit ❌ | Claude |
 | 4 | Tier volumes + double-count-free aggregation | ✅ domain | — |
-| 5 | Numeric inspector | ❌ | Claude |
+| 5 | Numeric inspector | ✅ name, storeys, storey height, base elevation, use, visible, locked + height/footprint readouts; width/depth/rotation readouts wait for D9 | — |
 | 6 | Interaction state machine | ✅ `interaction.ts`, wired to the scene via `MassLayer` | — |
 | 7 | Undo/redo | ✅ domain; keyboard/UI wiring ❌ | Claude |
 | 8 | Snapping | 🟡 grid maths merged (D1, `snapping.ts`); wiring + P1 edge/vertex ❌ | Claude |
@@ -168,7 +168,7 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 | QA-06 boundary warning | ❌ | ❌ |
 | QA-07 drag + Esc | ✅ roof gesture + Esc/pointer loss restore exact base, no entry | ✅ roof drag to 18 storeys, Esc → exact 3 storeys, camera unchanged |
 | QA-08 undo/redo dup/delete/rotate | ✅ geometry + selection | ❌ shortcuts (waiting on D7) and duplicate/delete/rotate controls |
-| QA-16 numeric rejection | ✅ invalid storeys rejected, no entry | ❌ inspector keeps prior value |
+| QA-16 numeric rejection | ✅ invalid storeys rejected, no entry | ✅ "-1" and "abc" refused with field errors, "41" refused with the domain message; field reverts to the prior value |
 
 ### 7.4 Open decisions (Claude-owned)
 
@@ -200,9 +200,9 @@ Repository map that must be preserved (`AGENTS.md` §3): `src/app`, `src/compone
 |---|---|
 | `npm run typecheck` | ✅ no errors |
 | `npm run lint` | ✅ no errors/warnings |
-| `npm run test` | ✅ **142/142 across 17 files** |
-| `npm run build` | ✅ landing ~92 kB gzip; studio 272.5 kB gzip (+8.6 kB for massing; known >500 kB raw warning, lazy route) |
-| `npm run test:e2e` | ✅ 2/2 re-run after the mass scene adapter |
+| `npm run test` | ✅ **167/167 across 19 files** |
+| `npm run build` | ✅ landing ~92 kB gzip; studio 273.9 kB gzip (+10 kB for massing since M1; known >500 kB raw warning, lazy route) |
+| `npm run test:e2e` | ✅ 2/2 re-run after the numeric inspector |
 | `npm run capture` | 26 reference images; no UI change since M1 |
 
 ### 10.1 The one change made while preparing this report
@@ -335,7 +335,9 @@ Same rules as §15.1. Branch: `deepseek/round2` from current `main`. The don't-t
 - Rules: mod = `metaKey || ctrlKey`. Undo = mod + `z` without Shift. Redo = mod + Shift + `z`, or Ctrl + `y` (not Meta + `y`). Key comparison is case-insensitive. Alt held → `null`. `targetTag` of `INPUT`, `TEXTAREA` or `SELECT`, or `targetEditable: true` → `null`, so native text undo keeps working.
 - Done when: a test per rule, including Shift + `Z` arriving as uppercase `key`.
 
-**D8 — Inspector input parsing and formatting** · commit `feat(m2): add inspector input parsing and formatting`
+**D8 — Inspector input parsing and formatting** — ✅ **done by Claude** (needed for the inspector before round 2 started); `src/features/editor/inspectorInput.ts` follows this spec. **DeepSeek: skip D8.**
+
+~~D8 original card~~ · commit `feat(m2): add inspector input parsing and formatting`
 - New files only: `src/features/editor/inspectorInput.ts` + `.test.ts`. Read `parseMetres` in `src/lib/coordinates.ts` first; reuse it, do not modify it.
 - Export `parseStoreys(text: string): number | null` — trims; digits only → integer; anything else (`''`, `'3.5'`, `'-1'`, `'3 storeys'`, `'1e2'`) → `null`. Range checks stay in `validateTier`.
 - Export `formatInputValue(value: number): string` — 2 decimal places with a `.` separator, no unit (the design contract puts the unit as a suffix inside the field): `9.6 → '9.60'`, `-0.001 → '0.00'` (never `'-0.00'`), non-finite → `''`.
@@ -352,13 +354,13 @@ When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `de
 
 ## 16. Next actions
 
-**DeepSeek (now, in parallel):** D7 → D9 on `deepseek/round2` (§15.3b).
+**DeepSeek (now, in parallel):** D7 and D9 on `deepseek/round2` (§15.3b; D8 already done).
 
 **Claude (now, on `main`) — files that don't overlap with D7–D9:**
 1. ~~Locked-volume rule~~ — done (enforced in commands).
 2. ~~Renderer-free tool/pointer state machine~~ — done (`interaction.ts`).
 3. ~~Mass scene adapter, roof handle, QA-07 in the studio, D1 grid snapping~~ — done; evidence in `docs/screenshots/m2-*.jpg`.
-4. Numeric inspector on `updateTier`/`updateVolume`, using D8 parsing and D9 dimensions, keeping the prior value on invalid input (QA-16); metric-card formatting.
+4. ~~Numeric inspector~~ — done (QA-16 verified in the browser). Still open: width/depth/rotation readouts once D9 lands; metric-card formatting (M3); a mass list so hidden masses can be reselected.
 5. Undo/redo wiring with D7; boundary/clearance warnings (QA-06); fix §12 #13 (legend overlap).
 6. M2 gate: code review record, QA-03–08 table, fixed-camera screenshots of flat/L/stepped masses.
 
