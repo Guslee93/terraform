@@ -3,10 +3,12 @@ import { SiteFooter, SiteHeader } from '../components/marketing/SiteChrome'
 import { StudioShell } from '../components/studio/StudioShell'
 import { ButtonLink } from '../components/ui/Button'
 import { getSite } from '../features/sites/siteCatalog'
+import { useSitePackage } from '../features/sites/useSitePackage'
 
 export function StudioPage() {
   const { siteId } = useParams()
   const site = getSite(siteId)
+  const { status, data, error, retry } = useSitePackage(site?.id ?? null)
 
   if (!site) {
     return (
@@ -31,5 +33,13 @@ export function StudioPage() {
     )
   }
 
-  return <StudioShell site={site} />
+  return (
+    <StudioShell
+      site={site}
+      sitePackage={data}
+      packageStatus={status}
+      packageError={error}
+      onRetry={retry}
+    />
+  )
 }

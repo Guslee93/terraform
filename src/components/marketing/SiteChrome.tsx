@@ -83,7 +83,31 @@ export function SiteFooter() {
             <Link to="/about" className="transition-colors hover:text-ink">
               About
             </Link>
+            <Link to="/about#data" className="transition-colors hover:text-ink">
+              Data
+            </Link>
           </nav>
+          <span className="normal-case tracking-normal">
+            Buildings{' '}
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-line underline-offset-2 hover:text-ink"
+            >
+              © OpenStreetMap contributors
+            </a>{' '}
+            (ODbL) · Terrain{' '}
+            <a
+              href="https://www.kartverket.no/api-og-data/vilkar-for-bruk/"
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-line underline-offset-2 hover:text-ink"
+            >
+              © Kartverket
+            </a>{' '}
+            (CC BY 4.0)
+          </span>
           <span>Oslo, Norway</span>
           <span>Desktop-first · No login</span>
           <span>© 2026 Terraform study</span>

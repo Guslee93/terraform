@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "siteId": "sloped-edge",
+  "label": "Study area \u2014 not a cadastral parcel",
+  "polygon": [
+    [
+      -115.0,
+      -155.0
+    ],
+    [
+      115.0,
+      -155.0
+    ],
+    [
+      115.0,
+      155.0
+    ],
+    [
+      -115.0,
+      155.0
+    ],
+    [
+      -115.0,
+      -155.0
+    ]
+  ]
+}

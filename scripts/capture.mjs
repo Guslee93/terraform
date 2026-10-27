@@ -45,20 +45,31 @@ try {
 
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' })
     await page.screenshot({
-      path: `${OUT}/m0-landing-${viewport.name}.png`,
+      path: `${OUT}/m1-landing-${viewport.name}.png`,
       fullPage: false,
     })
 
-    await page.goto(`${BASE}/studio/compact-infill`, { waitUntil: 'networkidle' })
-    await page.waitForTimeout(700)
-    await page.screenshot({
-      path: `${OUT}/m0-studio-${viewport.name}.png`,
-      fullPage: false,
-    })
+    for (const site of ['compact-infill', 'sloped-edge']) {
+      await page.goto(`${BASE}/studio/${site}`, { waitUntil: 'networkidle' })
+      await page.waitForTimeout(1200)
+      await page.screenshot({
+        path: `${OUT}/m1-${site}-${viewport.name}.png`,
+        fullPage: false,
+      })
+
+      if (viewport.width >= 1280) {
+        await page.getByRole('button', { name: 'Top' }).click()
+        await page.waitForTimeout(1000)
+        await page.screenshot({
+          path: `${OUT}/m1-${site}-${viewport.name}-top.png`,
+          fullPage: false,
+        })
+      }
+    }
   }
 
   await browser.close()
-  console.log(`Captured ${viewports.length * 2} screenshots in ${OUT}`)
+  console.log(`Captured ${viewports.length * 3 + 3 * 2} screenshots in ${OUT}`)
 } finally {
   server.kill('SIGTERM')
 }

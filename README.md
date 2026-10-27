@@ -1,8 +1,8 @@
 # Terraform
 
-An interactive architectural site-planning portfolio prototype. Explore a curated Oslo site, shape a conceptual massing, test sunlight and shadow, read geometry-derived metrics, and compare two concepts.
+An interactive architectural site-planning portfolio prototype. Explore a real, simplified Oslo study area, shape a conceptual massing, test sunlight and shadow, read geometry-derived metrics, and compare two concepts.
 
-> **Status:** M0 complete. The 3D viewport, studio layout and design system are in place and have passed the code and visual gates. Curated site packages arrive in M1; the studio intentionally shows no invented site geometry.
+> **Status:** M1 complete. Two static, openly licensed Oslo site packages load in a validated local ENU frame with terrain, simplified OSM context, study boundaries, camera presets, compass and scale. M2 massing engine is next.
 
 ## Quick start
 
@@ -30,6 +30,19 @@ Open the printed local URL. Routes:
 | `npm run test` | Vitest unit/component suite |
 | `npm run test:e2e` | Playwright Chromium smoke path |
 | `npm run capture` | Capture reference screenshots into `docs/screenshots/` |
+| `python3 scripts/build_site_packages.py --offline` | Rebuild both site packages from committed raw caches |
+
+## Site data pipeline
+
+The two static packages under `public/sites/` are generated offline from openly licensed sources:
+
+- **Building footprints:** © OpenStreetMap contributors, ODbL 1.0. Simplified with a 1.2 m tolerance; building relations are omitted.
+- **Terrain:** © Kartverket DTM1, CC BY 4.0, sampled on a 13 × 13 grid through the open height API.
+- **Study boundary:** an authored rectangle, explicitly not a cadastral parcel.
+
+Raw OSM XML and elevation responses are cached in `data/raw/` for reproducible offline rebuilds. Each package ships an `attribution.md`; the studio also exposes the credits in the Inspector and About page. The Python script uses `certifi` when available for TLS on macOS.
+
+Never replace these packages with invented parcel or regulation data.
 
 ## Stack
 

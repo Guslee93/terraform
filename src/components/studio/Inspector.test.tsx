@@ -1,9 +1,14 @@
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useState } from 'react'
+import { useState, type ComponentProps, type ReactNode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { SITES, type SiteSummary } from '../../features/sites/siteCatalog'
 import { Inspector } from './Inspector'
+
+function render(ui: ReactNode) {
+  return rtlRender(<MemoryRouter>{ui}</MemoryRouter>)
+}
 
 function requireSite(id: string): SiteSummary {
   const site = SITES.find((candidate) => candidate.id === id)
@@ -12,6 +17,19 @@ function requireSite(id: string): SiteSummary {
 }
 
 const site = requireSite('compact-infill')
+const layers = { terrain: true, context: true, parcel: true }
+const baseProps: ComponentProps<typeof Inspector> = {
+  site,
+  manifest: null,
+  packageStatus: 'ready',
+  layers,
+  onToggleLayer: () => undefined,
+  activeTab: 'model',
+  onTabChange: () => undefined,
+  isOpen: false,
+  onClose: () => undefined,
+  isDrawer: false,
+}
 
 function DrawerHarness() {
   const [open, setOpen] = useState(false)
@@ -22,9 +40,7 @@ function DrawerHarness() {
         Open inspector
       </button>
       <Inspector
-        site={site}
-        activeTab="model"
-        onTabChange={() => undefined}
+        {...baseProps}
         isOpen={open}
         onClose={() => setOpen(false)}
         isDrawer
@@ -35,16 +51,7 @@ function DrawerHarness() {
 
 describe('Inspector drawer', () => {
   it('does not render when closed', () => {
-    const { container } = render(
-      <Inspector
-        site={site}
-        activeTab="model"
-        onTabChange={() => undefined}
-        isOpen={false}
-        onClose={() => undefined}
-        isDrawer
-      />,
-    )
+    const { container } = render(<Inspector {...baseProps} isDrawer />)
 
     expect(container).toBeEmptyDOMElement()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -67,16 +74,7 @@ describe('Inspector drawer', () => {
   })
 
   it('renders as a static panel on desktop', () => {
-    render(
-      <Inspector
-        site={site}
-        activeTab="model"
-        onTabChange={() => undefined}
-        isOpen={false}
-        onClose={() => undefined}
-        isDrawer={false}
-      />,
-    )
+    render(<Inspector {...baseProps} />)
 
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

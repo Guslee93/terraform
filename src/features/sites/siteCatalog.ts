@@ -20,7 +20,7 @@ export const SITES: readonly SiteSummary[] = [
     title: 'Compact Infill',
     subtitle: 'Dense Oslo block · strong shadow study',
     description:
-      'A tight urban parcel surrounded by mature blocks. Clear setbacks, a simple lot edge and long seasonal shadows make it the primary demonstration site.',
+      'A tight urban study area surrounded by mature apartment blocks. Clear setbacks, a simple lot edge and long seasonal shadows make it the primary demonstration site.',
     morphology: 'Urban infill',
     thumbnail: '/sites/compact-infill.svg',
     dataStatus: 'curated-demo',
@@ -30,7 +30,7 @@ export const SITES: readonly SiteSummary[] = [
     title: 'Sloped Edge',
     subtitle: 'Topography · stepped massing',
     description:
-      'A parcel at the city edge where the ground begins to fall away. Noticeable relief and asymmetric surroundings reward a stepped, terrain-aware concept.',
+      'A study area at the city edge where the ground begins to fall away. Noticeable relief and asymmetric surroundings reward a stepped, terrain-aware concept.',
     morphology: 'Landscape edge',
     thumbnail: '/sites/sloped-edge.svg',
     dataStatus: 'curated-demo',

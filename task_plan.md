@@ -6,7 +6,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 
 ## Current Phase
 
-**M0 complete — M1 site packages and camera next**
+**M2 — Massing engine next** (M1 packages are complete and immutable)
 
 ## Phases
 
@@ -41,13 +41,15 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 
 ### Phase 2 — M1 Site packages and camera
 
-- [ ] Licence and provenance record
-- [ ] Offline preprocessing pipeline
-- [ ] Two packages + manifest validation
-- [ ] Terrain/context/parcel/layers
-- [ ] Camera presets, compass, scale
-- [ ] Performance trace and budget
-- **Status:** pending
+- [x] Licence and provenance record (OSM ODbL 1.0, Kartverket CC BY 4.0)
+- [x] Offline preprocessing pipeline with cached raw sources
+- [x] Two packages + manifest/statistics/topology validation
+- [x] Terrain/context/study-boundary layers with working toggles
+- [x] Camera presets, compass, scale, layer legend
+- [x] Performance trace and budget (60.1 fps at 1440×900 on Metal)
+- [x] `gis-qa-engineer` geometry QA — pass with follow-ups
+- [x] `code-reviewer` gate — pass with follow-ups
+- **Status:** complete
 
 ### Phase 3 — M2 Massing engine
 
@@ -56,7 +58,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [ ] Numeric inspector and validation
 - [ ] Undo/redo transactions
 - [ ] QA-03–08
-- **Status:** pending
+- **Status:** in_progress
 
 ### Phase 4 — M3 Live analysis
 
@@ -107,6 +109,9 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 | AI excluded until M6 | PRD non-goal for v1 |
 | Static Concept A chip in M0 | Avoid fabricated scenario switching before M4 |
 | 1100 px drawer breakpoint | Matches the design contract; canvas stays dominant |
+| OSM ODbL + Kartverket CC BY 4.0 packages | Openly licensed, real context and terrain; static and offline |
+| Local tangent-plane projection, NN2000 vertical datum | Accurate metric editing with provenance; ADR-0002 |
+| One merged context mesh + 13 × 13 terrain | ~5 draw calls, 60 fps; sufficient for conceptual massing |
 
 ## Errors encountered
 
@@ -118,11 +123,14 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 | Studio chunk >500 kB warning | 1 | Accepted for M0; route is lazy-loaded; vendor splitting scheduled for M1 |
 | E2E asserted old milestone copy after the UI copy change | 1 | Updated the smoke test to the product-facing empty-state heading |
 | Full-screen empty-state overlay blocked canvas pointer events | 1 | Added `pointer-events-none` to the overlay; card keeps `pointer-events-auto` |
+| Python framework TLS failed against the elevation API | 1 | Use `certifi` explicitly for preprocessing requests |
+| 12 simplified OSM footprints self-intersected | 1 | Added ring repair/validation in the pipeline and loader; QA re-check is clean |
+| Old slope bbox included the Ekeberg cliff (−91 m relief) | 1 | Moved to a 31 m-relief hillside study area with 33 context buildings |
 
 ## Next actions
 
-1. Run `research-synthesist` on site licensing and provenance before any geometry work.
-2. Build the offline preprocessing pipeline with `gis-spatial-data-engineer`.
-3. Validate the first package with `gis-qa-engineer`; then add camera presets and layers.
-4. Keep the inspector's open M2 hardening follow-ups (`inert` background, focus-on-resize) on the M2 checklist.
-5. Split the Three.js vendor chunk during M1 performance work.
+1. Write the M2 domain model and command contracts with `engineering-software-architect`.
+2. Implement and test `MassVolume`, footprint creation, storeys, tiers and validation before touching gizmos.
+3. Add the numeric inspector and transactional undo/redo; keep one drag = one history entry.
+4. Carry M1 follow-ups: terrain resolution if needed, aspect-aware mobile framing, compass near eye level.
+5. Preserve the generated site packages as immutable; massing never mutates context or terrain.

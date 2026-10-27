@@ -100,7 +100,26 @@ Additional checks:
 | Export → import | geometry, assumptions and notes identical |
 | Migration v0 → v1 | deterministic converted document |
 
-## 6. PRD QA matrix mapping
+## 6. M1 package fixtures
+
+These values are the generated-package baseline. The automated package test reads the real JSON and cross-checks manifest statistics, so source regeneration must keep these relationships true.
+
+| Fixture | Compact Infill | Sloped Edge |
+|---|---|---|
+| Package id | `compact-infill` | `sloped-edge` |
+| Origin latitude / longitude | 59.9235 / 10.7580 | 59.89825 / 10.77375 |
+| Origin elevation | 20.42 m | 137.20 m |
+| Study area | 190 × 240 m = 45 600 m² | 230 × 310 m = 71 300 m² |
+| Terrain grid | 13 × 13 | 13 × 13 |
+| Terrain range (relative) | −4.38 … +5.98 m | −26.98 … +4.01 m |
+| Buildings | 137 | 33 |
+| Buildings inside study area | 65 | 20 |
+| Sources | OSM ODbL 1.0 · Kartverket CC BY 4.0 | same |
+| Boundary label | not a cadastral parcel | same |
+
+Geometry checks: every building footprint must be a simple ring with positive area and finite coordinates. The first M1 build failed this check for 12 footprints; the repair pass and runtime validator now enforce it.
+
+## 7. PRD QA matrix mapping
 
 | QA | Fixture / test |
 |---|---|

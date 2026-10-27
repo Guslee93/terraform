@@ -24,13 +24,6 @@ const sections = [
       'Area, volume, height and coverage are derived from the same geometry the visitor edits. Solar direction is calculated from the site’s coordinates and timestamp. Where the tool cannot make a claim, the interface says so.',
     ],
   },
-  {
-    title: 'Data and attribution',
-    body: [
-      'The demonstration sites are curated and simplified. They may be inspired by Oslo morphology without representing an exact property. Site packages record their sources, licences, acquisition dates and simplifications; the studio exposes those notes.',
-      'The PRD’s preferred pipeline is offline preprocessing: terrain, context and parcel data are transformed once into a compact, versioned asset package rather than fetched from live GIS services at runtime.',
-    ],
-  },
 ]
 
 export function AboutPage() {
@@ -102,6 +95,78 @@ export function AboutPage() {
                 </div>
               </section>
             ))}
+
+            <section id="data" className="scroll-mt-28">
+              <h2 className="font-display text-[28px] leading-tight tracking-[-0.01em] text-ink">
+                Data sources
+              </h2>
+              <p className="mt-3 text-[13.5px] leading-[1.8] text-ink-secondary">
+                Both sites are static packages built offline. No live GIS service is queried at
+                runtime. Each package records its sources, licence, acquisition date and
+                simplifications in its own attribution file.
+              </p>
+              <ul className="mt-5 space-y-3">
+                <li className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary">
+                    Building footprints
+                  </p>
+                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-secondary">
+                    <a
+                      href="https://www.openstreetmap.org/copyright"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+                    >
+                      © OpenStreetMap contributors
+                    </a>
+                    , licensed under the{' '}
+                    <a
+                      href="https://opendatacommons.org/licenses/odbl/1-0/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+                    >
+                      Open Database License 1.0
+                    </a>
+                    . Derived footprints are simplified and redistributed under the same licence.
+                  </p>
+                </li>
+                <li className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary">
+                    Terrain
+                  </p>
+                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-secondary">
+                    <a
+                      href="https://www.kartverket.no/api-og-data/vilkar-for-bruk/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+                    >
+                      © Kartverket
+                    </a>
+                    , DTM1 elevation sampled through the open height API, licensed under{' '}
+                    <a
+                      href="https://creativecommons.org/licenses/by/4.0/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+                    >
+                      CC BY 4.0
+                    </a>
+                    .
+                  </p>
+                </li>
+                <li className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary">
+                    Study boundary
+                  </p>
+                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-secondary">
+                    The dashed boundary is an authored study-area rectangle. It is not a cadastral
+                    parcel, property boundary, zoning designation or planning constraint.
+                  </p>
+                </li>
+              </ul>
+            </section>
 
             <section className="rounded-[var(--radius-card)] border border-line bg-surface p-6">
               <h2 className="font-display text-[24px] leading-tight text-ink">Technical stack</h2>

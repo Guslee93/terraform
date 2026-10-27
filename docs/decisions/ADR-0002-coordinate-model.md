@@ -16,7 +16,7 @@ Site geometry originates in a geographic CRS, while editing, raycasting, snappin
    - `north` (+y): metres from the site origin
    - `up` (+z): metres above the site origin elevation
 2. The renderer consumes `(east, up, -north)` — a Y-up, right-handed Three.js frame.
-3. Each site package records `crs.sourceEPSG`, `originEast`, `originNorth`, `originElevation`, `unit: 'm'`, and the transform used during preprocessing.
+3. Each site package records `crs.sourceEPSG`, `horizontalDatum`, `verticalDatum`, `originLatitude`, `originLongitude`, `originElevation`, `unit: 'm'`, and the transform used during preprocessing. This is a deliberate refinement of PRD §4.1's `originEast`/`originNorth`: the local origin is `(0, 0)` by definition, while the geographic origin must remain explicit for solar calculations and provenance.
 4. **One conversion pipeline** (`src/lib/coordinates.ts`) serves imports, raycasts, snapping, measurement, camera framing and export.
 5. Latitude/longitude are used only for solar position and provenance metadata. They are never mesh vertices.
 6. Site packages are recentered during offline preprocessing. Runtime re-origining is out of scope for v1.

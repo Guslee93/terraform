@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "id": "compact-infill",
+  "title": "Compact Infill",
+  "subtitle": "Dense Oslo block \u00b7 strong shadow study",
+  "description": "A tight urban study area surrounded by mature apartment blocks. The simplified context is derived from OpenStreetMap footprints and the terrain from Kartverket DTM1.",
+  "morphology": "Urban infill",
+  "location": {
+    "latitude": 59.9235,
+    "longitude": 10.758,
+    "timeZone": "Europe/Oslo"
+  },
+  "crs": {
+    "sourceEPSG": "EPSG:4326",
+    "horizontalDatum": "WGS84",
+    "verticalDatum": "NN2000",
+    "originLatitude": 59.9235,
+    "originLongitude": 10.758,
+    "originElevation": 20.42,
+    "projection": "local-tangent-plane-wgs84"
+  },
+  "unit": "m",
+  "dataStatus": "curated-demo",
+  "assetPaths": {
+    "terrain": "terrain.json",
+    "buildings": "buildings.json",
+    "studyArea": "study-area.json",
+    "thumbnail": "/sites/compact-infill.svg",
+    "attribution": "attribution.md"
+  },
+  "constraints": {
+    "maxHeightMeters": 18.0,
+    "setbackMeters": 4.0,
+    "label": "Illustrative design constraint"
+  },
+  "cameraPresets": {
+    "isometric": {
+      "position": [
+        285.49,
+        -328.31,
+        285.49
+      ],
+      "target": [
+        0.0,
+        0.0,
+        8.0
+      ],
+      "projection": "perspective",
+      "fov": 32
+    },
+    "top": {
+      "position": [
+        0.0,
+        -0.01,
+        688.74
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "projection": "perspective",
+      "fov": 32
+    },
+    "north": {
+      "position": [
+        0.0,
+        -413.24,
+        189.78
+      ],
+      "target": [
+        0.0,
+        0.0,
+        8.0
+      ],
+      "projection": "perspective",
+      "fov": 32
+    },
+    "south": {
+      "position": [
+        0.0,
+        413.24,
+        189.78
+      ],
+      "target": [
+        0.0,
+        0.0,
+        8.0
+      ],
+      "projection": "perspective",
+      "fov": 32
+    },
+    "eyeLevel": {
+      "position": [
+        244.88,
+        -275.49,
+        16.0
+      ],
+      "target": [
+        0.0,
+        0.0,
+        8.0
+      ],
+      "projection": "perspective",
+      "fov": 34
+    }
+  },
+  "sources": [
+    {
+      "title": "OpenStreetMap building footprints",
+      "url": "https://www.openstreetmap.org/copyright",
+      "license": "ODbL 1.0",
+      "attribution": "\u00a9 OpenStreetMap contributors",
+      "acquiredAt": "2026-10-27"
+    },
+    {
+      "title": "Kartverket DTM1 elevation",
+      "url": "https://ws.geonorge.no/hoydedata/v1/",
+      "license": "CC BY 4.0",
+      "attribution": "\u00a9 Kartverket",
+      "acquiredAt": "2026-10-27"
+    }
+  ],
+  "simplified": [
+    "Footprints simplified with a 1.2 m tolerance; building relations omitted",
+    "Heights from height, building:levels, or a typology fallback",
+    "Terrain sampled on a 13 \u00d7 13 grid and recentered to the origin",
+    "Study boundary is authored, not a cadastral parcel"
+  ],
+  "statistics": {
+    "buildingCount": 137,
+    "terrainSamples": 169,
+    "studyAreaM2": 45600.0,
+    "sourceChecksum": "5b58d26f69bcc64f"
+  }
+}

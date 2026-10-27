@@ -54,7 +54,20 @@
 | `npm create vite` waited on an interactive prompt | Killed it; wrote scaffold and pinned manifest manually |
 | DOM leaked across tests | Explicit `afterEach(cleanup)` |
 | Lazy route broke a synchronous assertion | `findByRole` for the unknown-site route |
-| Build warned about the 952 kB studio chunk | Accepted for M0; planned M1 vendor split |
+| Build warned about the studio chunk | Route is lazy-loaded; landing ~92 kB gzip, studio ~263 kB gzip |
+| Python framework TLS failed on the elevation API | Explicit `certifi` context in the build script |
+| Simplified OSM rings self-intersected | Repair/finer-tolerance pass plus runtime simple-ring validation |
+| Original slope bbox included the Ekeberg cliff | Moved to a 31 m-relief hillside with 33 context buildings |
+
+## M1 data and performance findings
+
+- OSM building footprints: © OpenStreetMap contributors, ODbL 1.0; ways only, 1.2 m simplification, heights from `height` / `building:levels` / typology fallback.
+- Kartverket DTM1: © Kartverket, CC BY 4.0; 13 × 13 samples, NN2000 heights recentred to each site origin.
+- Study boundaries are authored rectangles, explicitly not cadastral parcels.
+- Compact Infill: 137 buildings, 45 600 m² study area, 20.42 m origin elevation, −4.38…+5.98 m relief.
+- Sloped Edge: 33 buildings, 71 300 m² study area, 137.20 m origin elevation, −26.98…+4.01 m relief (31 m relief).
+- Package sizes: ~95 KB Compact, ~32 KB Sloped; ~5 draw calls; 60.1 fps at 1440×900 on Apple M1 Pro via ANGLE Metal; 0 page errors.
+- Headless SwiftShader measured 39.6 fps; software rendering is not the target hardware case.
 
 ## Resources
 
@@ -62,7 +75,10 @@
 - R3F docs: https://r3f.docs.pmnd.rs/
 - Three.js docs: https://threejs.org/docs/
 - SunCalc: https://www.npmjs.com/package/suncalc
-- Kartverket terrain: https://www.kartverket.no/en/api-and-data/terrengdata
+- Kartverket terrain: https://ws.geonorge.no/hoydedata/v1/
+- Kartverket terms: https://www.kartverket.no/api-og-data/vilkar-for-bruk/
+- OSM attribution: https://www.openstreetmap.org/copyright
+- ODbL 1.0: https://opendatacommons.org/licenses/odbl/1-0/
 - Design contract: `docs/design/design-contract.md`
 - QA fixtures: `docs/qa/fixtures.md`
 
@@ -75,10 +91,19 @@
 - Final suite: typecheck, lint, 17 unit/component tests, production build and 1 Playwright smoke test all pass.
 - Remaining follow-ups: inert the drawer background for assistive technology, guard focus restoration on resize, capture focus/hover states, add a 1024 px breakpoint screenshot, replace the static scenario chip in M4.
 
+## M1 gate outcome (2026-10-27)
+
+- `agency-research-synthesist`: confirmed OSM ODbL 1.0 and Kartverket CC BY 4.0 usage, attribution and redistribution constraints.
+- `agency-gis-qa-engineer`: initial build had 12 self-intersecting simplified footprints; fixed, re-check clean; **PASS with follow-ups**.
+- `agency-code-reviewer`: **PASS with follow-ups**; no blockers after the topology fix.
+- Final suite: typecheck, lint, 33 unit/component tests, production build and 2 Playwright tests pass.
+- Performance: 60.1 fps at 1440×900 on hardware GPU; no page errors.
+
 ## Visual notes
 
 - Landing: warm off-white paper, serif hero, two site cards with diagrammatic SVG thumbnails, thin rules, restrained blue-grey accent.
-- Studio: 56 px top bar, 56 px rail, 336 px inspector, light grid canvas, explicit empty state. No site geometry shown yet by design.
-- Reference screenshots captured in `docs/screenshots/` at 1440×900, 1280×800, 1920×1080 and 390×844.
-- After first capture: reduced hero height so the site section enters the 900 px viewport, hid the mobile tagline, stopped the mobile CTA from wrapping, replaced the faint Drei grid with two `gridHelper` layers, and raised disabled-control opacity.
-- Remaining polish before the M0 gate: inspector density, hover/focus states, drawer focus trap, and a final type/colour pass by the design agents.
+- Studio: 56 px top bar, 56 px rail, 336 px inspector, live terrain/context study area, dashed boundary, dynamic compass, scale bar and layer toggles.
+- Reference screenshots captured in `docs/screenshots/` at 1440×900, 1280×800, 1920×1080 and 390×844, plus top views at three desktop sizes.
+- The 1440 hero holds three lines; the first site section enters the viewport.
+- Context is merged into one mesh; terrain uses a subtle mesh grid and solid edge skirt.
+- Remaining polish: mobile aspect framing, compass behaviour near eye level, hover/focus state captures.

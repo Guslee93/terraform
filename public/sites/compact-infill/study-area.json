@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "siteId": "compact-infill",
+  "label": "Study area \u2014 not a cadastral parcel",
+  "polygon": [
+    [
+      -95.0,
+      -120.0
+    ],
+    [
+      95.0,
+      -120.0
+    ],
+    [
+      95.0,
+      120.0
+    ],
+    [
+      -95.0,
+      120.0
+    ],
+    [
+      -95.0,
+      -120.0
+    ]
+  ]
+}

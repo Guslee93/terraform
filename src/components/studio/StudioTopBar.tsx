@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 type StudioTopBarProps = {
   site: SiteSummary
   scenario: string
+  canFit: boolean
   onFitSite: () => void
   onToggleInspector: () => void
   inspectorOpen: boolean
@@ -15,6 +16,7 @@ type StudioTopBarProps = {
 export function StudioTopBar({
   site,
   scenario,
+  canFit,
   onFitSite,
   onToggleInspector,
   inspectorOpen,
@@ -52,17 +54,19 @@ export function StudioTopBar({
 
         <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-line sm:block" />
 
-        <button
-          type="button"
-          onClick={onFitSite}
-          className="hidden min-h-9 items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 text-[11px] font-medium text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink md:inline-flex"
-        >
-          <Icon name="fit" size={15} />
-          Fit site
-          <kbd className="ml-0.5 rounded border border-line px-1 py-px text-[9px] text-ink-secondary">
-            F
-          </kbd>
-        </button>
+        {canFit && (
+          <button
+            type="button"
+            onClick={onFitSite}
+            className="hidden min-h-9 items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 text-[11px] font-medium text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink md:inline-flex"
+          >
+            <Icon name="fit" size={15} />
+            Fit site
+            <kbd className="ml-0.5 rounded border border-line px-1 py-px text-[9px] text-ink-secondary">
+              F
+            </kbd>
+          </button>
+        )}
 
         <Link
           to="/about"

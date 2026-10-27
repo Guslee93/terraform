@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import type { SiteManifest } from '../../features/sites/manifest'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
+import type { SceneLayers } from '../../scene/ViewportCanvas'
 import { cn } from '../../lib/cn'
 import { Icon } from '../ui/Icon'
 
@@ -19,8 +22,18 @@ const TABS: readonly Tab[] = [
   { id: 'compare', label: 'Compare', available: false, note: 'M4' },
 ]
 
+const LAYER_ROWS: ReadonlyArray<{ id: keyof SceneLayers; label: string }> = [
+  { id: 'terrain', label: 'Terrain' },
+  { id: 'context', label: 'Context buildings' },
+  { id: 'parcel', label: 'Study boundary' },
+]
+
 type InspectorProps = {
   site: SiteSummary
+  manifest: SiteManifest | null
+  packageStatus: 'loading' | 'ready' | 'error'
+  layers: SceneLayers
+  onToggleLayer: (layer: keyof SceneLayers) => void
   activeTab: InspectorTab
   onTabChange: (tab: InspectorTab) => void
   isOpen: boolean
@@ -39,6 +52,10 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export function Inspector({
   site,
+  manifest,
+  packageStatus,
+  layers,
+  onToggleLayer,
   activeTab,
   onTabChange,
   isOpen,
@@ -167,7 +184,9 @@ export function Inspector({
               </span>
               <p className="mt-2.5 text-[12.5px] font-medium text-ink">No mass selected</p>
               <p className="mx-auto mt-1 max-w-[30ch] text-[11.5px] leading-relaxed text-ink-secondary">
-                Massing tools appear when a site model is loaded.
+                {packageStatus === 'ready'
+                  ? 'Massing tools are not available in this preview.'
+                  : 'Massing tools appear when the site package is ready.'}
               </p>
             </div>
           </section>
@@ -182,11 +201,58 @@ export function Inspector({
             <dl className="mt-2">
               <Row label="Site" value={site.title} />
               <Row label="Morphology" value={site.morphology} />
-              <Row label="Data" value="Curated demo" />
+              <Row
+                label="Data"
+                value={
+                  packageStatus === 'ready'
+                    ? 'Curated demo'
+                    : packageStatus === 'error'
+                      ? 'Unavailable'
+                      : 'Loading'
+                }
+              />
+              <Row
+                label="Buildings"
+                value={manifest ? `${manifest.statistics.buildingCount} simplified` : '—'}
+              />
+              <Row
+                label="Terrain"
+                value={manifest ? `${manifest.statistics.terrainSamples} samples` : '—'}
+              />
               <Row label="Frame" value="Local ENU · metres" />
-              <Row label="Context" value="Not loaded in preview" />
               <Row label="Constraints" value="Illustrative only" />
             </dl>
+            <p className="mt-2 text-[10px] leading-relaxed text-ink-secondary">
+              Buildings © OpenStreetMap contributors (ODbL). Terrain © Kartverket (CC BY 4.0).{' '}
+              <Link to="/about#data" className="underline decoration-line underline-offset-2 hover:text-ink">
+                Data notes
+              </Link>
+            </p>
+          </section>
+
+          <section aria-labelledby="layers-heading" className="mt-6">
+            <h2
+              id="layers-heading"
+              className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
+            >
+              Layers
+            </h2>
+            <div className="mt-2 space-y-0.5">
+              {LAYER_ROWS.map((row) => (
+                <label
+                  key={row.id}
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-[6px] px-1.5 py-1.5 text-[11.5px] text-ink transition-colors hover:bg-surface-muted"
+                >
+                  <span>{row.label}</span>
+                  <input
+                    type="checkbox"
+                    checked={layers[row.id]}
+                    onChange={() => onToggleLayer(row.id)}
+                    className="size-3.5 accent-[var(--accent)]"
+                  />
+                </label>
+              ))}
+            </div>
           </section>
 
           <section aria-labelledby="assumptions-heading" className="mt-6">

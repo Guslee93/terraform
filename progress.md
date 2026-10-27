@@ -42,18 +42,37 @@
   - Added the mobile read-only notice and mobile disclaimer before sign-off.
 - Files created/modified: see Phase 0 plus `docs/reviews/M0-*.md`, `src/components/studio/Inspector.test.tsx`, `e2e/smoke.spec.ts`.
 
+### Phase 2: M1 site packages and camera
+
+- **Status:** complete
+- **Started:** 2026-10-27
+- Actions taken:
+  - `agency-research-synthesist` confirmed OSM ODbL 1.0 and Kartverket CC BY 4.0 usage and attribution.
+  - Built `scripts/build_site_packages.py` with cached OSM XML and DTM1 elevation responses.
+  - Generated Compact Infill (137 simplified buildings) and Sloped Edge (33 buildings, 31 m relief) with 13 × 13 terrain grids.
+  - Added a runtime-repairing ring simplifier after QA found 12 self-intersecting footprints.
+  - Implemented `SiteManifest` and package parsers with schema, unit, topology, statistics and provenance validation.
+  - Implemented local ENU rendering: terrain mesh/grid/skirt, merged context geometry, dashed study boundary.
+  - Added deterministic camera presets, animated transitions, dynamic compass, scale bar and layer legend.
+  - Added working terrain/context/boundary layer toggles and package loading/error/retry states.
+  - Ran `agency-gis-qa-engineer`; fixed the topology and attribution findings; pass with follow-ups.
+  - Ran `agency-code-reviewer`; pass with follow-ups.
+  - Measured 60.1 fps at 1440×900 on Apple M1 Pro / ANGLE Metal.
+- Files created/modified: `scripts/build_site_packages.py`, `data/raw/*`, `public/sites/*`, `src/features/sites/{manifest,package,geometry,useSitePackage}.ts`, `src/scene/{ViewportCanvas,siteGeometry,CameraRig,HudProbe,CameraHud,hudStore}.tsx`, `src/components/studio/{CameraPresets,StudioShell,StudioTopBar,Inspector}.tsx`, `docs/reviews/M1-*.md`, `docs/data/site-package-spec.md`, `docs/qa/fixtures.md`.
+
 ## Test results
 
 | Test | Input | Expected | Actual | Status |
 |---|---|---|---|---|
 | Typecheck | `npm run typecheck` | No errors | No errors | pass |
 | Lint | `npm run lint` | No errors | No errors | pass |
-| Unit/component | `npm run test` | All pass | 17/17 pass | pass |
-| Production build | `npm run build` | Success | Success; landing ~91 kB gzip, studio ~251 kB gzip | pass |
-| E2E smoke | `npm run test:e2e` | Landing → studio | 1/1 pass | pass |
-| Reference screenshots | `npm run capture` | 8 images at 4 viewports | 8 images in `docs/screenshots/` | pass |
-| Visual review | `agency-ui-finish-gate-reviewer` | PASS with follow-ups | PASS with follow-ups | pass |
-| Code review | `agency-code-reviewer` | No blockers | 1 blocker found and fixed; pass with follow-ups | pass |
+| Unit/component | `npm run test` | All pass | 33/33 pass | pass |
+| Production build | `npm run build` | Success | Success; landing ~92 kB gzip, studio ~263 kB gzip | pass |
+| E2E smoke | `npm run test:e2e` | Both packages, presets, layer toggle | 2/2 pass | pass |
+| Reference screenshots | `npm run capture` | 18 images at 4 viewports | 18 images in `docs/screenshots/` | pass |
+| M1 performance | rAF sample at 1440×900, Metal | >45 fps | 60.1 fps, 0 page errors | pass |
+| M1 geometry QA | `agency-gis-qa-engineer` | No blockers | Pass with follow-ups | pass |
+| M1 code review | `agency-code-reviewer` | No blockers | Pass with follow-ups | pass |
 
 ## Error log
 
@@ -67,13 +86,16 @@
 | 2026-10-27 | Wide studio screenshots showed an illegible grid | 1 | Replaced Drei Grid with two `gridHelper` layers and stronger contrast |
 | 2026-10-27 | Full-screen empty-state overlay blocked OrbitControls | 1 | Added `pointer-events-none` to the overlay; card keeps `pointer-events-auto` |
 | 2026-10-27 | E2E asserted removed milestone copy | 1 | Updated the smoke test to the product-facing empty-state heading |
+| 2026-10-27 | Python framework TLS failed against the elevation API | 1 | Used `certifi` explicitly for preprocessing requests |
+| 2026-10-27 | 12 simplified OSM footprints self-intersected | 1 | Ring repair + runtime simple-ring validation; QA re-check clean |
+| 2026-10-27 | Old slope bbox included the Ekeberg cliff (−91 m relief) | 1 | Moved to a 31 m-relief hillside with 33 context buildings |
 
 ## 5-question reboot check
 
 | Question | Answer |
 |---|---|
-| Where am I? | M0 complete; M1 site packages next |
-| Where am I going? | M1 provenance → preprocessing → package validation → layers/camera; then M2 massing |
+| Where am I? | M1 complete; M2 massing engine next |
+| Where am I going? | M2 domain model → massing tools → numeric inspector → undo/redo → QA-03–08 |
 | What's the goal? | Terraform v1: credible interactive architectural site-planning portfolio prototype |
-| What have I learned? | See `findings.md` — versions, bundle sizes, skill roster, review findings |
-| What have I done? | See Phase 0/1 above, `docs/reviews/M0-*.md`, and `git log` |
+| What have I learned? | See `findings.md` — versions, data provenance, bundle sizes, review findings |
+| What have I done? | See Phase 0/1/2 above, `docs/reviews/M1-*.md`, and `git log` |

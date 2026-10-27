@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "id": "sloped-edge",
+  "title": "Sloped Edge",
+  "subtitle": "Topography \u00b7 stepped massing",
+  "description": "A study area at Oslo's edge where the ground falls away. Context footprints come from OpenStreetMap and the relief from Kartverket DTM1.",
+  "morphology": "Landscape edge",
+  "location": {
+    "latitude": 59.89825,
+    "longitude": 10.77375,
+    "timeZone": "Europe/Oslo"
+  },
+  "crs": {
+    "sourceEPSG": "EPSG:4326",
+    "horizontalDatum": "WGS84",
+    "verticalDatum": "NN2000",
+    "originLatitude": 59.89825,
+    "originLongitude": 10.77375,
+    "originElevation": 137.2,
+    "projection": "local-tangent-plane-wgs84"
+  },
+  "unit": "m",
+  "dataStatus": "curated-demo",
+  "assetPaths": {
+    "terrain": "terrain.json",
+    "buildings": "buildings.json",
+    "studyArea": "study-area.json",
+    "thumbnail": "/sites/sloped-edge.svg",
+    "attribution": "attribution.md"
+  },
+  "constraints": {
+    "maxHeightMeters": 15.0,
+    "setbackMeters": 3.0,
+    "label": "Illustrative design constraint"
+  },
+  "cameraPresets": {
+    "isometric": {
+      "position": [
+        360.01,
+        -414.01,
+        360.01
+      ],
+      "target": [
+        0.0,
+        0.0,
+        10.0
+      ],
+      "projection": "perspective",
+      "fov": 32
+    },
+    "top": {
+      "position": [
+        0.0,
+        -0.01,
+        868.51
+      ],
+      "target": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "projection": "perspective",
+      "fov": 32
+    },
+    "north": {
+      "position": [
+        0.0,
+        -521.11,
+        239.32
+      ],
+      "target": [
+        0.0,
+        0.0,
+        10.0
+      ],
+      "projection": "perspective",
+      "fov": 32
+    },
+    "south": {
+      "position": [
+        0.0,
+        521.11,
+        239.32
+      ],
+      "target": [
+        0.0,
+        0.0,
+        10.0
+      ],
+      "projection": "perspective",
+      "fov": 32
+    },
+    "eyeLevel": {
+      "position": [
+        308.8,
+        -347.4,
+        16.0
+      ],
+      "target": [
+        0.0,
+        0.0,
+        10.0
+      ],
+      "projection": "perspective",
+      "fov": 34
+    }
+  },
+  "sources": [
+    {
+      "title": "OpenStreetMap building footprints",
+      "url": "https://www.openstreetmap.org/copyright",
+      "license": "ODbL 1.0",
+      "attribution": "\u00a9 OpenStreetMap contributors",
+      "acquiredAt": "2026-10-27"
+    },
+    {
+      "title": "Kartverket DTM1 elevation",
+      "url": "https://ws.geonorge.no/hoydedata/v1/",
+      "license": "CC BY 4.0",
+      "attribution": "\u00a9 Kartverket",
+      "acquiredAt": "2026-10-27"
+    }
+  ],
+  "simplified": [
+    "Footprints simplified with a 1.2 m tolerance; building relations omitted",
+    "Heights from height, building:levels, or a typology fallback",
+    "Terrain sampled on a 13 \u00d7 13 grid and recentered to the origin",
+    "Study boundary is authored, not a cadastral parcel"
+  ],
+  "statistics": {
+    "buildingCount": 33,
+    "terrainSamples": 169,
+    "studyAreaM2": 71300.0,
+    "sourceChecksum": "ec348fe5c4952b0b"
+  }
+}

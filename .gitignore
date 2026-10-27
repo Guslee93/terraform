@@ -11,3 +11,5 @@ blob-report/
 !.env.example
 *.tsbuildinfo
 .vite/
+__pycache__/
+*.pyc

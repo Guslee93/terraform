@@ -1,6 +1,6 @@
 # Terraform — Agent Operating Guide
 
-**Status:** M0 complete · M1 site packages next
+**Status:** M1 complete · M2 massing engine next
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
 **Product type:** architectural portfolio prototype, not a commercial SaaS
 
@@ -60,7 +60,7 @@ src/
     scenarios/         (M4) CRUD, persistence, comparison
     exports/           (M5) PNG capture, JSON
   scene/               R3F canvas, lighting, camera, future mesh factories
-  data/                curated manifests and static assets (M1)
+  data/                cached raw source data (OSM XML, elevation responses)
   lib/                 coordinates, units, shared utilities
   styles/              PRD design tokens + Tailwind entry
   test/                Vitest setup
@@ -239,6 +239,6 @@ Update `task_plan.md` after each phase and `progress.md` after each session. Log
 
 ## 10. Current state and next action
 
-**Done:** M0 gate complete — git repository, Vite 8 + React 19 + TypeScript 6 scaffold, pinned dependencies, Tailwind 4 tokens from PRD §7.2, landing page, About page, responsive studio shell, R3F ground/grid/camera, inspector scaffold with focus-managed drawer, coordinate utilities and tests, ADR-0001–0003, milestone briefs, design contract, site package spec, QA fixtures, planning files, UX/UI/code/visual review records, reference screenshots.
+**Done:** M0 and M1 gates complete — Vite/React/TypeScript scaffold, design tokens, landing/About, studio shell, focus-managed inspector, coordinate contract, two validated static site packages built from OSM footprints and Kartverket DTM1 terrain, local ENU rendering, terrain/context/boundary layers, camera presets, compass/scale, package tests, geometry QA and code review, reference screenshots.
 
-**Next:** start M1 with provenance, not geometry. Use `research-synthesist` to confirm licences and record sources, then `gis-spatial-data-engineer` to build the offline preprocessing pipeline, then `gis-qa-engineer` to validate the package. Do not replace the honest M0 empty state with invented site data before the package exists. Keep the open M2 hardening follow-ups from `docs/reviews/M0-code-review.md` on the M2 checklist.
+**Next:** start M2 with the immutable massing domain model, not the gizmos. Use `engineering-software-architect` for the model/command contracts and `engineering-senior-developer` for implementation; implement and test `MassVolume`, footprint creation, storeys/tiers, validation, undo/redo transactions and numeric inspector before adding 3D manipulators. Keep the M1 packages immutable. Carry the open M1/M2 follow-ups from `docs/reviews/M1-code-review.md` and `docs/reviews/M0-code-review.md`.
