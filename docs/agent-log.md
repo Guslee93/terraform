@@ -33,4 +33,5 @@ Record every meaningful agent engagement. The point is to preserve **why** an ou
 | 2026-10-27 | M2 | Claude Code (Opus 5.5) | Add massing fixtures; fix max height and simple-ring checks | commit `f250232` | Accepted | Fixtures §2–3; `maxHeight` no longer floors at 0; `isSimpleRing` edge cases. |
 | 2026-10-27 | M2 | Claude Code (Opus 5.5) | Add scenario-level validation and JSON serialization | commit `4d09bfc` | Accepted | `validation.ts` document rules; `serialize.ts` round-trip with schema guard. |
 | 2026-10-27 | M2 | Claude Code (Opus 5.5) | Add massing command layer and undo/redo history | commit `4c054cd` | Accepted | `src/features/editor/commands.ts`, `history.ts`; 100-entry bound; preview/commit/cancel. |
+| 2026-10-27 | M0 | DeepSeek V4 Flash (Antigravity) | D5 capture 1024×800 drawer-breakpoint screenshots (report §15.3 D5) | `scripts/capture.mjs`, `docs/screenshots/m1-*-1024x800.png` | **Pending Claude review** | Playwright probe: floating drawer control visible at 1024×800, hidden at 1280×800. |
 |  |  |  |  |  |  |  |
