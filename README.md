@@ -42,6 +42,8 @@ The two static packages under `public/sites/` are generated offline from openly 
 
 Raw OSM XML and elevation responses are cached in `data/raw/` for reproducible offline rebuilds. Each package ships an `attribution.md`; the studio also exposes the credits in the Inspector and About page. The Python script uses `certifi` when available for TLS on macOS.
 
+**Prerequisite for rebuilding packages:** `python3 -m pip install certifi` so the script can validate TLS against the elevation API on macOS.
+
 Never replace these packages with invented parcel or regulation data.
 
 ## Stack
