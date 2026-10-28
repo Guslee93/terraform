@@ -44,6 +44,9 @@ try {
 
   const browser = await chromium.launch()
   const page = await browser.newPage({ deviceScaleFactor: 1 })
+  // Evidence screenshots always show the full look: headless Chromium renders in software,
+  // where render quality "Auto" would drop to Low (no shadows, no AO).
+  await page.addInitScript(() => window.localStorage.setItem('terraform.renderQuality', 'high'))
 
   for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height })

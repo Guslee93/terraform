@@ -16,7 +16,7 @@ import { normalizeRing } from '../../lib/polygon'
 import type { CameraPresetId } from '../../features/sites/manifest'
 import type { SitePackage } from '../../features/sites/package'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
-import { CameraHud } from '../../scene/CameraHud'
+import { readRenderPreference, writeRenderPreference } from '../../scene/renderQuality'
 import { ViewportCanvas, type SceneLayers } from '../../scene/ViewportCanvas'
 import { Button } from '../ui/Button'
 import { Icon } from '../ui/Icon'
@@ -46,6 +46,7 @@ export function StudioShell({
     createEditorState(createHistory(createScenario({ siteId }))),
   )
   const [activeTab, setActiveTab] = useState<InspectorTab>('model')
+  const [renderPreference, setRenderPreference] = useState(readRenderPreference)
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const [isDesktop, setIsDesktop] = useState(() =>
     window.matchMedia('(min-width: 1100px)').matches,
@@ -209,8 +210,8 @@ export function StudioShell({
                 dispatch={dispatch}
                 editable={editable}
                 warnedVolumes={warnedVolumes}
+                renderPreference={renderPreference}
               />
-              <CameraHud layers={layers} />
               <CameraPresets active={cameraPreset} onSelect={requestCamera} />
             </>
           ) : (
@@ -243,14 +244,16 @@ export function StudioShell({
             </div>
           )}
 
-          <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
-            <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
-              {packageStatus === 'ready' ? 'Curated demo' : 'Local package'}
-            </span>
-            <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm sm:hidden">
-              Read-only preview
-            </span>
-          </div>
+          {packageStatus !== 'ready' && (
+            <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
+              <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
+                Local package
+              </span>
+              <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm sm:hidden">
+                Read-only preview
+              </span>
+            </div>
+          )}
 
           {packageStatus === 'ready' && (editor.error || editor.tool === 'draw' || warningSummary) && (
             <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-16 sm:top-4">
@@ -290,6 +293,8 @@ export function StudioShell({
           packageStatus={packageStatus}
           layers={layers}
           onToggleLayer={toggleLayer}
+          renderPreference={renderPreference}
+          onRenderPreferenceChange={(preference) => setRenderPreference(writeRenderPreference(preference))}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           isOpen={inspectorOpen}

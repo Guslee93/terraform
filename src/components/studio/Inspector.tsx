@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { SiteManifest } from '../../features/sites/manifest'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
 import type { SceneLayers } from '../../scene/ViewportCanvas'
+import { isRenderPreference, type RenderPreference } from '../../scene/renderQuality'
 import { cn } from '../../lib/cn'
 import { Icon } from '../ui/Icon'
 import type { MassingCommand } from '../../features/editor/history'
@@ -46,6 +47,8 @@ type InspectorProps = {
   packageStatus: 'loading' | 'ready' | 'error'
   layers: SceneLayers
   onToggleLayer: (layer: keyof SceneLayers) => void
+  renderPreference: RenderPreference
+  onRenderPreferenceChange: (preference: RenderPreference) => void
   activeTab: InspectorTab
   onTabChange: (tab: InspectorTab) => void
   isOpen: boolean
@@ -76,6 +79,8 @@ export function Inspector({
   packageStatus,
   layers,
   onToggleLayer,
+  renderPreference,
+  onRenderPreferenceChange,
   activeTab,
   onTabChange,
   isOpen,
@@ -316,6 +321,29 @@ export function Inspector({
                   />
                 </label>
               ))}
+            </div>
+            <div className="mt-3">
+              <label htmlFor="render-quality" className="text-[11.5px] text-ink">
+                Render quality
+              </label>
+              <select
+                id="render-quality"
+                value={renderPreference}
+                aria-describedby="render-quality-hint"
+                onChange={(event) => {
+                  const value = event.currentTarget.value
+                  if (isRenderPreference(value)) onRenderPreferenceChange(value)
+                }}
+                className="mt-1 block min-h-9 w-full rounded-[var(--radius-control)] border border-line bg-surface px-2 text-[11.5px] text-ink"
+              >
+                <option value="auto">Auto</option>
+                <option value="high">High</option>
+                <option value="balanced">Balanced</option>
+                <option value="low">Low</option>
+              </select>
+              <p id="render-quality-hint" className="mt-1 text-[10px] leading-relaxed text-ink-secondary">
+                Auto lowers quality on software rendering.
+              </p>
             </div>
           </section>
 

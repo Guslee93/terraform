@@ -2,7 +2,7 @@ import { render as rtlRender, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState, type ComponentProps, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { SITES, type SiteSummary } from '../../features/sites/siteCatalog'
 import { Inspector } from './Inspector'
 import { createRectangleFootprint, createTier, createVolume } from '../../features/massing/factories'
@@ -25,6 +25,8 @@ const baseProps: ComponentProps<typeof Inspector> = {
   packageStatus: 'ready',
   layers,
   onToggleLayer: () => undefined,
+  renderPreference: 'auto',
+  onRenderPreferenceChange: () => undefined,
   activeTab: 'model',
   onTabChange: () => undefined,
   isOpen: false,
@@ -58,6 +60,21 @@ function DrawerHarness() {
 }
 
 describe('Inspector drawer', () => {
+  it('labels the quality select, describes Auto and permits keyboard focus and selection', async () => {
+    const onChange = vi.fn()
+    const user = userEvent.setup()
+    render(<Inspector {...baseProps} onRenderPreferenceChange={onChange} />)
+    const quality = screen.getByRole('combobox', { name: 'Render quality' })
+    expect(quality).toHaveValue('auto')
+    expect(quality).toHaveAccessibleDescription('Auto lowers quality on software rendering.')
+    // It immediately follows the last layer checkbox in the keyboard sequence.
+    screen.getByRole('checkbox', { name: 'Study boundary' }).focus()
+    await user.tab()
+    expect(quality).toHaveFocus()
+    await user.selectOptions(quality, 'low')
+    expect(onChange).toHaveBeenCalledWith('low')
+  })
+
   it('does not render when closed', () => {
     const { container } = render(<Inspector {...baseProps} isDrawer />)
 

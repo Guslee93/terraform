@@ -1,4 +1,35 @@
 import { enuToThreeXyz, type ThreeVec3 } from '../lib/coordinates'
+import { RENDER_PROFILES, type RenderProfile } from './renderQuality'
+
+type SunDirection = { azimuthDeg: number; elevationDeg: number }
+
+export type LightRig = {
+  night: boolean
+  sun: (SunDirection & { intensity: number; castShadow: boolean }) | null
+  ambient: number
+  hemisphere: { sky: string; ground: string; intensity: number }
+}
+
+export function lightRig(sun: SunDirection, profile: RenderProfile): LightRig {
+  if (sun.elevationDeg <= 0) {
+    return {
+      night: true,
+      sun: null,
+      ambient: 0.35,
+      hemisphere: { sky: '#C9D3E0', ground: '#B9BEC4', intensity: 1.0 },
+    }
+  }
+  return {
+    night: false,
+    sun: {
+      ...sun,
+      intensity: 3.2 * Math.min(sun.elevationDeg / 6, 1),
+      castShadow: RENDER_PROFILES[profile].shadows,
+    },
+    ambient: 0.28,
+    hemisphere: { sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.75 },
+  }
+}
 
 /**
  * Directional-light position for a sun at the given azimuth (degrees clockwise from north)

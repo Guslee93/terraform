@@ -1,5 +1,38 @@
 import { describe, expect, it } from 'vitest'
-import { fitShadowFrustum, sunPosition } from './lighting'
+import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
+
+describe('lightRig', () => {
+  it.each([6, 20, 49.5])('preserves the daylight rig at %s degrees', (elevationDeg) => {
+    expect(lightRig({ azimuthDeg: 217, elevationDeg }, 'high')).toEqual({
+      night: false,
+      sun: { azimuthDeg: 217, elevationDeg, intensity: 3.2, castShadow: true },
+      ambient: 0.28,
+      hemisphere: { sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.75 },
+    })
+  })
+
+  it('fades direct sun to half intensity at 3 degrees without changing fill', () => {
+    const rig = lightRig({ azimuthDeg: 90, elevationDeg: 3 }, 'balanced')
+    expect(rig.sun?.intensity).toBe(1.6)
+    expect(rig.sun?.castShadow).toBe(true)
+    expect(rig.night).toBe(false)
+    expect(rig.ambient).toBe(0.28)
+    expect(rig.hemisphere).toEqual({ sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.75 })
+  })
+
+  it.each([0, -10])('removes direct sun at %s degrees and keeps the model readable', (elevationDeg) => {
+    expect(lightRig({ azimuthDeg: 180, elevationDeg }, 'high')).toEqual({
+      night: true,
+      sun: null,
+      ambient: 0.35,
+      hemisphere: { sky: '#C9D3E0', ground: '#B9BEC4', intensity: 1 },
+    })
+  })
+
+  it.each([-10, 0, 3, 20])('never casts shadows in Low at %s degrees', (elevationDeg) => {
+    expect(lightRig({ azimuthDeg: 180, elevationDeg }, 'low').sun?.castShadow ?? false).toBe(false)
+  })
+})
 
 describe('sunPosition', () => {
   it('places a south-west sun at −x (west) and +z (south)', () => {

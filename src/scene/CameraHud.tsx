@@ -1,7 +1,7 @@
 import type { SceneLayers } from './ViewportCanvas'
 import { useHudStore } from './hudStore'
 
-export function CameraHud({ layers }: { layers?: SceneLayers } = {}) {
+export function CameraHud({ layers, night = false }: { layers?: SceneLayers; night?: boolean } = {}) {
   const bearingDegrees = useHudStore((state) => state.bearingDegrees)
   const scaleLabel = useHudStore((state) => state.scaleLabel)
   const scaleWidthPx = useHudStore((state) => state.scaleWidthPx)
@@ -12,6 +12,19 @@ export function CameraHud({ layers }: { layers?: SceneLayers } = {}) {
 
   return (
     <>
+      <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
+        <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
+          Curated demo
+        </span>
+        {night && (
+          <span role="status" className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
+            Sun below horizon
+          </span>
+        )}
+        <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm sm:hidden">
+          Read-only preview
+        </span>
+      </div>
       <div className="pointer-events-none absolute right-3 top-12 z-10 flex flex-col items-center gap-1 sm:right-4 sm:top-4">
         <div className="relative grid size-10 place-items-center rounded-full border border-line bg-surface/85 shadow-sm backdrop-blur-sm">
           <svg

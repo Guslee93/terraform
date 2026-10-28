@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
@@ -12,14 +12,17 @@ import { EMPTY_SELECTION } from '../features/massing/types'
 import { cameraLocked, displayedDocument, type EditorEvent, type EditorState } from '../features/editor/interaction'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
-import { fitShadowFrustum, sunPosition } from './lighting'
-import { DEMO_SUN_INSTANT, sunDirection } from '../features/analysis/sun'
+import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
+import { DEMO_SUN_INSTANT, sunDirection, type SunDirection } from '../features/analysis/sun'
 import { MassLayer } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
-import { isSoftwareRenderer, webglRendererName } from './rendererTier'
+import { webglRendererName } from './rendererTier'
+import { RENDER_PROFILES, resolveProfile, type RenderPreference, type RenderProfile } from './renderQuality'
+import { detectWebGL } from './webglSupport'
+import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
-import { SceneErrorBoundary } from './SceneErrorBoundary'
+import { SceneErrorBoundary, SceneUnavailable } from './SceneErrorBoundary'
 import {
   createContextGeometry,
   createContourGeometry,
@@ -47,6 +50,7 @@ type ViewportProps = {
   dispatch: (event: EditorEvent) => void
   editable: boolean
   warnedVolumes: ReadonlySet<string>
+  renderPreference: RenderPreference
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
@@ -225,7 +229,11 @@ function StudyBoundary({ sitePackage }: { sitePackage: SitePackage }) {
 /** Floor for the shadow volume's height so proposed masses taller than the context still cast. */
 const MIN_SHADOW_HEIGHT = 60
 
-function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
+function SiteLights({ sitePackage, sun, profile }: {
+  sitePackage: SitePackage
+  sun: SunDirection
+  profile: RenderProfile
+}) {
   const frustum = useMemo(() => {
     const { terrain, buildings } = sitePackage
     const corners = [terrain.minX, terrain.maxX].flatMap((east) =>
@@ -236,31 +244,34 @@ function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
     // ponytail: masses above MIN_SHADOW_HEIGHT can clip at the frustum edge; feed mass tops in if that shows.
     return fitShadowFrustum(Math.max(...corners), Math.max(-min, max, ...tops, MIN_SHADOW_HEIGHT))
   }, [sitePackage])
-  // Real Oslo sun for the reference instant (21 June, 15:00), from the site's own location.
-  const { latitude, longitude } = sitePackage.manifest.location
-  const sun = useMemo(() => sunDirection(DEMO_SUN_INSTANT, latitude, longitude), [latitude, longitude])
+  const rig = lightRig(sun, profile)
+  const shadowMapSize = RENDER_PROFILES[profile].shadowMapSize
 
   return (
     <>
       {/* Fill low enough that walls read by their angle to the sun (Hektar: ≈195 away, ≈225 oblique, white facing). */}
-      <ambientLight intensity={0.28} />
-      <hemisphereLight args={['#EEF3FA', '#D2D5D8', 1.75]} />
-      <directionalLight
-        position={sunPosition(sun.azimuthDeg, sun.elevationDeg, frustum.distance)}
-        intensity={3.2}
-        castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
-        shadow-camera-left={-frustum.halfExtent}
-        shadow-camera-right={frustum.halfExtent}
-        shadow-camera-top={frustum.halfExtent}
-        shadow-camera-bottom={-frustum.halfExtent}
-        shadow-camera-near={frustum.near}
-        shadow-camera-far={frustum.far}
-        shadow-radius={1}
-        shadow-bias={-0.0002}
-        shadow-normalBias={0.03}
-      />
+      <ambientLight intensity={rig.ambient} />
+      <hemisphereLight args={[rig.hemisphere.sky, rig.hemisphere.ground, rig.hemisphere.intensity]} />
+      {rig.sun && (
+        <directionalLight
+          // Recreate the light when the map size changes, releasing the previous shadow target.
+          key={profile}
+          position={sunPosition(sun.azimuthDeg, sun.elevationDeg, frustum.distance)}
+          intensity={rig.sun.intensity}
+          castShadow={rig.sun.castShadow}
+          shadow-mapSize-width={shadowMapSize}
+          shadow-mapSize-height={shadowMapSize}
+          shadow-camera-left={-frustum.halfExtent}
+          shadow-camera-right={frustum.halfExtent}
+          shadow-camera-top={frustum.halfExtent}
+          shadow-camera-bottom={-frustum.halfExtent}
+          shadow-camera-near={frustum.near}
+          shadow-camera-far={frustum.far}
+          shadow-radius={1}
+          shadow-bias={-0.0002}
+          shadow-normalBias={0.03}
+        />
+      )}
     </>
   )
 }
@@ -270,13 +281,10 @@ const SceneComposer = lazy(() => import('./SceneComposer'))
 /** Below this canvas width the scene renders without ambient occlusion (ADR-0005 §3). */
 const AO_MIN_WIDTH_PX = 640
 
-/** Ambient occlusion on wide canvases with hardware GPU only. */
-function AmbientOcclusion() {
+/** Ambient occlusion on wide canvases when the resolved quality profile enables it. */
+function AmbientOcclusion({ profile }: { profile: RenderProfile }) {
   const wide = useThree((state) => state.size.width >= AO_MIN_WIDTH_PX)
-  const gl = useThree((state) => state.gl)
-  // CPU rasterisers (headless test browsers, VMs) render N8AO far too slowly to be usable.
-  const software = useMemo(() => isSoftwareRenderer(webglRendererName(gl)), [gl])
-  if (!wide || software) return null
+  if (!wide || !RENDER_PROFILES[profile].ambientOcclusion) return null
   // If the composer cannot start, drop AO and keep R3F's own render loop.
   return (
     <SceneErrorBoundary fallback={null}>
@@ -296,8 +304,15 @@ export function ViewportCanvas({
   dispatch,
   editable,
   warnedVolumes,
+  renderPreference,
 }: ViewportProps) {
   const controlsRef = useRef<OrbitControlsHandle>(null)
+  const [webgl] = useState(detectWebGL)
+  const [rendererName, setRendererName] = useState<string | null>(null)
+  const profile = resolveProfile(renderPreference, rendererName ?? '')
+  const { latitude, longitude } = sitePackage.manifest.location
+  // C8 will replace this reference direction with the selected time's SunState.
+  const sun = useMemo(() => sunDirection(DEMO_SUN_INSTANT, latitude, longitude), [latitude, longitude])
   const { manifest, terrain, buildings } = sitePackage
   const initialPreset = manifest.cameraPresets.isometric
   const initialPosition = enuToThreeXyz(initialPreset.position)
@@ -321,75 +336,82 @@ export function ViewportCanvas({
       role="region"
       aria-label={`3D site viewport for ${manifest.title}. Drag to orbit, middle-drag to pan, scroll to zoom.`}
     >
-      <SceneErrorBoundary>
-        <Canvas
-          key={manifest.id}
-          // PCF + shadow-radius: three r186 removed PCFSoftShadowMap.
-          shadows="percentage"
-          dpr={[1, 1.75]}
-          // Neutral tone mapping keeps white-model albedo white; ACES greys it down.
-          gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: NeutralToneMapping }}
-          camera={{
-            position: initialPosition,
-            fov: initialPreset.fov ?? 32,
-            near: 0.5,
-            far: 2600,
-          }}
-        >
-          <color attach="background" args={[VIEWPORT_BACKGROUND]} />
-          <fog attach="fog" args={[VIEWPORT_BACKGROUND, 600, 1400]} />
-          <SiteLights sitePackage={sitePackage} />
+      {webgl === 'none' ? (
+        <SceneUnavailable reason="unsupported" />
+      ) : (
+        <SceneErrorBoundary>
+          <Canvas
+            key={manifest.id}
+            // PCF + shadow-radius: three r186 removed PCFSoftShadowMap.
+            shadows={RENDER_PROFILES[profile].shadows ? 'percentage' : false}
+            onCreated={({ gl }) => setRendererName(webglRendererName(gl))}
+            dpr={[1, 1.75]}
+            // Neutral tone mapping keeps white-model albedo white; ACES greys it down.
+            gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: NeutralToneMapping }}
+            camera={{
+              position: initialPosition,
+              fov: initialPreset.fov ?? 32,
+              near: 0.5,
+              far: 2600,
+            }}
+          >
+            <color attach="background" args={[VIEWPORT_BACKGROUND]} />
+            <fog attach="fog" args={[VIEWPORT_BACKGROUND, 600, 1400]} />
+            <SiteLights sitePackage={sitePackage} sun={sun} profile={profile} />
 
-          {layers.terrain && (
-            <TerrainMesh
-              terrain={terrain}
-              landcover={sitePackage.landcover}
-              showGrid={presetId === 'top' || drawing}
-              onGroundClick={onGroundClick}
-              onGroundMove={
-                drawing && editor.interaction.kind === 'drawing'
-                  ? (point) => dispatch({ type: 'pointerMove', point })
-                  : undefined
-              }
+            {layers.terrain && (
+              <TerrainMesh
+                terrain={terrain}
+                landcover={sitePackage.landcover}
+                showGrid={presetId === 'top' || drawing}
+                onGroundClick={onGroundClick}
+                onGroundMove={
+                  drawing && editor.interaction.kind === 'drawing'
+                    ? (point) => dispatch({ type: 'pointerMove', point })
+                    : undefined
+                }
+              />
+            )}
+            {layers.context && <ContextBuildings buildings={buildings.buildings} />}
+            {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
+            {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
+            {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
+
+            <MassLayer
+              editor={editor}
+              dispatch={dispatch}
+              editable={editable}
+              controlsRef={controlsRef}
+              heightAt={heightAt}
+              warnedVolumes={warnedVolumes}
             />
-          )}
-          {layers.context && <ContextBuildings buildings={buildings.buildings} />}
-          {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
-          {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
-          {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
 
-          <MassLayer
-            editor={editor}
-            dispatch={dispatch}
-            editable={editable}
-            controlsRef={controlsRef}
-            heightAt={heightAt}
-            warnedVolumes={warnedVolumes}
-          />
+            <CameraRig
+              presetId={presetId}
+              nonce={cameraNonce}
+              presets={manifest.cameraPresets}
+              controlsRef={controlsRef}
+            />
+            <HudProbe controlsRef={controlsRef} />
+            {/* Wait for renderer detection so Auto never starts AO on software GL. */}
+            {rendererName !== null && <AmbientOcclusion profile={profile} />}
 
-          <CameraRig
-            presetId={presetId}
-            nonce={cameraNonce}
-            presets={manifest.cameraPresets}
-            controlsRef={controlsRef}
-          />
-          <HudProbe controlsRef={controlsRef} />
-          <AmbientOcclusion />
-
-          <OrbitControls
-            ref={controlsRef}
-            makeDefault
-            enabled={!cameraLocked(editor)}
-            enableDamping
-            dampingFactor={0.075}
-            minDistance={20}
-            maxDistance={1100}
-            minPolarAngle={0.02}
-            maxPolarAngle={Math.PI / 2 - 0.015}
-            target={initialTarget}
-          />
-        </Canvas>
-      </SceneErrorBoundary>
+            <OrbitControls
+              ref={controlsRef}
+              makeDefault
+              enabled={!cameraLocked(editor)}
+              enableDamping
+              dampingFactor={0.075}
+              minDistance={20}
+              maxDistance={1100}
+              minPolarAngle={0.02}
+              maxPolarAngle={Math.PI / 2 - 0.015}
+              target={initialTarget}
+            />
+          </Canvas>
+        </SceneErrorBoundary>
+      )}
+      <CameraHud layers={layers} night={lightRig(sun, profile).night} />
     </div>
   )
 }
