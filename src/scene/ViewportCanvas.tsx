@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
+import { DoubleSide, EdgesGeometry, NeutralToneMapping, type WebGLRenderer } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import { contourSegments } from '../features/sites/contours'
@@ -265,13 +265,28 @@ function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
 
 const SceneComposer = lazy(() => import('./SceneComposer'))
 
+/** Software WebGL renderers (headless Chromium SwiftShader, llvmpipe). */
+const SOFTWARE_RENDERER_RE = /\b(?:swiftshader|llvmpipe)\b/i
+
+function isSoftwareRenderer(gl: WebGLRenderer): boolean {
+  try {
+    const context = gl.getContext()
+    const info = (context.getParameter(context.RENDERER) ?? '') as string
+    return SOFTWARE_RENDERER_RE.test(info)
+  } catch {
+    return false
+  }
+}
+
 /** Below this canvas width the scene renders without ambient occlusion (ADR-0005 §3). */
 const AO_MIN_WIDTH_PX = 640
 
-/** Ambient occlusion on wide canvases only; narrow (mobile, read-only) views render directly. */
+/** Ambient occlusion on wide canvases with hardware GPU only. */
 function AmbientOcclusion() {
   const wide = useThree((state) => state.size.width >= AO_MIN_WIDTH_PX)
-  if (!wide) return null
+  const gl = useThree((state) => state.gl)
+  const software = isSoftwareRenderer(gl)
+  if (!wide || software) return null
   // If the composer cannot start, drop AO and keep R3F's own render loop.
   return (
     <SceneErrorBoundary fallback={null}>
