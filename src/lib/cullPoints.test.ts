@@ -36,30 +36,18 @@ describe('pointsOutsideRings', () => {
   })
 
   it('treats a point exactly on an edge as inside (removed)', () => {
-    // pointInPolygon uses ray casting; an edge-touching ray may count as
-    // crossing, but the spec says "a point on a ring edge counts as inside".
-    // pointInPolygon uses the standard ray-cast rule which may or may not
-    // treat exact on-edge as inside. The test documents the actual behaviour
-    // of the reused predicate.
     const ring: Vec2[] = [
       [0, 0],
       [10, 0],
       [10, 10],
       [0, 10],
     ]
-    const midEdge: Vec2 = [5, 0] // on the bottom edge
-    const result = pointsOutsideRings([midEdge], [ring])
-    // pointInPolygon may report this as inside (crossing ray through vertex)
-    // or outside depending on the implementation's vertex rule.
-    // We accept either, but must document it.
-    if (result.length === 0) {
-      expect(result).toEqual([])
-    } else {
-      // If the predicate reports on-edge as outside, the point is kept.
-      // The fixture still proves the function works; the edge behaviour
-      // is inherited from pointInPolygon.
-      expect(result).toEqual([midEdge])
-    }
+    const onEdge: Vec2 = [5, 0] // on the bottom edge
+    const corner: Vec2 = [0, 0] // on a ring vertex
+    // pointInPolygon's ray-cast rule, verified: an edge-touching point crosses
+    // once and registers as inside, matching the "on the edge counts as inside"
+    // contract in D14.
+    expect(pointsOutsideRings([onEdge, corner], [ring])).toEqual([])
   })
 
   it('handles two overlapping rings, removing points inside either', () => {
