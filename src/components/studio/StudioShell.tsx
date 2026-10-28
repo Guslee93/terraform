@@ -210,7 +210,7 @@ export function StudioShell({
                 editable={editable}
                 warnedVolumes={warnedVolumes}
               />
-              <CameraHud />
+              <CameraHud layers={layers} />
               <CameraPresets active={cameraPreset} onSelect={requestCamera} />
             </>
           ) : (
