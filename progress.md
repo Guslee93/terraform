@@ -271,3 +271,10 @@
 - Verification: focused foliage/variant tests **19/19 pass**; `npm run lint && npm run test && npm run build` **pass**, **293 tests across 32 files**; `git diff --check` clean. Existing Three.js CJS deprecation and vendor chunk-size warnings remain.
 - Failed/limited verification: initial read guessed a nonexistent `scripts/capture-screenshots.ts`; actual script is `scripts/capture.mjs`. Vite SSR count inspection succeeded but emitted an HMR socket `EPERM`. `npm run test:e2e` could not start the dev server (`listen EPERM 127.0.0.1:5173`). Computer-use fallback reported no available browser. Fresh fixed-view screenshots and runtime visual verification could not be completed in this sandbox; no visual acceptance claim.
 - Other agents concurrently modified lighting/UI/docs/screenshots; those files were neither edited nor reverted here. Test/build results describe the shared working tree at verification time. No other implementation gaps identified.
+
+### DeepSeek rounds 3 and 4 review (2026-10-28)
+
+- Round 3 (D14–D20) accepted; rows added to the agent log. D16 screenshots superseded by later grade commits. D19 crops checked visually: no AO specks.
+- Round 4 (D17b, D22, D21, D26, D23) reviewed and merged as `d7921e4`. Geocoder field names verified against the live Kartverket fixture. D26 uses OSM feature label points with cited ids where no place node exists.
+- Suite after merge (Codex's untracked partial C4 files set aside during the run): lint ✅ · typecheck ✅ · 314 unit tests ✅ · build ✅ · e2e 9/10 (massing timeout under software GL, D28).
+- Round 2 rows (D7–D13) are still "Pending" in the agent log; not reviewed in this session.

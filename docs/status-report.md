@@ -382,6 +382,10 @@ Same rules as §15.1. Branch: `deepseek/round3` from `deepseek/round2` at `e0113
 **D20 — Reusable GPU frame-rate probe** · commit `chore(scripts): add GPU frame-rate probe`
 - New file only: `scripts/measure-fps.mjs`. Launch Chromium with `--use-angle=metal --enable-gpu --ignore-gpu-blocklist` (fall back to no flags off macOS), start or reuse the dev server like `scripts/capture.mjs`, and for each site at device scale 1 and 2 load `/studio/<site>`, wait 3 s, count `requestAnimationFrame` callbacks over 4 s and print `site dpr fps`. Add a row to the README commands table. Must pass `npm run lint`.
 
+### 15.3c result (reviewed 2026-10-28)
+
+D14–D20 accepted (agent log). D16 screenshots predate the later grade, so they are superseded; refresh at the M5 gate. D19: no specks, settings kept. Remaining issue: `e2e/massing.spec.ts` exceeds 30 s under software GL, assigned as D28.
+
 ### 15.3d Round 4 cards (D22, D21, D23, D26) — site import groundwork (M6 track, ADR-0006)
 
 Same rules as §15.1. **Start only after round 3 has been reviewed and merged**, on branch `deepseek/round4`, preferably in its own git worktree (`git worktree add ../Terraform-ds4 -b deepseek/round4`) so it does not share a working tree with Claude or Codex. Background: `docs/plans/site-import-plan.md` §3–§5. Order: D22 → D21; D23 and D26 are independent.
@@ -412,6 +416,10 @@ Same rules as §15.1. **Start only after round 3 has been reviewed and merged**,
 - New files only: `src/features/import/cities.ts` + `.test.ts`.
 - Export `type QuickPick = { id: string; label: string; country: 'NO' | 'SE' | 'DK' | 'FI'; latitude: number; longitude: number; frameMetres: 400 }` and `QUICK_PICKS` for Oslo (Grünerløkka), Bergen (Bryggen), Trondheim (Bakklandet), Stockholm (Södermalm), Göteborg (Haga), Malmö (Möllevången), Copenhagen (Nørrebro), Aarhus (Latinerkvarteret), Helsinki (Kallio). Coordinates from OpenStreetMap place nodes, 4 decimals, source noted in a comment per row.
 - Tests: ids unique; each point lies inside its country's bounding box (NO 4–31.5 E / 57.9–71.2 N, SE 10.9–24.2 / 55.3–69.1, DK 8–15.2 / 54.5–57.8, FI 19–31.6 / 59.7–70.1).
+
+### 15.3d result (reviewed 2026-10-28)
+
+D17b, D22, D21, D26, D23 accepted and merged (`d7921e4`). Suite after merge: lint, typecheck, 314 unit tests, build pass; e2e 9/10 (massing timeout, D28).
 
 ### 15.3e Round 4b cards (D28–D29) — after round 4, same worktree and branch
 
