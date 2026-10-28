@@ -31,7 +31,10 @@ export function CameraHud({ layers }: { layers?: SceneLayers } = {}) {
         <span className="text-[9px] uppercase tracking-[0.14em] text-ink-secondary">N</span>
       </div>
 
-      <div className="pointer-events-none absolute bottom-14 left-3 z-10 hidden flex-col gap-1 min-[1100px]:bottom-9 sm:flex">
+      <div
+        data-testid="legend"
+        className="pointer-events-none absolute bottom-14 left-3 z-10 hidden flex-col gap-1 min-[1100px]:bottom-12 sm:flex"
+      >
         <div className="flex items-center gap-2">
           <span aria-hidden="true" className="w-5 border-t border-dashed border-accent" />
           <span
@@ -83,7 +86,10 @@ export function CameraHud({ layers }: { layers?: SceneLayers } = {}) {
         )}
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 left-3 z-10 hidden flex-col gap-1 sm:flex">
+      <div
+        data-testid="scale-bar"
+        className="pointer-events-none absolute bottom-3 left-3 z-10 hidden flex-col gap-1 sm:flex"
+      >
         <div
           className="h-1.5 border-x border-b border-ink-secondary/70"
           style={{ width: `${scaleWidthPx}px` }}
