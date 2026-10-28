@@ -1,0 +1,152 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "R",
+        "osm_id": 2017432,
+        "osm_key": "place",
+        "osm_value": "island",
+        "type": "other",
+        "name": "Södermalm",
+        "district": "Södermalms stadsdelsområde",
+        "city": "Stockholm",
+        "county": "Stockholms län",
+        "country": "Sverige",
+        "countrycode": "SE",
+        "extent": [
+          18.0260682,
+          59.3213931,
+          18.1071724,
+          59.3032122
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.0697558,
+          59.3123782
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "R",
+        "osm_id": 5695402,
+        "osm_key": "place",
+        "osm_value": "suburb",
+        "type": "district",
+        "name": "Södermalm",
+        "city": "Stockholms kommun",
+        "county": "Stockholms län",
+        "country": "Sverige",
+        "countrycode": "SE",
+        "extra": {
+          "admin_level": "10"
+        },
+        "extent": [
+          18.0248052,
+          59.3238146,
+          18.1093278,
+          59.3027296
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.0779938,
+          59.3159445
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W",
+        "osm_id": 47160788,
+        "osm_key": "amenity",
+        "osm_value": "place_of_worship",
+        "type": "house",
+        "name": "Stockholms katolska domkyrka",
+        "street": "Söderledstunneln",
+        "locality": "Skanstull",
+        "district": "Södermalm",
+        "city": "Stockholm",
+        "county": "Stockholms län",
+        "country": "Sverige",
+        "postcode": "118 30",
+        "countrycode": "SE",
+        "extent": [
+          18.0720397,
+          59.3139321,
+          18.0727522,
+          59.3133004
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.0724348,
+          59.313557
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "N",
+        "osm_id": 304602016,
+        "osm_key": "tourism",
+        "osm_value": "museum",
+        "type": "house",
+        "name": "Stadsmuseet i Stockholm",
+        "street": "Stadsmuseets gård",
+        "district": "Södermalm",
+        "city": "Stockholm",
+        "county": "Stockholms län",
+        "country": "Sverige",
+        "postcode": "104 65",
+        "countrycode": "SE"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.0712613,
+          59.3195947
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W",
+        "osm_id": 863888871,
+        "osm_key": "highway",
+        "osm_value": "service",
+        "type": "street",
+        "name": "Södermalmstorg",
+        "district": "Södermalm",
+        "city": "Stockholm",
+        "county": "Stockholms län",
+        "country": "Sverige",
+        "postcode": "118 46",
+        "countrycode": "SE",
+        "extent": [
+          18.0702269,
+          59.3204249,
+          18.0704421,
+          59.3198976
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.0703448,
+          59.3201649
+        ]
+      }
+    }
+  ]
+}

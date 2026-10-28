@@ -79,3 +79,75 @@ test('the 3D view changes when Streets is toggled off then on', async ({ page })
     .poll(async () => (await page.screenshot({ clip })).equals(withoutStreets), { timeout: 10_000 })
     .toBe(false)
 })
+
+test('the legend clears the scale bar and the Site notes button at every viewport', async ({
+  page,
+}) => {
+  // The WebGL scene (with postprocessing) makes resize-based checks slow on some
+  // machines; the default 30 s per-test budget is too tight for four viewports.
+  test.setTimeout(60_000)
+
+  const viewports = [
+    { width: 1024, height: 800 },
+    { width: 1280, height: 800 },
+    { width: 1440, height: 900 },
+    { width: 1920, height: 1080 },
+  ]
+
+  // The HUD layout is pure CSS, so load the scene once and resize per viewport.
+  await page.setViewportSize(viewports[0])
+  await page.goto('/studio/compact-infill')
+  await expect(
+    page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
+  ).toBeVisible()
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport)
+    await page.waitForTimeout(150)
+
+    const legend = page.getByTestId('legend')
+    const scaleBar = page.getByTestId('scale-bar')
+    await expect(legend).toBeVisible()
+    await expect(scaleBar).toBeVisible()
+
+    const legendBox = await legend.boundingBox()
+    const scaleBox = await scaleBar.boundingBox()
+    if (!legendBox || !scaleBox) {
+      throw new Error(`HUD boxes not measurable at ${viewport.width}x${viewport.height}`)
+    }
+
+    // All layers are on by default, so the legend is at its tallest; it must still
+    // sit at least 8 px above the scale bar at every width from sm upward.
+    expect(
+      legendBox.y + legendBox.height + 8,
+      `legend must keep an 8 px gap above the scale bar at ${viewport.width}x${viewport.height}`,
+    ).toBeLessThanOrEqual(scaleBox.y)
+
+    // Below 1100 px the "Site notes" floating button shares the bottom-left corner;
+    // it must never sit on top of the legend (no overlapping boxes). The tool rail
+    // also has a control labelled "Site notes" (top-left), so pick the bottom-anchored
+    // instance only — it is the one the legend has to clear.
+    const notesButtons = page.getByRole('button', { name: 'Site notes' })
+    let floatingNotesBox: { x: number; y: number; width: number; height: number } | null = null
+    const notesCount = await notesButtons.count()
+    for (let i = 0; i < notesCount; i++) {
+      const buttonBox = await notesButtons.nth(i).boundingBox()
+      if (buttonBox && buttonBox.y > viewport.height / 2) {
+        floatingNotesBox = buttonBox
+        break
+      }
+    }
+    if (floatingNotesBox) {
+      const overlapsX =
+        legendBox.x < floatingNotesBox.x + floatingNotesBox.width &&
+        floatingNotesBox.x < legendBox.x + legendBox.width
+      const overlapsY =
+        legendBox.y < floatingNotesBox.y + floatingNotesBox.height &&
+        floatingNotesBox.y < legendBox.y + legendBox.height
+      expect(
+        overlapsX && overlapsY,
+        `Site notes must not overlap the legend at ${viewport.width}x${viewport.height}`,
+      ).toBe(false)
+    }
+  }
+})
