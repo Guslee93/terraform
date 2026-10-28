@@ -35,7 +35,7 @@ export default function SceneComposer() {
     // Metres: contact darkening at wall bases, in courtyards and between close blocks.
     ao.configuration.aoRadius = 4
     ao.configuration.distanceFalloff = 1
-    ao.configuration.intensity = 1
+    ao.configuration.intensity = 1.6
     // Cool dark grey, matching the blue-grey hemisphere shade instead of black.
     ao.configuration.color = new Color('#2B3138')
     effectComposer.addPass(ao)

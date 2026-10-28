@@ -13,3 +13,4 @@ blob-report/
 .vite/
 __pycache__/
 *.pyc
+tmp/
