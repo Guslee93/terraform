@@ -38,3 +38,12 @@ Run it for **three frames**: Grünerløkka Oslo (59.9225, 10.7595, 400 m), Bjør
 - The three frames produce packages in `tmp/spike/`; the findings doc is written.
 - `npm run lint` passes (the script must lint clean).
 - Report: commands run, findings summary, anything you could not do (e.g. network blocked).
+
+## Addendum — terrain policy decision (Claude, 2026-10-28)
+
+Decision on the open question in `docs/plans/spike-findings.md`:
+
+1. **Sea cells → water surface.** A grid node whose Kartverket response has `terreng: "Havflate"` or `datakilde: "dybdekurver"` is set to **0 m (NN2000 mean sea level)** before recentring, flagged `water-surface`. Sea-floor depth is not modelled; say so in the manifest `simplified` list and attribution.
+2. **Missing nodes → nearest valid neighbour, capped.** A null node takes the value of the nearest valid node in grid distance (ties: lowest row, then column), flagged `estimated`. If more than **5 %** of nodes are estimated, the import fails with a source-naming error.
+3. Record per-node flags in the spike summary (counts by `measured` / `water-surface` / `estimated`) and add one `simplified` line, e.g. "2 of 169 terrain samples estimated from neighbours; 54 sea samples set to mean sea level".
+4. Rerun Bjørvika (and Grünerløkka, to confirm no change) and update the findings doc: the Bjørvika row, the new policy, and C3 acceptance.
