@@ -114,7 +114,7 @@ Rules: never introduce a new hex in a component; add a token first. Borders are 
 | Background / fog | `#F4F2EE` (`--surface-viewport`) |
 | Terrain | warm off-white `#F7F4EF` → `#EEEAE3` by elevation; skirt `#DCD8D1` |
 | Context buildings | single matte `#FAF9F6`, no per-use tints |
-| Context edges | `#6F6E6A` at 0.3 opacity, creases > 30° only |
+| Context edges | `#7E7D7A` at 0.85 opacity, 1 device px, creases > 30° only — thin mid-grey outline ≈ 140/255, matched to Hektar |
 | Concept massing | pale accent `#C9DBE5` — the only tinted built object; warning/invalid stay semantic; storey bands + outline `#355E79` at 0.35 |
 | Alternate mass | cool blue-grey `#E9EDF0` |
 | Parcel boundary | `#355E79`, 2 px |

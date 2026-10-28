@@ -51,9 +51,9 @@ const CLICK_TOLERANCE_PX = 4
 
 const VIEWPORT_BACKGROUND = '#F4F2EE'
 const CONTEXT_COLOR = '#FAF9F6'
-const EDGE_COLOR = '#6F6E6A'
-/** One line-weight knob: ~0.3 reads as a clay model, ~0.7 as a sketch model. */
-const EDGE_OPACITY = 0.3
+const EDGE_COLOR = '#7E7D7A'
+/** One line-weight knob. 0.85 matches Hektar's thin mid-grey outline (≈ 140/255 on white walls). */
+const EDGE_OPACITY = 0.85
 /** Crease angle (degrees) above which a context edge is drawn; hides coplanar triangle seams. */
 const EDGE_THRESHOLD_DEG = 30
 /** Contours every 1 m, emphasised every 5 m; skipped on sites with less relief than that. */
