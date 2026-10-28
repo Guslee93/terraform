@@ -166,6 +166,11 @@ export function AboutPage() {
                   </p>
                 </li>
               </ul>
+              <p className="mt-3 text-[12.5px] leading-relaxed text-ink-secondary">
+                Streets, trees, parks, grass, woods and water areas come from the same
+                OpenStreetMap extract as the building footprints, are simplified, and are drawn at
+                illustrative widths and sizes.
+              </p>
             </section>
 
             <section className="rounded-[var(--radius-card)] border border-line bg-surface p-6">
