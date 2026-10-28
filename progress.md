@@ -220,3 +220,11 @@
 - Known limitation: a lower tier's roof handle sits at its roof centroid, which can be under the upper tier (handle still works; inspector switcher is the alternative).
 - Evidence: `docs/screenshots/m2-stepped-*.jpg`.
 - Tests: lint ✅ · test 205/205 ✅ (22 files) · e2e 2/2 ✅ · build ✅ (studio 276.5 kB gzip).
+
+### M2 review gate
+
+- Ran in an isolated worktree of `main` because DeepSeek round 2 was active in the main checkout (branch `deepseek/round2`). A first attempt symlinked `node_modules`, which loaded two React copies and shared Vite's dependency cache with DeepSeek's dev server; stopped it, installed the worktree's own `node_modules`, and confirmed the 5173 server still rendered.
+- Gate commands on `main` (`5b244a3`): typecheck ✅ · lint ✅ · test 205/205 ✅ · build ✅ (landing 91.88 kB, studio 276.54 kB gzip) · Playwright smoke 2/2 ✅ on a dedicated port.
+- Fixed-camera evidence: flat, L-shaped and stepped masses on Compact Infill at the ISO and TOP presets (`docs/screenshots/m2-gate-flat-l-stepped-{iso,top}.jpg`).
+- `docs/reviews/M2-code-review.md`: no blockers; 3 major (missing add-at-point/scale/vertex-edit tools, no single-pointer alternative to moving a mass, missing width/depth/rotation + palette), 7 minor, 2 nits. QA-03–08 all pass (QA-03 persistence is M4). Decision: **pass with follow-ups** for G1 + QA gate; **milestone acceptance not met**. Self-review — independent review recommended.
+- `docs/agent-log.md` row deferred until round 2 is merged (DeepSeek edits that file on its branch).

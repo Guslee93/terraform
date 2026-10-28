@@ -57,7 +57,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [ ] Add/draw/transform/storeys/tiers
 - [ ] Numeric inspector and validation (domain done; UI pending)
 - [x] Undo/redo transactions
-- [ ] QA-03–08
+- [x] QA-03–08 (code review pass with follow-ups, `docs/reviews/M2-code-review.md`; acceptance open)
 - **Status:** in_progress
 
 ### Phase 4 — M3 Live analysis

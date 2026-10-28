@@ -38,7 +38,7 @@ Repo now: 7 commits on `main`, 94 unit/component tests across 12 files, 2 Playwr
 |---|---|---|---|
 | **M0** Foundation | ✅ **Complete** | Visual gate **PASS** + code review **PASS**, both with follow-ups | Cohesive UI at 1440×900; keyboard/focus basics |
 | **M1** Site packages & camera | ✅ **Complete** | Geometry QA **PASS** + code review **PASS** + visual review **PASS**, with follow-ups | No live GIS; north/scale aligned; stable FPS (60.1) |
-| **M2** Massing engine | 🔄 **In progress** | No gate yet; domain + history committed and tested; UI/scene not started | QA-03–08; stepped forms correct |
+| **M2** Massing engine | 🔄 **In progress** | Code review + QA-03–08 **pass with follow-ups** (`docs/reviews/M2-code-review.md`); milestone acceptance open: add-at-point/scale/vertex tools, width/depth/rotation + palette, WCAG 2.5.7 move alternative, DeepSeek round 2 | QA-03–08; stepped forms correct |
 | **M3** Live analysis | ⏳ Pending | — | Fixtures match; sun reference verified; disclaimers visible |
 | **M4** Scenarios & persistence | ⏳ Pending | — | QA-09/12 after reload |
 | **M5** Portfolio polish | ⏳ Pending | — | Full 3-min workflow; final visual gate |
@@ -354,15 +354,17 @@ When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `de
 
 ## 16. Next actions
 
-**DeepSeek (now, in parallel):** D7 and D9 on `deepseek/round2` (§15.3b; D8 already done).
+**M2 gate (2026-10-28):** code review and QA-03–08 pass with follow-ups — see `docs/reviews/M2-code-review.md` (self-review; independent review recommended). Milestone acceptance is **not** met until the follow-ups below land or are descoped by ADR.
 
-**Claude (now, on `main`) — files that don't overlap with D7–D9:**
-1. ~~Locked-volume rule~~ — done (enforced in commands).
-2. ~~Renderer-free tool/pointer state machine~~ — done (`interaction.ts`).
-3. ~~Mass scene adapter, roof handle, QA-07 in the studio, D1 grid snapping~~ — done; evidence in `docs/screenshots/m2-*.jpg`.
-4. ~~Numeric inspector~~ — done (QA-16 verified in the browser). Still open: width/depth/rotation readouts once D9 lands; metric-card formatting (M3); a mass list so hidden masses can be reselected.
-5. Wire D7 keyboard shortcuts into the rail's undo/redo; ~~QA-06~~ done; ~~mass list~~ done; fix §12 #13 (legend overlap).
-6. M2 gate: code review record, QA-03–08 table, fixed-camera screenshots of flat/L/stepped masses.
+**DeepSeek (in progress):** round 2 on `deepseek/round2` — D7, D9, D10–D13 from the prompt given 2026-10-28 (D8 already done by Claude).
+
+**Claude (next, on `main`) — from the M2 review follow-ups:**
+1. Review and merge `deepseek/round2`; wire D7 shortcuts and D9 width/depth/rotation readouts; add the M2 review row to `docs/agent-log.md`.
+2. Missing tools: add mass at point, scale footprint, vertex edit — or an ADR descoping them (user decision).
+3. Accessibility: position alternative to dragging (WCAG 2.5.7) and arrow keys on the roof handle.
+4. Snap drawn corners to the grid; place lower-tier handles on exposed roof; count only visible masses in the warning summary; dispatch `pointerCancel` on unmount.
+5. Palette decision (design contract), drag-time FPS measurement, short interaction recording, legend overlap if D11 does not land.
+6. Independent review, then M2 acceptance (G4).
 
 ## 17. Appendix — key artifact index
 
