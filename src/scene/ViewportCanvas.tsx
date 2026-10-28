@@ -5,13 +5,13 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
-import { sampleTerrainHeight } from '../features/sites/geometry'
+import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import { EMPTY_SELECTION } from '../features/massing/types'
 import { cameraLocked, type EditorEvent, type EditorState } from '../features/editor/interaction'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
-import { DEFAULT_SUN, sunPosition } from './lighting'
+import { DEFAULT_SUN, fitShadowFrustum, sunPosition } from './lighting'
 import { MassLayer } from './MassLayer'
 import { SceneErrorBoundary } from './SceneErrorBoundary'
 import {
@@ -112,7 +112,7 @@ function ContextBuildings({ buildings }: { buildings: SitePackage['buildings']['
 
   return (
     <group>
-      <mesh geometry={geometry} castShadow>
+      <mesh geometry={geometry} castShadow receiveShadow>
         <meshStandardMaterial
           color={CONTEXT_COLOR}
           roughness={0.9}
@@ -158,24 +158,39 @@ function StudyBoundary({ sitePackage }: { sitePackage: SitePackage }) {
   )
 }
 
-function SiteLights() {
+/** Floor for the shadow volume's height so proposed masses taller than the context still cast. */
+const MIN_SHADOW_HEIGHT = 60
+
+function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
+  const frustum = useMemo(() => {
+    const { terrain, buildings } = sitePackage
+    const corners = [terrain.minX, terrain.maxX].flatMap((east) =>
+      [terrain.minY, terrain.maxY].map((north) => Math.hypot(east, north)),
+    )
+    const { min, max } = terrainHeightRange(terrain)
+    const tops = buildings.buildings.map((building) => building.baseElevation + building.height)
+    // ponytail: masses above MIN_SHADOW_HEIGHT can clip at the frustum edge; feed mass tops in if that shows.
+    return fitShadowFrustum(Math.max(...corners), Math.max(-min, max, ...tops, MIN_SHADOW_HEIGHT))
+  }, [sitePackage])
+
   return (
     <>
       {/* Low ambient + cool hemisphere fill keeps a ~3:1 lit/shaded ratio with blue-grey shade. */}
       <ambientLight intensity={0.3} />
       <hemisphereLight args={['#FFFFFF', '#CDD0D4', 1.6]} />
       <directionalLight
-        position={sunPosition(DEFAULT_SUN.azimuthDeg, DEFAULT_SUN.elevationDeg, 340)}
+        position={sunPosition(DEFAULT_SUN.azimuthDeg, DEFAULT_SUN.elevationDeg, frustum.distance)}
         intensity={2.4}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-left={-520}
-        shadow-camera-right={520}
-        shadow-camera-top={520}
-        shadow-camera-bottom={-520}
-        shadow-camera-near={10}
-        shadow-camera-far={1100}
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
+        shadow-camera-left={-frustum.halfExtent}
+        shadow-camera-right={frustum.halfExtent}
+        shadow-camera-top={frustum.halfExtent}
+        shadow-camera-bottom={-frustum.halfExtent}
+        shadow-camera-near={frustum.near}
+        shadow-camera-far={frustum.far}
+        shadow-radius={2}
         shadow-bias={-0.0002}
         shadow-normalBias={0.03}
       />
@@ -216,7 +231,8 @@ export function ViewportCanvas({
       <SceneErrorBoundary>
         <Canvas
           key={manifest.id}
-          shadows
+          // PCF + shadow-radius: three r186 removed PCFSoftShadowMap.
+          shadows="percentage"
           dpr={[1, 1.75]}
           // Neutral tone mapping keeps white-model albedo white; ACES greys it down.
           gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: NeutralToneMapping }}
@@ -229,7 +245,7 @@ export function ViewportCanvas({
         >
           <color attach="background" args={[VIEWPORT_BACKGROUND]} />
           <fog attach="fog" args={[VIEWPORT_BACKGROUND, 600, 1400]} />
-          <SiteLights />
+          <SiteLights sitePackage={sitePackage} />
 
           {layers.terrain && (
             <TerrainMesh
