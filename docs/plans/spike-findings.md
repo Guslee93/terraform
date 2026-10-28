@@ -123,3 +123,69 @@ Terrain coverage and sea-surface questions are resolved for C3 by the approved t
 - Bjørvika: the Opera House, the Barcode towers and the harbour basin are recognisable; the fjord renders as a flat water surface at mean sea level (no sea-floor pit), 2 of 169 nodes estimated. `docs/screenshots/import-spike-bjorvika-iso.png`.
 
 Carry into P2 (C4/C5), beyond §"What must change": repair self-intersecting merged footprints (one fan-triangulated building in Grünerløkka, south-east corner); `user-import` data status so the studio stops showing "Curated demo"; sloped roofs (Opera) are flat extrusions, so state that in the data notes.
+
+## P2 C4/C5 result
+
+Work resumed 2026-10-28 after the interrupted C4 run. Scope follows `docs/handoffs/C4-C5-importer-library.md`; records are kept in this owned document rather than changing milestone logs outside the work order. No UI, dependency, staging or commit changes.
+
+C4: reviewed the seven partial modules, fixed the readonly tuple mismatch in `geometry.ts`, and added offline tests for projection, frames, tiles, geometry repair, building unions, context and requests. First targeted run: **7 files / 38 tests passed**. Three recorded z14 tiles (737,423 bytes total) serve both Oslo frames and the real seam case, MVT building **9090116012** east of Oslo S, crossing 14/8681/4765–4766. Fixture provenance is in `src/features/import/__fixtures__/tiles/README.md`.
+
+The saved P1 Grünerløkka buildings all pass today's `isSimpleRing`; the visually reported south-east fan artifact could not be isolated as a self-intersection from that output. The complete recorded frame and a synthetic bow-tie are covered without inventing a real failing case. Courtyard holes remain omitted and raised parts remain grounded, matching the spike/schema; drafts retain `minHeight` for a future schema decision.
+
+C5 fixture recording: the initial recorder tried to import the spike's non-exported `unproject` and failed before any requests. Retried with the exact projection formula and recorded both 169-point Kartverket grids (four batches each). Implementation and final checks follow below.
+
+C5 delivers `terrain.ts` (provider interface, Kartverket batching/response validation, pure Terrarium decoder and bilinear sampler, browser PNG adapter, grid policy) and `assemble.ts` (five-stage progress, abort, warnings, provenance, manifest/assets and parser/statistics validation). `manifest.ts` now accepts `user-import`; its dedicated tests also preserve both old values and reject unknown values. Optional provider URL/licence/datum metadata avoids claiming NN2000 for arbitrary custom or Terrarium sources. `buildTerrainGrid` exposes per-node flags; the existing package schema carries aggregate counts in terrain source/manifest notes and structured import warnings.
+
+Offline results after review:
+
+| Frame | Buildings | Roads | Land-cover parts | Terrain measured / water / estimated | Package JSON bytes¹ |
+|---|---:|---:|---:|---|---:|
+| Grünerløkka | 202 | 162 | 11 | 169 / 0 / 0 | 104074 |
+| Bjørvika | 52 | 180 | 41 | 113 / 54 / 2 | 61285 |
+
+¹ Compact `JSON.stringify(SitePackage)`, not the spike's pretty-printed files plus thumbnail/attribution. Sources include the recorded fixture provider metadata. Six Grünerløkka road runs are removed by the required 0.5 m same-class deduplication. Land-cover counts differ from C3 because `repairRing` now normalizes/revalidates outputs and applies the specified 12 m² cutoff. Both building counts exactly match the spike. Seam areas: northern fragment 1313.251819 m², southern fragment 926.691524 m², merged 1423.418662 m²; one simple output ring.
+
+Fixture inventory: `tiles/14-8681-4764.pbf` **207705 B**, `14-8681-4765.pbf` **330609 B**, `14-8681-4766.pbf` **199109 B**, `tilejson.json` **29088 B**; `terrain/grunerlokka.json` **45683 B**, `terrain/bjorvika.json` **45171 B**. Total source fixture payload: **857365 B** (README files excluded). Both fixture folders have README files with exact source URLs, snapshot/API version, UTC fetch time and licence notices. No geocoder/city-owned fixtures were changed.
+
+Code review (same implementer using the code-reviewer role, not an independent review): fixed a concave clipping failure where an overlapping boundary bridge caused all parts to be discarded; Turf self-union now handles collinear bridges and repeated touching vertices after `unkinkPolygon`, with simple-ring validation. Added area-preserving disconnected-clip and repeated-touch regressions. Corrected clipping when callers pass an origin different from the frame centre. A preliminary typecheck also caught the Node fixture helper's missing type reference; fixed locally without changing tsconfig/dependencies. A C5 test caught Göteborg inside an overly broad DK bbox; splitting Jutland/Zealand/Bornholm fixes all nine quick-pick cities. Cancellation, policy failures and malformed source data are tested; no remaining blocker was found in the scoped review.
+
+Deviations / limits / follow-up:
+
+- No React, Three.js, scene, component or app dependencies in production importer modules. No UI was changed, so screenshot capture is not applicable. The app still does not import this library.
+- The browser-only `createImageBitmap`/`OffscreenCanvas` adapter is intentionally untested, as permitted by C5; pure pixel decoding/interpolation is tested. Browser integration must verify it in P3/P5. Terrarium is coarser/source-dependent; pixel interpolation clamps at tile edges and does not classify sea nodes. Kartverket is the only provider supplying explicit water classification.
+- Country bounding boxes are deliberately approximate, with documented overlap precedence; border areas can have the wrong zone/coverage classification. An all-null grid in the Oslo/NO classification fails; outside it, the next provider is tried. Partial grids over the 5% estimation cap fail rather than becoming flat. Network/provider failures can fall through; only exhaustion yields a labelled unmeasured flat grid.
+- Source checksum is SHA-256 of raw tile bytes plus normalized terrain samples, since the provider interface does not expose terrain HTTP bytes. Optional source metadata preserves licence and datum when supplied. Create a fresh `openFreeMapSource()` per import to obtain one TileJSON snapshot for that import. HTTP requests have a 30-second timeout; retry/backoff is not added to this bounded library work order.
+- The required illustrative 18 m / 4 m constraints remain labelled `Illustrative design constraint — not planning advice`; absent-real-constraint schema is deferred. Outer rings omit courtyards, raised parts remain grounded, and sloped roofs remain flat. Land-cover overlap deduplication is outside C4's required road dedupe and remains deferred.
+- The returned object is an in-memory `SitePackage`. Manifest asset names mirror C3; this task does not write files or generate thumbnail/attribution assets. Persistence/export and browser entry points belong to subsequent work orders.
+- The visually reported P1 fan artifact was not reproduced as an invalid saved footprint. No claim is made that renderer behaviour was fixed; the geometry repair contract is tested independently. Licence release verification remains with D23.
+
+`dataStatus` consumers and producers (repository-wide search, no UI edits):
+
+- `src/features/sites/manifest.ts`: type, parser validation and returned value (updated); `src/features/sites/manifest.test.ts`: new acceptance/rejection tests.
+- `src/components/studio/Inspector.tsx:352`: two-way label currently renders every non-curated value as “Licensed source”; Claude must add the import label before integration.
+- `src/features/sites/siteCatalog.ts`: curated-only catalogue type and two curated entries; `siteCatalog.test.ts`: checks curated statuses (left unchanged).
+- `src/features/import/assemble.ts` and `assemble.test.ts`: new writer and assertion for `user-import`.
+- `public/sites/{compact-infill,sloped-edge}/manifest.json`: curated static data (unchanged).
+- `scripts/build_site_packages.py` and `scripts/spike-import.mjs`: existing curated-status writers (unchanged; spike compatibility value remains historical).
+- Documentation contracts: `Terraform_Comprehensive_PRD_v1.md` and `docs/data/site-package-spec.md` still show the original two-value union; ADR-0006 authorizes this extension. Site-import plan and C3/C4-C5 handoffs mention the status transition. These files are outside this work order's edit ownership.
+
+Final validation (2026-10-28):
+
+- `npm run lint`: passed.
+- `npm run typecheck`: passed, including the final typecheck invoked by `npm run build`.
+- `npm run test`: **45 files / 396 tests passed**. C4/C5 adds **82 tests in 10 files** (seven C4 modules, terrain, assembly and manifest); the 18 pre-existing geocoder/city tests remain unchanged.
+- `npm run build`: passed. Existing Three.js vendor chunk >500 kB warning remains; the isolated importer adds no app bundle entry. The full test run also reports the existing Three.js CommonJS deprecation warning.
+- `npm run test:e2e`: attempted because Chromium is installed, but the sandbox prevents browser launch: `bootstrap_check_in ... MachPortRendezvousServer ... Permission denied (1100)`. Five launch failures, five tests not run; **no browser assertions executed**. No permission escalation or sandbox workaround was attempted. Browser testing remains unverified in this run.
+- Production importer import scan: no React/Three.js/scene/component/app imports, no `any` or type assertions. No app imports of the new importer. `git diff --check` passed; index is empty. No stage/commit operations performed.
+
+C4/C5 implementation and required library checks are complete. Files changed/added are the nine importer modules, their nine test files, a Node-only fixture helper, the tile/terrain fixtures and READMEs, the manifest union/parser plus its tests, and this appended result. The browser PNG adapter and P1 visual artifact need the explicitly deferred browser/visual follow-up; this is not a claim that the M6 UI or release gate is complete.
+
+## P2 C4/C5 — Claude review (2026-10-28)
+
+**Accepted.** Renderer-free (no React/Three/scene imports), no `any`, manifest change limited to the `user-import` enum. Seam merge is tested on a real recorded building (MVT id 9090116012, tiles 14/8681/4765–4766). Offline imports reproduce the spike (202 / 52 buildings; Bjørvika 54 water / 2 estimated). Suite: lint, typecheck, 396 tests, build pass.
+
+Notes for follow-up:
+- Codex could not reproduce the P1 "fan" building as an invalid footprint, so the artefact is likely in scene triangulation of a valid but awkward outline (collinear/near-duplicate vertices) → Claude to check in `createContextGeometry` when the import UI lands.
+- Formatting in `src/features/import/` is denser than the rest of the codebase; not enforced by lint. Normalise when touched next.
+- The browser PNG adapter for terrain tiles is untested by design until the `/new` route exists (D24 e2e).
+- Studio labels for `dataStatus: 'user-import'` (Inspector) remain for Claude's integration (plan T4).

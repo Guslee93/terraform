@@ -40,7 +40,7 @@ export type SiteManifest = {
     projection: string
   }
   unit: 'm'
-  dataStatus: 'curated-demo' | 'licensed-real-world-simplified'
+  dataStatus: 'curated-demo' | 'licensed-real-world-simplified' | 'user-import'
   assetPaths: {
     terrain: string
     buildings: string
@@ -165,7 +165,7 @@ export function parseSiteManifest(value: unknown): SiteManifest {
   if (root.unit !== 'm') fail('manifest.unit', 'only metres are supported')
 
   const dataStatus = asString(root.dataStatus, 'manifest.dataStatus')
-  if (dataStatus !== 'curated-demo' && dataStatus !== 'licensed-real-world-simplified') {
+  if (dataStatus !== 'curated-demo' && dataStatus !== 'licensed-real-world-simplified' && dataStatus !== 'user-import') {
     fail('manifest.dataStatus', 'unknown data status')
   }
 
