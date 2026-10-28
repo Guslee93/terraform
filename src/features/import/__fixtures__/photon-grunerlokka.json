@@ -1,0 +1,145 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "R",
+        "osm_id": 1279942,
+        "osm_key": "boundary",
+        "osm_value": "administrative",
+        "type": "district",
+        "name": "Grünerløkka",
+        "city": "Oslo",
+        "country": "Norge",
+        "countrycode": "NO",
+        "extra": {
+          "admin_level": "9"
+        },
+        "extent": [
+          10.7479892,
+          59.9375594,
+          10.8076603,
+          59.9134768
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.7774212,
+          59.9254713
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "N",
+        "osm_id": 1125975790,
+        "osm_key": "place",
+        "osm_value": "suburb",
+        "type": "locality",
+        "name": "Grünerløkka",
+        "district": "Grünerløkka",
+        "city": "Oslo",
+        "country": "Norge",
+        "postcode": "0554",
+        "countrycode": "NO"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.7578889,
+          59.9238556
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W",
+        "osm_id": 1420766801,
+        "osm_key": "amenity",
+        "osm_value": "university",
+        "type": "house",
+        "name": "Kunsthøgskolen i Oslo",
+        "street": "Fossveien",
+        "locality": "Grünerløkka",
+        "district": "Grünerløkka",
+        "city": "Oslo",
+        "country": "Norge",
+        "postcode": "0554",
+        "countrycode": "NO",
+        "extent": [
+          10.753332,
+          59.9266589,
+          10.755962,
+          59.9253706
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.7547253,
+          59.9260282
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "N",
+        "osm_id": 5412354900,
+        "osm_key": "tourism",
+        "osm_value": "museum",
+        "type": "house",
+        "name": "Naturhistorisk museum",
+        "street": "Sars' gate",
+        "locality": "Tøyen",
+        "district": "Grünerløkka",
+        "city": "Oslo",
+        "country": "Norge",
+        "postcode": "0564",
+        "countrycode": "NO"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.771714,
+          59.919783
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W",
+        "osm_id": 1420826219,
+        "osm_key": "amenity",
+        "osm_value": "college",
+        "type": "house",
+        "name": "Arkitektur- og designhøgskolen i Oslo",
+        "street": "Maridalsveien",
+        "locality": "Fredensborg",
+        "district": "Grünerløkka",
+        "city": "Oslo",
+        "country": "Norge",
+        "postcode": "0175",
+        "countrycode": "NO",
+        "extent": [
+          10.750405,
+          59.9255368,
+          10.7520233,
+          59.9240732
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.7512422,
+          59.924766
+        ]
+      }
+    }
+  ]
+}

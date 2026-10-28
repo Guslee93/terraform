@@ -193,6 +193,217 @@ def parse_osm(path: Path, origin: tuple[float, float]) -> list[dict]:
     return buildings
 
 
+# Illustrative carriageway widths (m) by OSM highway class; the data has no measured widths.
+ROAD_WIDTHS = {
+    "motorway": 14.0, "trunk": 12.0, "primary": 12.0, "secondary": 10.0, "tertiary": 8.0,
+    "residential": 6.0, "unclassified": 6.0, "living_street": 5.0, "service": 4.0,
+    "pedestrian": 5.0, "footway": 2.5, "path": 2.0, "cycleway": 2.5, "steps": 2.0,
+    "track": 3.0,
+}
+
+
+def clip_segment(a, b, extent):
+    """Liang–Barsky clip of segment a→b to extent (min_x, min_y, max_x, max_y); None if outside."""
+    min_x, min_y, max_x, max_y = extent
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    t0, t1 = 0.0, 1.0
+    for p, q in ((-dx, a[0] - min_x), (dx, max_x - a[0]), (-dy, a[1] - min_y), (dy, max_y - a[1])):
+        if p == 0:
+            if q < 0:
+                return None
+            continue
+        t = q / p
+        if p < 0:
+            t0 = max(t0, t)
+        else:
+            t1 = min(t1, t)
+        if t0 > t1:
+            return None
+    return (a[0] + dx * t0, a[1] + dy * t0), (a[0] + dx * t1, a[1] + dy * t1)
+
+
+def clip_polyline(points, extent):
+    """Split a polyline into the runs that lie inside the extent."""
+    runs, current = [], []
+    for a, b in zip(points, points[1:]):
+        clipped = clip_segment(a, b, extent)
+        if clipped is None:
+            if len(current) >= 2:
+                runs.append(current)
+            current = []
+            continue
+        start, end = clipped
+        if current and math.dist(current[-1], start) < 1e-6:
+            current.append(end)
+        else:
+            if len(current) >= 2:
+                runs.append(current)
+            current = [start, end]
+        if end != b:  # left the extent mid-segment
+            runs.append(current)
+            current = []
+    if len(current) >= 2:
+        runs.append(current)
+    return runs
+
+
+def parse_osm_context(path: Path, origin: tuple[float, float], extent) -> tuple[list[dict], list[list[float]]]:
+    """Road centrelines (clipped to the extent) and tree points from the cached OSM extract."""
+    root = ET.parse(path).getroot()
+    nodes = {}
+    trees = []
+    for node in root.findall("node"):
+        point = project(float(node.get("lat")), float(node.get("lon")), origin[0], origin[1])
+        nodes[node.get("id")] = point
+        tags = {tag.get("k"): tag.get("v") for tag in node.findall("tag")}
+        min_x, min_y, max_x, max_y = extent
+        if tags.get("natural") == "tree" and min_x <= point[0] <= max_x and min_y <= point[1] <= max_y:
+            trees.append([round(point[0], 2), round(point[1], 2)])
+    roads = []
+    for way in root.findall("way"):
+        tags = {tag.get("k"): tag.get("v") for tag in way.findall("tag")}
+        width = ROAD_WIDTHS.get(tags.get("highway", ""))
+        # Tunnels are underground and area-tagged ways are plazas, not centrelines.
+        if width is None or tags.get("tunnel") not in (None, "no") or tags.get("area") == "yes":
+            continue
+        points = [nodes[ref.get("ref")] for ref in way.findall("nd") if ref.get("ref") in nodes]
+        for index, run in enumerate(clip_polyline(points, extent)):
+            roads.append(
+                {
+                    "id": f"{way.get('id')}-{index}",
+                    "highway": tags["highway"],
+                    "width": width,
+                    "centreline": [[round(x, 2), round(y, 2)] for x, y in run],
+                }
+            )
+    roads.sort(key=lambda road: road["id"])
+    trees.sort()
+    return roads, trees
+
+
+LANDCOVER_TAGS = {
+    "water": (("natural", "water"), ("waterway", "riverbank"), ("landuse", "reservoir"), ("landuse", "basin")),
+    "wood": (("natural", "wood"), ("landuse", "forest")),
+    "park": (("leisure", "park"), ("leisure", "garden"), ("landuse", "recreation_ground"), ("leisure", "playground")),
+    "grass": (("landuse", "grass"), ("landuse", "meadow"), ("landuse", "village_green"), ("natural", "grassland"), ("landuse", "flowerbed")),
+}
+
+
+def clip_ring(points, extent):
+    """Sutherland–Hodgman clip to (min_x, min_y, max_x, max_y); return an open ring."""
+    ring = list(points)
+    if ring and ring[0] == ring[-1]:
+        ring.pop()
+    for axis, boundary, direction in (
+        (0, extent[0], 1), (0, extent[2], -1),
+        (1, extent[1], 1), (1, extent[3], -1),
+    ):
+        if not ring:
+            break
+        clipped = []
+        previous = ring[-1]
+        previous_inside = direction * (previous[axis] - boundary) >= 0
+        for current in ring:
+            current_inside = direction * (current[axis] - boundary) >= 0
+            if current_inside != previous_inside:
+                fraction = (boundary - previous[axis]) / (current[axis] - previous[axis])
+                other = 1 - axis
+                point = [0.0, 0.0]
+                point[axis] = boundary
+                point[other] = previous[other] + fraction * (current[other] - previous[other])
+                clipped.append(tuple(point))
+            if current_inside:
+                clipped.append(current)
+            previous, previous_inside = current, current_inside
+        ring = []
+        for point in clipped:
+            if not ring or point != ring[-1]:
+                ring.append(point)
+        if len(ring) > 1 and ring[0] == ring[-1]:
+            ring.pop()
+    return ring if len(ring) >= 3 else []
+
+
+def join_outer_rings(ways: list[list[str]]) -> list[list[str]]:
+    """Join member node refs at either end, reversing ways as needed; discard open chains."""
+    remaining = [list(way) for way in ways if len(way) >= 2]
+    rings = []
+    while remaining:
+        chain = remaining.pop(0)
+        while chain[0] != chain[-1]:
+            for index, way in enumerate(remaining):
+                if chain[-1] == way[0]:
+                    chain.extend(way[1:])
+                elif chain[-1] == way[-1]:
+                    chain.extend(way[-2::-1])
+                elif chain[0] == way[-1]:
+                    chain = way[:-1] + chain
+                elif chain[0] == way[0]:
+                    chain = way[:0:-1] + chain
+                else:
+                    continue
+                remaining.pop(index)
+                break
+            else:
+                break
+        if len(chain) >= 4 and chain[0] == chain[-1]:
+            rings.append(chain)
+    return rings
+
+
+def parse_osm_landcover(path: Path, origin: tuple[float, float], extent) -> list[dict]:
+    """Illustrative ground tints from closed OSM ways and multipolygon outer rings."""
+    root = ET.parse(path).getroot()
+    nodes = {
+        node.get("id"): project(float(node.get("lat")), float(node.get("lon")), *origin)
+        for node in root.findall("node")
+    }
+    ways = {
+        way.get("id"): [ref.get("ref") for ref in way.findall("nd")]
+        for way in root.findall("way")
+    }
+    areas = []
+    for element in [*root.findall("way"), *root.findall("relation")]:
+        tags = {tag.get("k"): tag.get("v") for tag in element.findall("tag")}
+        kind = next((kind for kind, matches in LANDCOVER_TAGS.items()
+                     if any(tags.get(key) == value for key, value in matches)), None)
+        if kind is None:
+            continue
+        if element.tag == "way":
+            refs = ways[element.get("id")]
+            rings = [refs] if len(refs) >= 4 and refs[0] == refs[-1] else []
+        elif tags.get("type") == "multipolygon":
+            rings = join_outer_rings([
+                ways[member.get("ref")]
+                for member in element.findall("member")
+                if member.get("type") == "way" and member.get("role") == "outer"
+                and member.get("ref") in ways
+            ])
+        else:
+            continue
+        for refs in rings:
+            # Missing nodes must not create an invented edge across an incomplete extract.
+            if any(ref not in nodes for ref in refs):
+                continue
+            ring = clip_ring([nodes[ref] for ref in refs[:-1]], extent)
+            if polygon_area(ring) < 4.0:
+                continue
+            ring = simplify(ring + [ring[0]], 0.5)[:-1]
+            if len(ring) < 3 or polygon_area(ring) < 4.0:
+                continue
+            signed_area = sum(a[0] * b[1] - b[0] * a[1]
+                              for a, b in zip(ring, ring[1:] + ring[:1]))
+            if signed_area < 0:
+                ring.reverse()
+            areas.append({
+                "id": f"{element.tag}/{element.get('id')}",
+                "kind": kind,
+                "ring": [[x, y] for x, y in ring],
+            })
+    areas.sort(key=lambda area: area["id"])
+    return areas
+
+
 SHA256SUMS = RAW / "SHA256SUMS"
 
 
@@ -513,6 +724,24 @@ This simplified, derived building dataset is made available under ODbL 1.0.
 If you reuse or redistribute it, keep this attribution and the ODbL notice.
 Licence text: https://opendatacommons.org/licenses/odbl/1-0/
 
+## Roads and trees
+
+© OpenStreetMap contributors (ODbL 1.0), from the same extract as the buildings.
+Roads are `highway` centrelines clipped to the terrain extent; widths are illustrative
+values by highway class, not measured carriageways. Tunnels and area-tagged ways are
+omitted. Trees are `natural=tree` points drawn with illustrative sizes and tints varied
+by position; no species, height or canopy data is implied.
+
+## Land cover
+
+© OpenStreetMap contributors (ODbL 1.0), from the same cached extract.
+Water: `natural=water`, `waterway=riverbank`, `landuse=reservoir|basin`.
+Wood: `natural=wood`, `landuse=forest`. Park: `leisure=park|garden|playground`,
+`landuse=recreation_ground`. Grass: `landuse=grass|meadow|village_green|flowerbed`,
+`natural=grassland`. Closed ways and multipolygon outer rings are clipped to the
+terrain extent and simplified at 0.5 m; areas below 4 m² and incomplete rings are
+omitted. Inner rings are ignored. Polygons are illustrative ground tints.
+
 ## Terrain
 
 © Kartverket. Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
@@ -556,6 +785,9 @@ def build_site(site_id: str, offline: bool) -> None:
     terrain = build_terrain(site, origin, offline)
     buildings = process_buildings(raw_buildings, terrain, site["boundary"])
     boundary = study_area(site)
+    extent = (terrain["minX"], terrain["minY"], terrain["maxX"], terrain["maxY"])
+    roads, trees = parse_osm_context(raw_osm, origin, extent)
+    landcover = parse_osm_landcover(raw_osm, origin, extent)
 
     output = PUBLIC / site_id
     output.mkdir(parents=True, exist_ok=True)
@@ -589,6 +821,9 @@ def build_site(site_id: str, offline: bool) -> None:
             "studyArea": "study-area.json",
             "thumbnail": f"/sites/{site_id}.svg",
             "attribution": "attribution.md",
+            "roads": "roads.json",
+            "trees": "trees.json",
+            "landcover": "landcover.json",
         },
         "constraints": {
             "maxHeightMeters": site["max_height"],
@@ -619,6 +854,9 @@ def build_site(site_id: str, offline: bool) -> None:
             "Heights from height, building:levels, or a typology fallback",
             "Terrain sampled on a 13 × 13 grid and recentered to the origin",
             "Study boundary is authored, not a cadastral parcel",
+            "Roads are OSM centrelines with illustrative widths by highway class; tunnels omitted",
+            "Trees are OSM natural=tree points drawn with illustrative, position-varied sizes and tints",
+            "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m² and incomplete rings omitted; multipolygon inner rings ignored",
         ],
         "statistics": {
             "buildingCount": len(buildings),
@@ -635,11 +873,24 @@ def build_site(site_id: str, offline: bool) -> None:
         + "\n"
     )
     (output / "study-area.json").write_text(json.dumps(boundary, indent=2) + "\n")
+    (output / "roads.json").write_text(
+        json.dumps({"schemaVersion": 1, "siteId": site_id, "roads": roads}, indent=2) + "\n"
+    )
+    (output / "trees.json").write_text(
+        json.dumps({"schemaVersion": 1, "siteId": site_id, "trees": trees}, indent=2) + "\n"
+    )
     (output / "attribution.md").write_text(write_attribution(site, terrain))
+    (output / "landcover.json").write_text(
+        json.dumps({"schemaVersion": 1, "siteId": site_id, "areas": landcover}, indent=2) + "\n"
+    )
 
+    landcover_counts = ", ".join(
+        f"{kind}: {sum(area['kind'] == kind for area in landcover)}" for kind in LANDCOVER_TAGS
+    )
     print(
         f"{site_id}: {len(buildings)} buildings, {terrain['cols']}x{terrain['rows']} terrain, "
-        f"{len(raw_buildings)} raw footprints"
+        f"{len(raw_buildings)} raw footprints, {len(roads)} road runs, {len(trees)} trees, "
+        f"{len(landcover)} land cover areas ({landcover_counts})"
     )
 
 

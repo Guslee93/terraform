@@ -58,6 +58,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [ ] Numeric inspector and validation (domain done; UI pending)
 - [x] Undo/redo transactions
 - [x] QA-03–08 (code review pass with follow-ups, `docs/reviews/M2-code-review.md`; acceptance open)
+- [x] Scene look (ADR-0005): white-model palette, fitted shadows, AO, contours, storey bands, OSM streets/trees — owner request, landed beside M2
 - **Status:** in_progress
 
 ### Phase 4 — M3 Live analysis
@@ -131,6 +132,19 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 | Old slope bbox included the Ekeberg cliff (−91 m relief) | 1 | Moved to a 31 m-relief hillside study area with 33 context buildings |
 
 ## Next actions
+
+### C1 — Land cover work order (2026-10-28)
+
+- [x] Read C1, AGENTS, ADR-0005 §5, package spec and roads/trees precedent.
+- [x] Add offline polygon extraction, clipping/joining and builder fixtures.
+- [x] Add optional manifest path, validated loader/types and tests.
+- [x] Rebuild offline, verify protected bytes, run Python/lint/test/build and report.
+- Scope: data/loading only; no rendering, dependencies, network or commit.
+- Result: Compact 10 areas (water 1 / park 1 / grass 8 / wood 0); Sloped 2
+  (water 0 / park 0 / grass 1 / wood 1). Python checks, lint, 269 tests and build pass.
+  All 10 protected files match baseline and HEAD; second offline rebuild is deterministic.
+- Resolved error: nested f-string in count logging failed on local Python; extracted
+  the count string and reran successfully. Detailed evidence is in `progress.md`.
 
 1. Write the M2 domain model and command contracts with `engineering-software-architect`.
 2. Implement and test `MassVolume`, footprint creation, storeys, tiers and validation before touching gizmos.

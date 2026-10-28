@@ -1,4 +1,4 @@
-import { ExtrudeGeometry, Shape, type BufferGeometry } from 'three'
+import { BufferGeometry, ExtrudeGeometry, Float32BufferAttribute, Shape } from 'three'
 import { enuToThreeXyz, type ThreeVec3 } from '../lib/coordinates'
 import { ringCentroid } from '../lib/polygon'
 import { tierHeight, tierTop } from '../features/massing/aggregate'
@@ -24,6 +24,23 @@ export function createTierGeometry(tier: TierShape): BufferGeometry {
   geometry.rotateX(-Math.PI / 2)
   geometry.translate(0, tier.baseElevation, 0)
   geometry.computeVertexNormals()
+  return geometry
+}
+
+/** Floor lines at every intermediate storey (k × storeyHeight above the base), as line-segment pairs. */
+export function createStoreyLineGeometry(tier: TierShape): BufferGeometry {
+  const positions: number[] = []
+  const vertices = tier.footprint.vertices
+  for (let storey = 1; storey < tier.storeys; storey += 1) {
+    const up = tier.baseElevation + storey * tier.storeyHeight
+    vertices.forEach(([east, north], index) => {
+      const next = vertices[(index + 1) % vertices.length]
+      if (!next) return
+      positions.push(...enuToThreeXyz([east, north, up]), ...enuToThreeXyz([next[0], next[1], up]))
+    })
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
   return geometry
 }
 

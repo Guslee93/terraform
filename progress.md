@@ -228,3 +228,61 @@
 - Fixed-camera evidence: flat, L-shaped and stepped masses on Compact Infill at the ISO and TOP presets (`docs/screenshots/m2-gate-flat-l-stepped-{iso,top}.jpg`).
 - `docs/reviews/M2-code-review.md`: no blockers; 3 major (missing add-at-point/scale/vertex-edit tools, no single-pointer alternative to moving a mass, missing width/depth/rotation + palette), 7 minor, 2 nits. QA-03–08 all pass (QA-03 persistence is M4). Decision: **pass with follow-ups** for G1 + QA gate; **milestone acceptance not met**. Self-review — independent review recommended.
 - `docs/agent-log.md` row deferred until round 2 is merged (DeepSeek edits that file on its branch).
+
+### Scene look — Phase 1 (white model, `docs/design/scene-look-plan.md`)
+
+- Context buildings: one matte `#F3F2EE` (per-kind tints and the context colour attribute removed) plus crease edge lines (`EdgesGeometry`, 30°, `#6F6E6A` at 0.3 — one `EDGE_OPACITY` knob).
+- Ground near-white `#F0EFEC` → `#E6E5E1` by elevation; skirt `#D8D7D3`; background/fog/`--surface-viewport` `#EEEDE9`.
+- Light rig: `NeutralToneMapping` (ACES greyed the whites to ~215), ambient 0.3, hemisphere `#FFFFFF`/`#CDD0D4` 1.6, sun 2.4 from `sunPosition(225°, 35°)` (`src/scene/lighting.ts`, tested). Measured viewport luminance: shadows p5–p15 170–182, lit 231–237 (was 118–145 / 214–237 on the first pass).
+- Terrain grid only in Top view or while drawing.
+- Proposal mass `#C9DBE5` (pale accent) pulled forward from Phase 3: with a white context the old `#F2EFE7` mass disappeared.
+- Browser verification: drew a mass on Compact Infill (Top → Iso); reads clearly against the context; no console errors.
+- Evidence: `docs/screenshots/scene-look-{before,after}-*-1440x900*.png`, `scene-look-after-mass-iso.png`. `scripts/capture.mjs` takes `SHOT_PREFIX` / `SHOT_VIEWPORT`.
+- Tests: lint ✅ · test 229/229 ✅ (25 files) · e2e 4/4 ✅ · build ✅.
+- Known limitations: with the grid hidden in Iso, Sloped Edge's slope reads less (silhouette and plinth only) → contour lines are the honest fix. three r186 removed `PCFSoftShadowMap` (falls back to PCF, console warning) → Phase 2 must use PCF + `shadow-radius` or VSM.
+
+### Scene look — Phases 2–3 (ADR-0005)
+
+- ADR-0005 accepted: palette/light, fitted shadows, AO dependencies, contours, OSM roads/trees, storey bands.
+- Shadows: `fitShadowFrustum` (tested) sizes the ortho shadow camera to the site's bounding sphere; 4096 map ≈ 0.10 m/texel (was ≈ 0.5 m). PCF + `shadow-radius` (r186 dropped PCFSoft). Context buildings receive shadows.
+- Storey bands: `createStoreyLineGeometry` (tested) at every intermediate floor; faint accent outline on unselected masses; polygon offset on mass faces.
+- Contours: `contourSegments` (marching triangles, renderer-free, tested) → 1 m / 5 m lines, only with ≥ 2 m relief.
+- AO: `postprocessing` 6.39.5 (Zlib) + `n8ao` 2.0.1 (ISC), pinned; `SceneComposer` lazy chunk 96.0 kB gzip, studio chunk unchanged at ~36 kB gzip. 60 fps at 1440×900, 1× and 2× DPR (ANGLE Metal, M1 Pro).
+- **Bug found and fixed:** the first composer used `useMemo` + effect cleanup; StrictMode's double mount disposed it (postprocessing empties `passes`), freezing the canvas on its first frame (presets and new masses never redrew). Unit tests and DOM-only e2e passed throughout; it was caught by checking a drawn mass visually. Fix builds the composer in the effect; new e2e `the 3D view redraws when the camera preset changes` fails on the old code and passes now. The first 60 fps figure had been measured against the frozen composer and was re-measured after the fix (still 60).
+- Streets/trees: builder emits additive `roads.json` (136 / 32 runs) and `trees.json` (128 / 122 points); `terrain.json`, `buildings.json`, `study-area.json` byte-identical after `--offline` rebuild. Optional manifest paths, validated parsers, loader tests for present and absent cases, `scripts/test_build_site_packages.py` for clipping. Streets/Trees layer toggles hidden when a package lacks the file.
+- Evidence: `docs/screenshots/scene-look-final-*.png` (ISO + Top for both sites, mass close-up).
+- Tests: lint ✅ · test 246/246 ✅ · e2e 5/5 ✅ (now ~52 s: AO under software GL) · build ✅ · Python clip check ✅.
+- Study boundary fix: `drapePolyline` (tested) resamples the boundary every 4 m on the terrain, so its sides no longer sink under the slope on Sloped Edge (pre-existing since M1). Tests 247/247, e2e 5/5.
+- Known gaps: faint AO specks at some road edges; one illustrative tree size.
+
+### C1 — Offline land cover data and loading (2026-10-28)
+
+- Work order: `docs/handoffs/C1-landcover.md`; implementer using the spatial data engineer role. Data/loading only; no network, dependencies or commits.
+- Changed `scripts/build_site_packages.py` and `scripts/test_build_site_packages.py`: exact water/wood/park/grass tag mapping; closed ways and end-to-end multipolygon outer joining (including reversed ways); Sutherland–Hodgman extent clipping; 0.5 m simplification; <4 m² filtering; open CCW output sorted by source ID. Incomplete rings skipped, inner rings ignored as specified.
+- Added `public/sites/{compact-infill,sloped-edge}/landcover.json`; changed only `manifest.json` and `attribution.md` beside those new assets. Compact: water 1, park 1, grass 8, wood 0 (10 total). Sloped: water 0, park 0, grass 1, wood 1 (2 total).
+- Changed `src/features/sites/{manifest.ts,package.ts,package.test.ts,fetchJson.test.ts,useSitePackage.test.tsx}`: optional path, typed data, validation, conditional fetching, matching site IDs and empty fallback. A listed file containing JSON null is rejected.
+- Changed `docs/data/site-package-spec.md`, `task_plan.md`, `progress.md` and `docs/agent-log.md` for the schema and execution evidence.
+- Python tests cover inside/half-outside/outside clipping, extent enclosure/touching, reversed joining, multiple rings, missing members/nodes, open/tiny/outside ways, tag classification, ignored holes, sorted IDs and CCW output. TypeScript tests cover both real packages, each rejection rule, valid kinds/5000-area boundary, optional paths, absent-file request suppression and site-ID mismatch.
+- Verification: `python3 scripts/test_build_site_packages.py` → all four groups print ok; `npm run lint && npm run test && npm run build` → pass, 269 tests across 29 files. Existing Three.js CJS deprecation and large vendor-chunk warnings remain non-blocking.
+- Offline rebuild run twice. Second run reproduced every site asset byte-for-byte. SHA-256 checks against the pre-edit baseline and byte comparison against HEAD confirm all 10 protected terrain/buildings/study-area/roads/trees files unchanged.
+- Failed attempt: initial count-report line used a nested f-string with an escaped quote unsupported by the local Python; extracted the count string and reran successfully.
+- Limitations: inner holes intentionally ignored; incomplete cached rings skipped; multiple outer rings retain the same relation source ID. No rendering/UI changes or screenshots were required by C1. All requested work completed.
+- Concurrent unrelated changes appeared in scene files and `docs/status-report.md` during execution; they were not edited or reverted by this work. Full test/build results describe the shared working tree at verification time.
+
+### C2 — Leaf-cluster tree foliage (2026-10-28)
+
+- Executed `docs/handoffs/C2-foliage.md` using `gis-3d-scene-developer`. Changed only its five owned scene files and the two explicitly required logs; no dependency changes or commit. Status: **Pending Claude review**.
+- Added `src/scene/foliage.ts`: seeded Mulberry32 generation; 18–28 outward-biased clumps in round/tall ellipsoids, detail-zero icosahedra with bounded vertex jitter and random rotation, per-face linear greens, non-indexed flat normals. Repeated corners share displacement to keep clumps closed. Unit-height trunks and two/three tapered five-sided branches; merged parts disposed.
+- Updated `Trees.tsx`: six memoized canopy/branch pairs per shape, grouped by shape and variant (at most 24 instanced meshes), unmount disposal, existing terrain placement/rotation/size retained with unit-geometry scaling. Requested vertex-colour canopy material, opacity 0.9, depth writing and shadows; branch colour `#A39A8C`.
+- Updated `treeVariants.ts` with salt-5 variant hashing and near-white tint multipliers. Added `foliage.test.ts` and extended `treeVariants.test.ts` for seed repeatability/variation, padded ellipsoid bounds, flat normals/face colours, colour range/diversity, geometry budgets and variant coverage across 40 trees.
+- Measured canopy vertices for seeds 0–5 (each shape): **1200, 1440, 1560, 1500, 1680, 1500**; branch vertices **180, 240, 240, 240, 240, 240**.
+- Verification: focused foliage/variant tests **19/19 pass**; `npm run lint && npm run test && npm run build` **pass**, **293 tests across 32 files**; `git diff --check` clean. Existing Three.js CJS deprecation and vendor chunk-size warnings remain.
+- Failed/limited verification: initial read guessed a nonexistent `scripts/capture-screenshots.ts`; actual script is `scripts/capture.mjs`. Vite SSR count inspection succeeded but emitted an HMR socket `EPERM`. `npm run test:e2e` could not start the dev server (`listen EPERM 127.0.0.1:5173`). Computer-use fallback reported no available browser. Fresh fixed-view screenshots and runtime visual verification could not be completed in this sandbox; no visual acceptance claim.
+- Other agents concurrently modified lighting/UI/docs/screenshots; those files were neither edited nor reverted here. Test/build results describe the shared working tree at verification time. No other implementation gaps identified.
+
+### DeepSeek rounds 3 and 4 review (2026-10-28)
+
+- Round 3 (D14–D20) accepted; rows added to the agent log. D16 screenshots superseded by later grade commits. D19 crops checked visually: no AO specks.
+- Round 4 (D17b, D22, D21, D26, D23) reviewed and merged as `d7921e4`. Geocoder field names verified against the live Kartverket fixture. D26 uses OSM feature label points with cited ids where no place node exists.
+- Suite after merge (Codex's untracked partial C4 files set aside during the run): lint ✅ · typecheck ✅ · 314 unit tests ✅ · build ✅ · e2e 9/10 (massing timeout under software GL, D28).
+- Round 2 rows (D7–D13) are still "Pending" in the agent log; not reviewed in this session.

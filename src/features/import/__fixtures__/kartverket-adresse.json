@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "treffPerSide": 5,
+    "side": 0,
+    "totaltAntallTreff": 2,
+    "viserFra": 0,
+    "viserTil": 5,
+    "sokeStreng": "sok=Thorvald%20Meyers%20gate%2040%20Oslo&treffPerSide=5",
+    "asciiKompatibel": true
+  },
+  "adresser": [
+    {
+      "adressenavn": "Thorvald Meyers gate",
+      "adressetekst": "Thorvald Meyers gate 40A",
+      "adressetilleggsnavn": null,
+      "adressekode": 17489,
+      "nummer": 40,
+      "bokstav": "A",
+      "kommunenummer": "0301",
+      "kommunenavn": "OSLO",
+      "gardsnummer": 228,
+      "bruksnummer": 482,
+      "festenummer": 0,
+      "undernummer": null,
+      "bruksenhetsnummer": [
+        "H0201",
+        "H0202",
+        "H0301",
+        "H0401"
+      ],
+      "objtype": "Vegadresse",
+      "poststed": "OSLO",
+      "postnummer": "0555",
+      "adressetekstutenadressetilleggsnavn": "Thorvald Meyers gate 40A",
+      "stedfestingverifisert": false,
+      "representasjonspunkt": {
+        "epsg": "EPSG:4258",
+        "lat": 59.92371913549509,
+        "lon": 10.75944665075892
+      },
+      "oppdateringsdato": "2020-06-15T18:07:30",
+      "adresseid": "285829723",
+      "atkomstpunkt": {
+        "oy": {
+          "epsg": "EPSG:4258",
+          "lat": 59.92371913549509,
+          "lon": 10.75944665075892
+        },
+        "nodetat": {
+          "epsg": "EPSG:4258",
+          "lat": 59.92371913549509,
+          "lon": 10.75944665075892
+        },
+        "sommer": {
+          "epsg": "EPSG:4258",
+          "lat": 59.92371913549509,
+          "lon": 10.75944665075892
+        },
+        "vinter": {
+          "epsg": "EPSG:4258",
+          "lat": 59.92371913549509,
+          "lon": 10.75944665075892
+        },
+        "generell": null
+      }
+    },
+    {
+      "adressenavn": "Thorvald Meyers gate",
+      "adressetekst": "Thorvald Meyers gate 40B",
+      "adressetilleggsnavn": null,
+      "adressekode": 17489,
+      "nummer": 40,
+      "bokstav": "B",
+      "kommunenummer": "0301",
+      "kommunenavn": "OSLO",
+      "gardsnummer": 228,
+      "bruksnummer": 482,
+      "festenummer": 0,
+      "undernummer": null,
+      "bruksenhetsnummer": [
+        "H0201",
+        "H0301"
+      ],
+      "objtype": "Vegadresse",
+      "poststed": "OSLO",
+      "postnummer": "0555",
+      "adressetekstutenadressetilleggsnavn": "Thorvald Meyers gate 40B",
+      "stedfestingverifisert": false,
+      "representasjonspunkt": {
+        "epsg": "EPSG:4258",
+        "lat": 59.923700946654236,
+        "lon": 10.759463578967445
+      },
+      "oppdateringsdato": "2020-06-15T18:07:30",
+      "adresseid": "285831552",
+      "atkomstpunkt": {
+        "oy": {
+          "epsg": "EPSG:4258",
+          "lat": 59.923700946654236,
+          "lon": 10.759463578967445
+        },
+        "nodetat": {
+          "epsg": "EPSG:4258",
+          "lat": 59.923700946654236,
+          "lon": 10.759463578967445
+        },
+        "sommer": {
+          "epsg": "EPSG:4258",
+          "lat": 59.923700946654236,
+          "lon": 10.759463578967445
+        },
+        "vinter": {
+          "epsg": "EPSG:4258",
+          "lat": 59.923700946654236,
+          "lon": 10.759463578967445
+        },
+        "generell": null
+      }
+    }
+  ]
+}

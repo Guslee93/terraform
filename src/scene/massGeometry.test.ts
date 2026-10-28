@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createFootprint, createRectangleFootprint, createTier } from '../features/massing/factories'
-import { createTierGeometry, roofHandlePosition } from './massGeometry'
+import { createStoreyLineGeometry, createTierGeometry, roofHandlePosition } from './massGeometry'
 
 describe('mass geometry adapter', () => {
   it('extrudes a tier into the renderer frame (east, up, -north)', () => {
@@ -51,5 +51,34 @@ describe('mass geometry adapter', () => {
     expect(x).toBeCloseTo(5, 6)
     expect(y).toBeCloseTo(16, 6)
     expect(z).toBeCloseTo(3, 6)
+  })
+})
+
+describe('storey line geometry', () => {
+  it('draws one ring per intermediate floor at k × storey height above the base', () => {
+    const tier = createTier({
+      footprint: createRectangleFootprint(10, 6, [0, 0]),
+      baseElevation: 2,
+      storeys: 4,
+      storeyHeight: 3,
+    })
+    const geometry = createStoreyLineGeometry(tier)
+    const position = geometry.getAttribute('position')
+    // 3 intermediate floors × 4 edges × 2 endpoints.
+    expect(position.count).toBe(24)
+    const heights = new Set<number>()
+    for (let index = 0; index < position.count; index += 1) heights.add(position.getY(index))
+    expect([...heights].sort((a, b) => a - b)).toEqual([5, 8, 11])
+    geometry.dispose()
+  })
+
+  it('is empty for a single-storey tier', () => {
+    const tier = createTier({
+      footprint: createRectangleFootprint(10, 6, [0, 0]),
+      baseElevation: 0,
+      storeys: 1,
+      storeyHeight: 3,
+    })
+    expect(createStoreyLineGeometry(tier).getAttribute('position').count).toBe(0)
   })
 })

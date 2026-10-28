@@ -121,23 +121,23 @@ Geometry checks: every building footprint must be a simple ring with positive ar
 
 ## 7. PRD QA matrix mapping
 
-| QA | Fixture / test |
-|---|---|
-| QA-01 | M1 package load smoke |
-| QA-02 | Camera presets and orbit test |
-| QA-03 | Rectangle/polygon creation |
-| QA-04 | Self-intersection rejection |
-| QA-05 | 3→5 storeys recalculation |
-| QA-06 | Boundary crossing warning |
-| QA-07 | Drag + Esc restores exact dimensions |
-| QA-08 | Undo/redo duplicate/delete/rotate |
-| QA-09 | M4 reload fixture |
-| QA-10 | Deterministic sun vector |
-| QA-11 | Winter/no-sun state |
-| QA-12 | Comparison deltas |
-| QA-13 | PNG export contents |
-| QA-14 | Corrupt schema/quota |
-| QA-15 | No WebGL fallback |
-| QA-16 | Invalid numeric input |
-| QA-17 | Reduced motion |
-| QA-18 | Missing site asset |
+| QA | Fixture / test | Covered by |
+|---|---|---|
+| QA-01 | M1 package load smoke | `e2e/smoke.spec.ts` — "landing page opens the primary studio and the package loads"; "the sloped-edge package loads its own context"; `src/features/sites/package.test.ts` — "parses the manifest and all three assets" |
+| QA-02 | Camera presets and orbit test | `e2e/smoke.spec.ts` — "landing page opens the primary studio and the package loads" (Top preset clicked, `aria-pressed` asserted). Orbit-drag behaviour has no automated test. |
+| QA-03 | Rectangle/polygon creation | `src/features/editor/interaction.test.ts` — "adds points on click, removes with Backspace, and creates a mass on Enter"; `src/features/editor/commands.test.ts` — "adds a volume and selects it" |
+| QA-04 | Self-intersection rejection | `src/features/editor/interaction.test.ts` — "QA-04: rejects a self-intersecting footprint and keeps the points to fix"; `src/lib/polygon.test.ts` — "rejects a crossing bow-tie"; `src/features/massing/validation.test.ts` — "rejects a self-intersecting bow-tie and leaves it unchanged" |
+| QA-05 | 3→5 storeys recalculation | `src/features/editor/commands.test.ts` — "updates height and concept GFA from the geometry"; `src/features/editor/interaction.test.ts` — "QA-05 via roof drag: 3 → 5 storeys commits a 16 m tier" |
+| QA-06 | Boundary crossing warning | `src/features/massing/clearance.test.ts` — "flags a mass crossing the boundary"; "flags a mass fully outside"; "flags a crossing upper tier even when the base tier is inside"; "reports nothing for a mass fully inside"; "flags a mass cutting into a slope with the depth"; "flags a mass floating above the ground with the gap"; "accepts a mass seated on flat ground" |
+| QA-07 | Drag + Esc restores exact dimensions | `src/features/editor/commands.test.ts` — "reverts to the exact pre-drag dimensions with no history entry"; `src/features/editor/interaction.test.ts` — "QA-07: roof drag then Esc restores the exact document with no entry"; `src/features/editor/history.test.ts` — "cancels back to the exact base with no entry" |
+| QA-08 | Undo/redo duplicate/delete/rotate | `src/features/editor/commands.test.ts` — "duplicates with fresh ids, selects the copy, and undoes exactly"; "deletes, clears selection, and restores the volume in place on undo"; "rotates every tier about one pivot and undoes to exact vertices"; `src/features/editor/history.test.ts` — "restores document and selection on undo and redo"; `src/components/studio/ToolRail.test.tsx` — "undoes and redoes when available"; `src/components/studio/MassFields.test.tsx` — "duplicates the mass beside the original"; "deletes the mass"; "rotates by 15° steps (clockwise is negative in ENU)" |
+| QA-09 | M4 reload fixture | Not yet covered |
+| QA-10 | Deterministic sun vector | Not yet covered |
+| QA-11 | Winter/no-sun state | Not yet covered |
+| QA-12 | Comparison deltas | Not yet covered |
+| QA-13 | PNG export contents | Not yet covered |
+| QA-14 | Corrupt schema/quota | `src/features/massing/serialize.test.ts` — "rejects malformed JSON"; "rejects unknown schema version"; "rejects structurally broken documents with a path"; "rejects semantically invalid values after decoding". Quota-exceeded handling (IndexedDB) is M4 — Not yet covered. |
+| QA-15 | No WebGL fallback | Not yet covered |
+| QA-16 | Invalid numeric input | `src/features/editor/inspectorInput.test.ts` — `parseStoreys` "parses %j as %d" / "rejects %j" (incl. `''`, `3.5`, `-1`, `3 storeys`, `1e2`) and `formatInputValue` "shows two decimals without a unit", "never shows negative zero", "returns an empty string for non-finite values"; `src/features/editor/commands.test.ts` — "rejects invalid numeric updates without an entry (QA-16)"; `src/components/studio/MassFields.test.tsx` — "QA-16: rejects non-numeric input, keeps the prior value and says why"; "QA-16: shows the domain error and keeps the prior value when a command is refused"; "QA-16: rejects a non-number in metres"; "parses metres with a comma decimal"; `src/lib/coordinates.test.ts` — "accepts whole and decimal values, including comma decimals"; "rejects empty, partial and non-numeric values" |
+| QA-17 | Reduced motion | Not yet covered |
+| QA-18 | Missing site asset | `src/features/sites/useSitePackage.test.tsx` — "reports a load failure as error with a retry action"; `src/features/sites/fetchJson.test.ts` — "fails with a timeout error naming the URL when a request stalls" |

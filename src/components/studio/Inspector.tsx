@@ -27,9 +27,16 @@ const TABS: readonly Tab[] = [
   { id: 'compare', label: 'Compare', available: false, note: 'M4' },
 ]
 
-const LAYER_ROWS: ReadonlyArray<{ id: keyof SceneLayers; label: string }> = [
+const LAYER_ROWS: ReadonlyArray<{
+  id: keyof SceneLayers
+  label: string
+  /** Optional package file the row depends on; the row is hidden when the package lacks it. */
+  asset?: 'roads' | 'trees'
+}> = [
   { id: 'terrain', label: 'Terrain' },
   { id: 'context', label: 'Context buildings' },
+  { id: 'streets', label: 'Streets', asset: 'roads' },
+  { id: 'trees', label: 'Trees', asset: 'trees' },
   { id: 'parcel', label: 'Study boundary' },
 ]
 
@@ -295,7 +302,7 @@ export function Inspector({
               Layers
             </h2>
             <div className="mt-2 space-y-0.5">
-              {LAYER_ROWS.map((row) => (
+              {LAYER_ROWS.filter((row) => !row.asset || manifest?.assetPaths[row.asset]).map((row) => (
                 <label
                   key={row.id}
                   className="flex cursor-pointer items-center justify-between gap-3 rounded-[6px] px-1.5 py-1.5 text-[11.5px] text-ink transition-colors hover:bg-surface-muted"

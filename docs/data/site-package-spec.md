@@ -15,8 +15,25 @@ public/sites/<site-id>/
   terrain.json             # rows/cols + heights in metres relative to origin
   buildings.json           # simplified footprints, heights, base elevations
   study-area.json          # authored boundary; not a cadastral parcel
+  roads.json               # optional: OSM highway centrelines + illustrative widths (ADR-0005)
+  trees.json               # optional: OSM natural=tree points
+  landcover.json           # optional: OSM water/park/grass/wood polygons (illustrative ground tints)
   attribution.md
 ```
+
+`roads.json` and `trees.json` are optional and referenced by `assetPaths.roads` /
+`assetPaths.trees`. Packages without them stay valid and load with empty layers;
+the Streets and Trees layer toggles are hidden for such packages.
+
+`landcover.json` is optional through `assetPaths.landcover`; absent paths load as
+`landcover: []` without a request. Its schema is `{ schemaVersion: 1, siteId,
+areas: [{ id, kind, ring }] }`, where kind is `water | park | grass | wood` and ring
+is an open, counter-clockwise array of local `[east, north]` points. The builder
+clips closed ways and joined multipolygon outer rings to the terrain, simplifies
+at 0.5 m and drops areas below 4 m². Inner rings and incomplete rings are ignored.
+IDs retain `way/<id>` or `relation/<id>`; multiple outer rings of a relation share
+its source ID. Polygons are illustrative ground tints; this addition supplies data
+only, without rendering or layer controls.
 
 The card thumbnail lives at `public/sites/<site-id>.svg` and is referenced from
 `assetPaths.thumbnail`. Paths in the manifest are relative to the package root,
@@ -56,6 +73,9 @@ interface SiteManifest {
     studyArea: string
     thumbnail: string
     attribution: string
+    roads?: string
+    trees?: string
+    landcover?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -130,6 +150,9 @@ Unknown fields are rejected or ignored explicitly; required fields are validated
 - [ ] Manifest statistics match the building count, terrain samples and boundary area.
 - [ ] Attribution states that the boundary is not a cadastral parcel.
 - [ ] Deterministic load: same manifest → same scene checksum.
+- [ ] Optional roads: every run has ≥ 2 points and a width in (0, 50] m; runs are clipped to the terrain extent; tunnels and area-tagged ways omitted.
+- [ ] Optional trees: finite `[east, north]` points inside the terrain extent; no size data implied.
+- [ ] Optional land cover: matching site ID, ≤ 5000 areas, known kinds, ≥ 3 finite points and positive area per ring; built rings open, counter-clockwise, ≥ 4 m² and clipped to terrain; inner rings ignored and documented.
 
 ## 6. Performance budgets (initial)
 

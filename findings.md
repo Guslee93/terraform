@@ -43,6 +43,10 @@
 | Separate UI store and document command layer | Testable transactions; ADR-0003 |
 | Tailwind 4 + CSS variables from PRD §7.2 | Token fidelity without a component library |
 | Lazy-load studio route | Landing stays light; Three.js only loads on entry |
+| `postprocessing` 6.39.5 (Zlib) + `n8ao` 2.0.1 (ISC) for AO, lazy chunk | ADR-0005; 96 kB gzip, kept off the first frame |
+| `NeutralToneMapping` for the white model | ACES greyed albedo whites to ~215/255 |
+| three r186 removed `PCFSoftShadowMap` | Use PCF + `shadow-radius` |
+| postprocessing `EffectComposer.dispose()` empties `passes` | Never memoise a composer that an effect disposes (StrictMode) |
 | TypeScript 6.0.3 | Lint compatibility; ADR-0001 |
 | Editorial Newsreader display + Inter UI | Distinctive but restrained; self-hosted |
 | Empty studio state instead of invented geometry | Truthfulness; no fabricated site data |

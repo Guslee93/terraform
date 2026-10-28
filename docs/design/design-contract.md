@@ -107,18 +107,27 @@ Rules: never introduce a new hex in a component; add a token first. Borders are 
 
 ## 8. 3D scene palette
 
+"White model" look — see `docs/design/scene-look-plan.md`. Separation comes from light, shadow and linework, not hue.
+
 | Element | Colour |
 |---|---|
-| Terrain | warm desaturated sage `#DDE3DA` |
-| Context buildings | matte warm grey `#D2D4CC` |
-| Concept massing | off-white / clay `#F2EFE7` |
+| Background / fog | `#F4F2EE` (`--surface-viewport`) |
+| Terrain | warm off-white `#F7F4EF` → `#EEEAE3` by elevation; skirt `#DCD8D1` |
+| Context buildings | single matte `#FAF9F6`, no per-use tints |
+| Context edges | `#7E7D7A` at 0.85 opacity, 1 device px, creases > 30° only — thin mid-grey outline ≈ 140/255, matched to Hektar |
+| Concept massing | pale accent `#C9DBE5` — the only tinted built object; warning/invalid stay semantic; storey bands + outline `#355E79` at 0.35 |
 | Alternate mass | cool blue-grey `#E9EDF0` |
 | Parcel boundary | `#355E79`, 2 px |
 | Setbacks | `#B8822B`, dashed |
 | Selection outline | dark blue-grey |
-| Grid | `#B9C0B6`, sections `#9AA399` |
+| Grid | `#B9C0B6`, sections `#9AA399`; shown only in Top view or while drawing |
+| Contours | `#6F6E6A`, 1 m at 0.14, 5 m at 0.32; only when relief ≥ 2 m |
+| Streets (OSM) | `#E2E1DD`, one value step darker than ground |
+| Trees (OSM) | leaf-cluster canopies (18–28 jittered clumps, greens `#A9CBA0` `#8FBB8A` `#C3DAB5` `#7FAE7E` per clump), 6 variants × round/tall, branches `#A39A8C`; size 0.75–1.35×, varied by position (Codex C2) |
+| Green space (OSM park/grass/wood) | rendered ≈ `#D3DCCB` (muted sage), painted into the terrain texture |
+| Water (OSM) | rendered ≈ `#C6DCE8`, painted into the terrain texture |
 
-Lighting: one directional sun, soft ambient/hemisphere fill, readable shadows. No fake PBR realism, no bloom, no vignette on the canvas.
+Lighting: one directional sun at the real Oslo position for 21 June, 15:00 (`DEMO_SUN_INSTANT`, azimuth ≈ 217°, elevation ≈ 49.5°, suncalc) until M3 adds date/time controls; intensity 3.2; ambient 0.28; cool hemisphere fill (`#EEF3FA` / `#D2D5D8`, 1.75), low enough that walls read by their angle to the sun, as in Hektar (facing ≈ white, oblique ≈ 225, away ≈ 195–210); `NeutralToneMapping`. Shadows: PCF, 4096 map fitted to the site (~0.1 m/texel). Shadow radius 1 (crisp). Ambient occlusion: N8AO radius 4 m, intensity 1, cool `#2B3138`, desktop widths only (ADR-0005). No fake PBR realism, no bloom, no vignette on the canvas.
 
 ## 9. Accessibility
 

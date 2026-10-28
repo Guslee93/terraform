@@ -40,13 +40,17 @@ export type SiteManifest = {
     projection: string
   }
   unit: 'm'
-  dataStatus: 'curated-demo' | 'licensed-real-world-simplified'
+  dataStatus: 'curated-demo' | 'licensed-real-world-simplified' | 'user-import'
   assetPaths: {
     terrain: string
     buildings: string
     studyArea: string
     thumbnail: string
     attribution: string
+    /** Optional OSM context layers (ADR-0005 §5); older packages omit them. */
+    roads?: string
+    trees?: string
+    landcover?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -161,7 +165,7 @@ export function parseSiteManifest(value: unknown): SiteManifest {
   if (root.unit !== 'm') fail('manifest.unit', 'only metres are supported')
 
   const dataStatus = asString(root.dataStatus, 'manifest.dataStatus')
-  if (dataStatus !== 'curated-demo' && dataStatus !== 'licensed-real-world-simplified') {
+  if (dataStatus !== 'curated-demo' && dataStatus !== 'licensed-real-world-simplified' && dataStatus !== 'user-import') {
     fail('manifest.dataStatus', 'unknown data status')
   }
 
@@ -227,6 +231,15 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       studyArea: asString(assetPaths.studyArea, 'manifest.assetPaths.studyArea'),
       thumbnail: asString(assetPaths.thumbnail, 'manifest.assetPaths.thumbnail'),
       attribution: asString(assetPaths.attribution, 'manifest.assetPaths.attribution'),
+      ...(assetPaths.roads === undefined
+        ? {}
+        : { roads: asString(assetPaths.roads, 'manifest.assetPaths.roads') }),
+      ...(assetPaths.trees === undefined
+        ? {}
+        : { trees: asString(assetPaths.trees, 'manifest.assetPaths.trees') }),
+      ...(assetPaths.landcover === undefined
+        ? {}
+        : { landcover: asString(assetPaths.landcover, 'manifest.assetPaths.landcover') }),
     },
     constraints: {
       maxHeightMeters,

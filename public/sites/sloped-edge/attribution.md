@@ -10,6 +10,24 @@ This simplified, derived building dataset is made available under ODbL 1.0.
 If you reuse or redistribute it, keep this attribution and the ODbL notice.
 Licence text: https://opendatacommons.org/licenses/odbl/1-0/
 
+## Roads and trees
+
+© OpenStreetMap contributors (ODbL 1.0), from the same extract as the buildings.
+Roads are `highway` centrelines clipped to the terrain extent; widths are illustrative
+values by highway class, not measured carriageways. Tunnels and area-tagged ways are
+omitted. Trees are `natural=tree` points drawn with illustrative sizes and tints varied
+by position; no species, height or canopy data is implied.
+
+## Land cover
+
+© OpenStreetMap contributors (ODbL 1.0), from the same cached extract.
+Water: `natural=water`, `waterway=riverbank`, `landuse=reservoir|basin`.
+Wood: `natural=wood`, `landuse=forest`. Park: `leisure=park|garden|playground`,
+`landuse=recreation_ground`. Grass: `landuse=grass|meadow|village_green|flowerbed`,
+`natural=grassland`. Closed ways and multipolygon outer rings are clipped to the
+terrain extent and simplified at 0.5 m; areas below 4 m² and incomplete rings are
+omitted. Inner rings are ignored. Polygons are illustrative ground tints.
+
 ## Terrain
 
 © Kartverket. Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).

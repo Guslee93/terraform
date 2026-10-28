@@ -1,0 +1,68 @@
+{
+  "koordsys": 4326,
+  "punkter": [
+    {
+      "datakilde": "dtm1",
+      "terreng": "BymessigBebyggelse",
+      "x": 10.7589,
+      "y": 59.9219,
+      "z": 16
+    },
+    {
+      "datakilde": "dtm1",
+      "terreng": "BymessigBebyggelse",
+      "x": 10.7595,
+      "y": 59.9219,
+      "z": 16.1
+    },
+    {
+      "datakilde": "dtm1",
+      "terreng": "BymessigBebyggelse",
+      "x": 10.7601,
+      "y": 59.9219,
+      "z": 16.13
+    },
+    {
+      "datakilde": "dtm1",
+      "terreng": "ÅpentOmråde",
+      "x": 10.7589,
+      "y": 59.9225,
+      "z": 17.63
+    },
+    {
+      "datakilde": "dtm1",
+      "terreng": "BymessigBebyggelse",
+      "x": 10.7595,
+      "y": 59.9225,
+      "z": 17.58
+    },
+    {
+      "datakilde": "dtm1",
+      "terreng": "BymessigBebyggelse",
+      "x": 10.7601,
+      "y": 59.9225,
+      "z": 19.26
+    },
+    {
+      "datakilde": "dtm1",
+      "terreng": "ÅpentOmråde",
+      "x": 10.7589,
+      "y": 59.9231,
+      "z": 19.63
+    },
+    {
+      "datakilde": "dtm1",
+      "terreng": "BymessigBebyggelse",
+      "x": 10.7595,
+      "y": 59.9231,
+      "z": 19.48
+    },
+    {
+      "datakilde": "dtm1",
+      "terreng": "BymessigBebyggelse",
+      "x": 10.7601,
+      "y": 59.9231,
+      "z": 19.05
+    }
+  ]
+}

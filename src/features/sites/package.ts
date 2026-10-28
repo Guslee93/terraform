@@ -53,11 +53,51 @@ export type StudyAreaData = {
   polygon: Vec2Tuple[]
 }
 
+export type Road = {
+  id: string
+  highway: string
+  /** Illustrative width (m) by highway class, not a measured carriageway. */
+  width: number
+  centreline: Vec2Tuple[]
+}
+
+export type RoadsData = {
+  schemaVersion: 1
+  siteId: string
+  roads: Road[]
+}
+
+export type TreesData = {
+  schemaVersion: 1
+  siteId: string
+  trees: Vec2Tuple[]
+}
+
+export type LandCoverKind = 'water' | 'park' | 'grass' | 'wood'
+
+export type LandCoverArea = {
+  id: string
+  kind: LandCoverKind
+  ring: Vec2Tuple[]
+}
+
+export type LandCoverData = {
+  schemaVersion: 1
+  siteId: string
+  areas: LandCoverArea[]
+}
+
 export type SitePackage = {
   manifest: SiteManifest
   terrain: TerrainData
   buildings: BuildingsData
   studyArea: StudyAreaData
+  /** Empty when the package has no roads file. */
+  roads: RoadsData['roads']
+  /** Empty when the package has no trees file. */
+  trees: TreesData['trees']
+  /** Empty when the package has no land cover file. */
+  landcover: LandCoverArea[]
 }
 
 const BUILDING_KINDS: readonly BuildingKind[] = [
@@ -240,6 +280,70 @@ export function parseStudyArea(value: unknown): StudyAreaData {
 }
 
 
+export function parseRoads(value: unknown): RoadsData {
+  const root = asRecord(value, 'roads')
+  if (root.schemaVersion !== 1) fail('roads.schemaVersion', 'unsupported schema version')
+  const roads = asArray(root.roads, 'roads.roads')
+  if (roads.length > 5000) fail('roads.roads', 'too many roads')
+  return {
+    schemaVersion: 1,
+    siteId: asString(root.siteId, 'roads.siteId'),
+    roads: roads.map((item, index) => {
+      const path = `roads.roads[${index}]`
+      const road = asRecord(item, path)
+      const width = asNumber(road.width, `${path}.width`)
+      if (width <= 0 || width > 50) fail(`${path}.width`, 'out of range')
+      const centreline = asArray(road.centreline, `${path}.centreline`).map((point, pointIndex) =>
+        asVec2(point, `${path}.centreline[${pointIndex}]`),
+      )
+      if (centreline.length < 2) fail(`${path}.centreline`, 'expected at least two points')
+      return {
+        id: asString(road.id, `${path}.id`),
+        highway: asString(road.highway, `${path}.highway`),
+        width,
+        centreline,
+      }
+    }),
+  }
+}
+
+export function parseTrees(value: unknown): TreesData {
+  const root = asRecord(value, 'trees')
+  if (root.schemaVersion !== 1) fail('trees.schemaVersion', 'unsupported schema version')
+  const trees = asArray(root.trees, 'trees.trees')
+  if (trees.length > 20000) fail('trees.trees', 'too many trees')
+  return {
+    schemaVersion: 1,
+    siteId: asString(root.siteId, 'trees.siteId'),
+    trees: trees.map((point, index) => asVec2(point, `trees.trees[${index}]`)),
+  }
+}
+
+export function parseLandCover(value: unknown): LandCoverData {
+  const root = asRecord(value, 'landcover')
+  if (root.schemaVersion !== 1) fail('landcover.schemaVersion', 'unsupported schema version')
+  const areas = asArray(root.areas, 'landcover.areas')
+  if (areas.length > 5000) fail('landcover.areas', 'too many areas')
+  return {
+    schemaVersion: 1,
+    siteId: asString(root.siteId, 'landcover.siteId'),
+    areas: areas.map((item, index) => {
+      const path = `landcover.areas[${index}]`
+      const area = asRecord(item, path)
+      const kind = asString(area.kind, `${path}.kind`)
+      if (kind !== 'water' && kind !== 'park' && kind !== 'grass' && kind !== 'wood') {
+        fail(`${path}.kind`, 'unknown land cover kind')
+      }
+      const ring = asArray(area.ring, `${path}.ring`).map((point, pointIndex) =>
+        asVec2(point, `${path}.ring[${pointIndex}]`),
+      )
+      if (ring.length < 3) fail(`${path}.ring`, 'expected at least three points')
+      const size = polygonArea(ring)
+      if (!Number.isFinite(size) || size <= 0) fail(`${path}.ring`, 'must have finite positive area')
+      return { id: asString(area.id, `${path}.id`), kind, ring }
+    }),
+  }
+}
 
 function assetUrl(siteId: string, relative: string): string {
   if (relative.startsWith('/') || relative.includes('..') || relative.includes('://')) {
@@ -299,17 +403,25 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
   )
   if (manifest.id !== siteId) fail('manifest.id', 'does not match the requested site')
 
-  const [terrainRaw, buildingsRaw, studyAreaRaw] = await Promise.all([
+  const { roads: roadsPath, trees: treesPath, landcover: landcoverPath } = manifest.assetPaths
+  const [terrainRaw, buildingsRaw, studyAreaRaw, roadsRaw, treesRaw, landcoverRaw] = await Promise.all([
     fetchJson(assetUrl(siteId, manifest.assetPaths.terrain), signal),
     fetchJson(assetUrl(siteId, manifest.assetPaths.buildings), signal),
     fetchJson(assetUrl(siteId, manifest.assetPaths.studyArea), signal),
+    roadsPath === undefined ? null : fetchJson(assetUrl(siteId, roadsPath), signal),
+    treesPath === undefined ? null : fetchJson(assetUrl(siteId, treesPath), signal),
+    landcoverPath === undefined ? null : fetchJson(assetUrl(siteId, landcoverPath), signal),
   ])
 
   const terrain = parseTerrain(terrainRaw)
   const buildings = parseBuildings(buildingsRaw)
   const studyArea = parseStudyArea(studyAreaRaw)
+  const roads = roadsRaw === null ? null : parseRoads(roadsRaw)
+  const trees = treesRaw === null ? null : parseTrees(treesRaw)
+  const landcover = landcoverPath === undefined ? null : parseLandCover(landcoverRaw)
 
-  for (const asset of [terrain, buildings, studyArea]) {
+  for (const asset of [terrain, buildings, studyArea, roads, trees, landcover]) {
+    if (asset === null) continue
     if (asset.siteId !== siteId) fail(asset.siteId, 'site id does not match the package')
   }
   if (manifest.statistics.terrainSamples !== terrain.cols * terrain.rows) {
@@ -322,5 +434,13 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
     fail('manifest.statistics.studyAreaM2', 'does not match the study boundary area')
   }
 
-  return { manifest, terrain, buildings, studyArea }
+  return {
+    manifest,
+    terrain,
+    buildings,
+    studyArea,
+    roads: roads?.roads ?? [],
+    trees: trees?.trees ?? [],
+    landcover: landcover?.areas ?? [],
+  }
 }

@@ -348,6 +348,95 @@ Same rules as §15.1. Branch: `deepseek/round2` from current `main`. The don't-t
 - Export `footprintDimensions(vertices: readonly Vec2[]): { width: number; depth: number; rotation: number }` — the minimum-area bounding rectangle, testing each convex-hull edge direction (O(n²) is fine for ≤ 200 vertices). `width ≥ depth`; `rotation` is the angle of the width axis from east, counter-clockwise, normalised to `[0, π)`; on ties prefer the smallest rotation. Fewer than 3 vertices → `{ width: 0, depth: 0, rotation: 0 }`.
 - Tests: 18 × 12 rectangle → `18, 12, 0`; the same rotated 30° about its centre → `18, 12, π/6` (±1e-9); the 20 × 10 L-shape from `docs/qa/fixtures.md` → `20, 10, 0`; a 10 × 10 square → `10, 10, 0`; a 12 × 18 rectangle (taller than wide) → `18, 12, π/2`.
 
+### 15.3c Round 3 cards (D14–D20) — scene look follow-ups
+
+Same rules as §15.1. Branch: `deepseek/round3` from `deepseek/round2` at `e011315` or later (land cover and tree variety have landed; ready to start). Three-way split for this round: Claude owns visuals and review, Codex owns the land cover data pipeline (`docs/handoffs/C1-landcover.md`), DeepSeek owns the cards below.
+
+**Don't touch (round 3):** `src/scene/**` except `CameraHud.tsx` for D17; `src/features/sites/**`; `scripts/build_site_packages.py`; `public/sites/**`; `docs/decisions/**`; `package.json` dependencies.
+
+**D14 — Cull trees inside proposed masses (pure helper)** · commit `feat(scene): add point culling helper for masses`
+- New files only: `src/lib/cullPoints.ts` + `.test.ts`. Reuse `pointInPolygon` from `src/lib/polygon.ts`; do not modify it.
+- Export `pointsOutsideRings(points: readonly Vec2[], rings: readonly (readonly Vec2[])[]): Vec2[]` — keeps input order; a point on a ring edge counts as inside (removed); empty `rings` returns a copy of `points`.
+- Tests: no rings; one square ring removing 2 of 5 points; a point exactly on an edge; two overlapping rings; order preserved. Claude wires it into `Trees.tsx`.
+
+**D15 — E2E for the Streets and Trees layer toggles** · commit `test(e2e): cover streets and trees layer toggles`
+- New file only: `e2e/layers.spec.ts`. Copy the canvas-compare technique from `e2e/smoke.spec.ts` ("the 3D view redraws…"): screenshot a 300 × 200 clip at the canvas centre, uncheck **Trees**, poll until the clip differs; re-check, poll until it differs again. Same for **Streets**. Use `/studio/compact-infill`, viewport 1440 × 900.
+- Also assert the Streets and Trees checkboxes exist on both sites.
+
+**D16 — Fixed-view screenshot refresh** · commit `docs(screenshots): refresh scene-look set at all viewports`
+- Run `SHOT_PREFIX=scene-look-final npm run capture` (no `SHOT_VIEWPORT`) and commit only `docs/screenshots/scene-look-final-*` files. Delete the generated `scene-look-final-landing-*` files before committing. Do not commit any `m1-*` file.
+- Report: list the files and flag any image where the 3D view looks blank, frozen (Top identical to Iso) or cut off.
+
+**D17 — Legend swatches for the new layers** · commit `feat(scene): legend swatches for streets, trees, green and water`
+- Edit `src/scene/CameraHud.tsx` only. Extend the bottom-left legend (the "Study boundary" row) to a vertical list. Add rows in this order, each a 12 × 8 px swatch with `rounded-[2px]` plus the existing label style: **Green space** `#CBDBC5`, **Water** `#BCD6E6`, **Streets** `#E2E1DD` with a 1 px `border-line` border, **Trees** a 8 px circle `#9BBA94`. Keep the study boundary row first.
+- Show a row only when its layer is on: add a prop `layers: SceneLayers` (type from `ViewportCanvas.tsx`) and pass it from where `CameraHud` is rendered. Green and Water rows show when the `terrain` layer is on. If you cannot find where `CameraHud` is rendered without touching another `src/scene` file, stop and report.
+- Keep it hidden below `sm` and keep the 1100 px offset rule. No new colours beyond these four.
+
+**D18 — About page data notes** · commit `docs(about): list streets, trees and land cover sources`
+- Edit `src/app/AboutPage.tsx` text only, in the existing © OpenStreetMap block: add one sentence saying streets, trees, parks, grass, woods and water come from the same OpenStreetMap extract, are simplified, and are drawn at illustrative widths and sizes. Use only the claim-policy wording in `AGENTS.md` §7. No new sections, no styling changes.
+
+**D19 — Road-edge AO specks: investigation report (no code)** · commit `docs(qa): road edge AO speck investigation`
+- In a local, uncommitted edit, try `ROAD_LIFT` 0.05 / 0.15 / 0.3 in `src/scene/siteGeometry.ts` and `aoRadius` 3 / 5 in `src/scene/SceneComposer.tsx`. For each of the 6 combinations, capture `compact-infill` Iso at 1440 × 900 and crop the park's north-west corner.
+- Commit only `docs/qa/road-ao-specks.md` with a table (setting → speck count by eye, crop path) and the crops under `docs/qa/road-ao/`. **Revert both source files** before committing. Recommend one setting; Claude decides.
+
+**D20 — Reusable GPU frame-rate probe** · commit `chore(scripts): add GPU frame-rate probe`
+- New file only: `scripts/measure-fps.mjs`. Launch Chromium with `--use-angle=metal --enable-gpu --ignore-gpu-blocklist` (fall back to no flags off macOS), start or reuse the dev server like `scripts/capture.mjs`, and for each site at device scale 1 and 2 load `/studio/<site>`, wait 3 s, count `requestAnimationFrame` callbacks over 4 s and print `site dpr fps`. Add a row to the README commands table. Must pass `npm run lint`.
+
+### 15.3c result (reviewed 2026-10-28)
+
+D14–D20 accepted (agent log). D16 screenshots predate the later grade, so they are superseded; refresh at the M5 gate. D19: no specks, settings kept. Remaining issue: `e2e/massing.spec.ts` exceeds 30 s under software GL, assigned as D28.
+
+### 15.3d Round 4 cards (D22, D21, D23, D26) — site import groundwork (M6 track, ADR-0006)
+
+Same rules as §15.1. **Start only after round 3 has been reviewed and merged**, on branch `deepseek/round4`, preferably in its own git worktree (`git worktree add ../Terraform-ds4 -b deepseek/round4`) so it does not share a working tree with Claude or Codex. Background: `docs/plans/site-import-plan.md` §3–§5. Order: D22 → D21; D23 and D26 are independent.
+
+**Don't touch (round 4):** everything outside the files named in each card. In particular `src/scene/**`, `src/features/sites/**`, `scripts/build_site_packages.py`, `scripts/spike-import.mjs`, `public/**`, `docs/decisions/**`. No new dependencies.
+
+**D22 — Fixture recorder** · commit `chore(import): record site-import fixtures`
+- New file `scripts/record-import-fixtures.mjs` (Node 22, `fetch`, descriptive `User-Agent`, one request per second). Writes into `src/features/import/__fixtures__/`:
+  - `photon-grunerlokka.json` — `https://photon.komoot.io/api/?q=Grünerløkka%20Oslo&limit=5`
+  - `photon-sodermalm.json` — same for `Södermalm Stockholm`
+  - `kartverket-adresse.json` — `https://ws.geonorge.no/adresser/v1/sok?sok=Thorvald%20Meyers%20gate%2040%20Oslo&treffPerSide=5`
+  - `kartverket-hoyde.json` — one `punkt` batch of 9 points around 59.9225, 10.7595 (`koordsys=4326`)
+  - `README.md` — each file's URL, fetch date (UTC), licence (Photon/OSM ODbL; Kartverket CC BY 4.0).
+- Do not record map tiles (Codex owns tiles). Commit the script and the fixtures.
+
+**D21 — Geocoder clients** · commit `feat(import): Photon and Kartverket geocoder clients`
+- New files only: `src/features/import/geocode.ts` + `.test.ts` (tests use the D22 fixtures via a mocked `fetch`; no live network in tests).
+- Export `type PlaceResult = { id: string; label: string; detail: string; latitude: number; longitude: number; source: 'photon' | 'kartverket' }`.
+- `searchPhoton(query: string, signal?: AbortSignal): Promise<PlaceResult[]>` — `https://photon.komoot.io/api/?q=…&limit=8&lang=en`, bias to the Nordics with `&bbox=4,54,32,71`; label from `name` (or `street housenumber`), detail from `district/city/country`.
+- `searchKartverket(query: string, signal?: AbortSignal): Promise<PlaceResult[]>` — Adresse-API `sok`, `treffPerSide=8`; label `adressetekst`, detail `poststed`; coordinates from `representasjonspunkt` (`lat`, `lon`).
+- `searchPlaces(query, signal)` — runs both, Kartverket results first, de-duplicates results within 25 m, max 8. Empty / whitespace query → `[]` without a request. Every request has an 8 s timeout and honours `signal`; one failing source must not fail the other.
+- Validate every response field; drop malformed entries instead of throwing. No `any`.
+
+**D23 — Licence and usage verification (no code)** · commit `docs(data): verify site-import sources`
+- New file `docs/data/import-sources.md`. For each source in plan §3 (OpenFreeMap tiles + style, OpenMapTiles schema, OpenStreetMap, Kartverket høydedata, Kartverket Adresse-API, AWS Terrain Tiles, Photon, Nominatim, Overpass, Dataforsyningen, Lantmäteriet Byggnad, Kartverket FKB): official licence link, exact attribution string to display, usage policy limits (rate, caching, autocomplete, commercial), and a verdict **Ship / Ship with conditions / Do not ship (needs backend or agreement)**. Quote at most one short phrase per source; link the rest. Flag anything that contradicts plan §3.
+
+**D26 — City quick picks** · commit `feat(import): Nordic city quick picks`
+- New files only: `src/features/import/cities.ts` + `.test.ts`.
+- Export `type QuickPick = { id: string; label: string; country: 'NO' | 'SE' | 'DK' | 'FI'; latitude: number; longitude: number; frameMetres: 400 }` and `QUICK_PICKS` for Oslo (Grünerløkka), Bergen (Bryggen), Trondheim (Bakklandet), Stockholm (Södermalm), Göteborg (Haga), Malmö (Möllevången), Copenhagen (Nørrebro), Aarhus (Latinerkvarteret), Helsinki (Kallio). Coordinates from OpenStreetMap place nodes, 4 decimals, source noted in a comment per row.
+- Tests: ids unique; each point lies inside its country's bounding box (NO 4–31.5 E / 57.9–71.2 N, SE 10.9–24.2 / 55.3–69.1, DK 8–15.2 / 54.5–57.8, FI 19–31.6 / 59.7–70.1).
+
+### 15.3d result (reviewed 2026-10-28)
+
+D17b, D22, D21, D26, D23 accepted and merged (`d7921e4`). Suite after merge: lint, typecheck, 314 unit tests, build pass; e2e 9/10 (massing timeout, D28).
+
+### 15.3e Round 4b cards (D28–D29) — after round 4, same worktree and branch
+
+Same rules as §15.1. Continue on `deepseek/round4` in `../Terraform-ds4` after D17b/D22/D21/D26/D23. Codex is working in the main checkout on `src/features/import/**` and `src/features/sites/manifest.ts`; do not touch those.
+
+**D28 — No ambient occlusion on software renderers** · commit `perf(scene): skip AO on software WebGL renderers`
+- Problem: `e2e/massing.spec.ts` now exceeds its 30 s test timeout because N8AO is very slow under software GL (SwiftShader in headless Chromium); weak laptops pay the same cost.
+- New files `src/scene/rendererTier.ts` + `.test.ts`: export `isSoftwareRenderer(rendererName: string): boolean`, true when the name matches `/swiftshader|llvmpipe|softpipe|software|basic render/i`. Test real strings: `ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) …), SwiftShader driver)` → true; `ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)` → false; `llvmpipe (LLVM 15.0.7, 256 bits)` → true; `''` → false.
+- Edit `src/scene/ViewportCanvas.tsx`, the `AmbientOcclusion` component only: read the renderer name once via `gl.getContext()` and the `WEBGL_debug_renderer_info` extension (`UNMASKED_RENDERER_WEBGL`); if the extension is missing, treat it as hardware. Return `null` when `isSoftwareRenderer` is true. Comment why.
+- Done when: `npx playwright test e2e/massing.spec.ts` passes **without** raising any timeout; `e2e/smoke.spec.ts` (including "the 3D view redraws…") still passes. Do not change `playwright.config.ts` or any timeout.
+
+**D29 — Hide trees inside proposed masses** · commit `feat(scene): hide trees inside proposed masses`
+- Uses your D14 `pointsOutsideRings` (`src/lib/cullPoints.ts`); do not modify it.
+- New files `src/scene/massFootprints.ts` + `.test.ts`: export `visibleTierFootprints(document: ScenarioDocument): Vec2[][]`, the footprint vertices of every tier of every **visible** volume (hidden volumes excluded). Tests: hidden volume excluded; stacked tiers both included; empty document → `[]`.
+- Edit `src/scene/Trees.tsx`: new optional prop `exclude?: readonly (readonly Vec2[])[]`; filter `sitePackage.trees` with `pointsOutsideRings` before variant/placement (memoised on trees and exclude). Edit `src/scene/ViewportCanvas.tsx` only to pass `exclude={visibleTierFootprints(displayedDocument(editor))}` (memoised) to `<Trees>`. Live drag previews may update the culling; that is fine.
+- Done when: unit tests pass; e2e still passes; describe in the report how you verified a drawn mass over the Compact Infill park removes the trees under it (DOM/instance-count evidence, since you cannot view images; e.g. expose nothing new, but compare a canvas clip before/after like `e2e/layers.spec.ts`).
+
 ### 15.4 Handoff back to Claude
 
 When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `deepseek/followups`). Claude will diff it against `main`, check the work against the task cards and AGENTS.md, re-run the suite, merge accepted commits, fix or reject the rest, mark the rows in `docs/agent-log.md` and update `progress.md` and this report.

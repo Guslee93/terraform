@@ -1,9 +1,14 @@
+import type { SceneLayers } from './ViewportCanvas'
 import { useHudStore } from './hudStore'
 
-export function CameraHud() {
+export function CameraHud({ layers }: { layers?: SceneLayers } = {}) {
   const bearingDegrees = useHudStore((state) => state.bearingDegrees)
   const scaleLabel = useHudStore((state) => state.scaleLabel)
   const scaleWidthPx = useHudStore((state) => state.scaleWidthPx)
+
+  const terrainOn = layers?.terrain ?? true
+  const streetsOn = layers?.streets ?? true
+  const treesOn = layers?.trees ?? true
 
   return (
     <>
@@ -26,17 +31,65 @@ export function CameraHud() {
         <span className="text-[9px] uppercase tracking-[0.14em] text-ink-secondary">N</span>
       </div>
 
-      <div className="pointer-events-none absolute bottom-9 left-3 z-10 hidden items-center gap-2 sm:flex">
-        <span aria-hidden="true" className="w-5 border-t border-dashed border-accent" />
-        <span
-          className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary"
-          title="Authored study area — not a cadastral parcel"
-        >
-          Study boundary
-        </span>
+      <div
+        data-testid="legend"
+        className="pointer-events-none absolute bottom-14 left-3 z-10 hidden flex-col gap-1 min-[1100px]:bottom-12 sm:flex"
+      >
+        <div className="flex items-center gap-2">
+          <span aria-hidden="true" className="w-5 border-t border-dashed border-accent" />
+          <span
+            className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary"
+            title="Authored study area — not a cadastral parcel"
+          >
+            Study boundary
+          </span>
+        </div>
+        {terrainOn && (
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="rounded-[2px]"
+              style={{ width: '12px', height: '8px', backgroundColor: '#CBDBC5' }}
+            />
+            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">Green space</span>
+          </div>
+        )}
+        {terrainOn && (
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="rounded-[2px]"
+              style={{ width: '12px', height: '8px', backgroundColor: '#BCD6E6' }}
+            />
+            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">Water</span>
+          </div>
+        )}
+        {streetsOn && (
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="rounded-[2px] border border-line"
+              style={{ width: '12px', height: '8px', backgroundColor: '#E2E1DD' }}
+            />
+            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">Streets</span>
+          </div>
+        )}
+        {treesOn && (
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="rounded-full"
+              style={{ width: '8px', height: '8px', backgroundColor: '#9BBA94' }}
+            />
+            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">Trees</span>
+          </div>
+        )}
       </div>
 
-      <div className="pointer-events-none absolute bottom-3 left-3 z-10 hidden flex-col gap-1 sm:flex">
+      <div
+        data-testid="scale-bar"
+        className="pointer-events-none absolute bottom-3 left-3 z-10 hidden flex-col gap-1 sm:flex"
+      >
         <div
           className="h-1.5 border-x border-b border-ink-secondary/70"
           style={{ width: `${scaleWidthPx}px` }}
