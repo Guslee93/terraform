@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, NeutralToneMapping, type WebGLRenderer } from 'three'
+import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import { contourSegments } from '../features/sites/contours'
@@ -17,6 +17,7 @@ import { DEMO_SUN_INSTANT, sunDirection } from '../features/analysis/sun'
 import { MassLayer } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
+import { isSoftwareRenderer, webglRendererName } from './rendererTier'
 import { createLandCoverTexture } from './landCoverTexture'
 import { SceneErrorBoundary } from './SceneErrorBoundary'
 import {
@@ -266,21 +267,6 @@ function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
 
 const SceneComposer = lazy(() => import('./SceneComposer'))
 
-/** Software WebGL renderers (headless Chromium SwiftShader, llvmpipe). */
-const SOFTWARE_RENDERER_RE = /\b(?:swiftshader|llvmpipe)\b/i
-
-function isSoftwareRenderer(gl: WebGLRenderer): boolean {
-  try {
-    const context = gl.getContext()
-    const ext = context.getExtension('WEBGL_debug_renderer_info')
-    if (!ext) return false
-    const info = (context.getParameter(ext.UNMASKED_RENDERER_WEBGL) ?? '') as string
-    return SOFTWARE_RENDERER_RE.test(info)
-  } catch {
-    return false
-  }
-}
-
 /** Below this canvas width the scene renders without ambient occlusion (ADR-0005 §3). */
 const AO_MIN_WIDTH_PX = 640
 
@@ -288,7 +274,8 @@ const AO_MIN_WIDTH_PX = 640
 function AmbientOcclusion() {
   const wide = useThree((state) => state.size.width >= AO_MIN_WIDTH_PX)
   const gl = useThree((state) => state.gl)
-  const software = isSoftwareRenderer(gl)
+  // CPU rasterisers (headless test browsers, VMs) render N8AO far too slowly to be usable.
+  const software = useMemo(() => isSoftwareRenderer(webglRendererName(gl)), [gl])
   if (!wide || software) return null
   // If the composer cannot start, drop AO and keep R3F's own render loop.
   return (
