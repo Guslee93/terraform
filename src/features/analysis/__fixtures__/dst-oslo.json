@@ -1,0 +1,334 @@
+{
+  "$schema": "dst-oslo-v1",
+  "timezone": "Europe/Oslo",
+  "notes": "Gap local times map to the instant zoneinfo resolves (pre-transition offset), which is what a time scrubber must jump to. Overlap local times carry both folds. tzdata version is the authoritative rule set.",
+  "tzdata_version": "2026.6",
+  "transitions": [
+    {
+      "transition_utc_instant": "2026-03-29T01:00:00Z",
+      "local_before": "2026-03-29 01:59 CET",
+      "local_after": "2026-03-29 03:00 CEST",
+      "kind": "gap",
+      "offset_before": "1:00:00",
+      "offset_after": "2:00:00",
+      "cases": [
+        {
+          "local": "2026-03-29 02:15",
+          "utc_instant": "2026-03-29T01:15:00Z",
+          "displayed_post": "2026-03-29 03:15 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        },
+        {
+          "local": "2026-03-29 02:30",
+          "utc_instant": "2026-03-29T01:30:00Z",
+          "displayed_post": "2026-03-29 03:30 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        },
+        {
+          "local": "2026-03-29 02:45",
+          "utc_instant": "2026-03-29T01:45:00Z",
+          "displayed_post": "2026-03-29 03:45 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        }
+      ]
+    },
+    {
+      "transition_utc_instant": "2026-10-25T01:00:00Z",
+      "local_before": "2026-10-25 02:59 CEST",
+      "local_after": "2026-10-25 02:00 CET",
+      "kind": "overlap",
+      "offset_before": "2:00:00",
+      "offset_after": "1:00:00",
+      "cases": [
+        {
+          "local": "2026-10-25 02:15",
+          "fold": 0,
+          "utc_instant": "2026-10-25T00:15:00Z",
+          "displayed_local": "2026-10-25 02:15 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2026-10-25 02:15",
+          "fold": 1,
+          "utc_instant": "2026-10-25T01:15:00Z",
+          "displayed_local": "2026-10-25 02:15 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        },
+        {
+          "local": "2026-10-25 02:30",
+          "fold": 0,
+          "utc_instant": "2026-10-25T00:30:00Z",
+          "displayed_local": "2026-10-25 02:30 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2026-10-25 02:30",
+          "fold": 1,
+          "utc_instant": "2026-10-25T01:30:00Z",
+          "displayed_local": "2026-10-25 02:30 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        },
+        {
+          "local": "2026-10-25 02:45",
+          "fold": 0,
+          "utc_instant": "2026-10-25T00:45:00Z",
+          "displayed_local": "2026-10-25 02:45 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2026-10-25 02:45",
+          "fold": 1,
+          "utc_instant": "2026-10-25T01:45:00Z",
+          "displayed_local": "2026-10-25 02:45 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        }
+      ]
+    },
+    {
+      "transition_utc_instant": "2027-03-28T01:00:00Z",
+      "local_before": "2027-03-28 01:59 CET",
+      "local_after": "2027-03-28 03:00 CEST",
+      "kind": "gap",
+      "offset_before": "1:00:00",
+      "offset_after": "2:00:00",
+      "cases": [
+        {
+          "local": "2027-03-28 02:15",
+          "utc_instant": "2027-03-28T01:15:00Z",
+          "displayed_post": "2027-03-28 03:15 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        },
+        {
+          "local": "2027-03-28 02:30",
+          "utc_instant": "2027-03-28T01:30:00Z",
+          "displayed_post": "2027-03-28 03:30 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        },
+        {
+          "local": "2027-03-28 02:45",
+          "utc_instant": "2027-03-28T01:45:00Z",
+          "displayed_post": "2027-03-28 03:45 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        }
+      ]
+    },
+    {
+      "transition_utc_instant": "2027-10-31T01:00:00Z",
+      "local_before": "2027-10-31 02:59 CEST",
+      "local_after": "2027-10-31 02:00 CET",
+      "kind": "overlap",
+      "offset_before": "2:00:00",
+      "offset_after": "1:00:00",
+      "cases": [
+        {
+          "local": "2027-10-31 02:15",
+          "fold": 0,
+          "utc_instant": "2027-10-31T00:15:00Z",
+          "displayed_local": "2027-10-31 02:15 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2027-10-31 02:15",
+          "fold": 1,
+          "utc_instant": "2027-10-31T01:15:00Z",
+          "displayed_local": "2027-10-31 02:15 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        },
+        {
+          "local": "2027-10-31 02:30",
+          "fold": 0,
+          "utc_instant": "2027-10-31T00:30:00Z",
+          "displayed_local": "2027-10-31 02:30 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2027-10-31 02:30",
+          "fold": 1,
+          "utc_instant": "2027-10-31T01:30:00Z",
+          "displayed_local": "2027-10-31 02:30 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        },
+        {
+          "local": "2027-10-31 02:45",
+          "fold": 0,
+          "utc_instant": "2027-10-31T00:45:00Z",
+          "displayed_local": "2027-10-31 02:45 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2027-10-31 02:45",
+          "fold": 1,
+          "utc_instant": "2027-10-31T01:45:00Z",
+          "displayed_local": "2027-10-31 02:45 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        }
+      ]
+    },
+    {
+      "transition_utc_instant": "2028-03-26T01:00:00Z",
+      "local_before": "2028-03-26 01:59 CET",
+      "local_after": "2028-03-26 03:00 CEST",
+      "kind": "gap",
+      "offset_before": "1:00:00",
+      "offset_after": "2:00:00",
+      "cases": [
+        {
+          "local": "2028-03-26 02:15",
+          "utc_instant": "2028-03-26T01:15:00Z",
+          "displayed_post": "2028-03-26 03:15 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        },
+        {
+          "local": "2028-03-26 02:30",
+          "utc_instant": "2028-03-26T01:30:00Z",
+          "displayed_post": "2028-03-26 03:30 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        },
+        {
+          "local": "2028-03-26 02:45",
+          "utc_instant": "2028-03-26T01:45:00Z",
+          "displayed_post": "2028-03-26 03:45 CEST",
+          "note": "gap (this wall-clock never occurred); mapped via pre-transition offset to UTC instant; displays as post-transition offset time"
+        }
+      ]
+    },
+    {
+      "transition_utc_instant": "2028-10-29T01:00:00Z",
+      "local_before": "2028-10-29 02:59 CEST",
+      "local_after": "2028-10-29 02:00 CET",
+      "kind": "overlap",
+      "offset_before": "2:00:00",
+      "offset_after": "1:00:00",
+      "cases": [
+        {
+          "local": "2028-10-29 02:15",
+          "fold": 0,
+          "utc_instant": "2028-10-29T00:15:00Z",
+          "displayed_local": "2028-10-29 02:15 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2028-10-29 02:15",
+          "fold": 1,
+          "utc_instant": "2028-10-29T01:15:00Z",
+          "displayed_local": "2028-10-29 02:15 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        },
+        {
+          "local": "2028-10-29 02:30",
+          "fold": 0,
+          "utc_instant": "2028-10-29T00:30:00Z",
+          "displayed_local": "2028-10-29 02:30 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2028-10-29 02:30",
+          "fold": 1,
+          "utc_instant": "2028-10-29T01:30:00Z",
+          "displayed_local": "2028-10-29 02:30 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        },
+        {
+          "local": "2028-10-29 02:45",
+          "fold": 0,
+          "utc_instant": "2028-10-29T00:45:00Z",
+          "displayed_local": "2028-10-29 02:45 CEST",
+          "note": "overlap (time occurred twice); fold=0 is the earlier (CEST) occurrence"
+        },
+        {
+          "local": "2028-10-29 02:45",
+          "fold": 1,
+          "utc_instant": "2028-10-29T01:45:00Z",
+          "displayed_local": "2028-10-29 02:45 CET",
+          "note": "overlap (time occurred twice); fold=1 is the later (CET) occurrence"
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "control": "normal 2026-07-10 12:00",
+      "local": "2026-07-10 12:00",
+      "utc_instant": "2026-07-10T10:00:00Z",
+      "displayed_local": "2026-07-10 12:00 CEST",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2026-01-10 12:00",
+      "local": "2026-01-10 12:00",
+      "utc_instant": "2026-01-10T11:00:00Z",
+      "displayed_local": "2026-01-10 12:00 CET",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2026-07-10 12:00",
+      "local": "2026-07-10 12:00",
+      "utc_instant": "2026-07-10T10:00:00Z",
+      "displayed_local": "2026-07-10 12:00 CEST",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2026-01-10 12:00",
+      "local": "2026-01-10 12:00",
+      "utc_instant": "2026-01-10T11:00:00Z",
+      "displayed_local": "2026-01-10 12:00 CET",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2027-07-10 12:00",
+      "local": "2027-07-10 12:00",
+      "utc_instant": "2027-07-10T10:00:00Z",
+      "displayed_local": "2027-07-10 12:00 CEST",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2027-01-10 12:00",
+      "local": "2027-01-10 12:00",
+      "utc_instant": "2027-01-10T11:00:00Z",
+      "displayed_local": "2027-01-10 12:00 CET",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2027-07-10 12:00",
+      "local": "2027-07-10 12:00",
+      "utc_instant": "2027-07-10T10:00:00Z",
+      "displayed_local": "2027-07-10 12:00 CEST",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2027-01-10 12:00",
+      "local": "2027-01-10 12:00",
+      "utc_instant": "2027-01-10T11:00:00Z",
+      "displayed_local": "2027-01-10 12:00 CET",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2028-07-10 12:00",
+      "local": "2028-07-10 12:00",
+      "utc_instant": "2028-07-10T10:00:00Z",
+      "displayed_local": "2028-07-10 12:00 CEST",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2028-01-10 12:00",
+      "local": "2028-01-10 12:00",
+      "utc_instant": "2028-01-10T11:00:00Z",
+      "displayed_local": "2028-01-10 12:00 CET",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2028-07-10 12:00",
+      "local": "2028-07-10 12:00",
+      "utc_instant": "2028-07-10T10:00:00Z",
+      "displayed_local": "2028-07-10 12:00 CEST",
+      "note": "normal day control (no transition nearby)"
+    },
+    {
+      "control": "normal 2028-01-10 12:00",
+      "local": "2028-01-10 12:00",
+      "utc_instant": "2028-01-10T11:00:00Z",
+      "displayed_local": "2028-01-10 12:00 CET",
+      "note": "normal day control (no transition nearby)"
+    }
+  ]
+}
