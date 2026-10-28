@@ -115,14 +115,17 @@ Rules: never introduce a new hex in a component; add a token first. Borders are 
 | Terrain | near-white `#F0EFEC` → `#E6E5E1` by elevation (≤ 4% tint); skirt `#D8D7D3` |
 | Context buildings | single matte `#F3F2EE`, no per-use tints |
 | Context edges | `#6F6E6A` at 0.3 opacity, creases > 30° only |
-| Concept massing | pale accent `#C9DBE5` — the only coloured object; warning/invalid stay semantic |
+| Concept massing | pale accent `#C9DBE5` — the only tinted built object; warning/invalid stay semantic; storey bands + outline `#355E79` at 0.35 |
 | Alternate mass | cool blue-grey `#E9EDF0` |
 | Parcel boundary | `#355E79`, 2 px |
 | Setbacks | `#B8822B`, dashed |
 | Selection outline | dark blue-grey |
 | Grid | `#B9C0B6`, sections `#9AA399`; shown only in Top view or while drawing |
+| Contours | `#6F6E6A`, 1 m at 0.14, 5 m at 0.32; only when relief ≥ 2 m |
+| Streets (OSM) | `#E2E1DD`, one value step darker than ground |
+| Trees (OSM) | canopy `#9DB59A`, trunk `#B8B2A6`; one illustrative size |
 
-Lighting: one directional sun (default SW, 35° elevation until M3 drives it), low ambient (0.12), cool hemisphere fill (`#FFFFFF` / `#CDD0D4`, 0.55) for a ~3:1 lit-to-shaded ratio. No fake PBR realism, no bloom, no vignette on the canvas.
+Lighting: one directional sun (default SW, 35° elevation until M3 drives it), intensity 2.4; ambient 0.3; cool hemisphere fill (`#FFFFFF` / `#CDD0D4`, 1.6); `NeutralToneMapping`. Shadows: PCF, 4096 map fitted to the site (~0.1 m/texel). Ambient occlusion: N8AO, cool `#2B3138`, desktop widths only (ADR-0005). No fake PBR realism, no bloom, no vignette on the canvas.
 
 ## 9. Accessibility
 

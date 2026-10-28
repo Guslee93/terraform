@@ -58,6 +58,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [ ] Numeric inspector and validation (domain done; UI pending)
 - [x] Undo/redo transactions
 - [ ] QA-03–08
+- [x] Scene look (ADR-0005): white-model palette, fitted shadows, AO, contours, storey bands, OSM streets/trees — owner request, landed beside M2
 - **Status:** in_progress
 
 ### Phase 4 — M3 Live analysis

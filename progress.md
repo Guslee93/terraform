@@ -232,3 +232,16 @@
 - Evidence: `docs/screenshots/scene-look-{before,after}-*-1440x900*.png`, `scene-look-after-mass-iso.png`. `scripts/capture.mjs` takes `SHOT_PREFIX` / `SHOT_VIEWPORT`.
 - Tests: lint ✅ · test 229/229 ✅ (25 files) · e2e 4/4 ✅ · build ✅.
 - Known limitations: with the grid hidden in Iso, Sloped Edge's slope reads less (silhouette and plinth only) → contour lines are the honest fix. three r186 removed `PCFSoftShadowMap` (falls back to PCF, console warning) → Phase 2 must use PCF + `shadow-radius` or VSM.
+
+### Scene look — Phases 2–3 (ADR-0005)
+
+- ADR-0005 accepted: palette/light, fitted shadows, AO dependencies, contours, OSM roads/trees, storey bands.
+- Shadows: `fitShadowFrustum` (tested) sizes the ortho shadow camera to the site's bounding sphere; 4096 map ≈ 0.10 m/texel (was ≈ 0.5 m). PCF + `shadow-radius` (r186 dropped PCFSoft). Context buildings receive shadows.
+- Storey bands: `createStoreyLineGeometry` (tested) at every intermediate floor; faint accent outline on unselected masses; polygon offset on mass faces.
+- Contours: `contourSegments` (marching triangles, renderer-free, tested) → 1 m / 5 m lines, only with ≥ 2 m relief.
+- AO: `postprocessing` 6.39.5 (Zlib) + `n8ao` 2.0.1 (ISC), pinned; `SceneComposer` lazy chunk 96.0 kB gzip, studio chunk unchanged at ~36 kB gzip. 60 fps at 1440×900, 1× and 2× DPR (ANGLE Metal, M1 Pro).
+- **Bug found and fixed:** the first composer used `useMemo` + effect cleanup; StrictMode's double mount disposed it (postprocessing empties `passes`), freezing the canvas on its first frame (presets and new masses never redrew). Unit tests and DOM-only e2e passed throughout; it was caught by checking a drawn mass visually. Fix builds the composer in the effect; new e2e `the 3D view redraws when the camera preset changes` fails on the old code and passes now. The first 60 fps figure had been measured against the frozen composer and was re-measured after the fix (still 60).
+- Streets/trees: builder emits additive `roads.json` (136 / 32 runs) and `trees.json` (128 / 122 points); `terrain.json`, `buildings.json`, `study-area.json` byte-identical after `--offline` rebuild. Optional manifest paths, validated parsers, loader tests for present and absent cases, `scripts/test_build_site_packages.py` for clipping. Streets/Trees layer toggles hidden when a package lacks the file.
+- Evidence: `docs/screenshots/scene-look-final-*.png` (ISO + Top for both sites, mass close-up).
+- Tests: lint ✅ · test 246/246 ✅ · e2e 5/5 ✅ (now ~52 s: AO under software GL) · build ✅ · Python clip check ✅.
+- Known gaps: study-boundary line sinks under the terrain on Sloped Edge in Top view (pre-existing, corner-only points); faint AO specks at some road edges; one illustrative tree size.
