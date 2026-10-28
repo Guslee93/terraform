@@ -47,6 +47,9 @@ export type SiteManifest = {
     studyArea: string
     thumbnail: string
     attribution: string
+    /** Optional OSM context layers (ADR-0005 §5); older packages omit them. */
+    roads?: string
+    trees?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -227,6 +230,12 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       studyArea: asString(assetPaths.studyArea, 'manifest.assetPaths.studyArea'),
       thumbnail: asString(assetPaths.thumbnail, 'manifest.assetPaths.thumbnail'),
       attribution: asString(assetPaths.attribution, 'manifest.assetPaths.attribution'),
+      ...(assetPaths.roads === undefined
+        ? {}
+        : { roads: asString(assetPaths.roads, 'manifest.assetPaths.roads') }),
+      ...(assetPaths.trees === undefined
+        ? {}
+        : { trees: asString(assetPaths.trees, 'manifest.assetPaths.trees') }),
     },
     constraints: {
       maxHeightMeters,

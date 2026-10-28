@@ -25,6 +25,8 @@ const SAMPLE_PACKAGE: SitePackage = {
   terrain: parseTerrain(compactTerrain),
   buildings: parseBuildings(compactBuildings),
   studyArea: parseStudyArea(compactStudyArea),
+  roads: [],
+  trees: [],
 }
 
 const NO_SITE: string | null = null

@@ -18,7 +18,7 @@ function requireSite(id: string): SiteSummary {
 }
 
 const site = requireSite('compact-infill')
-const layers = { terrain: true, context: true, parcel: true }
+const layers = { terrain: true, context: true, streets: true, trees: true, parcel: true }
 const baseProps: ComponentProps<typeof Inspector> = {
   site,
   manifest: null,

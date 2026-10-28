@@ -55,6 +55,8 @@ export function StudioShell({
   const [layers, setLayers] = useState<SceneLayers>({
     terrain: true,
     context: true,
+    streets: true,
+    trees: true,
     parcel: true,
   })
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')

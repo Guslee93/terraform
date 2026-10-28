@@ -2,7 +2,15 @@ import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
+import {
+  CylinderGeometry,
+  DoubleSide,
+  EdgesGeometry,
+  IcosahedronGeometry,
+  NeutralToneMapping,
+  Object3D,
+  type InstancedMesh,
+} from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import { contourSegments } from '../features/sites/contours'
@@ -18,6 +26,7 @@ import { SceneErrorBoundary } from './SceneErrorBoundary'
 import {
   createContextGeometry,
   createContourGeometry,
+  createRoadGeometry,
   createTerrainGeometry,
   createTerrainGridGeometry,
   createTerrainSkirtGeometry,
@@ -26,6 +35,8 @@ import {
 export type SceneLayers = {
   terrain: boolean
   context: boolean
+  streets: boolean
+  trees: boolean
   parcel: boolean
 }
 
@@ -148,6 +159,80 @@ function ContextBuildings({ buildings }: { buildings: SitePackage['buildings']['
       <lineSegments geometry={edges}>
         <lineBasicMaterial color={EDGE_COLOR} transparent opacity={EDGE_OPACITY} depthWrite={false} />
       </lineSegments>
+    </group>
+  )
+}
+
+/** One value step darker than the ground (ref 8): streets read without a hue. */
+const ROAD_COLOR = '#E2E1DD'
+const TREE_COLOR = '#9DB59A'
+const TRUNK_COLOR = '#B8B2A6'
+/** Illustrative tree size (m): OSM gives positions only, not heights or canopy spreads. */
+const TREE_CANOPY_RADIUS = 2.6
+const TREE_TRUNK_HEIGHT = 3
+
+function Streets({ sitePackage }: { sitePackage: SitePackage }) {
+  const geometry = useMemo(
+    () => createRoadGeometry(sitePackage.roads, sitePackage.terrain),
+    [sitePackage],
+  )
+  useEffect(() => () => geometry.dispose(), [geometry])
+
+  return (
+    <mesh geometry={geometry} receiveShadow>
+      <meshStandardMaterial
+        color={ROAD_COLOR}
+        roughness={1}
+        metalness={0}
+        polygonOffset
+        polygonOffsetFactor={-2}
+        polygonOffsetUnits={-2}
+      />
+    </mesh>
+  )
+}
+
+function Trees({ sitePackage }: { sitePackage: SitePackage }) {
+  const { trees, terrain } = sitePackage
+  const canopyRef = useRef<InstancedMesh>(null)
+  const trunkRef = useRef<InstancedMesh>(null)
+  const canopy = useMemo(() => new IcosahedronGeometry(TREE_CANOPY_RADIUS, 1), [])
+  const trunk = useMemo(() => new CylinderGeometry(0.22, 0.3, TREE_TRUNK_HEIGHT, 6), [])
+  useEffect(
+    () => () => {
+      canopy.dispose()
+      trunk.dispose()
+    },
+    [canopy, trunk],
+  )
+
+  useEffect(() => {
+    const placer = new Object3D()
+    trees.forEach(([east, north], index) => {
+      const ground = sampleTerrainHeight(terrain, east, north)
+      placer.position.set(east, ground + TREE_TRUNK_HEIGHT / 2, -north)
+      placer.updateMatrix()
+      trunkRef.current?.setMatrixAt(index, placer.matrix)
+      placer.position.set(east, ground + TREE_TRUNK_HEIGHT + TREE_CANOPY_RADIUS * 0.7, -north)
+      placer.updateMatrix()
+      canopyRef.current?.setMatrixAt(index, placer.matrix)
+    })
+    for (const mesh of [canopyRef.current, trunkRef.current]) {
+      if (!mesh) continue
+      mesh.instanceMatrix.needsUpdate = true
+      mesh.computeBoundingSphere()
+    }
+  }, [trees, terrain])
+
+  if (trees.length === 0) return null
+  return (
+    <group>
+      <instancedMesh ref={trunkRef} args={[trunk, undefined, trees.length]} castShadow>
+        <meshStandardMaterial color={TRUNK_COLOR} roughness={1} metalness={0} />
+      </instancedMesh>
+      <instancedMesh ref={canopyRef} args={[canopy, undefined, trees.length]} castShadow receiveShadow>
+        <meshStandardMaterial color={TREE_COLOR} roughness={0.95} metalness={0} flatShading />
+      </instancedMesh>
     </group>
   )
 }
@@ -301,6 +386,8 @@ export function ViewportCanvas({
             />
           )}
           {layers.context && <ContextBuildings buildings={buildings.buildings} />}
+          {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
+          {layers.trees && <Trees sitePackage={sitePackage} />}
           {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
 
           <MassLayer

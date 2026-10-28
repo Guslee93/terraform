@@ -31,6 +31,7 @@ Open the printed local URL. Routes:
 | `npm run test:e2e` | Playwright Chromium smoke path |
 | `npm run capture` | Capture reference screenshots into `docs/screenshots/` |
 | `python3 scripts/build_site_packages.py --offline` | Rebuild both site packages from committed raw caches |
+| `python3 scripts/test_build_site_packages.py` | Self-check for the road clipping used by the package builder |
 
 ## Site data pipeline
 

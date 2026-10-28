@@ -5,8 +5,8 @@ import {
   ShapeUtils,
   Vector2,
 } from 'three'
-import type { ContextBuilding, TerrainData } from '../features/sites/package'
-import { terrainHeightRange } from '../features/sites/geometry'
+import type { ContextBuilding, Road, TerrainData } from '../features/sites/package'
+import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import type { ContourSegment } from '../features/sites/contours'
 
 // Near-white ground; elevation tint stays under 4% so separation comes from light, not hue.
@@ -209,5 +209,62 @@ export function createContourGeometry(segments: readonly ContourSegment[]): Buff
   }
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  return geometry
+}
+
+/** Road ribbons sit this far (m) above the sampled ground so they never sink into the terrain. */
+export const ROAD_LIFT = 0.15
+/** Longest ribbon step (m): short enough to follow the terrain between centreline vertices. */
+const ROAD_STEP_M = 4
+
+/**
+ * Flat road ribbons draped on the terrain. Each centreline segment is extended by half the
+ * road width at both ends so bends and junctions overlap instead of leaving wedge gaps.
+ */
+export function createRoadGeometry(roads: readonly Road[], terrain: TerrainData): BufferGeometry {
+  const positions: number[] = []
+  const at = (east: number, north: number): [number, number, number] => [
+    east,
+    sampleTerrainHeight(terrain, east, north) + ROAD_LIFT,
+    -north,
+  ]
+
+  for (const road of roads) {
+    const half = road.width / 2
+    for (let index = 0; index < road.centreline.length - 1; index += 1) {
+      const a = road.centreline[index]
+      const b = road.centreline[index + 1]
+      if (!a || !b) continue
+      const length = Math.hypot(b[0] - a[0], b[1] - a[1])
+      if (length === 0) continue
+      const ux = (b[0] - a[0]) / length
+      const uy = (b[1] - a[1]) / length
+      // Left normal of the direction (east, north) → (−north, east).
+      const nx = -uy * half
+      const ny = ux * half
+      const startX = a[0] - ux * half
+      const startY = a[1] - uy * half
+      const total = length + road.width
+      const steps = Math.max(1, Math.ceil(total / ROAD_STEP_M))
+      for (let step = 0; step < steps; step += 1) {
+        const t0 = (total * step) / steps
+        const t1 = (total * (step + 1)) / steps
+        const x0 = startX + ux * t0
+        const y0 = startY + uy * t0
+        const x1 = startX + ux * t1
+        const y1 = startY + uy * t1
+        const leftA = at(x0 + nx, y0 + ny)
+        const rightA = at(x0 - nx, y0 - ny)
+        const leftB = at(x1 + nx, y1 + ny)
+        const rightB = at(x1 - nx, y1 - ny)
+        // Counter-clockwise seen from above (+y), so the faces point up.
+        positions.push(...rightA, ...rightB, ...leftB, ...rightA, ...leftB, ...leftA)
+      }
+    }
+  }
+
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  geometry.computeVertexNormals()
   return geometry
 }

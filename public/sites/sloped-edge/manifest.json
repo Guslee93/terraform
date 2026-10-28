@@ -26,7 +26,9 @@
     "buildings": "buildings.json",
     "studyArea": "study-area.json",
     "thumbnail": "/sites/sloped-edge.svg",
-    "attribution": "attribution.md"
+    "attribution": "attribution.md",
+    "roads": "roads.json",
+    "trees": "trees.json"
   },
   "constraints": {
     "maxHeightMeters": 15.0,
@@ -125,7 +127,9 @@
     "Footprints simplified with a 1.2 m tolerance; building relations omitted",
     "Heights from height, building:levels, or a typology fallback",
     "Terrain sampled on a 13 \u00d7 13 grid and recentered to the origin",
-    "Study boundary is authored, not a cadastral parcel"
+    "Study boundary is authored, not a cadastral parcel",
+    "Roads are OSM centrelines with illustrative widths by highway class; tunnels omitted",
+    "Trees are OSM natural=tree points drawn at one illustrative size"
   ],
   "statistics": {
     "buildingCount": 33,

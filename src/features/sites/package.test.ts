@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import compactBuildings from '../../../public/sites/compact-infill/buildings.json'
 import compactManifest from '../../../public/sites/compact-infill/manifest.json'
+import compactRoads from '../../../public/sites/compact-infill/roads.json'
 import compactStudyArea from '../../../public/sites/compact-infill/study-area.json'
 import compactTerrain from '../../../public/sites/compact-infill/terrain.json'
+import compactTrees from '../../../public/sites/compact-infill/trees.json'
 import slopedBuildings from '../../../public/sites/sloped-edge/buildings.json'
 import slopedManifest from '../../../public/sites/sloped-edge/manifest.json'
+import slopedRoads from '../../../public/sites/sloped-edge/roads.json'
 import slopedStudyArea from '../../../public/sites/sloped-edge/study-area.json'
 import slopedTerrain from '../../../public/sites/sloped-edge/terrain.json'
+import slopedTrees from '../../../public/sites/sloped-edge/trees.json'
 import { SitePackageError, parseSiteManifest } from './manifest'
-import { parseBuildings, parseStudyArea, parseTerrain } from './package'
+import { parseBuildings, parseRoads, parseStudyArea, parseTerrain, parseTrees } from './package'
 
 const PACKAGES = [
   {
@@ -90,5 +94,54 @@ describe('package validation', () => {
     const broken = structuredClone(compactStudyArea)
     broken.polygon.pop()
     expect(() => parseStudyArea(broken)).toThrow(/closed/)
+  })
+})
+
+describe('optional roads and trees (ADR-0005 §5)', () => {
+  it('parses both packaged context files', () => {
+    for (const [roads, trees, id] of [
+      [compactRoads, compactTrees, 'compact-infill'],
+      [slopedRoads, slopedTrees, 'sloped-edge'],
+    ] as const) {
+      const parsedRoads = parseRoads(roads)
+      const parsedTrees = parseTrees(trees)
+      expect(parsedRoads.siteId).toBe(id)
+      expect(parsedTrees.siteId).toBe(id)
+      expect(parsedRoads.roads.length).toBeGreaterThan(0)
+      expect(parsedTrees.trees.length).toBeGreaterThan(0)
+      for (const road of parsedRoads.roads) {
+        expect(road.centreline.length).toBeGreaterThanOrEqual(2)
+        expect(road.width).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('keeps manifests valid with and without the optional paths', () => {
+    expect(parseSiteManifest(compactManifest).assetPaths.roads).toBe('roads.json')
+    const required = Object.fromEntries(
+      Object.entries(compactManifest.assetPaths).filter(([key]) => key !== 'roads' && key !== 'trees'),
+    )
+    const legacy = parseSiteManifest({ ...compactManifest, assetPaths: required })
+    expect(legacy.assetPaths.roads).toBeUndefined()
+    expect(legacy.assetPaths.trees).toBeUndefined()
+  })
+
+  it('rejects a road with fewer than two points or a non-positive width', () => {
+    const base = { schemaVersion: 1, siteId: 'x' }
+    expect(() =>
+      parseRoads({ ...base, roads: [{ id: 'a', highway: 'service', width: 4, centreline: [[0, 0]] }] }),
+    ).toThrow(SitePackageError)
+    expect(() =>
+      parseRoads({
+        ...base,
+        roads: [{ id: 'a', highway: 'service', width: 0, centreline: [[0, 0], [1, 1]] }],
+      }),
+    ).toThrow(SitePackageError)
+  })
+
+  it('rejects a malformed tree point', () => {
+    expect(() => parseTrees({ schemaVersion: 1, siteId: 'x', trees: [[1]] })).toThrow(
+      SitePackageError,
+    )
   })
 })

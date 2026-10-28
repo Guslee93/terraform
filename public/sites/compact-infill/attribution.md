@@ -10,6 +10,14 @@ This simplified, derived building dataset is made available under ODbL 1.0.
 If you reuse or redistribute it, keep this attribution and the ODbL notice.
 Licence text: https://opendatacommons.org/licenses/odbl/1-0/
 
+## Roads and trees
+
+© OpenStreetMap contributors (ODbL 1.0), from the same extract as the buildings.
+Roads are `highway` centrelines clipped to the terrain extent; widths are illustrative
+values by highway class, not measured carriageways. Tunnels and area-tagged ways are
+omitted. Trees are `natural=tree` points drawn at one illustrative size; no species,
+height or canopy data is implied.
+
 ## Terrain
 
 © Kartverket. Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
