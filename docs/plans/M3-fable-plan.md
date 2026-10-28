@@ -138,6 +138,8 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 
 ## 8. Branches and file ownership
 
+**Set up 2026-10-28:** `deepseek/round3` merged into `main` as `88c629d` (suite green: lint, typecheck, 396 tests, build). Fable worktree created: `../Terraform-m3` on `m3/domain` from `main`, `npm ci` done. DeepSeek's worktree `../Terraform-ds4` is clean and fully merged; DeepSeek starts its next round with `git switch -c deepseek/round5 main` inside that worktree. The main checkout is on `main`.
+
 Right now the main checkout is on `deepseek/round3`, which holds everything (scene look, import spike, rounds 3–4), and Codex resumes C4/C5 there at 15:21.
 
 **Before Fable starts (Claude, needs your OK):** once Codex's C4/C5 is reviewed and committed, merge `deepseek/round3` into `main`, then give each agent its own worktree from `main`:
