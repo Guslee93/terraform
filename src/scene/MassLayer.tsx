@@ -14,7 +14,7 @@ import {
 } from '../features/editor/interaction'
 import { DEFAULT_GRID_STEP_M } from '../features/editor/snapping'
 import type { OrbitControlsHandle } from './CameraRig'
-import { createTierGeometry, roofHandlePosition } from './massGeometry'
+import { createStoreyLineGeometry, createTierGeometry, roofHandlePosition } from './massGeometry'
 
 // Accent-family tint: the proposal is the only coloured object against the white context.
 const MASS_COLOR = '#C9DBE5'
@@ -22,6 +22,9 @@ const INVALID_COLOR = '#EBC9C4'
 /** Amber tint for clearance warnings (design contract: amber = warning). */
 const WARNING_COLOR = '#EFD9AC'
 const SELECTION_COLOR = '#355E79'
+/** Storey bands and unselected outlines: a darker accent so they read on the tinted faces. */
+const MASS_LINE_COLOR = '#355E79'
+const MASS_LINE_OPACITY = 0.35
 
 type MassLayerProps = {
   editor: EditorState
@@ -105,7 +108,17 @@ function TierMesh({
     () => createTierGeometry({ footprint, baseElevation, storeys, storeyHeight }),
     [footprint, baseElevation, storeys, storeyHeight],
   )
-  useEffect(() => () => geometry.dispose(), [geometry])
+  const storeyLines = useMemo(
+    () => createStoreyLineGeometry({ footprint, baseElevation, storeys, storeyHeight }),
+    [footprint, baseElevation, storeys, storeyHeight],
+  )
+  useEffect(
+    () => () => {
+      geometry.dispose()
+      storeyLines.dispose()
+    },
+    [geometry, storeyLines],
+  )
 
   return (
     <mesh
@@ -115,12 +128,23 @@ function TierMesh({
       onPointerDown={onPointerDown}
       onClick={(event) => event.stopPropagation()}
     >
+      {/* Faces pushed back so storey bands and edges lying on them do not z-fight. */}
       <meshStandardMaterial
         color={invalid ? INVALID_COLOR : warning ? WARNING_COLOR : MASS_COLOR}
         roughness={0.85}
         metalness={0}
+        polygonOffset
+        polygonOffsetFactor={1}
+        polygonOffsetUnits={1}
       />
-      {selected && <Edges color={SELECTION_COLOR} threshold={20} lineWidth={1.5} />}
+      {selected ? (
+        <Edges color={SELECTION_COLOR} threshold={20} lineWidth={1.5} />
+      ) : (
+        <Edges threshold={20} color={MASS_LINE_COLOR} transparent opacity={MASS_LINE_OPACITY} />
+      )}
+      <lineSegments geometry={storeyLines} raycast={() => null}>
+        <lineBasicMaterial color={MASS_LINE_COLOR} transparent opacity={MASS_LINE_OPACITY} />
+      </lineSegments>
     </mesh>
   )
 }
