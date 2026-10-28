@@ -9,13 +9,14 @@ import { contourSegments } from '../features/sites/contours'
 import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import { EMPTY_SELECTION } from '../features/massing/types'
-import { cameraLocked, type EditorEvent, type EditorState } from '../features/editor/interaction'
+import { cameraLocked, displayedDocument, type EditorEvent, type EditorState } from '../features/editor/interaction'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, sunPosition } from './lighting'
 import { DEMO_SUN_INSTANT, sunDirection } from '../features/analysis/sun'
 import { MassLayer } from './MassLayer'
 import { Trees } from './Trees'
+import { visibleTierFootprints } from './massFootprints'
 import { createLandCoverTexture } from './landCoverTexture'
 import { SceneErrorBoundary } from './SceneErrorBoundary'
 import {
@@ -271,7 +272,9 @@ const SOFTWARE_RENDERER_RE = /\b(?:swiftshader|llvmpipe)\b/i
 function isSoftwareRenderer(gl: WebGLRenderer): boolean {
   try {
     const context = gl.getContext()
-    const info = (context.getParameter(context.RENDERER) ?? '') as string
+    const ext = context.getExtension('WEBGL_debug_renderer_info')
+    if (!ext) return false
+    const info = (context.getParameter(ext.UNMASKED_RENDERER_WEBGL) ?? '') as string
     return SOFTWARE_RENDERER_RE.test(info)
   } catch {
     return false
@@ -314,6 +317,10 @@ export function ViewportCanvas({
   const initialTarget = enuToThreeXyz(initialPreset.target)
   const heightAt = (east: number, north: number) => sampleTerrainHeight(terrain, east, north)
   const drawing = editable && editor.tool === 'draw'
+  const treeExclude = useMemo(
+    () => visibleTierFootprints(displayedDocument(editor)),
+    [editor],
+  )
 
   const onGroundClick = (point: Vec2, elevation: number) => {
     if (!editable) return
@@ -361,7 +368,7 @@ export function ViewportCanvas({
           )}
           {layers.context && <ContextBuildings buildings={buildings.buildings} />}
           {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
-          {layers.trees && <Trees sitePackage={sitePackage} />}
+          {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
           {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
 
           <MassLayer

@@ -4,6 +4,8 @@ import { sampleTerrainHeight } from '../features/sites/geometry'
 import type { SitePackage } from '../features/sites/package'
 import { createBranchGeometry, createCanopyGeometry, FOLIAGE_VARIANTS } from './foliage'
 import { TREE_TINTS, treeVariant, type TreeShape, type TreeVariant } from './treeVariants'
+import { pointsOutsideRings } from '../lib/cullPoints'
+import type { Vec2 } from '../lib/coordinates'
 
 /** Illustrative sizes (m) before the per-tree scale; OSM gives positions only. */
 const CANOPY_RADIUS = 2.3
@@ -73,7 +75,7 @@ function TreeInstances({ geometry, trees }: { geometry: GeometryPair; trees: rea
 }
 
 /** OSM tree points as instanced leaf clusters; size and form are illustrative only. */
-export function Trees({ sitePackage }: { sitePackage: SitePackage }) {
+export function Trees({ sitePackage, exclude }: { sitePackage: SitePackage; exclude?: readonly (readonly Vec2[])[] }) {
   const { trees, terrain } = sitePackage
   const geometries = useMemo(
     () => SHAPES.flatMap((shape) => Array.from({ length: FOLIAGE_VARIANTS }, (_, variant) => ({
@@ -92,7 +94,8 @@ export function Trees({ sitePackage }: { sitePackage: SitePackage }) {
   }, [geometries])
 
   const groups = useMemo(() => {
-    const placed: Placed[] = trees.map(([east, north]) => ({
+    const visible = exclude ? pointsOutsideRings(trees, exclude) : trees
+    const placed: Placed[] = visible.map(([east, north]) => ({
       east,
       north,
       ground: sampleTerrainHeight(terrain, east, north),
@@ -102,7 +105,7 @@ export function Trees({ sitePackage }: { sitePackage: SitePackage }) {
       geometry,
       trees: placed.filter((tree) => tree.shape === geometry.shape && tree.variant === geometry.variant),
     }))
-  }, [trees, terrain, geometries])
+  }, [trees, terrain, geometries, exclude])
 
   if (trees.length === 0) return null
   return (
