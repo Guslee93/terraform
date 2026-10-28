@@ -1,63 +1,31 @@
 import { useEffect, useMemo, useRef } from 'react'
-import {
-  Color,
-  CylinderGeometry,
-  IcosahedronGeometry,
-  Object3D,
-  type BufferGeometry,
-  type InstancedMesh,
-} from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { Color, Object3D, type BufferGeometry, type InstancedMesh } from 'three'
 import { sampleTerrainHeight } from '../features/sites/geometry'
 import type { SitePackage } from '../features/sites/package'
-import { TREE_TINTS, treeVariant, type TreeShape } from './treeVariants'
+import { createBranchGeometry, createCanopyGeometry, FOLIAGE_VARIANTS } from './foliage'
+import { TREE_TINTS, treeVariant, type TreeShape, type TreeVariant } from './treeVariants'
 
-const TRUNK_COLOR = '#B8B2A6'
 /** Illustrative sizes (m) before the per-tree scale; OSM gives positions only. */
 const CANOPY_RADIUS = 2.3
 const TRUNK_HEIGHT = 2.8
-/** Slightly see-through canopies read lighter and less blobby, as in the Hektar reference. */
-const CANOPY_OPACITY = 0.82
+const SHAPES: readonly TreeShape[] = ['round', 'tall']
 
-/** Blob offsets (x, y, z) and radii, in canopy-radius units, for each canopy silhouette. */
-const CANOPY_BLOBS: Record<TreeShape, readonly (readonly [number, number, number, number])[]> = {
-  round: [
-    [0, 0, 0, 1],
-    [0.7, 0.25, 0.3, 0.72],
-    [-0.62, 0.15, -0.35, 0.7],
-    [0.1, 0.7, -0.2, 0.62],
-  ],
-  tall: [
-    [0, 0, 0, 0.78],
-    [0.15, 0.9, 0.05, 0.68],
-    [-0.1, 1.65, -0.1, 0.5],
-    [-0.3, 0.45, 0.3, 0.55],
-  ],
+type Placed = TreeVariant & { east: number; north: number; ground: number }
+type GeometryPair = {
+  shape: TreeShape
+  variant: number
+  canopy: BufferGeometry
+  branches: BufferGeometry
 }
 
-function createCanopy(shape: TreeShape): BufferGeometry {
-  const blobs = CANOPY_BLOBS[shape].map(([x, y, z, radius]) =>
-    new IcosahedronGeometry(radius * CANOPY_RADIUS, 1).translate(
-      x * CANOPY_RADIUS,
-      y * CANOPY_RADIUS,
-      z * CANOPY_RADIUS,
-    ),
-  )
-  const merged = mergeGeometries(blobs)
-  for (const blob of blobs) blob.dispose()
-  return merged
-}
-
-type Placed = { east: number; north: number; ground: number; scale: number; rotation: number; tint: number }
-
-function CanopyInstances({ shape, trees }: { shape: TreeShape; trees: readonly Placed[] }) {
-  const ref = useRef<InstancedMesh>(null)
-  const geometry = useMemo(() => createCanopy(shape), [shape])
-  useEffect(() => () => geometry.dispose(), [geometry])
+function TreeInstances({ geometry, trees }: { geometry: GeometryPair; trees: readonly Placed[] }) {
+  const canopyRef = useRef<InstancedMesh>(null)
+  const branchRef = useRef<InstancedMesh>(null)
 
   useEffect(() => {
-    const mesh = ref.current
-    if (!mesh) return
+    const canopy = canopyRef.current
+    const branches = branchRef.current
+    if (!canopy || !branches) return
     const placer = new Object3D()
     const color = new Color()
     trees.forEach((tree, index) => {
@@ -67,77 +35,81 @@ function CanopyInstances({ shape, trees }: { shape: TreeShape; trees: readonly P
         -tree.north,
       )
       placer.rotation.set(0, tree.rotation, 0)
-      placer.scale.setScalar(tree.scale)
+      placer.scale.setScalar(CANOPY_RADIUS * tree.scale)
       placer.updateMatrix()
-      mesh.setMatrixAt(index, placer.matrix)
-      mesh.setColorAt(index, color.set(TREE_TINTS[tree.tint] ?? TREE_TINTS[0]))
+      canopy.setMatrixAt(index, placer.matrix)
+      canopy.setColorAt(index, color.set(TREE_TINTS[tree.tint] ?? TREE_TINTS[0]))
+
+      placer.position.set(tree.east, tree.ground, -tree.north)
+      placer.scale.setScalar(TRUNK_HEIGHT * tree.scale)
+      placer.updateMatrix()
+      branches.setMatrixAt(index, placer.matrix)
     })
-    mesh.instanceMatrix.needsUpdate = true
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-    mesh.computeBoundingSphere()
+    canopy.instanceMatrix.needsUpdate = true
+    if (canopy.instanceColor) canopy.instanceColor.needsUpdate = true
+    branches.instanceMatrix.needsUpdate = true
+    canopy.computeBoundingSphere()
+    branches.computeBoundingSphere()
   }, [trees])
 
   if (trees.length === 0) return null
   return (
-    <instancedMesh ref={ref} args={[geometry, undefined, trees.length]} castShadow receiveShadow>
-      <meshStandardMaterial
-        roughness={0.95}
-        metalness={0}
-        flatShading
-        transparent
-        opacity={CANOPY_OPACITY}
-      />
-    </instancedMesh>
+    <group>
+      <instancedMesh ref={canopyRef} args={[geometry.canopy, undefined, trees.length]} castShadow receiveShadow>
+        <meshStandardMaterial
+          vertexColors
+          flatShading
+          roughness={0.9}
+          transparent
+          opacity={0.9}
+          depthWrite
+        />
+      </instancedMesh>
+      <instancedMesh ref={branchRef} args={[geometry.branches, undefined, trees.length]} castShadow>
+        <meshStandardMaterial color="#A39A8C" roughness={1} metalness={0} />
+      </instancedMesh>
+    </group>
   )
 }
 
-/** OSM tree points as instanced low-poly trees with deterministic size, shape and tint variety. */
+/** OSM tree points as instanced leaf clusters; size and form are illustrative only. */
 export function Trees({ sitePackage }: { sitePackage: SitePackage }) {
   const { trees, terrain } = sitePackage
-  const trunkRef = useRef<InstancedMesh>(null)
-  const trunk = useMemo(() => new CylinderGeometry(0.16, 0.24, TRUNK_HEIGHT, 6), [])
-  useEffect(() => () => trunk.dispose(), [trunk])
-
-  const placed = useMemo(
-    () =>
-      trees.map(([east, north]) => ({
-        east,
-        north,
-        ground: sampleTerrainHeight(terrain, east, north),
-        ...treeVariant(east, north),
-      })),
-    [trees, terrain],
+  const geometries = useMemo(
+    () => SHAPES.flatMap((shape) => Array.from({ length: FOLIAGE_VARIANTS }, (_, variant) => ({
+      shape,
+      variant,
+      canopy: createCanopyGeometry(shape, variant),
+      branches: createBranchGeometry(shape, variant),
+    }))),
+    [],
   )
-  const byShape = useMemo(
-    () => ({
-      round: placed.filter((tree) => tree.shape === 'round'),
-      tall: placed.filter((tree) => tree.shape === 'tall'),
-    }),
-    [placed],
-  )
+  useEffect(() => () => {
+    for (const geometry of geometries) {
+      geometry.canopy.dispose()
+      geometry.branches.dispose()
+    }
+  }, [geometries])
 
-  useEffect(() => {
-    const mesh = trunkRef.current
-    if (!mesh) return
-    const placer = new Object3D()
-    placed.forEach((tree, index) => {
-      placer.position.set(tree.east, tree.ground + (TRUNK_HEIGHT / 2) * tree.scale, -tree.north)
-      placer.scale.setScalar(tree.scale)
-      placer.updateMatrix()
-      mesh.setMatrixAt(index, placer.matrix)
-    })
-    mesh.instanceMatrix.needsUpdate = true
-    mesh.computeBoundingSphere()
-  }, [placed])
+  const groups = useMemo(() => {
+    const placed: Placed[] = trees.map(([east, north]) => ({
+      east,
+      north,
+      ground: sampleTerrainHeight(terrain, east, north),
+      ...treeVariant(east, north),
+    }))
+    return geometries.map((geometry) => ({
+      geometry,
+      trees: placed.filter((tree) => tree.shape === geometry.shape && tree.variant === geometry.variant),
+    }))
+  }, [trees, terrain, geometries])
 
-  if (placed.length === 0) return null
+  if (trees.length === 0) return null
   return (
     <group>
-      <instancedMesh ref={trunkRef} args={[trunk, undefined, placed.length]} castShadow>
-        <meshStandardMaterial color={TRUNK_COLOR} roughness={1} metalness={0} />
-      </instancedMesh>
-      <CanopyInstances shape="round" trees={byShape.round} />
-      <CanopyInstances shape="tall" trees={byShape.tall} />
+      {groups.map(({ geometry, trees: group }) => (
+        <TreeInstances key={`${geometry.shape}-${geometry.variant}`} geometry={geometry} trees={group} />
+      ))}
     </group>
   )
 }

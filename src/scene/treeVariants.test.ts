@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { FOLIAGE_VARIANTS } from './foliage'
 import { TREE_TINTS, treeVariant } from './treeVariants'
 
 describe('treeVariant', () => {
@@ -13,6 +14,9 @@ describe('treeVariant', () => {
       expect(variant.scale).toBeLessThan(1.35)
       expect(variant.tint).toBeGreaterThanOrEqual(0)
       expect(variant.tint).toBeLessThan(TREE_TINTS.length)
+      expect(Number.isInteger(variant.variant)).toBe(true)
+      expect(variant.variant).toBeGreaterThanOrEqual(0)
+      expect(variant.variant).toBeLessThan(FOLIAGE_VARIANTS)
       expect(['round', 'tall']).toContain(variant.shape)
       expect(variant.rotation).toBeGreaterThanOrEqual(0)
       expect(variant.rotation).toBeLessThan(Math.PI * 2)
@@ -23,6 +27,7 @@ describe('treeVariant', () => {
     const row = Array.from({ length: 40 }, (_, index) => treeVariant(index * 8, 0))
     expect(new Set(row.map((variant) => variant.tint)).size).toBeGreaterThan(2)
     expect(new Set(row.map((variant) => variant.shape)).size).toBe(2)
+    expect(new Set(row.map((variant) => variant.variant)).size).toBe(FOLIAGE_VARIANTS)
     expect(Math.max(...row.map((v) => v.scale)) - Math.min(...row.map((v) => v.scale))).toBeGreaterThan(0.3)
   })
 })

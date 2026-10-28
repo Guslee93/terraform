@@ -1,5 +1,7 @@
-/** Muted greens for canopy variety (Hektar-style); none is a species or health claim. */
-export const TREE_TINTS = ['#9BBA94', '#AFC9A3', '#8AAD86', '#C0D4B2'] as const
+import { FOLIAGE_VARIANTS } from './foliage'
+
+/** Near-white multipliers preserve the canopy's per-face greens. */
+export const TREE_TINTS = ['#FFFFFF', '#F2F7EE', '#FAFFF5', '#EAF2E6'] as const
 
 export type TreeShape = 'round' | 'tall'
 
@@ -9,6 +11,7 @@ export type TreeVariant = {
   tint: number
   shape: TreeShape
   rotation: number
+  variant: number
 }
 
 /** Small integer hash of a position (centimetre grid), so variety is stable across loads. */
@@ -29,5 +32,6 @@ export function treeVariant(east: number, north: number): TreeVariant {
     tint: Math.floor(hash(east, north, 2) * TREE_TINTS.length),
     shape: hash(east, north, 3) < 0.35 ? 'tall' : 'round',
     rotation: hash(east, north, 4) * Math.PI * 2,
+    variant: Math.floor(hash(east, north, 5) * FOLIAGE_VARIANTS),
   }
 }
