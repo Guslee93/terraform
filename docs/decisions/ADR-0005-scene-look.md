@@ -48,6 +48,12 @@ The cached raw sources (`data/raw/*.osm`, checksummed in `SHA256SUMS`) already c
 - Trees: point positions only; one instanced low-poly canopy at a fixed illustrative size, muted green. No species, height or canopy data is implied.
 - Attribution: OSM ODbL notice extended in each `attribution.md`.
 
+### 5a. Land cover and tree variety (2026-10-28 addendum)
+
+- `landcover.json` (additive, optional `assetPaths.landcover`) carries OSM water, park, grass and wood polygons, clipped to the terrain extent; built by Codex from work order `docs/handoffs/C1-landcover.md`. Multipolygon inner rings are ignored and relations whose member ways are missing from the cached extract are skipped.
+- Rendering paints the polygons into a 2048 px plan-view canvas texture on the terrain mesh (UVs u = east, v = north). It drapes exactly on slopes with no z-fighting and costs no extra draw call. Colours follow the Hektar reference: pale sage green and pale blue.
+- Trees vary deterministically by position (size, round/tall clustered canopy, one of four tints, rotation). This is illustrative variety only, not species or height data.
+
 ### 6. Storey bands
 
 Proposed masses draw a thin line at each storey height derived from the tier's `storeys` × `storeyHeight` — real model data, no fake façade detail (no windows, rooftop units, chimneys).

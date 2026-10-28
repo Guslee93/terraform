@@ -2,15 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import {
-  CylinderGeometry,
-  DoubleSide,
-  EdgesGeometry,
-  IcosahedronGeometry,
-  NeutralToneMapping,
-  Object3D,
-  type InstancedMesh,
-} from 'three'
+import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import { contourSegments } from '../features/sites/contours'
@@ -22,6 +14,8 @@ import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
 import { DEFAULT_SUN, fitShadowFrustum, sunPosition } from './lighting'
 import { MassLayer } from './MassLayer'
+import { Trees } from './Trees'
+import { createLandCoverTexture } from './landCoverTexture'
 import { SceneErrorBoundary } from './SceneErrorBoundary'
 import {
   createContextGeometry,
@@ -74,13 +68,24 @@ type GroundHandlers = {
 
 function TerrainMesh({
   terrain,
+  landcover,
   showGrid,
   onGroundClick,
   onGroundMove,
-}: { terrain: SitePackage['terrain']; showGrid: boolean } & GroundHandlers) {
+}: {
+  terrain: SitePackage['terrain']
+  landcover: SitePackage['landcover']
+  showGrid: boolean
+} & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
   const skirt = useMemo(() => createTerrainSkirtGeometry(terrain), [terrain])
+  // Parks green, water blue, painted in plan and draped by the terrain UVs (ADR-0005 §5).
+  const landcoverTexture = useMemo(
+    () => createLandCoverTexture(landcover, terrain),
+    [landcover, terrain],
+  )
+  useEffect(() => () => landcoverTexture?.dispose(), [landcoverTexture])
   const contours = useMemo(() => {
     const { min, max } = terrainHeightRange(terrain)
     const { minor, major } =
@@ -114,7 +119,12 @@ function TerrainMesh({
           onGroundMove?.([event.point.x, -event.point.z])
         }
       >
-        <meshStandardMaterial vertexColors roughness={0.97} metalness={0} />
+        <meshStandardMaterial
+          vertexColors
+          map={landcoverTexture}
+          roughness={0.97}
+          metalness={0}
+        />
       </mesh>
       <mesh geometry={skirt} receiveShadow>
         <meshStandardMaterial color="#D8D7D3" roughness={1} metalness={0} side={DoubleSide} />
@@ -166,11 +176,6 @@ function ContextBuildings({ buildings }: { buildings: SitePackage['buildings']['
 
 /** One value step darker than the ground (ref 8): streets read without a hue. */
 const ROAD_COLOR = '#E2E1DD'
-const TREE_COLOR = '#9DB59A'
-const TRUNK_COLOR = '#B8B2A6'
-/** Illustrative tree size (m): OSM gives positions only, not heights or canopy spreads. */
-const TREE_CANOPY_RADIUS = 2.6
-const TREE_TRUNK_HEIGHT = 3
 
 function Streets({ sitePackage }: { sitePackage: SitePackage }) {
   const geometry = useMemo(
@@ -190,51 +195,6 @@ function Streets({ sitePackage }: { sitePackage: SitePackage }) {
         polygonOffsetUnits={-2}
       />
     </mesh>
-  )
-}
-
-function Trees({ sitePackage }: { sitePackage: SitePackage }) {
-  const { trees, terrain } = sitePackage
-  const canopyRef = useRef<InstancedMesh>(null)
-  const trunkRef = useRef<InstancedMesh>(null)
-  const canopy = useMemo(() => new IcosahedronGeometry(TREE_CANOPY_RADIUS, 1), [])
-  const trunk = useMemo(() => new CylinderGeometry(0.22, 0.3, TREE_TRUNK_HEIGHT, 6), [])
-  useEffect(
-    () => () => {
-      canopy.dispose()
-      trunk.dispose()
-    },
-    [canopy, trunk],
-  )
-
-  useEffect(() => {
-    const placer = new Object3D()
-    trees.forEach(([east, north], index) => {
-      const ground = sampleTerrainHeight(terrain, east, north)
-      placer.position.set(east, ground + TREE_TRUNK_HEIGHT / 2, -north)
-      placer.updateMatrix()
-      trunkRef.current?.setMatrixAt(index, placer.matrix)
-      placer.position.set(east, ground + TREE_TRUNK_HEIGHT + TREE_CANOPY_RADIUS * 0.7, -north)
-      placer.updateMatrix()
-      canopyRef.current?.setMatrixAt(index, placer.matrix)
-    })
-    for (const mesh of [canopyRef.current, trunkRef.current]) {
-      if (!mesh) continue
-      mesh.instanceMatrix.needsUpdate = true
-      mesh.computeBoundingSphere()
-    }
-  }, [trees, terrain])
-
-  if (trees.length === 0) return null
-  return (
-    <group>
-      <instancedMesh ref={trunkRef} args={[trunk, undefined, trees.length]} castShadow>
-        <meshStandardMaterial color={TRUNK_COLOR} roughness={1} metalness={0} />
-      </instancedMesh>
-      <instancedMesh ref={canopyRef} args={[canopy, undefined, trees.length]} castShadow receiveShadow>
-        <meshStandardMaterial color={TREE_COLOR} roughness={0.95} metalness={0} flatShading />
-      </instancedMesh>
-    </group>
   )
 }
 
@@ -370,6 +330,7 @@ export function ViewportCanvas({
           {layers.terrain && (
             <TerrainMesh
               terrain={terrain}
+              landcover={sitePackage.landcover}
               showGrid={presetId === 'top' || drawing}
               onGroundClick={onGroundClick}
               onGroundMove={

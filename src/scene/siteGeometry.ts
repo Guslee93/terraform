@@ -16,6 +16,7 @@ const HIGH_TERRAIN = new Color('#E6E5E1')
 export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
   const positions: number[] = []
   const colors: number[] = []
+  const uvs: number[] = []
   const indices: number[] = []
   const { min, max } = terrainHeightRange(terrain)
   const span = max - min || 1
@@ -27,6 +28,8 @@ export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
       const east = terrain.minX + ((terrain.maxX - terrain.minX) * col) / (terrain.cols - 1)
       const height = terrain.heights[row]?.[col] ?? 0
       positions.push(east, height, -north)
+      // u runs east, v runs north, so a plan-view texture (north up) drapes without flipping.
+      uvs.push(col / (terrain.cols - 1), row / (terrain.rows - 1))
       color.copy(LOW_TERRAIN).lerp(HIGH_TERRAIN, (height - min) / span)
       colors.push(color.r, color.g, color.b)
     }
@@ -45,6 +48,7 @@ export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
   geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
+  geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2))
   geometry.setIndex(indices)
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()

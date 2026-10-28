@@ -123,7 +123,9 @@ Rules: never introduce a new hex in a component; add a token first. Borders are 
 | Grid | `#B9C0B6`, sections `#9AA399`; shown only in Top view or while drawing |
 | Contours | `#6F6E6A`, 1 m at 0.14, 5 m at 0.32; only when relief ≥ 2 m |
 | Streets (OSM) | `#E2E1DD`, one value step darker than ground |
-| Trees (OSM) | canopy `#9DB59A`, trunk `#B8B2A6`; one illustrative size |
+| Trees (OSM) | four canopy tints `#9BBA94` `#AFC9A3` `#8AAD86` `#C0D4B2` at 0.82 opacity, round or tall clustered canopy, size 0.75–1.35×, varied by position; trunk `#B8B2A6` |
+| Green space (OSM park/grass/wood) | rendered ≈ `#CBDBC5`, painted into the terrain texture |
+| Water (OSM) | rendered ≈ `#BCD6E6`, painted into the terrain texture |
 
 Lighting: one directional sun (default SW, 35° elevation until M3 drives it), intensity 2.4; ambient 0.3; cool hemisphere fill (`#FFFFFF` / `#CDD0D4`, 1.6); `NeutralToneMapping`. Shadows: PCF, 4096 map fitted to the site (~0.1 m/texel). Ambient occlusion: N8AO, cool `#2B3138`, desktop widths only (ADR-0005). No fake PBR realism, no bloom, no vignette on the canvas.
 
