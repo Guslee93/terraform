@@ -413,6 +413,22 @@ Same rules as §15.1. **Start only after round 3 has been reviewed and merged**,
 - Export `type QuickPick = { id: string; label: string; country: 'NO' | 'SE' | 'DK' | 'FI'; latitude: number; longitude: number; frameMetres: 400 }` and `QUICK_PICKS` for Oslo (Grünerløkka), Bergen (Bryggen), Trondheim (Bakklandet), Stockholm (Södermalm), Göteborg (Haga), Malmö (Möllevången), Copenhagen (Nørrebro), Aarhus (Latinerkvarteret), Helsinki (Kallio). Coordinates from OpenStreetMap place nodes, 4 decimals, source noted in a comment per row.
 - Tests: ids unique; each point lies inside its country's bounding box (NO 4–31.5 E / 57.9–71.2 N, SE 10.9–24.2 / 55.3–69.1, DK 8–15.2 / 54.5–57.8, FI 19–31.6 / 59.7–70.1).
 
+### 15.3e Round 4b cards (D28–D29) — after round 4, same worktree and branch
+
+Same rules as §15.1. Continue on `deepseek/round4` in `../Terraform-ds4` after D17b/D22/D21/D26/D23. Codex is working in the main checkout on `src/features/import/**` and `src/features/sites/manifest.ts`; do not touch those.
+
+**D28 — No ambient occlusion on software renderers** · commit `perf(scene): skip AO on software WebGL renderers`
+- Problem: `e2e/massing.spec.ts` now exceeds its 30 s test timeout because N8AO is very slow under software GL (SwiftShader in headless Chromium); weak laptops pay the same cost.
+- New files `src/scene/rendererTier.ts` + `.test.ts`: export `isSoftwareRenderer(rendererName: string): boolean`, true when the name matches `/swiftshader|llvmpipe|softpipe|software|basic render/i`. Test real strings: `ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) …), SwiftShader driver)` → true; `ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)` → false; `llvmpipe (LLVM 15.0.7, 256 bits)` → true; `''` → false.
+- Edit `src/scene/ViewportCanvas.tsx`, the `AmbientOcclusion` component only: read the renderer name once via `gl.getContext()` and the `WEBGL_debug_renderer_info` extension (`UNMASKED_RENDERER_WEBGL`); if the extension is missing, treat it as hardware. Return `null` when `isSoftwareRenderer` is true. Comment why.
+- Done when: `npx playwright test e2e/massing.spec.ts` passes **without** raising any timeout; `e2e/smoke.spec.ts` (including "the 3D view redraws…") still passes. Do not change `playwright.config.ts` or any timeout.
+
+**D29 — Hide trees inside proposed masses** · commit `feat(scene): hide trees inside proposed masses`
+- Uses your D14 `pointsOutsideRings` (`src/lib/cullPoints.ts`); do not modify it.
+- New files `src/scene/massFootprints.ts` + `.test.ts`: export `visibleTierFootprints(document: ScenarioDocument): Vec2[][]`, the footprint vertices of every tier of every **visible** volume (hidden volumes excluded). Tests: hidden volume excluded; stacked tiers both included; empty document → `[]`.
+- Edit `src/scene/Trees.tsx`: new optional prop `exclude?: readonly (readonly Vec2[])[]`; filter `sitePackage.trees` with `pointsOutsideRings` before variant/placement (memoised on trees and exclude). Edit `src/scene/ViewportCanvas.tsx` only to pass `exclude={visibleTierFootprints(displayedDocument(editor))}` (memoised) to `<Trees>`. Live drag previews may update the culling; that is fine.
+- Done when: unit tests pass; e2e still passes; describe in the report how you verified a drawn mass over the Compact Infill park removes the trees under it (DOM/instance-count evidence, since you cannot view images; e.g. expose nothing new, but compare a canvas clip before/after like `e2e/layers.spec.ts`).
+
 ### 15.4 Handoff back to Claude
 
 When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `deepseek/followups`). Claude will diff it against `main`, check the work against the task cards and AGENTS.md, re-run the suite, merge accepted commits, fix or reject the rest, mark the rows in `docs/agent-log.md` and update `progress.md` and this report.
