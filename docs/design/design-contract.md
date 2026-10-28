@@ -127,7 +127,7 @@ Rules: never introduce a new hex in a component; add a token first. Borders are 
 | Green space (OSM park/grass/wood) | rendered ≈ `#D3DCCB` (muted sage), painted into the terrain texture |
 | Water (OSM) | rendered ≈ `#C6DCE8`, painted into the terrain texture |
 
-Lighting: one directional sun (default SW, 35° elevation until M3 drives it), intensity 3.2; ambient 0.45; cool hemisphere fill (`#FFFFFF` / `#D2D5D8`, 2.2) — high-key grade matched to Hektar (lit ≈ 245–255, shadows ≈ 195–205); `NeutralToneMapping`. Shadows: PCF, 4096 map fitted to the site (~0.1 m/texel). Shadow radius 1 (crisp). Ambient occlusion: N8AO radius 4 m, intensity 1.6, cool `#2B3138`, desktop widths only (ADR-0005). No fake PBR realism, no bloom, no vignette on the canvas.
+Lighting: one directional sun at the real Oslo position for 21 June, 15:00 (`DEMO_SUN_INSTANT`, azimuth ≈ 217°, elevation ≈ 49.5°, suncalc) until M3 adds date/time controls; intensity 3.2; ambient 0.28; cool hemisphere fill (`#EEF3FA` / `#D2D5D8`, 1.75), low enough that walls read by their angle to the sun, as in Hektar (facing ≈ white, oblique ≈ 225, away ≈ 195–210); `NeutralToneMapping`. Shadows: PCF, 4096 map fitted to the site (~0.1 m/texel). Shadow radius 1 (crisp). Ambient occlusion: N8AO radius 4 m, intensity 1, cool `#2B3138`, desktop widths only (ADR-0005). No fake PBR realism, no bloom, no vignette on the canvas.
 
 ## 9. Accessibility
 

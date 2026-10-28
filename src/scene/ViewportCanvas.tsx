@@ -12,7 +12,8 @@ import { EMPTY_SELECTION } from '../features/massing/types'
 import { cameraLocked, type EditorEvent, type EditorState } from '../features/editor/interaction'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
-import { DEFAULT_SUN, fitShadowFrustum, sunPosition } from './lighting'
+import { fitShadowFrustum, sunPosition } from './lighting'
+import { DEMO_SUN_INSTANT, sunDirection } from '../features/analysis/sun'
 import { MassLayer } from './MassLayer'
 import { Trees } from './Trees'
 import { createLandCoverTexture } from './landCoverTexture'
@@ -233,14 +234,17 @@ function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
     // ponytail: masses above MIN_SHADOW_HEIGHT can clip at the frustum edge; feed mass tops in if that shows.
     return fitShadowFrustum(Math.max(...corners), Math.max(-min, max, ...tops, MIN_SHADOW_HEIGHT))
   }, [sitePackage])
+  // Real Oslo sun for the reference instant (21 June, 15:00), from the site's own location.
+  const { latitude, longitude } = sitePackage.manifest.location
+  const sun = useMemo(() => sunDirection(DEMO_SUN_INSTANT, latitude, longitude), [latitude, longitude])
 
   return (
     <>
-      {/* Low ambient + cool hemisphere fill keeps a ~3:1 lit/shaded ratio with blue-grey shade. */}
-      <ambientLight intensity={0.45} />
-      <hemisphereLight args={['#FFFFFF', '#D2D5D8', 2.2]} />
+      {/* Fill low enough that walls read by their angle to the sun (Hektar: ≈195 away, ≈225 oblique, white facing). */}
+      <ambientLight intensity={0.28} />
+      <hemisphereLight args={['#EEF3FA', '#D2D5D8', 1.75]} />
       <directionalLight
-        position={sunPosition(DEFAULT_SUN.azimuthDeg, DEFAULT_SUN.elevationDeg, frustum.distance)}
+        position={sunPosition(sun.azimuthDeg, sun.elevationDeg, frustum.distance)}
         intensity={3.2}
         castShadow
         shadow-mapSize-width={4096}
