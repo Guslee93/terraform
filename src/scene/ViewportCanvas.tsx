@@ -49,8 +49,8 @@ type ViewportProps = {
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
 const CLICK_TOLERANCE_PX = 4
 
-const VIEWPORT_BACKGROUND = '#EEEDE9'
-const CONTEXT_COLOR = '#F3F2EE'
+const VIEWPORT_BACKGROUND = '#F4F2EE'
+const CONTEXT_COLOR = '#FAF9F6'
 const EDGE_COLOR = '#6F6E6A'
 /** One line-weight knob: ~0.3 reads as a clay model, ~0.7 as a sketch model. */
 const EDGE_OPACITY = 0.3
@@ -127,7 +127,7 @@ function TerrainMesh({
         />
       </mesh>
       <mesh geometry={skirt} receiveShadow>
-        <meshStandardMaterial color="#D8D7D3" roughness={1} metalness={0} side={DoubleSide} />
+        <meshStandardMaterial color="#DCD8D1" roughness={1} metalness={0} side={DoubleSide} />
       </mesh>
       <lineSegments geometry={contours.minor}>
         <lineBasicMaterial color={EDGE_COLOR} transparent opacity={0.14} depthWrite={false} />
@@ -237,11 +237,11 @@ function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
   return (
     <>
       {/* Low ambient + cool hemisphere fill keeps a ~3:1 lit/shaded ratio with blue-grey shade. */}
-      <ambientLight intensity={0.3} />
-      <hemisphereLight args={['#FFFFFF', '#CDD0D4', 1.6]} />
+      <ambientLight intensity={0.45} />
+      <hemisphereLight args={['#FFFFFF', '#D2D5D8', 2.2]} />
       <directionalLight
         position={sunPosition(DEFAULT_SUN.azimuthDeg, DEFAULT_SUN.elevationDeg, frustum.distance)}
-        intensity={2.4}
+        intensity={3.2}
         castShadow
         shadow-mapSize-width={4096}
         shadow-mapSize-height={4096}
@@ -251,7 +251,7 @@ function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
         shadow-camera-bottom={-frustum.halfExtent}
         shadow-camera-near={frustum.near}
         shadow-camera-far={frustum.far}
-        shadow-radius={2}
+        shadow-radius={1}
         shadow-bias={-0.0002}
         shadow-normalBias={0.03}
       />

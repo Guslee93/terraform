@@ -10,8 +10,8 @@ import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geome
 import type { ContourSegment } from '../features/sites/contours'
 
 // Near-white ground; elevation tint stays under 4% so separation comes from light, not hue.
-const LOW_TERRAIN = new Color('#F0EFEC')
-const HIGH_TERRAIN = new Color('#E6E5E1')
+const LOW_TERRAIN = new Color('#F7F4EF')
+const HIGH_TERRAIN = new Color('#EEEAE3')
 
 export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
   const positions: number[] = []

@@ -3,13 +3,13 @@ import type { LandCoverArea, LandCoverKind, TerrainData } from '../features/site
 
 /**
  * Plan colours, multiplied with the near-white terrain vertex colours, so the rendered result
- * lands on the design-contract swatches (green space ≈ #CBDBC5, water ≈ #BCD6E6).
+ * lands on the muted Hektar-like swatches (green space ≈ #D3DCCB, water ≈ #C6DCE8).
  */
 const LANDCOVER_PAINT: Record<LandCoverKind, string> = {
-  grass: '#E0EDDA',
-  park: '#D8E9D3',
-  wood: '#CFE2CA',
-  water: '#C8E2F2',
+  grass: '#E4EADD',
+  park: '#DCE5D5',
+  wood: '#D2DECC',
+  water: '#CBE1EE',
 }
 /** Draw order: broad green first, water last so ponds sit on top of parks. */
 const PAINT_ORDER: readonly LandCoverKind[] = ['grass', 'park', 'wood', 'water']
