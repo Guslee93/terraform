@@ -33,3 +33,25 @@ test('the sloped-edge package loads its own context', async ({ page }) => {
   await expect(page.getByText('33 simplified')).toBeVisible()
   await expect(page.getByText(/© OpenStreetMap contributors/i).first()).toBeVisible()
 })
+
+// Regression: the AO composer once froze the canvas on its first frame under StrictMode, so
+// camera presets and new masses updated the DOM but never the picture. DOM assertions alone
+// cannot see that; compare what the canvas actually shows.
+test('the 3D view redraws when the camera preset changes', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/studio/compact-infill')
+  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
+  await expect(page.getByText('137 simplified')).toBeVisible()
+  const box = await viewport.boundingBox()
+  if (!box) throw new Error('The 3D site viewport region was not found')
+  // Centre of the canvas, clear of the compass, legend and preset overlays.
+  const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
+
+  // Let the scene (and the lazy AO chunk) settle before the reference frame.
+  await page.waitForTimeout(2500)
+  const iso = await page.screenshot({ clip })
+  await page.getByRole('button', { name: 'Top' }).click()
+  await expect
+    .poll(async () => (await page.screenshot({ clip })).equals(iso), { timeout: 10_000 })
+    .toBe(false)
+})

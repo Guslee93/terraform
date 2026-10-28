@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { N8AOPostPass } from 'n8ao'
 import {
@@ -22,7 +22,12 @@ export default function SceneComposer() {
   const camera = useThree((state) => state.camera)
   const size = useThree((state) => state.size)
 
-  const composer = useMemo(() => {
+  // Built inside the effect, not useMemo: StrictMode mounts effects twice, and a memoised
+  // composer disposed by the first cleanup has no passes left, freezing the canvas on its
+  // last frame (camera moves and new masses never appeared).
+  const [composer, setComposer] = useState<EffectComposer | null>(null)
+
+  useEffect(() => {
     const effectComposer = new EffectComposer(gl, { frameBufferType: HalfFloatType, multisampling: 4 })
     effectComposer.addPass(new RenderPass(scene, camera))
     const ao = new N8AOPostPass(scene, camera)
@@ -37,12 +42,19 @@ export default function SceneComposer() {
     effectComposer.addPass(
       new EffectPass(camera, new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL })),
     )
-    return effectComposer
+    setComposer(effectComposer)
+    return () => {
+      setComposer(null)
+      effectComposer.dispose()
+    }
   }, [gl, scene, camera])
 
-  useEffect(() => composer.setSize(size.width, size.height), [composer, size.width, size.height])
-  useEffect(() => () => composer.dispose(), [composer])
+  useEffect(() => composer?.setSize(size.width, size.height), [composer, size.width, size.height])
 
-  useFrame((_, delta) => composer.render(delta), 1)
+  // A priority-1 frame callback switches off R3F's own render, so draw directly until ready.
+  useFrame((_, delta) => {
+    if (composer) composer.render(delta)
+    else gl.render(scene, camera)
+  }, 1)
   return null
 }
