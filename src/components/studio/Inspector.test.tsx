@@ -36,6 +36,7 @@ const baseProps: ComponentProps<typeof Inspector> = {
   onCommand: () => null,
   masses: [],
   onSelectMass: () => undefined,
+  onSelectTier: () => undefined,
 }
 
 function DrawerHarness() {

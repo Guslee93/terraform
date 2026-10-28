@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { tierGfa, tierHeight, volumeGfa } from '../massing/aggregate'
 import {
+  tierFootprintArea,
+  tierGfa,
+  tierHeight,
+  volumeGfa,
+  volumeGroundFootprintArea,
+  volumeMaxHeight,
+  volumeVolume,
+} from '../massing/aggregate'
+import { ringWithin } from '../../lib/polygon'
+import {
+  createFootprint,
   createRectangleFootprint,
   createScenario,
   createTier,
@@ -16,6 +26,7 @@ import {
   removeTier,
   removeVolume,
   rotateVolume,
+  stackTier,
   updateTier,
   updateVolume,
 } from './commands'
@@ -222,5 +233,71 @@ describe('locked masses', () => {
 
   it('leaves other masses editable', () => {
     expect(execute(locked, moveVolume('v2', 1, 0)).undoStack).toHaveLength(2)
+  })
+})
+
+describe('stacked tiers', () => {
+  // Lower tier of the stepped-mass fixture (docs/qa/fixtures.md §2): 20 × 10 m, 3 × 3.2 m.
+  const lowerOnly = createVolume({
+    id: 'v1',
+    tiers: [createTier({ id: 't1', footprint: createRectangleFootprint(20, 10), storeys: 3, use: 'mixed' })],
+  })
+  const single = createHistory(createScenario({ siteId: 'compact-infill', volumes: [lowerOnly] }))
+  const tiersOf = (history: ReturnType<typeof createHistory>) => history.document.volumes[0]?.tiers ?? []
+
+  it('stacks a set-back tier on top and selects it', () => {
+    const history = execute(single, stackTier('v1', { id: 't2' }))
+    const [lower, upper] = tiersOf(history)
+    expect(upper?.baseElevation).toBeCloseTo(9.6, 9)
+    expect(upper?.storeys).toBe(2)
+    expect(upper?.storeyHeight).toBe(lower?.storeyHeight)
+    expect(upper?.use).toBe('mixed')
+    expect(upper && tierFootprintArea(upper)).toBeCloseTo(200 * 0.36, 6)
+    expect(lower && upper && ringWithin(upper.footprint.vertices, lower.footprint.vertices)).toBe(true)
+    expect(history.selection).toEqual({ volumeId: 'v1', tierId: 't2' })
+    const volume = history.document.volumes[0]
+    expect(volume && volumeGroundFootprintArea(volume)).toBeCloseTo(200, 6)
+  })
+
+  it('stacks the next tier on the current top', () => {
+    const twice = execute(execute(single, stackTier('v1', { id: 't2' })), stackTier('v1', { id: 't3' }))
+    expect(tiersOf(twice)[2]?.baseElevation).toBeCloseTo(16, 9)
+  })
+
+  it('falls back to the full outline when a setback would leave a concave base', () => {
+    const u = createFootprint([[0, 0], [30, 0], [30, 20], [20, 20], [20, 5], [10, 5], [10, 20], [0, 20]])
+    const concave = createHistory(
+      createScenario({
+        siteId: 'compact-infill',
+        volumes: [createVolume({ id: 'v1', tiers: [createTier({ id: 't1', footprint: u })] })],
+      }),
+    )
+    const history = execute(concave, stackTier('v1', { id: 't2' }))
+    expect(tiersOf(history)[1]?.footprint.vertices).toEqual(u.vertices)
+  })
+
+  it('keeps upper tiers attached when a lower tier changes height or base', () => {
+    const stacked = execute(single, stackTier('v1', { id: 't2' }))
+    const taller = execute(stacked, updateTier('v1', 't1', { storeys: 4 }))
+    expect(tiersOf(taller)[1]?.baseElevation).toBeCloseTo(12.8, 9)
+    const raised = execute(stacked, updateTier('v1', 't1', { baseElevation: 1 }))
+    expect(tiersOf(raised)[1]?.baseElevation).toBeCloseTo(10.6, 9)
+    const upperOnly = execute(stacked, updateTier('v1', 't2', { storeys: 5 }))
+    expect(tiersOf(upperOnly)[0]?.storeys).toBe(3)
+  })
+
+  it('reproduces the stepped-mass fixture through the command path', () => {
+    const stacked = execute(single, stackTier('v1', { id: 't2' }))
+    const fixture = execute(stacked, updateTier('v1', 't2', { footprint: createRectangleFootprint(10, 8), storeys: 2 }))
+    const volume = fixture.document.volumes[0]
+    expect(volume && volumeGroundFootprintArea(volume)).toBeCloseTo(200, 6)
+    expect(volume && volumeGfa(volume)).toBeCloseTo(760, 6)
+    expect(volume && volumeVolume(volume)).toBeCloseTo(2432, 6)
+    expect(volume && volumeMaxHeight(volume)).toBeCloseTo(16, 6)
+  })
+
+  it('refuses to stack on a locked mass', () => {
+    const locked = execute(single, updateVolume('v1', { locked: true }))
+    expect(() => execute(locked, stackTier('v1'))).toThrow('locked')
   })
 })

@@ -1,13 +1,15 @@
 import { useId, useState, type ReactNode } from 'react'
 import { parseMetres } from '../../lib/coordinates'
-import { tierFootprintArea, tierHeight } from '../../features/massing/aggregate'
+import { tierFootprintArea, tierHeight, tierTop } from '../../features/massing/aggregate'
 import type { ClearanceIssue } from '../../features/massing/clearance'
 import type { MassTier, MassUse, MassVolume } from '../../features/massing/types'
 import { USES } from '../../features/massing/validation'
 import {
   duplicateVolume,
+  removeTier,
   removeVolume,
   rotateVolume,
+  stackTier,
   updateTier,
   updateVolume,
 } from '../../features/editor/commands'
@@ -24,6 +26,7 @@ type MassFieldsProps = {
   onCommand: (command: MassingCommand) => string | null
   /** Clearance warnings for this mass (boundary, slope). */
   warnings?: readonly ClearanceIssue[]
+  onSelectTier: (tierId: string) => void
 }
 
 const USE_LABELS: Record<MassUse, string> = {
@@ -160,7 +163,14 @@ function Readout({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-export function MassFields({ volume, tier, disabled, onCommand, warnings = [] }: MassFieldsProps) {
+export function MassFields({
+  volume,
+  tier,
+  disabled,
+  onCommand,
+  warnings = [],
+  onSelectTier,
+}: MassFieldsProps) {
   const [panelError, setPanelError] = useState<string | null>(null)
   // A locked mass keeps rename, visibility and unlock (ADR-0004 §3 amendment).
   const geometryDisabled = disabled || volume.locked
@@ -174,6 +184,12 @@ export function MassFields({ volume, tier, disabled, onCommand, warnings = [] }:
     const value = parseMetres(text)
     return value === null ? 'Enter a number in metres.' : apply(value)
   }
+
+  const tiers = [...volume.tiers].sort((a, b) => a.baseElevation - b.baseElevation)
+  const groundTier = tiers[0]
+  // Only the topmost tier can be removed, so no tier is left hanging over a gap.
+  const isTopTier =
+    tiers.length > 1 && tier.id !== groundTier?.id && tierTop(tier) >= Math.max(...tiers.map(tierTop))
 
   // Place the copy east of the original, clear of its widest tier.
   const easts = volume.tiers.flatMap((candidate) => candidate.footprint.vertices.map(([east]) => east))
@@ -189,6 +205,14 @@ export function MassFields({ volume, tier, disabled, onCommand, warnings = [] }:
           className={actionClass}
         >
           Duplicate
+        </button>
+        <button
+          type="button"
+          disabled={geometryDisabled}
+          onClick={() => setPanelError(onCommand(stackTier(volume.id)))}
+          className={actionClass}
+        >
+          Add tier
         </button>
         <button
           type="button"
@@ -221,6 +245,41 @@ export function MassFields({ volume, tier, disabled, onCommand, warnings = [] }:
           Delete
         </button>
       </div>
+
+      {tiers.length > 1 && (
+        <div className="flex items-center gap-1.5">
+          <div role="group" aria-label="Tiers" className="flex flex-wrap gap-1">
+            {tiers.map((candidate, index) => (
+              <button
+                key={candidate.id}
+                type="button"
+                aria-pressed={candidate.id === tier.id}
+                onClick={() => onSelectTier(candidate.id)}
+                className={`${actionClass} aria-pressed:border-accent aria-pressed:bg-accent-soft aria-pressed:text-accent`}
+              >
+                Tier {index + 1}
+              </button>
+            ))}
+          </div>
+          {isTopTier && groundTier && (
+            <button
+              type="button"
+              disabled={geometryDisabled}
+              onClick={() =>
+                setPanelError(
+                  onCommand({
+                    ...removeTier(volume.id, tier.id),
+                    selectionAfter: { volumeId: volume.id, tierId: groundTier.id },
+                  }),
+                )
+              }
+              className={`${actionClass} ml-auto`}
+            >
+              Remove tier
+            </button>
+          )}
+        </div>
+      )}
 
       <Field
         label="Name"

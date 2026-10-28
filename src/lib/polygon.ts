@@ -142,3 +142,19 @@ export function rotateRing(points: readonly Vec2[], radians: number, origin?: Ve
     return [pivot[0] + dx * cos - dy * sin, pivot[1] + dx * sin + dy * cos] as const
   })
 }
+
+/** True when every vertex of `inner` lies inside `outer` and no edges touch or cross. */
+export function ringWithin(inner: readonly Vec2[], outer: readonly Vec2[]): boolean {
+  if (!inner.every((point) => pointInPolygon(point, outer))) return false
+  for (let i = 0; i < inner.length; i += 1) {
+    const a = inner[i]
+    const b = inner[(i + 1) % inner.length]
+    if (!a || !b) continue
+    for (let j = 0; j < outer.length; j += 1) {
+      const c = outer[j]
+      const d = outer[(j + 1) % outer.length]
+      if (c && d && segmentsIntersect(a, b, c, d)) return false
+    }
+  }
+  return true
+}

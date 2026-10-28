@@ -51,6 +51,7 @@ type InspectorProps = {
   onCommand: (command: MassingCommand) => string | null
   masses: readonly MassListItem[]
   onSelectMass: (volumeId: string) => void
+  onSelectTier: (tierId: string) => void
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -79,6 +80,7 @@ export function Inspector({
   onCommand,
   masses,
   onSelectMass,
+  onSelectTier,
 }: InspectorProps) {
   const panelRef = useRef<HTMLElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -223,6 +225,7 @@ export function Inspector({
                   disabled={!editingEnabled}
                   onCommand={onCommand}
                   warnings={selected.warnings}
+                  onSelectTier={onSelectTier}
                 />
                 {!canEdit && (
                   <p className="mt-2 text-[10px] text-ink-secondary">Massing is read-only on small screens.</p>

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { MassingCommand } from '../../features/editor/history'
@@ -17,9 +17,19 @@ const document = createScenario({ siteId: 'compact-infill', volumes: [volume] })
 
 function setup(overrides: Partial<Parameters<typeof MassFields>[0]> = {}) {
   const onCommand = vi.fn<(command: MassingCommand) => string | null>(() => null)
+  const onSelectTier = vi.fn<(tierId: string) => void>()
   const user = userEvent.setup()
-  render(<MassFields volume={volume} tier={tier} disabled={false} onCommand={onCommand} {...overrides} />)
-  return { onCommand, user }
+  render(
+    <MassFields
+      volume={volume}
+      tier={tier}
+      disabled={false}
+      onCommand={onCommand}
+      onSelectTier={onSelectTier}
+      {...overrides}
+    />,
+  )
+  return { onCommand, onSelectTier, user }
 }
 
 /** Applies the last command to the fixture document and returns the edited tier/volume. */
@@ -170,6 +180,57 @@ describe('MassFields', () => {
     expect(screen.getByRole('button', { name: 'Duplicate' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Rotate 15° clockwise' })).toBeDisabled()
+  })
+
+  it('adds a stacked tier', async () => {
+    const { onCommand, user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Add tier' }))
+    expect(onCommand.mock.lastCall?.[0].apply(document).volumes[0]?.tiers).toHaveLength(2)
+  })
+
+  it('has no tier switcher or remove for a single-tier mass', () => {
+    setup()
+    expect(screen.queryByRole('group', { name: 'Tiers' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remove tier' })).not.toBeInTheDocument()
+  })
+
+  describe('with an upper tier', () => {
+    const upper = createTier({
+      id: 't2',
+      footprint: createRectangleFootprint(10, 8),
+      baseElevation: 9.6,
+      storeys: 2,
+    })
+    const stepped = { ...volume, tiers: [tier, upper] }
+    const steppedDocument = createScenario({ siteId: 'compact-infill', volumes: [stepped] })
+
+    it('switches tiers in elevation order', async () => {
+      const { onSelectTier, user } = setup({ volume: stepped, tier: upper })
+      const group = screen.getByRole('group', { name: 'Tiers' })
+      const [first, second] = within(group).getAllByRole('button')
+      expect(first).toHaveTextContent('Tier 1')
+      expect(second).toHaveAttribute('aria-pressed', 'true')
+      if (first) await user.click(first)
+      expect(onSelectTier).toHaveBeenCalledWith('t1')
+    })
+
+    it('removes an upper tier and selects the ground tier', async () => {
+      const { onCommand, user } = setup({ volume: stepped, tier: upper })
+      await user.click(screen.getByRole('button', { name: 'Remove tier' }))
+      const command = onCommand.mock.lastCall?.[0]
+      expect(command?.apply(steppedDocument).volumes[0]?.tiers.map((candidate) => candidate.id)).toEqual(['t1'])
+      expect(command?.selectionAfter).toEqual({ volumeId: 'v1', tierId: 't1' })
+    })
+
+    it('does not offer to remove the ground tier', () => {
+      setup({ volume: stepped, tier })
+      expect(screen.queryByRole('button', { name: 'Remove tier' })).not.toBeInTheDocument()
+    })
+  })
+
+  it('disables Add tier on a locked mass', () => {
+    setup({ volume: { ...volume, locked: true } })
+    expect(screen.getByRole('button', { name: 'Add tier' })).toBeDisabled()
   })
 
   it('disables everything when editing is off', () => {

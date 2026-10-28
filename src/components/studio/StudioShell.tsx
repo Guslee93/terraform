@@ -299,6 +299,9 @@ export function StudioShell({
           onCommand={runCommand}
           masses={masses}
           onSelectMass={selectMass}
+          onSelectTier={(tierId) =>
+            dispatch({ type: 'select', selection: { volumeId: editor.history.selection.volumeId, tierId } })
+          }
         />
       </div>
 

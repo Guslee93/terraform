@@ -208,3 +208,15 @@
 - Browser verification (Compact Infill): duplicate → list shows "Mass 1 copy" selected → Undo removes it and reselects Mass 1 → Redo restores it selected and disables Redo; rotate 3 × 15° clockwise (footprint stays 900 m²) → 3 × Undo matches the pre-rotate screenshot; Delete → list "Mass 1", nothing selected → Undo restores the copy at its index, selected; hidden copy → deselect → selected again from the list. No new console errors.
 - Evidence: `docs/screenshots/m2-qa08-*.jpg`, `m2-hidden-mass-from-list.jpg`.
 - Tests: lint ✅ · test 190/190 ✅ (22 files) · e2e 2/2 ✅ · build ✅ (studio 276.0 kB gzip).
+
+### Stacked tiers (test-first)
+
+- `src/lib/polygon.ts`: `ringWithin(inner, outer)` (all vertices inside, no edge contact).
+- `stackTier(volumeId)`: new tier on the current top tier — base at its top, 2 storeys, same storey height and use, outline scaled 60 % about its centre (area × 0.36); concave bases where the scaled copy would leave the outline fall back to the full outline. Selects the new tier. Refused on locked masses.
+- `updateTier` now keeps stacks attached: when a tier's top moves (storeys, storey height, base), every tier at or above its old top moves by the same delta — also during roof drags.
+- The stepped-mass fixture (20 × 10 m × 3 + 10 × 8 m × 2 at 9.6 m) is reproduced through `stackTier` + `updateTier`: ground 200 m², GFA 760 m², volume 2 432 m³, max height 16 m.
+- UI: "Add tier" action; "Tiers" switcher (Tier 1…n by elevation) when a mass has several tiers; "Remove tier" on the topmost tier only (no gaps), selecting the ground tier after. In 3D only the selected tier is outlined and carries the roof handle; clicking a tier selects it.
+- Browser verification (Compact Infill): upper tier stacked at 7.39 m = lower base −2.21 + 9.6, footprint 629 m² = 36 % of 1 748 m²; Tier 1 → 4 storeys moved the upper base to 10.59 m; real roof drag on the upper tier changed only it; clicking the lower tier moved the outline; dragging the lower tier's handle raised the upper tier with it; Remove tier → one tier, Undo restores both. No new console errors.
+- Known limitation: a lower tier's roof handle sits at its roof centroid, which can be under the upper tier (handle still works; inspector switcher is the alternative).
+- Evidence: `docs/screenshots/m2-stepped-*.jpg`.
+- Tests: lint ✅ · test 205/205 ✅ (22 files) · e2e 2/2 ✅ · build ✅ (studio 276.5 kB gzip).

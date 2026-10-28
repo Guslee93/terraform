@@ -9,7 +9,7 @@
 | **Date** | 2026-10-27 |
 | **Source of truth** | `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026) |
 | **Headline state** | **M0 complete · M1 complete · M2 in progress — domain, validation, serialization, commands and undo/redo committed and tested; tools/scene/inspector not started** |
-| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 190/190 ✅ (22 files) · `test:e2e` 2/2 ✅ · `build` ✅ (re-run 2026-10-28 after the mass list and undo/redo UI — see §10) |
+| **Build status** | `typecheck` ✅ · `lint` ✅ · `test` 205/205 ✅ (22 files) · `test:e2e` 2/2 ✅ · `build` ✅ (re-run 2026-10-28 after stacked tiers — see §10) |
 
 > **How to read this report.** Every claim below is traceable to a file in this repository, a command output, or a review record. Sections 4–6 are history; section 7 is the state of the in-progress milestone; sections 8–11 describe the architecture, evidence and debt; section 13 tells you exactly what to verify and do next. If anything here contradicts the PRD, the PRD wins.
 
@@ -151,7 +151,7 @@ Nothing in `src/features/massing/**`, `src/features/editor/**` or `src/lib/polyg
 | 1 | Immutable domain model | ✅ | — |
 | 2 | Factories + validation | ✅ (winding is normalised by factories but not enforced on load) | — |
 | 3 | Tools (add, draw, move/rotate/scale, roof handle, vertex edit) | 🟡 draw, move (1 m grid snap) and roof handle live in the studio; rotate/scale/vertex edit ❌ | Claude |
-| 4 | Tier volumes + double-count-free aggregation | ✅ domain | — |
+| 4 | Tier volumes + double-count-free aggregation | ✅ `stackTier` (60 % setback, concave fallback), upper tiers follow lower-tier edits, inspector tier switcher + Remove tier (top tier only), per-tier selection in 3D | — |
 | 5 | Numeric inspector | ✅ name, storeys, storey height, base elevation, use, visible, locked + height/footprint readouts; width/depth/rotation readouts wait for D9 | — |
 | 6 | Interaction state machine | ✅ `interaction.ts`, wired to the scene via `MassLayer` | — |
 | 7 | Undo/redo | ✅ domain + tool-rail buttons; keyboard shortcuts wait for D7 | DeepSeek (D7) → Claude wiring |
@@ -200,9 +200,9 @@ Repository map that must be preserved (`AGENTS.md` §3): `src/app`, `src/compone
 |---|---|
 | `npm run typecheck` | ✅ no errors |
 | `npm run lint` | ✅ no errors/warnings |
-| `npm run test` | ✅ **190/190 across 22 files** |
-| `npm run build` | ✅ landing ~92 kB gzip; studio 276.0 kB gzip (+12 kB for massing since M1; known >500 kB raw warning, lazy route) |
-| `npm run test:e2e` | ✅ 2/2 re-run after the mass list and undo/redo UI |
+| `npm run test` | ✅ **205/205 across 22 files** |
+| `npm run build` | ✅ landing ~92 kB gzip; studio 276.5 kB gzip (+12.6 kB for massing since M1; known >500 kB raw warning, lazy route) |
+| `npm run test:e2e` | ✅ 2/2 re-run after stacked tiers |
 | `npm run capture` | 26 reference images; no UI change since M1 |
 
 ### 10.1 The one change made while preparing this report

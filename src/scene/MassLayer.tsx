@@ -239,7 +239,8 @@ export function MassLayer({
             <TierMesh
               key={tier.id}
               tier={tier}
-              selected={selection.volumeId === volume.id}
+              // Outline the tier the inspector edits; single-tier masses read as the whole mass.
+              selected={selection.volumeId === volume.id && selection.tierId === tier.id}
               invalid={invalidPreview && selection.volumeId === volume.id}
               warning={warnedVolumes.has(volume.id)}
               onPointerDown={editable ? startMove(volume, tier) : undefined}

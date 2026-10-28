@@ -1,6 +1,7 @@
 import type { Vec2 } from '../../lib/coordinates'
-import { ringCentroid, rotateRing, translateRing } from '../../lib/polygon'
-import { createId } from '../massing/factories'
+import { ringCentroid, ringWithin, rotateRing, translateRing } from '../../lib/polygon'
+import { tierTop } from '../massing/aggregate'
+import { createId, createTier } from '../massing/factories'
 import {
   EMPTY_SELECTION,
   type MassTier,
@@ -16,6 +17,12 @@ import type { MassingCommand } from './history'
  */
 
 type VolumePatch = Partial<Pick<MassVolume, 'name' | 'visible' | 'locked'>>
+
+/** Linear scale of a new stacked tier's outline about the tier below's centre (area × 0.36). */
+const SETBACK_SCALE = 0.6
+const STACKED_STOREYS = 2
+/** Tolerance for "this tier sits on that tier's top", in metres. */
+const STACK_EPSILON_M = 1e-6
 type TierPatch = Partial<Omit<MassTier, 'id'>>
 
 function requireVolume(document: ScenarioDocument, volumeId: string): MassVolume {
@@ -146,15 +153,56 @@ export function addTier(volumeId: string, tier: MassTier): MassingCommand {
   }
 }
 
+/** Stacks a set-back tier on the mass's current top tier and selects it. */
+export function stackTier(volumeId: string, { id = createId('tier') }: { id?: string } = {}): MassingCommand {
+  return {
+    label: 'Add tier',
+    apply: (document) =>
+      mapUnlockedVolume(document, volumeId, (volume) => {
+        const top = volume.tiers.reduce((highest, tier) => (tierTop(tier) > tierTop(highest) ? tier : highest))
+        const outline = top.footprint.vertices
+        const [east, north] = ringCentroid(outline)
+        const scaled = outline.map(
+          ([x, y]) => [east + (x - east) * SETBACK_SCALE, north + (y - north) * SETBACK_SCALE] as const,
+        )
+        // A concave outline can push the scaled copy outside; stack the full outline instead.
+        const footprint = ringWithin(scaled, outline) ? { vertices: scaled } : top.footprint
+        const tier = createTier({
+          id,
+          name: `Tier ${volume.tiers.length + 1}`,
+          footprint,
+          baseElevation: tierTop(top),
+          storeys: STACKED_STOREYS,
+          storeyHeight: top.storeyHeight,
+          use: top.use,
+        })
+        return { ...volume, tiers: [...volume.tiers, tier] }
+      }),
+    selectionAfter: { volumeId, tierId: id },
+  }
+}
+
+/**
+ * Edits one tier. Tiers stacked at or above its old top move with it, so upper tiers stay
+ * attached when a lower tier gains storeys or changes base elevation.
+ */
 export function updateTier(volumeId: string, tierId: string, patch: TierPatch): MassingCommand {
   return {
     label: 'Edit tier',
     apply: (document) =>
       mapUnlockedVolume(document, volumeId, (volume) => {
-        if (!volume.tiers.some((tier) => tier.id === tierId)) {
-          throw new Error(`Unknown tier: ${tierId}`)
-        }
-        return mapTiers(volume, (tier) => (tier.id === tierId ? { ...tier, ...patch } : tier))
+        const target = volume.tiers.find((tier) => tier.id === tierId)
+        if (!target) throw new Error(`Unknown tier: ${tierId}`)
+        const updated = { ...target, ...patch }
+        const oldTop = tierTop(target)
+        const delta = tierTop(updated) - oldTop
+        return mapTiers(volume, (tier) => {
+          if (tier.id === tierId) return updated
+          if (delta !== 0 && tier.baseElevation >= oldTop - STACK_EPSILON_M) {
+            return { ...tier, baseElevation: tier.baseElevation + delta }
+          }
+          return tier
+        })
       }),
   }
 }
