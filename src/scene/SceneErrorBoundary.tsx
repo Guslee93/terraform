@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 
-type Props = { children: ReactNode }
+/** `fallback` replaces the default WebGL notice, e.g. `null` to drop an optional effect. */
+type Props = { children: ReactNode; fallback?: ReactNode }
 type State = { hasError: boolean }
 
 export class SceneErrorBoundary extends Component<Props, State> {
@@ -20,6 +21,7 @@ export class SceneErrorBoundary extends Component<Props, State> {
 
   render() {
     if (!this.state.hasError) return this.props.children
+    if (this.props.fallback !== undefined) return this.props.fallback
 
     return (
       <div className="grid h-full place-items-center bg-viewport p-8">

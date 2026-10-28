@@ -26,9 +26,15 @@ Design contract §8 is the source of truth. Context is a single matte `#F3F2EE` 
 | `postprocessing` | 6.39.5 | Zlib | 2.8 MB (tree-shaken; only `EffectComposer`, `RenderPass`, `EffectPass`, `ToneMappingEffect` imported) | Composer for the AO pass; peer range `three >=0.168 <0.187` covers 0.186.1 |
 | `n8ao` | 2.0.1 | ISC | 0.8 MB | Screen-space AO tuned for architectural scenes; `N8AOPostPass` |
 
-`@react-three/postprocessing` is **not** used: it adds `maath` and a React layer for what a ~50-line component does. Both packages go in the lazy `three-vendor` chunk so the landing page never loads them. The gzip delta is recorded in `progress.md` when it lands.
+`@react-three/postprocessing` is **not** used: it adds `maath` and a React layer for what a ~50-line component (`src/scene/SceneComposer.tsx`) does. `n8ao` ships no types, so `src/types/n8ao.d.ts` declares only the surface we use.
 
-AO is a quality setting, not a claim: it is on by default on desktop, off when the canvas is narrower than 640 px, and the scene renders identically (minus AO) if the composer fails to initialise. Fallback considered and rejected for now: baked vertex AO (no dependency, but no courtyard or ground contact).
+Pipeline: `RenderPass` → `N8AOPostPass` (Medium quality, radius 5 m, intensity 3, cool AO colour `#2B3138`) → `EffectPass(ToneMappingEffect NEUTRAL)`. AO runs in linear light before tone mapping; the renderer's own tone mapping does not apply to composer targets.
+
+Measured (2026-10-28):
+- **Bundle:** the composer is lazy-loaded into its own chunk, `SceneComposer-*.js`, **96.0 kB gzip**. The studio chunk stays 35.9 kB gzip (it would have been 132.1 kB statically imported) and the landing page is unchanged.
+- **Frame rate:** 60 fps at 1440×900, both at 1× and 2× device pixel ratio, with AO on (headless Chromium, ANGLE Metal, Apple M1 Pro).
+
+Fallbacks: AO mounts only when the canvas is at least 640 px wide; until the chunk loads, and if the composer throws (caught by `SceneErrorBoundary fallback={null}`), R3F's own loop renders the scene without AO. Adaptive frame-rate disabling was planned but not built, since the measured frame rate leaves headroom; add it if a slower reference machine drops below 45 fps.
 
 ### 4. Terrain contours
 

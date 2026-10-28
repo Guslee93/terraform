@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
 import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
@@ -220,6 +220,25 @@ function SiteLights({ sitePackage }: { sitePackage: SitePackage }) {
   )
 }
 
+const SceneComposer = lazy(() => import('./SceneComposer'))
+
+/** Below this canvas width the scene renders without ambient occlusion (ADR-0005 §3). */
+const AO_MIN_WIDTH_PX = 640
+
+/** Ambient occlusion on wide canvases only; narrow (mobile, read-only) views render directly. */
+function AmbientOcclusion() {
+  const wide = useThree((state) => state.size.width >= AO_MIN_WIDTH_PX)
+  if (!wide) return null
+  // If the composer cannot start, drop AO and keep R3F's own render loop.
+  return (
+    <SceneErrorBoundary fallback={null}>
+      <Suspense fallback={null}>
+        <SceneComposer />
+      </Suspense>
+    </SceneErrorBoundary>
+  )
+}
+
 export function ViewportCanvas({
   sitePackage,
   layers,
@@ -300,6 +319,7 @@ export function ViewportCanvas({
             controlsRef={controlsRef}
           />
           <HudProbe controlsRef={controlsRef} />
+          <AmbientOcclusion />
 
           <OrbitControls
             ref={controlsRef}
