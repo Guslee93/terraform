@@ -76,11 +76,12 @@ SunCalc is the implementation library, but it is not its own reference. For each
 
 | Timestamp (Europe/Oslo) | Independent azimuth | Independent elevation | SunCalc azimuth | SunCalc elevation | Δ |
 |---|---|---|---|---|---|
-| 2026-03-20 12:00 | to record | to record | to record | to record | ≤0.5° |
-| 2026-06-21 12:00 | to record | to record | to record | to record | ≤0.5° |
-| 2026-09-22 12:00 | to record | to record | to record | to record | ≤0.5° |
-| 2026-12-21 12:00 | to record | to record | to record | to record | ≤0.5° |
-| 2026-12-21 23:00 | n/a (below horizon) | negative | must be below horizon | negative | n/a |
+| 2026-03-20 12:00 | 172.96° | 29.85° | 172.95° | 29.86° | ≤0.02° |
+| 2026-06-21 12:00 | 150.58° | 51.01° | 150.57° | 51.01° | ≤0.01° |
+| 2026-09-22 12:00 | 160.01° | 28.82° | 160.01° | 28.82° | <0.01° |
+| 2026-12-21 12:00 | 176.53° | 6.71° | 176.53° | 6.71° | <0.01° |
+| 2026-12-21 23:00 | 331.82° | −51.21° | 331.82° | −50.73° | 0.48° |
+Independent reference generated with pvlib 0.15.2 (NREL SPA, `nrel_numpy` method). SunCalc is the implementation library. Both use the same azimuth convention: degrees clockwise from true north. DST transitions resolved via zoneinfo (Europe/Oslo).
 
 Additional checks:
 
