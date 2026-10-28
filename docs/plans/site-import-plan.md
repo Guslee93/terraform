@@ -1,6 +1,6 @@
 # Site import — "pick any Nordic city block and get it in 3D"
 
-**Status:** Proposed (2026-10-28) · needs owner decision on scope (see §2) · ADR draft: `docs/decisions/ADR-0006-site-import.md`
+**Status:** Option A chosen (2026-10-28): M6 track, P1 spike running · ADR: `docs/decisions/ADR-0006-site-import.md` (Accepted)
 **Inspired by:** Hektar's site loading. We copy the *function* (find a place, frame it, get the city in 3D), not their UI.
 
 ---

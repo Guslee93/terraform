@@ -382,6 +382,37 @@ Same rules as §15.1. Branch: `deepseek/round3` from `deepseek/round2` at `e0113
 **D20 — Reusable GPU frame-rate probe** · commit `chore(scripts): add GPU frame-rate probe`
 - New file only: `scripts/measure-fps.mjs`. Launch Chromium with `--use-angle=metal --enable-gpu --ignore-gpu-blocklist` (fall back to no flags off macOS), start or reuse the dev server like `scripts/capture.mjs`, and for each site at device scale 1 and 2 load `/studio/<site>`, wait 3 s, count `requestAnimationFrame` callbacks over 4 s and print `site dpr fps`. Add a row to the README commands table. Must pass `npm run lint`.
 
+### 15.3d Round 4 cards (D22, D21, D23, D26) — site import groundwork (M6 track, ADR-0006)
+
+Same rules as §15.1. **Start only after round 3 has been reviewed and merged**, on branch `deepseek/round4`, preferably in its own git worktree (`git worktree add ../Terraform-ds4 -b deepseek/round4`) so it does not share a working tree with Claude or Codex. Background: `docs/plans/site-import-plan.md` §3–§5. Order: D22 → D21; D23 and D26 are independent.
+
+**Don't touch (round 4):** everything outside the files named in each card. In particular `src/scene/**`, `src/features/sites/**`, `scripts/build_site_packages.py`, `scripts/spike-import.mjs`, `public/**`, `docs/decisions/**`. No new dependencies.
+
+**D22 — Fixture recorder** · commit `chore(import): record site-import fixtures`
+- New file `scripts/record-import-fixtures.mjs` (Node 22, `fetch`, descriptive `User-Agent`, one request per second). Writes into `src/features/import/__fixtures__/`:
+  - `photon-grunerlokka.json` — `https://photon.komoot.io/api/?q=Grünerløkka%20Oslo&limit=5`
+  - `photon-sodermalm.json` — same for `Södermalm Stockholm`
+  - `kartverket-adresse.json` — `https://ws.geonorge.no/adresser/v1/sok?sok=Thorvald%20Meyers%20gate%2040%20Oslo&treffPerSide=5`
+  - `kartverket-hoyde.json` — one `punkt` batch of 9 points around 59.9225, 10.7595 (`koordsys=4326`)
+  - `README.md` — each file's URL, fetch date (UTC), licence (Photon/OSM ODbL; Kartverket CC BY 4.0).
+- Do not record map tiles (Codex owns tiles). Commit the script and the fixtures.
+
+**D21 — Geocoder clients** · commit `feat(import): Photon and Kartverket geocoder clients`
+- New files only: `src/features/import/geocode.ts` + `.test.ts` (tests use the D22 fixtures via a mocked `fetch`; no live network in tests).
+- Export `type PlaceResult = { id: string; label: string; detail: string; latitude: number; longitude: number; source: 'photon' | 'kartverket' }`.
+- `searchPhoton(query: string, signal?: AbortSignal): Promise<PlaceResult[]>` — `https://photon.komoot.io/api/?q=…&limit=8&lang=en`, bias to the Nordics with `&bbox=4,54,32,71`; label from `name` (or `street housenumber`), detail from `district/city/country`.
+- `searchKartverket(query: string, signal?: AbortSignal): Promise<PlaceResult[]>` — Adresse-API `sok`, `treffPerSide=8`; label `adressetekst`, detail `poststed`; coordinates from `representasjonspunkt` (`lat`, `lon`).
+- `searchPlaces(query, signal)` — runs both, Kartverket results first, de-duplicates results within 25 m, max 8. Empty / whitespace query → `[]` without a request. Every request has an 8 s timeout and honours `signal`; one failing source must not fail the other.
+- Validate every response field; drop malformed entries instead of throwing. No `any`.
+
+**D23 — Licence and usage verification (no code)** · commit `docs(data): verify site-import sources`
+- New file `docs/data/import-sources.md`. For each source in plan §3 (OpenFreeMap tiles + style, OpenMapTiles schema, OpenStreetMap, Kartverket høydedata, Kartverket Adresse-API, AWS Terrain Tiles, Photon, Nominatim, Overpass, Dataforsyningen, Lantmäteriet Byggnad, Kartverket FKB): official licence link, exact attribution string to display, usage policy limits (rate, caching, autocomplete, commercial), and a verdict **Ship / Ship with conditions / Do not ship (needs backend or agreement)**. Quote at most one short phrase per source; link the rest. Flag anything that contradicts plan §3.
+
+**D26 — City quick picks** · commit `feat(import): Nordic city quick picks`
+- New files only: `src/features/import/cities.ts` + `.test.ts`.
+- Export `type QuickPick = { id: string; label: string; country: 'NO' | 'SE' | 'DK' | 'FI'; latitude: number; longitude: number; frameMetres: 400 }` and `QUICK_PICKS` for Oslo (Grünerløkka), Bergen (Bryggen), Trondheim (Bakklandet), Stockholm (Södermalm), Göteborg (Haga), Malmö (Möllevången), Copenhagen (Nørrebro), Aarhus (Latinerkvarteret), Helsinki (Kallio). Coordinates from OpenStreetMap place nodes, 4 decimals, source noted in a comment per row.
+- Tests: ids unique; each point lies inside its country's bounding box (NO 4–31.5 E / 57.9–71.2 N, SE 10.9–24.2 / 55.3–69.1, DK 8–15.2 / 54.5–57.8, FI 19–31.6 / 59.7–70.1).
+
 ### 15.4 Handoff back to Claude
 
 When DeepSeek finishes, tell Claude "review `deepseek/round2`" (round 1 used `deepseek/followups`). Claude will diff it against `main`, check the work against the task cards and AGENTS.md, re-run the suite, merge accepted commits, fix or reject the rest, mark the rows in `docs/agent-log.md` and update `progress.md` and this report.
