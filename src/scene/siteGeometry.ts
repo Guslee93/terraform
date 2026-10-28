@@ -5,22 +5,12 @@ import {
   ShapeUtils,
   Vector2,
 } from 'three'
-import type { BuildingKind, ContextBuilding, TerrainData } from '../features/sites/package'
+import type { ContextBuilding, TerrainData } from '../features/sites/package'
 import { terrainHeightRange } from '../features/sites/geometry'
 
-const LOW_TERRAIN = new Color('#D3DCCF')
-const HIGH_TERRAIN = new Color('#B9C8B4')
-
-const BUILDING_COLORS: Record<BuildingKind, string> = {
-  apartments: '#D2D4CC',
-  house: '#DDE0D8',
-  commercial: '#CDD6DA',
-  church: '#C9C2B4',
-  industrial: '#C8CCC4',
-  civic: '#D8D2C6',
-  garage: '#D8D8D2',
-  other: '#D5D8D0',
-}
+// Near-white ground; elevation tint stays under 4% so separation comes from light, not hue.
+const LOW_TERRAIN = new Color('#F0EFEC')
+const HIGH_TERRAIN = new Color('#E6E5E1')
 
 export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
   const positions: number[] = []
@@ -145,26 +135,15 @@ function signedArea(points: readonly Vector2[]): number {
   return area / 2
 }
 
-function pushVertex(
-  positions: number[],
-  colors: number[],
-  color: Color,
-  east: number,
-  up: number,
-  north: number,
-) {
+function pushVertex(positions: number[], east: number, up: number, north: number) {
   positions.push(east, up, -north)
-  colors.push(color.r, color.g, color.b)
 }
 
 export function createContextGeometry(buildings: readonly ContextBuilding[]): BufferGeometry {
   const positions: number[] = []
-  const colors: number[] = []
-  const color = new Color()
 
   for (const building of buildings) {
     if (building.footprint.length < 3) continue
-    color.set(BUILDING_COLORS[building.kind])
     const base = building.baseElevation
     const top = base + building.height
     const centreX = building.footprint.reduce((sum, point) => sum + point[0], 0) / building.footprint.length
@@ -187,13 +166,13 @@ export function createContextGeometry(buildings: readonly ContextBuilding[]): Bu
       const a = contour[index]
       const b = contour[(index + 1) % contour.length]
       if (!a || !b) continue
-      pushVertex(positions, colors, color, a.x, base, a.y)
-      pushVertex(positions, colors, color, b.x, base, b.y)
-      pushVertex(positions, colors, color, b.x, top, b.y)
+      pushVertex(positions, a.x, base, a.y)
+      pushVertex(positions, b.x, base, b.y)
+      pushVertex(positions, b.x, top, b.y)
 
-      pushVertex(positions, colors, color, a.x, base, a.y)
-      pushVertex(positions, colors, color, b.x, top, b.y)
-      pushVertex(positions, colors, color, a.x, top, a.y)
+      pushVertex(positions, a.x, base, a.y)
+      pushVertex(positions, b.x, top, b.y)
+      pushVertex(positions, a.x, top, a.y)
     }
 
     for (const face of ShapeUtils.triangulateShape(contour, [])) {
@@ -206,15 +185,14 @@ export function createContextGeometry(buildings: readonly ContextBuilding[]): Bu
       const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
       const second = cross < 0 ? c : b
       const third = cross < 0 ? b : c
-      pushVertex(positions, colors, color, a.x, top, a.y)
-      pushVertex(positions, colors, color, second.x, top, second.y)
-      pushVertex(positions, colors, color, third.x, top, third.y)
+      pushVertex(positions, a.x, top, a.y)
+      pushVertex(positions, second.x, top, second.y)
+      pushVertex(positions, third.x, top, third.y)
     }
   }
 
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
-  geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
   return geometry

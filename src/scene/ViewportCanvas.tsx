@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide } from 'three'
+import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import { sampleTerrainHeight } from '../features/sites/geometry'
@@ -11,6 +11,7 @@ import { EMPTY_SELECTION } from '../features/massing/types'
 import { cameraLocked, type EditorEvent, type EditorState } from '../features/editor/interaction'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
+import { DEFAULT_SUN, sunPosition } from './lighting'
 import { MassLayer } from './MassLayer'
 import { SceneErrorBoundary } from './SceneErrorBoundary'
 import {
@@ -40,6 +41,14 @@ type ViewportProps = {
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
 const CLICK_TOLERANCE_PX = 4
 
+const VIEWPORT_BACKGROUND = '#EEEDE9'
+const CONTEXT_COLOR = '#F3F2EE'
+const EDGE_COLOR = '#6F6E6A'
+/** One line-weight knob: ~0.3 reads as a clay model, ~0.7 as a sketch model. */
+const EDGE_OPACITY = 0.3
+/** Crease angle (degrees) above which a context edge is drawn; hides coplanar triangle seams. */
+const EDGE_THRESHOLD_DEG = 30
+
 type GroundHandlers = {
   onGroundClick?: (point: Vec2, elevation: number) => void
   onGroundMove?: (point: Vec2) => void
@@ -47,9 +56,10 @@ type GroundHandlers = {
 
 function TerrainMesh({
   terrain,
+  showGrid,
   onGroundClick,
   onGroundMove,
-}: { terrain: SitePackage['terrain'] } & GroundHandlers) {
+}: { terrain: SitePackage['terrain']; showGrid: boolean } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
   const skirt = useMemo(() => createTerrainSkirtGeometry(terrain), [terrain])
@@ -79,9 +89,9 @@ function TerrainMesh({
         <meshStandardMaterial vertexColors roughness={0.97} metalness={0} />
       </mesh>
       <mesh geometry={skirt} receiveShadow>
-        <meshStandardMaterial color="#D6DED2" roughness={1} metalness={0} side={DoubleSide} />
+        <meshStandardMaterial color="#D8D7D3" roughness={1} metalness={0} side={DoubleSide} />
       </mesh>
-      <lineSegments geometry={grid}>
+      <lineSegments geometry={grid} visible={showGrid}>
         <lineBasicMaterial color="#7C8E7D" transparent opacity={0.22} depthWrite={false} />
       </lineSegments>
     </group>
@@ -90,21 +100,33 @@ function TerrainMesh({
 
 function ContextBuildings({ buildings }: { buildings: SitePackage['buildings']['buildings'] }) {
   const geometry = useMemo(() => createContextGeometry(buildings), [buildings])
+  const edges = useMemo(() => new EdgesGeometry(geometry, EDGE_THRESHOLD_DEG), [geometry])
 
-  useEffect(() => () => geometry.dispose(), [geometry])
+  useEffect(
+    () => () => {
+      geometry.dispose()
+      edges.dispose()
+    },
+    [geometry, edges],
+  )
 
   return (
-    <mesh geometry={geometry} castShadow>
-      <meshStandardMaterial
-        vertexColors
-        roughness={0.9}
-        metalness={0}
-        flatShading
-        polygonOffset
-        polygonOffsetFactor={1}
-        polygonOffsetUnits={1}
-      />
-    </mesh>
+    <group>
+      <mesh geometry={geometry} castShadow>
+        <meshStandardMaterial
+          color={CONTEXT_COLOR}
+          roughness={0.9}
+          metalness={0}
+          flatShading
+          polygonOffset
+          polygonOffsetFactor={1}
+          polygonOffsetUnits={1}
+        />
+      </mesh>
+      <lineSegments geometry={edges}>
+        <lineBasicMaterial color={EDGE_COLOR} transparent opacity={EDGE_OPACITY} depthWrite={false} />
+      </lineSegments>
+    </group>
   )
 }
 
@@ -139,11 +161,12 @@ function StudyBoundary({ sitePackage }: { sitePackage: SitePackage }) {
 function SiteLights() {
   return (
     <>
-      <ambientLight intensity={0.45} />
-      <hemisphereLight args={['#FFFFFF', '#BFC7BC', 0.35]} />
+      {/* Low ambient + cool hemisphere fill keeps a ~3:1 lit/shaded ratio with blue-grey shade. */}
+      <ambientLight intensity={0.3} />
+      <hemisphereLight args={['#FFFFFF', '#CDD0D4', 1.6]} />
       <directionalLight
-        position={[180, 260, 120]}
-        intensity={2.1}
+        position={sunPosition(DEFAULT_SUN.azimuthDeg, DEFAULT_SUN.elevationDeg, 340)}
+        intensity={2.4}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -195,7 +218,8 @@ export function ViewportCanvas({
           key={manifest.id}
           shadows
           dpr={[1, 1.75]}
-          gl={{ antialias: true, powerPreference: 'high-performance' }}
+          // Neutral tone mapping keeps white-model albedo white; ACES greys it down.
+          gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: NeutralToneMapping }}
           camera={{
             position: initialPosition,
             fov: initialPreset.fov ?? 32,
@@ -203,13 +227,14 @@ export function ViewportCanvas({
             far: 2600,
           }}
         >
-          <color attach="background" args={['#E8EBE7']} />
-          <fog attach="fog" args={['#E8EBE7', 520, 1250]} />
+          <color attach="background" args={[VIEWPORT_BACKGROUND]} />
+          <fog attach="fog" args={[VIEWPORT_BACKGROUND, 600, 1400]} />
           <SiteLights />
 
           {layers.terrain && (
             <TerrainMesh
               terrain={terrain}
+              showGrid={presetId === 'top' || drawing}
               onGroundClick={onGroundClick}
               onGroundMove={
                 drawing && editor.interaction.kind === 'drawing'

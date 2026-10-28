@@ -6,14 +6,18 @@ const HOST = '127.0.0.1'
 const PORT = 5173
 const BASE = `http://${HOST}:${PORT}`
 const OUT = 'docs/screenshots'
+const PREFIX = process.env.SHOT_PREFIX ?? 'm1'
 
-const viewports = [
+const allViewports = [
   { name: '1440x900', width: 1440, height: 900 },
   { name: '1280x800', width: 1280, height: 800 },
   { name: '1024x800', width: 1024, height: 800 },
   { name: '1920x1080', width: 1920, height: 1080 },
   { name: '390x844', width: 390, height: 844 },
 ]
+const viewports = process.env.SHOT_VIEWPORT
+  ? allViewports.filter((viewport) => viewport.name === process.env.SHOT_VIEWPORT)
+  : allViewports
 
 async function waitForServer() {
   for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -46,7 +50,7 @@ try {
 
     await page.goto(`${BASE}/`, { waitUntil: 'networkidle' })
     await page.screenshot({
-      path: `${OUT}/m1-landing-${viewport.name}.png`,
+      path: `${OUT}/${PREFIX}-landing-${viewport.name}.png`,
       fullPage: false,
     })
 
@@ -54,7 +58,7 @@ try {
       await page.goto(`${BASE}/studio/${site}`, { waitUntil: 'networkidle' })
       await page.waitForTimeout(1200)
       await page.screenshot({
-        path: `${OUT}/m1-${site}-${viewport.name}.png`,
+        path: `${OUT}/${PREFIX}-${site}-${viewport.name}.png`,
         fullPage: false,
       })
 
@@ -62,7 +66,7 @@ try {
         await page.getByRole('button', { name: 'Top' }).click()
         await page.waitForTimeout(1000)
         await page.screenshot({
-          path: `${OUT}/m1-${site}-${viewport.name}-top.png`,
+          path: `${OUT}/${PREFIX}-${site}-${viewport.name}-top.png`,
           fullPage: false,
         })
       }

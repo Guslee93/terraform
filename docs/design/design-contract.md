@@ -107,18 +107,22 @@ Rules: never introduce a new hex in a component; add a token first. Borders are 
 
 ## 8. 3D scene palette
 
+"White model" look — see `docs/design/scene-look-plan.md`. Separation comes from light, shadow and linework, not hue.
+
 | Element | Colour |
 |---|---|
-| Terrain | warm desaturated sage `#DDE3DA` |
-| Context buildings | matte warm grey `#D2D4CC` |
-| Concept massing | off-white / clay `#F2EFE7` |
+| Background / fog | `#EEEDE9` (`--surface-viewport`) |
+| Terrain | near-white `#F0EFEC` → `#E6E5E1` by elevation (≤ 4% tint); skirt `#D8D7D3` |
+| Context buildings | single matte `#F3F2EE`, no per-use tints |
+| Context edges | `#6F6E6A` at 0.3 opacity, creases > 30° only |
+| Concept massing | pale accent `#C9DBE5` — the only coloured object; warning/invalid stay semantic |
 | Alternate mass | cool blue-grey `#E9EDF0` |
 | Parcel boundary | `#355E79`, 2 px |
 | Setbacks | `#B8822B`, dashed |
 | Selection outline | dark blue-grey |
-| Grid | `#B9C0B6`, sections `#9AA399` |
+| Grid | `#B9C0B6`, sections `#9AA399`; shown only in Top view or while drawing |
 
-Lighting: one directional sun, soft ambient/hemisphere fill, readable shadows. No fake PBR realism, no bloom, no vignette on the canvas.
+Lighting: one directional sun (default SW, 35° elevation until M3 drives it), low ambient (0.12), cool hemisphere fill (`#FFFFFF` / `#CDD0D4`, 0.55) for a ~3:1 lit-to-shaded ratio. No fake PBR realism, no bloom, no vignette on the canvas.
 
 ## 9. Accessibility
 

@@ -16,7 +16,8 @@ import { DEFAULT_GRID_STEP_M } from '../features/editor/snapping'
 import type { OrbitControlsHandle } from './CameraRig'
 import { createTierGeometry, roofHandlePosition } from './massGeometry'
 
-const MASS_COLOR = '#F2EFE7'
+// Accent-family tint: the proposal is the only coloured object against the white context.
+const MASS_COLOR = '#C9DBE5'
 const INVALID_COLOR = '#EBC9C4'
 /** Amber tint for clearance warnings (design contract: amber = warning). */
 const WARNING_COLOR = '#EFD9AC'

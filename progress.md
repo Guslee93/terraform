@@ -220,3 +220,15 @@
 - Known limitation: a lower tier's roof handle sits at its roof centroid, which can be under the upper tier (handle still works; inspector switcher is the alternative).
 - Evidence: `docs/screenshots/m2-stepped-*.jpg`.
 - Tests: lint ✅ · test 205/205 ✅ (22 files) · e2e 2/2 ✅ · build ✅ (studio 276.5 kB gzip).
+
+### Scene look — Phase 1 (white model, `docs/design/scene-look-plan.md`)
+
+- Context buildings: one matte `#F3F2EE` (per-kind tints and the context colour attribute removed) plus crease edge lines (`EdgesGeometry`, 30°, `#6F6E6A` at 0.3 — one `EDGE_OPACITY` knob).
+- Ground near-white `#F0EFEC` → `#E6E5E1` by elevation; skirt `#D8D7D3`; background/fog/`--surface-viewport` `#EEEDE9`.
+- Light rig: `NeutralToneMapping` (ACES greyed the whites to ~215), ambient 0.3, hemisphere `#FFFFFF`/`#CDD0D4` 1.6, sun 2.4 from `sunPosition(225°, 35°)` (`src/scene/lighting.ts`, tested). Measured viewport luminance: shadows p5–p15 170–182, lit 231–237 (was 118–145 / 214–237 on the first pass).
+- Terrain grid only in Top view or while drawing.
+- Proposal mass `#C9DBE5` (pale accent) pulled forward from Phase 3: with a white context the old `#F2EFE7` mass disappeared.
+- Browser verification: drew a mass on Compact Infill (Top → Iso); reads clearly against the context; no console errors.
+- Evidence: `docs/screenshots/scene-look-{before,after}-*-1440x900*.png`, `scene-look-after-mass-iso.png`. `scripts/capture.mjs` takes `SHOT_PREFIX` / `SHOT_VIEWPORT`.
+- Tests: lint ✅ · test 229/229 ✅ (25 files) · e2e 4/4 ✅ · build ✅.
+- Known limitations: with the grid hidden in Iso, Sloped Edge's slope reads less (silhouette and plinth only) → contour lines are the honest fix. three r186 removed `PCFSoftShadowMap` (falls back to PCF, console warning) → Phase 2 must use PCF + `shadow-radius` or VSM.
