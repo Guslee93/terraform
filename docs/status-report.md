@@ -350,7 +350,7 @@ Same rules as §15.1. Branch: `deepseek/round2` from current `main`. The don't-t
 
 ### 15.3c Round 3 cards (D14–D20) — scene look follow-ups
 
-Same rules as §15.1. Branch: `deepseek/round3` from the tip of `deepseek/round2` **after** the land cover commit lands (Claude will say when). Three-way split for this round: Claude owns visuals and review, Codex owns the land cover data pipeline (`docs/handoffs/C1-landcover.md`), DeepSeek owns the cards below.
+Same rules as §15.1. Branch: `deepseek/round3` from `deepseek/round2` at `e011315` or later (land cover and tree variety have landed; ready to start). Three-way split for this round: Claude owns visuals and review, Codex owns the land cover data pipeline (`docs/handoffs/C1-landcover.md`), DeepSeek owns the cards below.
 
 **Don't touch (round 3):** `src/scene/**` except `CameraHud.tsx` for D17; `src/features/sites/**`; `scripts/build_site_packages.py`; `public/sites/**`; `docs/decisions/**`; `package.json` dependencies.
 
