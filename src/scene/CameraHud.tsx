@@ -26,7 +26,7 @@ export function CameraHud() {
         <span className="text-[9px] uppercase tracking-[0.14em] text-ink-secondary">N</span>
       </div>
 
-      <div className="pointer-events-none absolute bottom-9 left-3 z-10 hidden items-center gap-2 sm:flex">
+      <div className="pointer-events-none absolute bottom-14 left-3 z-10 hidden items-center gap-2 min-[1100px]:bottom-9 sm:flex">
         <span aria-hidden="true" className="w-5 border-t border-dashed border-accent" />
         <span
           className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary"
