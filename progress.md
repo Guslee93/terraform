@@ -244,4 +244,5 @@
 - Streets/trees: builder emits additive `roads.json` (136 / 32 runs) and `trees.json` (128 / 122 points); `terrain.json`, `buildings.json`, `study-area.json` byte-identical after `--offline` rebuild. Optional manifest paths, validated parsers, loader tests for present and absent cases, `scripts/test_build_site_packages.py` for clipping. Streets/Trees layer toggles hidden when a package lacks the file.
 - Evidence: `docs/screenshots/scene-look-final-*.png` (ISO + Top for both sites, mass close-up).
 - Tests: lint ✅ · test 246/246 ✅ · e2e 5/5 ✅ (now ~52 s: AO under software GL) · build ✅ · Python clip check ✅.
-- Known gaps: study-boundary line sinks under the terrain on Sloped Edge in Top view (pre-existing, corner-only points); faint AO specks at some road edges; one illustrative tree size.
+- Study boundary fix: `drapePolyline` (tested) resamples the boundary every 4 m on the terrain, so its sides no longer sink under the slope on Sloped Edge (pre-existing since M1). Tests 247/247, e2e 5/5.
+- Known gaps: faint AO specks at some road edges; one illustrative tree size.

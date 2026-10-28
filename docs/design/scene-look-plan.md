@@ -115,9 +115,10 @@ What this changes in the plan:
 | Storey bands | `dc5c293` | Floor lines from `storeys × storeyHeight`; faint accent outline on unselected masses |
 | Contours | `e8ba956` | Marching triangles on the rendered triangulation; 1 m / 5 m; restores Sloped Edge's slope reading |
 | Ambient occlusion | `c91e6ab`, fix `e30df25` | N8AO lazy chunk 96 kB gzip; 60 fps at 1440×900, 1× and 2× DPR (M1 Pro). The first version froze the canvas under StrictMode; caught visually, fixed, covered by a canvas-redraw e2e |
+| Study boundary draped | (this commit) | `drapePolyline` resamples every 4 m on the terrain; the boundary no longer sinks under the slope on Sloped Edge (pre-existing since M1) |
 | Streets and trees | `3266547` | Additive `roads.json` / `trees.json` from the cached OSM; existing package files byte-identical |
 
-Known gaps: the study-boundary line only has corner points, so on Sloped Edge its sides dip under the terrain in Top view (pre-existing since M1). Tiny AO specks can appear along road edges (0.15 m lift step). Trees use one illustrative size; trees that fall inside a proposed mass are not culled.
+Known gaps: tiny AO specks can appear along road edges (0.15 m lift step). Trees use one illustrative size; trees that fall inside a proposed mass are not culled.
 
 ## 8. Order of work
 

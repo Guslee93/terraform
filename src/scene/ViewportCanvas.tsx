@@ -27,6 +27,7 @@ import {
   createContextGeometry,
   createContourGeometry,
   createRoadGeometry,
+  drapePolyline,
   createTerrainGeometry,
   createTerrainGridGeometry,
   createTerrainSkirtGeometry,
@@ -238,16 +239,9 @@ function Trees({ sitePackage }: { sitePackage: SitePackage }) {
 }
 
 function StudyBoundary({ sitePackage }: { sitePackage: SitePackage }) {
+  // The ring is closed (first point repeated), so draping it as a polyline closes the loop.
   const points = useMemo(
-    () =>
-      sitePackage.studyArea.polygon.map(
-        ([east, north]) =>
-          [east, sampleTerrainHeight(sitePackage.terrain, east, north) + 0.6, -north] as [
-            number,
-            number,
-            number,
-          ],
-      ),
+    () => drapePolyline(sitePackage.studyArea.polygon, sitePackage.terrain, 4, 0.6),
     [sitePackage],
   )
 

@@ -268,3 +268,33 @@ export function createRoadGeometry(roads: readonly Road[], terrain: TerrainData)
   geometry.computeVertexNormals()
   return geometry
 }
+
+/**
+ * Renderer-frame points along an open polyline in ENU metres, resampled every `step` metres
+ * and lifted `lift` metres above the terrain, so straight edges follow the ground between
+ * vertices instead of cutting under a slope.
+ */
+export function drapePolyline(
+  points: readonly (readonly [number, number])[],
+  terrain: TerrainData,
+  step: number,
+  lift: number,
+): [number, number, number][] {
+  const at = (east: number, north: number): [number, number, number] => [
+    east,
+    sampleTerrainHeight(terrain, east, north) + lift,
+    -north,
+  ]
+  const draped: [number, number, number][] = []
+  points.forEach(([east, north], index) => {
+    const next = points[index + 1]
+    draped.push(at(east, north))
+    if (!next) return
+    const steps = Math.ceil(Math.hypot(next[0] - east, next[1] - north) / step)
+    for (let sample = 1; sample < steps; sample += 1) {
+      const t = sample / steps
+      draped.push(at(east + (next[0] - east) * t, north + (next[1] - north) * t))
+    }
+  })
+  return draped
+}

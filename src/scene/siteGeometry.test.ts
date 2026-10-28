@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Road, TerrainData } from '../features/sites/package'
-import { createRoadGeometry, ROAD_LIFT } from './siteGeometry'
+import { createRoadGeometry, drapePolyline, ROAD_LIFT } from './siteGeometry'
 
 /** 20 × 20 m terrain rising 1 m per metre towards the east. */
 const RAMP: TerrainData = {
@@ -50,5 +50,16 @@ describe('createRoadGeometry', () => {
     expect(geometry.boundingBox?.min.x).toBeCloseTo(2 - 3, 5)
     expect(geometry.boundingBox?.max.x).toBeCloseTo(18 + 3, 5)
     geometry.dispose()
+  })
+})
+
+describe('drapePolyline', () => {
+  it('adds points along each edge so the line follows the terrain between corners', () => {
+    // A 20 m edge across the ramp: corners at heights 0 and 20, but the middle must sit at 10.
+    const points = drapePolyline([[0, 10], [20, 10]], RAMP, 4, 0.5)
+    expect(points.length).toBe(6)
+    for (const [x, y] of points) expect(y).toBeCloseTo(x + 0.5, 5)
+    expect(points[0]).toEqual([0, 0.5, -10])
+    expect(points.at(-1)).toEqual([20, 20.5, -10])
   })
 })
