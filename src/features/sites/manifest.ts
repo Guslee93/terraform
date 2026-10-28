@@ -50,6 +50,7 @@ export type SiteManifest = {
     /** Optional OSM context layers (ADR-0005 §5); older packages omit them. */
     roads?: string
     trees?: string
+    landcover?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -236,6 +237,9 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       ...(assetPaths.trees === undefined
         ? {}
         : { trees: asString(assetPaths.trees, 'manifest.assetPaths.trees') }),
+      ...(assetPaths.landcover === undefined
+        ? {}
+        : { landcover: asString(assetPaths.landcover, 'manifest.assetPaths.landcover') }),
     },
     constraints: {
       maxHeightMeters,

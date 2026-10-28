@@ -28,7 +28,8 @@
     "thumbnail": "/sites/compact-infill.svg",
     "attribution": "attribution.md",
     "roads": "roads.json",
-    "trees": "trees.json"
+    "trees": "trees.json",
+    "landcover": "landcover.json"
   },
   "constraints": {
     "maxHeightMeters": 18.0,
@@ -129,7 +130,8 @@
     "Terrain sampled on a 13 \u00d7 13 grid and recentered to the origin",
     "Study boundary is authored, not a cadastral parcel",
     "Roads are OSM centrelines with illustrative widths by highway class; tunnels omitted",
-    "Trees are OSM natural=tree points drawn at one illustrative size"
+    "Trees are OSM natural=tree points drawn with illustrative, position-varied sizes and tints",
+    "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m\u00b2 and incomplete rings omitted; multipolygon inner rings ignored"
   ],
   "statistics": {
     "buildingCount": 137,

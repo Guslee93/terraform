@@ -246,3 +246,17 @@
 - Tests: lint ✅ · test 246/246 ✅ · e2e 5/5 ✅ (now ~52 s: AO under software GL) · build ✅ · Python clip check ✅.
 - Study boundary fix: `drapePolyline` (tested) resamples the boundary every 4 m on the terrain, so its sides no longer sink under the slope on Sloped Edge (pre-existing since M1). Tests 247/247, e2e 5/5.
 - Known gaps: faint AO specks at some road edges; one illustrative tree size.
+
+### C1 — Offline land cover data and loading (2026-10-28)
+
+- Work order: `docs/handoffs/C1-landcover.md`; implementer using the spatial data engineer role. Data/loading only; no network, dependencies or commits.
+- Changed `scripts/build_site_packages.py` and `scripts/test_build_site_packages.py`: exact water/wood/park/grass tag mapping; closed ways and end-to-end multipolygon outer joining (including reversed ways); Sutherland–Hodgman extent clipping; 0.5 m simplification; <4 m² filtering; open CCW output sorted by source ID. Incomplete rings skipped, inner rings ignored as specified.
+- Added `public/sites/{compact-infill,sloped-edge}/landcover.json`; changed only `manifest.json` and `attribution.md` beside those new assets. Compact: water 1, park 1, grass 8, wood 0 (10 total). Sloped: water 0, park 0, grass 1, wood 1 (2 total).
+- Changed `src/features/sites/{manifest.ts,package.ts,package.test.ts,fetchJson.test.ts,useSitePackage.test.tsx}`: optional path, typed data, validation, conditional fetching, matching site IDs and empty fallback. A listed file containing JSON null is rejected.
+- Changed `docs/data/site-package-spec.md`, `task_plan.md`, `progress.md` and `docs/agent-log.md` for the schema and execution evidence.
+- Python tests cover inside/half-outside/outside clipping, extent enclosure/touching, reversed joining, multiple rings, missing members/nodes, open/tiny/outside ways, tag classification, ignored holes, sorted IDs and CCW output. TypeScript tests cover both real packages, each rejection rule, valid kinds/5000-area boundary, optional paths, absent-file request suppression and site-ID mismatch.
+- Verification: `python3 scripts/test_build_site_packages.py` → all four groups print ok; `npm run lint && npm run test && npm run build` → pass, 269 tests across 29 files. Existing Three.js CJS deprecation and large vendor-chunk warnings remain non-blocking.
+- Offline rebuild run twice. Second run reproduced every site asset byte-for-byte. SHA-256 checks against the pre-edit baseline and byte comparison against HEAD confirm all 10 protected terrain/buildings/study-area/roads/trees files unchanged.
+- Failed attempt: initial count-report line used a nested f-string with an escaped quote unsupported by the local Python; extracted the count string and reran successfully.
+- Limitations: inner holes intentionally ignored; incomplete cached rings skipped; multiple outer rings retain the same relation source ID. No rendering/UI changes or screenshots were required by C1. All requested work completed.
+- Concurrent unrelated changes appeared in scene files and `docs/status-report.md` during execution; they were not edited or reverted by this work. Full test/build results describe the shared working tree at verification time.
