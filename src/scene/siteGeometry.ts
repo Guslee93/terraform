@@ -7,6 +7,7 @@ import {
 } from 'three'
 import type { ContextBuilding, TerrainData } from '../features/sites/package'
 import { terrainHeightRange } from '../features/sites/geometry'
+import type { ContourSegment } from '../features/sites/contours'
 
 // Near-white ground; elevation tint stays under 4% so separation comes from light, not hue.
 const LOW_TERRAIN = new Color('#F0EFEC')
@@ -195,5 +196,18 @@ export function createContextGeometry(buildings: readonly ContextBuilding[]): Bu
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
+  return geometry
+}
+
+/** Lift (m) that keeps contour lines just above the terrain surface they lie on. */
+const CONTOUR_LIFT = 0.15
+
+export function createContourGeometry(segments: readonly ContourSegment[]): BufferGeometry {
+  const positions: number[] = []
+  for (const [start, end] of segments) {
+    positions.push(start[0], start[2] + CONTOUR_LIFT, -start[1], end[0], end[2] + CONTOUR_LIFT, -end[1])
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
   return geometry
 }

@@ -5,6 +5,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
+import { contourSegments } from '../features/sites/contours'
 import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import { EMPTY_SELECTION } from '../features/massing/types'
@@ -16,6 +17,7 @@ import { MassLayer } from './MassLayer'
 import { SceneErrorBoundary } from './SceneErrorBoundary'
 import {
   createContextGeometry,
+  createContourGeometry,
   createTerrainGeometry,
   createTerrainGridGeometry,
   createTerrainSkirtGeometry,
@@ -48,6 +50,10 @@ const EDGE_COLOR = '#6F6E6A'
 const EDGE_OPACITY = 0.3
 /** Crease angle (degrees) above which a context edge is drawn; hides coplanar triangle seams. */
 const EDGE_THRESHOLD_DEG = 30
+/** Contours every 1 m, emphasised every 5 m; skipped on sites with less relief than that. */
+const CONTOUR_INTERVAL_M = 1
+const CONTOUR_MAJOR_INTERVAL_M = 5
+const CONTOUR_MIN_RELIEF_M = 2
 
 type GroundHandlers = {
   onGroundClick?: (point: Vec2, elevation: number) => void
@@ -63,14 +69,24 @@ function TerrainMesh({
   const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
   const skirt = useMemo(() => createTerrainSkirtGeometry(terrain), [terrain])
+  const contours = useMemo(() => {
+    const { min, max } = terrainHeightRange(terrain)
+    const { minor, major } =
+      max - min < CONTOUR_MIN_RELIEF_M
+        ? { minor: [], major: [] }
+        : contourSegments(terrain, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M)
+    return { minor: createContourGeometry(minor), major: createContourGeometry(major) }
+  }, [terrain])
 
   useEffect(
     () => () => {
       geometry.dispose()
       grid.dispose()
       skirt.dispose()
+      contours.minor.dispose()
+      contours.major.dispose()
     },
-    [geometry, grid, skirt],
+    [geometry, grid, skirt, contours],
   )
 
   return (
@@ -91,6 +107,12 @@ function TerrainMesh({
       <mesh geometry={skirt} receiveShadow>
         <meshStandardMaterial color="#D8D7D3" roughness={1} metalness={0} side={DoubleSide} />
       </mesh>
+      <lineSegments geometry={contours.minor}>
+        <lineBasicMaterial color={EDGE_COLOR} transparent opacity={0.14} depthWrite={false} />
+      </lineSegments>
+      <lineSegments geometry={contours.major}>
+        <lineBasicMaterial color={EDGE_COLOR} transparent opacity={0.32} depthWrite={false} />
+      </lineSegments>
       <lineSegments geometry={grid} visible={showGrid}>
         <lineBasicMaterial color="#7C8E7D" transparent opacity={0.22} depthWrite={false} />
       </lineSegments>
