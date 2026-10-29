@@ -47,6 +47,13 @@ Fixtures are the source of truth for domain tests. If an implementation disagree
 - Total volume: `200×9.6 + 80×6.4` = **2 432.00 m³**
 - Max height: **16.00 m**
 - Floor-level aggregation must not double-count the shared slab at 9.6 m.
+- Level-indexed (ADR-0007): plates at 0 / 3.2 / 6.4 m of 200 m² and 9.6 / 12.8 m of 80 m²; five storeys. Test: `src/features/massing/metrics.test.ts` "stepped mass: five levels, the shared slab at 9.6 m counted once".
+
+### Same-level overlap (ADR-0007)
+
+- Two 10 m × 10 m tiers at base 0, offset 5 m, 1 storey each
+- Expected level area: **150.00 m²** (union), not 200 m². Test: `metrics.test.ts` "two tiers overlapping at the same level".
+- As two separate buildings with 2 storeys each: scenario GFA **300.00 m²**, per-building sum **400.00 m²** (`gfaByBuildingM2`). Test: "interpenetrating buildings".
 
 ### Site coverage
 
