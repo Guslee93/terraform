@@ -9,6 +9,10 @@ import { Icon } from '../ui/Icon'
 import type { MassingCommand } from '../../features/editor/history'
 import type { ClearanceIssue } from '../../features/massing/clearance'
 import type { MassTier, MassVolume } from '../../features/massing/types'
+import type { ScenarioMetrics } from '../../features/massing/metrics'
+import { MetricsPanel, SelectedFloors } from './MetricsPanel'
+import { ConstraintsPanel, type ConstraintsPanelProps } from './ConstraintsPanel'
+import { SunPanel, type SunPanelProps } from './SunPanel'
 import { MassFields } from './MassFields'
 import { MassList, type MassListItem } from './MassList'
 
@@ -23,8 +27,8 @@ type Tab = {
 
 const TABS: readonly Tab[] = [
   { id: 'model', label: 'Model', available: true },
-  { id: 'sun', label: 'Sun', available: false, note: 'M3' },
-  { id: 'constraints', label: 'Constraints', available: false, note: 'M3' },
+  { id: 'sun', label: 'Sun', available: true },
+  { id: 'constraints', label: 'Constraints', available: true },
   { id: 'compare', label: 'Compare', available: false, note: 'M4' },
 ]
 
@@ -39,9 +43,14 @@ const LAYER_ROWS: ReadonlyArray<{
   { id: 'streets', label: 'Streets', asset: 'roads' },
   { id: 'trees', label: 'Trees', asset: 'trees' },
   { id: 'parcel', label: 'Study boundary' },
+  { id: 'setback', label: 'Setback' },
+  { id: 'heightLimit', label: 'Height limit' },
 ]
 
 type InspectorProps = {
+  constraintsPanel: ConstraintsPanelProps
+  metrics: ScenarioMetrics | null
+  sunPanel: SunPanelProps | null
   site: SiteSummary
   manifest: SiteManifest | null
   packageStatus: 'loading' | 'ready' | 'error'
@@ -74,6 +83,9 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export function Inspector({
+  constraintsPanel,
+  metrics,
+  sunPanel,
   site,
   manifest,
   packageStatus,
@@ -95,6 +107,7 @@ export function Inspector({
   onSelectTier,
 }: InspectorProps) {
   const panelRef = useRef<HTMLElement>(null)
+  const selectedMetrics = metrics?.perVolume.find((entry) => entry.volumeId === selected?.volume.id)
   const closeRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -107,7 +120,7 @@ export function Inspector({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') return
       const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        'summary, button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
       )
       if (!focusable || focusable.length === 0) return
       const first = focusable[0]
@@ -197,6 +210,10 @@ export function Inspector({
           aria-labelledby={`inspector-tab-${activeTab}`}
           className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
         >
+          {activeTab === 'constraints' && <ConstraintsPanel {...constraintsPanel} />}
+          {activeTab === 'sun' && (sunPanel ? <SunPanel {...sunPanel} /> : <p className="text-[11.5px] text-ink-secondary">Sun controls appear when the site package is ready.</p>)}
+          {activeTab === 'model' && <>
+          <MetricsPanel metrics={metrics} />
           {masses.length > 0 && (
             <section aria-labelledby="masses-heading" className="mb-6">
               <h2
@@ -239,6 +256,7 @@ export function Inspector({
                   warnings={selected.warnings}
                   onSelectTier={onSelectTier}
                 />
+                {selectedMetrics && <SelectedFloors metrics={selectedMetrics} />}
                 {!canEdit && (
                   <p className="mt-2 text-[10px] text-ink-secondary">Massing is read-only on small screens.</p>
                 )}
@@ -299,6 +317,8 @@ export function Inspector({
             </p>
           </section>
 
+          </>}
+
           <section aria-labelledby="layers-heading" className="mt-6">
             <h2
               id="layers-heading"
@@ -347,7 +367,7 @@ export function Inspector({
             </div>
           </section>
 
-          <section aria-labelledby="assumptions-heading" className="mt-6">
+          {activeTab === 'model' && <section aria-labelledby="assumptions-heading" className="mt-6">
             <h2
               id="assumptions-heading"
               className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
@@ -362,7 +382,7 @@ export function Inspector({
             <p className="mt-2 text-[10.5px] leading-relaxed text-ink-secondary">
               Storey height and display units used by the massing model.
             </p>
-          </section>
+          </section>}
 
           <section className="mt-5 flex gap-2.5 border-t border-line pt-3">
             <Icon name="info" size={14} className="mt-px shrink-0 text-warning" />

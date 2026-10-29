@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
+import { sunState } from '../../features/analysis/sun'
+import { localDayMinuteToInstant } from '../../features/analysis/time'
+import type { SunTime } from './SunPanel'
 import { createHistory } from '../../features/editor/history'
 import type { MassingCommand } from '../../features/editor/history'
 import {
@@ -8,6 +12,7 @@ import {
   displayedDocument,
   reduceEditor,
 } from '../../features/editor/interaction'
+import { scenarioMetrics } from '../../features/massing/metrics'
 import { tierHeight } from '../../features/massing/aggregate'
 import { checkClearance, type ClearanceIssue } from '../../features/massing/clearance'
 import { createScenario } from '../../features/massing/factories'
@@ -45,6 +50,14 @@ export function StudioShell({
   const [editor, dispatch] = useReducer(reduceEditor, site.id, (siteId) =>
     createEditorState(createHistory(createScenario({ siteId }))),
   )
+  const [heightReference, setHeightReference] = useState<HeightReference>('grade')
+  const [sunTime, setSunTime] = useState<SunTime>({ date: '2026-06-21', minuteOfDay: 900 })
+  const solar = useMemo(() => {
+    if (!sitePackage) return null
+    const { latitude, longitude, timeZone } = sitePackage.manifest.location
+    const resolved = localDayMinuteToInstant(sunTime.date, sunTime.minuteOfDay, timeZone)
+    return { resolved, state: sunState(resolved.instant, latitude, longitude, timeZone) }
+  }, [sunTime, sitePackage])
   const [activeTab, setActiveTab] = useState<InspectorTab>('model')
   const [renderPreference, setRenderPreference] = useState(readRenderPreference)
   const [inspectorOpen, setInspectorOpen] = useState(false)
@@ -59,23 +72,39 @@ export function StudioShell({
     streets: true,
     trees: true,
     parcel: true,
+    setback: true,
+    heightLimit: true,
   })
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
   const scenario = editor.history.document.name
   // The displayed document follows a live drag, so the inspector and warnings show preview values.
   const shown = displayedDocument(editor)
+  // displayedDocument includes hidden masses; analysis explicitly uses only visible previews.
+  const analysisDocument = useMemo(() => ({ ...shown, volumes: shown.volumes.filter((volume) => volume.visible) }), [shown])
+  const metrics = useMemo(() => sitePackage
+    ? scenarioMetrics(analysisDocument, normalizeRing(sitePackage.studyArea.polygon))
+    : null, [analysisDocument, sitePackage])
   const clearance = useMemo(
     () =>
       sitePackage
-        ? checkClearance(shown, {
+        ? checkClearance(analysisDocument, {
             studyArea: normalizeRing(sitePackage.studyArea.polygon),
             heightAt: (east, north) => sampleTerrainHeight(sitePackage.terrain, east, north),
           })
         : new Map<string, readonly ClearanceIssue[]>(),
-    [shown, sitePackage],
+    [analysisDocument, sitePackage],
   )
-  const warnedVolumes = useMemo(() => new Set(clearance.keys()), [clearance])
+  const constraints = useMemo(() => sitePackage ? constraintsFromManifest(sitePackage.manifest.constraints, heightReference) : null, [sitePackage, heightReference])
+  const envelope = useMemo(() => sitePackage ? evaluateEnvelope(analysisDocument, {
+    studyArea: normalizeRing(sitePackage.studyArea.polygon),
+    heightAt: (east, north) => sampleTerrainHeight(sitePackage.terrain, east, north),
+    constraints,
+  }) : null, [analysisDocument, sitePackage, constraints])
+  const warnedVolumes = useMemo(() => new Set([
+    ...clearance.keys(),
+    ...(envelope?.perVolume.filter((volume) => volume.status === 'exceeds').map((volume) => volume.volumeId) ?? []),
+  ]), [clearance, envelope])
   const warningSummary = (() => {
     if (clearance.size === 0) return null
     if (clearance.size > 1) return `${clearance.size} masses need attention`
@@ -105,11 +134,12 @@ export function StudioShell({
       name: volume.name,
       detail: base ? `${base.storeys} storeys · ${tierHeight(base).toFixed(1)} m${tiers}` : '',
       hidden: !volume.visible,
-      warning: clearance.has(volume.id),
+      warning: warnedVolumes.has(volume.id),
     }
   })
   const selectMass = (volumeId: string) => {
-    const tierId = shown.volumes.find((volume) => volume.id === volumeId)?.tiers[0]?.id ?? null
+    const tiers = shown.volumes.find((volume) => volume.id === volumeId)?.tiers ?? []
+    const tierId = [...tiers].sort((a, b) => a.baseElevation - b.baseElevation)[0]?.id ?? null
     dispatch({ type: 'select', selection: { volumeId, tierId } })
   }
   const idle = editor.interaction.kind === 'idle'
@@ -199,10 +229,13 @@ export function StudioShell({
         />
 
         <main className="relative min-w-0 flex-1 overflow-hidden" aria-label="Studio viewport">
-          {packageStatus === 'ready' && sitePackage ? (
+          {packageStatus === 'ready' && sitePackage && solar ? (
             <>
               <ViewportCanvas
                 sitePackage={sitePackage}
+                sun={solar.state}
+                constraints={constraints}
+                envelope={envelope}
                 layers={layers}
                 presetId={cameraPreset}
                 cameraNonce={cameraNonce}
@@ -288,6 +321,9 @@ export function StudioShell({
         </main>
 
         <Inspector
+          constraintsPanel={{ envelope, limits: sitePackage?.manifest.constraints ?? null, heightReference, onHeightReferenceChange: setHeightReference, masses, onSelectMass: selectMass }}
+          metrics={metrics}
+          sunPanel={solar && sitePackage ? { time: sunTime, onChange: setSunTime, ...solar, location: sitePackage.manifest.location } : null}
           site={site}
           manifest={sitePackage?.manifest ?? null}
           packageStatus={packageStatus}

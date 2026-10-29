@@ -18,9 +18,12 @@ function requireSite(id: string): SiteSummary {
 }
 
 const site = requireSite('compact-infill')
-const layers = { terrain: true, context: true, streets: true, trees: true, parcel: true }
+const layers = { terrain: true, context: true, streets: true, trees: true, parcel: true, setback: true, heightLimit: true }
 const baseProps: ComponentProps<typeof Inspector> = {
   site,
+  sunPanel: null,
+  metrics: null,
+  constraintsPanel: { envelope: null, limits: null, heightReference: 'grade', onHeightReferenceChange: () => {}, masses: [], onSelectMass: () => {} },
   manifest: null,
   packageStatus: 'ready',
   layers,
@@ -68,7 +71,7 @@ describe('Inspector drawer', () => {
     expect(quality).toHaveValue('auto')
     expect(quality).toHaveAccessibleDescription('Auto lowers quality on software rendering.')
     // It immediately follows the last layer checkbox in the keyboard sequence.
-    screen.getByRole('checkbox', { name: 'Study boundary' }).focus()
+    screen.getByRole('checkbox', { name: 'Height limit' }).focus()
     await user.tab()
     expect(quality).toHaveFocus()
     await user.selectOptions(quality, 'low')

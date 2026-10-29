@@ -13,7 +13,9 @@ import { cameraLocked, displayedDocument, type EditorEvent, type EditorState } f
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
-import { DEMO_SUN_INSTANT, sunDirection, type SunDirection } from '../features/analysis/sun'
+import type { SunDirection } from '../features/analysis/sun'
+import type { EnvelopeConstraints, EnvelopeResult } from '../features/analysis/constraints'
+import { ConstraintLayer } from './ConstraintLayer'
 import { MassLayer } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
@@ -39,10 +41,15 @@ export type SceneLayers = {
   streets: boolean
   trees: boolean
   parcel: boolean
+  setback: boolean
+  heightLimit: boolean
 }
 
 type ViewportProps = {
   sitePackage: SitePackage
+  sun: SunDirection
+  constraints: EnvelopeConstraints | null
+  envelope: EnvelopeResult | null
   layers: SceneLayers
   presetId: CameraPresetId
   cameraNonce: number
@@ -296,7 +303,10 @@ function AmbientOcclusion({ profile }: { profile: RenderProfile }) {
 }
 
 export function ViewportCanvas({
+  constraints,
+  envelope,
   sitePackage,
+  sun,
   layers,
   presetId,
   cameraNonce,
@@ -310,9 +320,6 @@ export function ViewportCanvas({
   const [webgl] = useState(detectWebGL)
   const [rendererName, setRendererName] = useState<string | null>(null)
   const profile = resolveProfile(renderPreference, rendererName ?? '')
-  const { latitude, longitude } = sitePackage.manifest.location
-  // C8 will replace this reference direction with the selected time's SunState.
-  const sun = useMemo(() => sunDirection(DEMO_SUN_INSTANT, latitude, longitude), [latitude, longitude])
   const { manifest, terrain, buildings } = sitePackage
   const initialPreset = manifest.cameraPresets.isometric
   const initialPosition = enuToThreeXyz(initialPreset.position)
@@ -377,6 +384,14 @@ export function ViewportCanvas({
             {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
             {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
 
+            <ConstraintLayer
+              sitePackage={sitePackage}
+              constraints={constraints}
+              envelope={envelope}
+              selectedVolume={displayedDocument(editor).volumes.find((volume) => volume.visible && volume.id === editor.history.selection.volumeId) ?? null}
+              setback={layers.setback}
+              heightLimit={layers.heightLimit}
+            />
             <MassLayer
               editor={editor}
               dispatch={dispatch}

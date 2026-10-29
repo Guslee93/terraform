@@ -57,6 +57,12 @@ export function CameraHud({ layers, night = false }: { layers?: SceneLayers; nig
             Study boundary
           </span>
         </div>
+        {layers?.setback && (
+          <div className="flex items-center gap-2">
+            <span aria-hidden="true" className="w-5 border-t border-dashed border-warning" />
+            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary" title="Illustrative constraint — not planning advice">Setback</span>
+          </div>
+        )}
         {terrainOn && (
           <div className="flex items-center gap-2">
             <span
