@@ -286,3 +286,15 @@
 - Round 4 (D17b, D22, D21, D26, D23) reviewed and merged as `d7921e4`. Geocoder field names verified against the live Kartverket fixture. D26 uses OSM feature label points with cited ids where no place node exists.
 - Suite after merge (Codex's untracked partial C4 files set aside during the run): lint ✅ · typecheck ✅ · 314 unit tests ✅ · build ✅ · e2e 9/10 (massing timeout under software GL, D28).
 - Round 2 rows (D7–D13) are still "Pending" in the agent log; not reviewed in this session.
+
+### M3 domain core — Fable session (2026-10-29)
+
+- Branch `m3/domain` in worktree `../Terraform-m3`, six commits `737de0e`–`dd8b84b`; brief `docs/plans/M3-fable-plan.md` §2, delivered in order F4 → F1 → F3 → F2 → F5, one commit each, plus the handoff `docs/handoffs/M3-fable-remaining.md` (final public API, decisions, Codex next steps).
+- F4 `src/features/analysis/time.ts`, `sun.ts`: Intl-only wall-clock ↔ instant with gap/overlap handling (every `dst-oslo.json` case), `sunState` with `belowHorizon` and ENU direction, `dayModel` incl. polar day/night, presets, scrubber helpers; QA-10 and QA-11 tests.
+- F1 `src/features/massing/metrics.ts`, `src/lib/clip.ts`: one plate per storey, 0.1 m level tolerance, union per level (ADR-0007); stepped fixture 760 m² / 5 storeys; per-building sum reported separately.
+- F3 `src/features/analysis/constraints.ts`, `insetPolygon`: boundary minus edge strips and vertex discs (48-gon), verified on rectangle, L-shape and a splitting dumbbell; per-mass status, reasons, offending rings, height above grade or datum (ADR-0008); disclaimer on every result.
+- F2 coverage = union ∩ parcel / parcel, outside area separate; fixtures §2 rows and edge cases.
+- F5 NOAA-equation oracle in tests only; ≤ 0.5° vs suncalc hourly through 2026 (Oslo, Tromsø) and vs every daytime NREL SPA row; fixtures §4 noon rows ≤ 0.05°.
+- Verification: `npm run lint` ✅ (after a directive for the pre-existing `window` use in `scripts/capture.mjs`) · `npm run typecheck` ✅ · `npm run test` ✅ 669 tests / 55 files · `npm run build` ✅.
+- Failed attempts: two hand-derived inset areas (L-shape, dumbbell) were wrong, not the code — the corner square at a reflex vertex and the lens at a neck were missed; expectations corrected with the derivation in the test. One metrics fixture overlapped the L-shape in plan; moved.
+- Open: owner to accept ADR-0007/0008; hidden-mass counting and the noon preset (handoff §2); `docs/reviews/M3-*` not started; UI (C8–C10) builds against handoff §4.
