@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-29 · **Reviewer:** Claude Code (Opus 5.5), acting as `engineering-code-reviewer` + `gis-qa-engineer`
 - **Scope:** `main` at `b91bf06` (Fable F1–F5, Codex C8–C11, DeepSeek D28–D34, Claude review fixes)
-- **Reviewer verdict:** **Pass with follow-ups** · **Owner sign-off:** pending
+- **Reviewer verdict:** **Pass with follow-ups** · **Owner sign-off:** ✅ accepted 2026-10-29
 
 ## 1. Gate criteria (PRD §13, brief, plan §11)
 

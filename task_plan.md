@@ -68,7 +68,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [x] Demo constraints and warnings (ADR-0008 height reference)
 - [x] Independent sun reference (NREL SPA + NOAA oracle)
 - [x] QA-06/10/11/15
-- **Status:** reviewer pass 2026-10-29 (`docs/reviews/M3-code-review.md`); owner sign-off pending
+- **Status:** complete — owner sign-off 2026-10-29 (`docs/reviews/M3-code-review.md`)
 
 ### Phase 5 — M4 Scenarios and comparison
 

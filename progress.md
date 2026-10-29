@@ -304,4 +304,4 @@
 - Fable F1–F5 (domain core), Codex C8–C11 (UI), DeepSeek D28–D34 (tests, evidence, reference data) merged on `main`.
 - Claude review: 7 evidence images viewed; envelope evidence recaptured in daylight with a realistic mass; height-limit plane made readable; ESLint ignores venvs.
 - Suite: lint 0 · 699 unit tests · build ✅ · e2e 18 passed (1 opt-in evidence spec skipped).
-- Record: `docs/reviews/M3-code-review.md` — reviewer pass with follow-ups; owner sign-off pending.
+- Record: `docs/reviews/M3-code-review.md` — reviewer pass with follow-ups; **owner signed off M3 on 2026-10-29**.

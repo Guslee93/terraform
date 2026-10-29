@@ -39,7 +39,7 @@ Repo now: 7 commits on `main`, 94 unit/component tests across 12 files, 2 Playwr
 | **M0** Foundation | ✅ **Complete** | Visual gate **PASS** + code review **PASS**, both with follow-ups | Cohesive UI at 1440×900; keyboard/focus basics |
 | **M1** Site packages & camera | ✅ **Complete** | Geometry QA **PASS** + code review **PASS** + visual review **PASS**, with follow-ups | No live GIS; north/scale aligned; stable FPS (60.1) |
 | **M2** Massing engine | 🔄 **In progress** | Code review + QA-03–08 **pass with follow-ups** (`docs/reviews/M2-code-review.md`); milestone acceptance open: add-at-point/scale/vertex tools, width/depth/rotation + palette, WCAG 2.5.7 move alternative, DeepSeek round 2 | QA-03–08; stepped forms correct |
-| **M3** Live analysis | ✅ Reviewer pass (owner sign-off pending) | `docs/reviews/M3-code-review.md` | Fixtures match; sun reference verified; disclaimers visible |
+| **M3** Live analysis | ✅ Complete (owner sign-off 2026-10-29) | `docs/reviews/M3-code-review.md` | Fixtures match; sun reference verified; disclaimers visible |
 | **M4** Scenarios & persistence | ⏳ Pending | — | QA-09/12 after reload |
 | **M5** Portfolio polish | ⏳ Pending | — | Full 3-min workflow; final visual gate |
 | **M6** Optional extensions | ⏳ Gated after M5 | — | Never destabilises v1 |
