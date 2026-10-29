@@ -58,8 +58,13 @@ Fixtures are the source of truth for domain tests. If an implementation disagree
 ### Site coverage
 
 - Parcel area: 40 m × 50 m = **2 000.00 m²**
-- Rectangle footprint 216 m² → coverage **10.80%**
-- Stepped mass ground footprint 200 m² → coverage **10.00%**
+- Rectangle footprint 216 m² → coverage **10.80%** — `src/features/massing/metrics.test.ts` "rectangle footprint 216 m² on a 2 000 m² parcel → 10.80 %"
+- Stepped mass ground footprint 200 m² → coverage **10.00%** — "stepped mass ground footprint 200 m² → 10.00 %"
+- Coverage is `footprintWithinParcelM2 / parcelAreaM2` (FR-054); the part outside the boundary is `footprintOutsideParcelM2` and never counts:
+  - Rectangle centred 15 m east (spans 6–24 m, parcel ends at 20 m): **168 m² inside, 48 m² outside, 8.40 %** — "footprint crossing the parcel edge is split"
+  - Rectangle fully outside: **0 %, 216 m² outside** — "footprint fully outside the parcel → 0 % coverage"
+  - 10 × 10 m footprint sharing the parcel's edge and corner: **100 m² inside, 0 outside** — "a footprint sharing the parcel edge and a corner is fully within"
+  - 60 × 70 m footprint over the whole parcel: **100 %, 2 200 m² outside** — "a mass larger than the parcel covers 100 %"
 
 ## 3. Validation fixtures
 

@@ -7,7 +7,8 @@ import {
   createTier,
   createVolume,
 } from './factories'
-import { floorLevels, LEVEL_TOLERANCE_M, scenarioMetrics, volumeMetrics } from './metrics'
+import { floorLevels, LEVEL_TOLERANCE_M, parcelCoverage, scenarioMetrics, volumeMetrics } from './metrics'
+import { footprintUnion } from './aggregate'
 
 // docs/qa/fixtures.md §2: parcel 40 m × 50 m centred on the origin.
 const PARCEL: Vec2[] = [
@@ -170,5 +171,67 @@ describe('scenarioMetrics', () => {
     )
     expect(metrics.gfaM2).toBeCloseTo(300 + 760, 6)
     expect(metrics.gfaByBuildingM2).toBeCloseTo(metrics.gfaM2, 6)
+  })
+})
+
+describe('parcel coverage (FR-054, fixtures §2 site coverage)', () => {
+  it('rectangle footprint 216 m² on a 2 000 m² parcel → 10.80 %', () => {
+    const metrics = scenarioMetrics(scenarioOf(createVolume({ tiers: [rectangle] })), PARCEL)
+    expect(metrics.footprintWithinParcelM2).toBeCloseTo(216, 6)
+    expect(metrics.footprintOutsideParcelM2).toBeCloseTo(0, 6)
+    expect(metrics.coverageWithinParcel * 100).toBeCloseTo(10.8, 6)
+  })
+
+  it('stepped mass ground footprint 200 m² → 10.00 %, the upper tier adds nothing', () => {
+    const metrics = scenarioMetrics(scenarioOf(createVolume({ tiers: [steppedLower, steppedUpper] })), PARCEL)
+    expect(metrics.groundFootprintM2).toBeCloseTo(200, 6)
+    expect(metrics.coverageWithinParcel * 100).toBeCloseTo(10, 6)
+  })
+
+  it('footprint fully outside the parcel → 0 % coverage, all of it reported outside', () => {
+    const outside = createTier({ footprint: createRectangleFootprint(18, 12, [60, 0]), storeys: 3 })
+    const metrics = scenarioMetrics(scenarioOf(createVolume({ tiers: [outside] })), PARCEL)
+    expect(metrics.groundFootprintM2).toBeCloseTo(216, 6)
+    expect(metrics.footprintWithinParcelM2).toBe(0)
+    expect(metrics.footprintOutsideParcelM2).toBeCloseTo(216, 6)
+    expect(metrics.coverageWithinParcel).toBe(0)
+  })
+
+  it('footprint crossing the parcel edge is split: 168 m² inside, 48 m² outside', () => {
+    // Spans 6..24 east; parcel ends at 20.
+    const crossing = createTier({ footprint: createRectangleFootprint(18, 12, [15, 0]), storeys: 3 })
+    const metrics = scenarioMetrics(scenarioOf(createVolume({ tiers: [crossing] })), PARCEL)
+    expect(metrics.footprintWithinParcelM2).toBeCloseTo(14 * 12, 6)
+    expect(metrics.footprintOutsideParcelM2).toBeCloseTo(4 * 12, 6)
+    expect(metrics.footprintWithinParcelM2 + metrics.footprintOutsideParcelM2).toBeCloseTo(metrics.groundFootprintM2, 6)
+    expect(metrics.coverageWithinParcel * 100).toBeCloseTo(8.4, 6)
+  })
+
+  it('a footprint sharing the parcel edge and a corner is fully within (touching is not crossing)', () => {
+    const corner = createTier({ footprint: createRectangleFootprint(10, 10, [15, 20]), storeys: 1 })
+    const metrics = scenarioMetrics(scenarioOf(createVolume({ tiers: [corner] })), PARCEL)
+    expect(metrics.footprintWithinParcelM2).toBeCloseTo(100, 6)
+    expect(metrics.footprintOutsideParcelM2).toBeCloseTo(0, 6)
+  })
+
+  it('overlapping buildings do not double count ground inside the parcel', () => {
+    const a = createVolume({ tiers: [createTier({ footprint: createRectangleFootprint(10, 10, [0, 0]), storeys: 1 })] })
+    const b = createVolume({ tiers: [createTier({ footprint: createRectangleFootprint(10, 10, [5, 0]), storeys: 1 })] })
+    const metrics = scenarioMetrics(scenarioOf(a, b), PARCEL)
+    expect(metrics.footprintWithinParcelM2).toBeCloseTo(150, 6)
+    expect(metrics.coverageWithinParcel * 100).toBeCloseTo(7.5, 6)
+  })
+
+  it('a mass larger than the parcel covers 100 % with the rest outside', () => {
+    const huge = createTier({ footprint: createRectangleFootprint(60, 70), storeys: 1 })
+    const metrics = scenarioMetrics(scenarioOf(createVolume({ tiers: [huge] })), PARCEL)
+    expect(metrics.coverageWithinParcel).toBeCloseTo(1, 9)
+    expect(metrics.footprintOutsideParcelM2).toBeCloseTo(60 * 70 - 2000, 6)
+  })
+
+  it('parcelCoverage handles an empty ground and a degenerate parcel', () => {
+    expect(parcelCoverage([], PARCEL)).toEqual({ withinM2: 0, outsideM2: 0, parcelAreaM2: 2000 })
+    const ground = footprintUnion([rectangle.footprint])
+    expect(parcelCoverage(ground, [[0, 0], [1, 1]])).toEqual({ withinM2: 0, outsideM2: 216, parcelAreaM2: 0 })
   })
 })
