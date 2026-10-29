@@ -1,0 +1,102 @@
+/// <reference lib="dom" />
+import { expect, test } from '@playwright/test'
+
+// D33 — M3 fixed-camera evidence screenshots (docs/plans/M3-fable-plan.md §10, §11).
+//
+// Writes docs/screenshots/m3-*.png for the M3 gate visual review: morning/noon/evening on
+// 21 June, noon on 21 December, below-horizon (21 Dec 18:00) and an envelope violation
+// (ISO view plus a close-up where the height-limit plane is visible). The render quality is
+// pinned to High so Claude's image review sees the full look (AO + 4096 shadows); headless
+// software GL would otherwise drop to "Auto → Low".
+//
+// Capture is opt-in so the regular suite stays fast and file-system quiet:
+//   SHOT_EVIDENCE=1 npx playwright test e2e/m3-evidence.spec.ts
+test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
+test.setTimeout(180_000)
+
+const OUT_DIR = 'docs/screenshots'
+const SHOT_SUFFIX = '1440x900'
+
+test.skip(
+  process.env.SHOT_EVIDENCE !== '1',
+  'Evidence capture is opt-in: run SHOT_EVIDENCE=1 npx playwright test e2e/m3-evidence.spec.ts',
+)
+
+test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('terraform.renderQuality', 'high')
+  })
+  await page.goto('/studio/compact-infill')
+  await expect(
+    page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
+  ).toBeVisible()
+  await expect(page.getByText('137 simplified')).toBeVisible()
+  await page.waitForTimeout(4000)
+
+  const shoot = (name: string) => page.screenshot({ path: `${OUT_DIR}/${name}-${SHOT_SUFFIX}.png` })
+
+  // Summer solstice day: morning (09:00) → noon (12:00) → evening (18:00), Iso camera.
+  await page.getByRole('tab', { name: 'Sun' }).click()
+  await page.getByRole('button', { name: 'Morning' }).click()
+  await page.waitForTimeout(1500)
+  await shoot('m3-morning-21jun')
+
+  await page.getByRole('button', { name: 'Noon' }).click()
+  await page.waitForTimeout(1500)
+  await shoot('m3-noon-21jun')
+
+  await page.getByRole('button', { name: 'Evening' }).click()
+  await page.waitForTimeout(1500)
+  await shoot('m3-evening-21jun')
+
+  // Winter solstice: noon (12:00) and 18:00 (below the horizon).
+  await page.getByRole('button', { name: 'Winter solstice' }).click()
+  await page.getByRole('button', { name: 'Noon' }).click()
+  await page.waitForTimeout(1500)
+  await shoot('m3-noon-21dec')
+
+  await page.getByRole('button', { name: 'Evening' }).click()
+  await expect(page.getByRole('status')).toHaveText('Sun below horizon')
+  await page.waitForTimeout(1200)
+  await shoot('m3-below-horizon-21dec-1800')
+
+  // Envelope violation: draw a mass across the study boundary in the top view, then return to
+  // the Iso preset. The Constraints tab shows Exceeds demo envelope and the warning lists the
+  // setback reason; the selected mass keeps the height-limit plane visible in the close-up.
+  await page.getByRole('button', { name: 'Top' }).click()
+  await page.waitForTimeout(500)
+  await page.getByRole('button', { name: 'Draw footprint' }).click()
+  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
+  const box = await viewport.boundingBox()
+  if (!box) throw new Error('The 3D site viewport region was not found')
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+  // 0.26 × viewport height east/west ≈ ±103 m: across the ±95 m boundary, inside the terrain grid.
+  const step = Math.round(box.height * 0.26)
+  for (const [dx, dy] of [[-step, -80], [step, -80], [step, 80], [-step, 80]]) {
+    await page.mouse.click(cx + dx, cy + dy)
+  }
+  await page.getByRole('button', { name: 'Draw footprint' }).evaluate((button) => button.blur())
+  await page.keyboard.press('Enter')
+
+  // The created mass is selected; confirm on the Model tab (the Name field lives there).
+  await page.getByRole('tab', { name: 'Model' }).click()
+  await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
+
+  await page.getByRole('button', { name: 'Iso' }).click()
+  await page.waitForTimeout(800)
+  await page.getByRole('tab', { name: 'Constraints' }).click()
+  await expect(page.getByRole('heading', { name: 'Exceeds demo envelope' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /outside the setback/ })).toBeVisible()
+  await page.waitForTimeout(1500)
+  await shoot('m3-envelope-violation-iso')
+
+  // Close-up: dolly towards the target so the translucent height-limit plane above the mass reads.
+  await page.mouse.move(cx, cy)
+  for (let index = 0; index < 5; index += 1) {
+    await page.mouse.wheel(0, -700)
+    await page.waitForTimeout(250)
+  }
+  await page.waitForTimeout(1500)
+  await shoot('m3-envelope-violation-closeup')
+})
