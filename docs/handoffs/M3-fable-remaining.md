@@ -20,6 +20,8 @@ Every fixtures §2–§4 row names its test in `docs/qa/fixtures.md`; §7 QA-10 
 
 ## 2. Decisions you need to make
 
+**Resolved 2026-10-29 (owner):** ADR-0007 and ADR-0008 accepted as proposed. Defaults kept: hidden volumes excluded by passing the displayed document; autumn overlap resolves to the earlier occurrence; `noon` preset = 12:00 wall-clock.
+
 1. **ADR-0007 (floor-level GFA)** — accept or amend before C9 shows the number. Key choices: one plate per storey at the storey's base; 0.1 m level tolerance; union per level; scenario `gfaM2` is the union across buildings and `gfaByBuildingM2` is the additive sum (they differ only when buildings interpenetrate). Mixed storey heights on *overlapping* tiers over-count and are declared out of scope.
 2. **ADR-0008 (height reference)** — default `grade` = lowest terrain sample under the ground tier(s); `datum` = site origin. Alternative (mean terrain) is listed and rejected. The manifest has no reference field; `constraintsFromManifest(manifest, 'grade' | 'datum')` is where the UI picks.
 3. **`buildingCount` counts every volume**, hidden ones included. `StudioShell` already passes the displayed document (`displayedDocument(editor)`) to `checkClearance`; pass the same to `scenarioMetrics` and `evaluateEnvelope` and hidden masses are excluded consistently. Decide whether hidden masses should count in exports.

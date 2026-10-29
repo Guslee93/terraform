@@ -1,6 +1,6 @@
 # ADR-0007 — Floor-level concept GFA
 
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-10-29)
 - **Date:** 2026-10-29
 - **Deciders:** Project owner, `engineering-software-architect`, `engineering-senior-developer`
 - **PRD references:** FR-050, FR-051, FR-053, FR-055, §6.1 line 403

@@ -1,6 +1,6 @@
 # ADR-0008 — Height reference for the demo envelope
 
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-10-29)
 - **Date:** 2026-10-29
 - **Deciders:** Project owner, `engineering-software-architect`, `engineering-senior-developer`
 - **PRD references:** FR-070–FR-075, §7.3 claim policy
