@@ -85,10 +85,12 @@ Independent reference generated with pvlib 0.15.2 (NREL SPA, `nrel_numpy` method
 
 Additional checks:
 
-- DST boundary `2026-03-29T01:30:00Z` resolves to 03:30 local, not 02:30.
-- Same site/date/time after reload produces the identical sun vector (QA-10).
-- Shadow direction aligns with the north arrow; a mass south of another casts northward at noon.
-- Night/below-horizon state never displays a positive sun-hours claim (QA-11).
+- DST boundary `2026-03-29T01:30:00Z` resolves to 03:30 local, not 02:30 — `src/features/analysis/time.test.ts` "fixtures §4: 01:30Z on 2026-03-29 reads 03:30 local, not 02:30".
+- Every gap and overlap case in `src/features/analysis/__fixtures__/dst-oslo.json` (2026–2028, tzdata 2026.6) resolves to the listed instant; gap times use the pre-transition offset, overlap times default to the earlier (CEST) occurrence — `time.test.ts` "maps the spring gap …" / "resolves the autumn overlap …".
+- Same site/date/time after reload produces the identical sun vector (QA-10) — `src/features/analysis/sun.test.ts` "QA-10: the same site, date and time give an identical state, including after a JSON reload".
+- Shadow direction aligns with the north arrow; a mass south of another casts northward at noon (visual check, D33).
+- Night/below-horizon state never displays a positive sun-hours claim (QA-11) — `sun.test.ts` "QA-11: winter night is below the horizon with no direction and no sun-hours wording"; polar night in Tromsø keeps `belowHorizon` all day.
+- Day model: Oslo midsummer sunrise 03:53 / sunset 22:43 CEST; Tromsø 2026-06-21 `polar-day`, 2026-12-21 `polar-night` — `sun.test.ts` "dayModel".
 
 ## 5. Persistence fixtures
 
@@ -133,8 +135,8 @@ Geometry checks: every building footprint must be a simple ring with positive ar
 | QA-07 | Drag + Esc restores exact dimensions | `src/features/editor/commands.test.ts` — "reverts to the exact pre-drag dimensions with no history entry"; `src/features/editor/interaction.test.ts` — "QA-07: roof drag then Esc restores the exact document with no entry"; `src/features/editor/history.test.ts` — "cancels back to the exact base with no entry" |
 | QA-08 | Undo/redo duplicate/delete/rotate | `src/features/editor/commands.test.ts` — "duplicates with fresh ids, selects the copy, and undoes exactly"; "deletes, clears selection, and restores the volume in place on undo"; "rotates every tier about one pivot and undoes to exact vertices"; `src/features/editor/history.test.ts` — "restores document and selection on undo and redo"; `src/components/studio/ToolRail.test.tsx` — "undoes and redoes when available"; `src/components/studio/MassFields.test.tsx` — "duplicates the mass beside the original"; "deletes the mass"; "rotates by 15° steps (clockwise is negative in ENU)" |
 | QA-09 | M4 reload fixture | Not yet covered |
-| QA-10 | Deterministic sun vector | Not yet covered |
-| QA-11 | Winter/no-sun state | Not yet covered |
+| QA-10 | Deterministic sun vector | `src/features/analysis/sun.test.ts` — "QA-10: the same site, date and time give an identical state, including after a JSON reload" |
+| QA-11 | Winter/no-sun state | `src/features/analysis/sun.test.ts` — "QA-11: winter night is below the horizon with no direction and no sun-hours wording"; "polar night keeps the sun below the horizon all day (QA-11 for the scrubber)" |
 | QA-12 | Comparison deltas | Not yet covered |
 | QA-13 | PNG export contents | Not yet covered |
 | QA-14 | Corrupt schema/quota | `src/features/massing/serialize.test.ts` — "rejects malformed JSON"; "rejects unknown schema version"; "rejects structurally broken documents with a path"; "rejects semantically invalid values after decoding". Quota-exceeded handling (IndexedDB) is M4 — Not yet covered. |
