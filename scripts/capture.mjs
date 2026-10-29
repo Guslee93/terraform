@@ -46,6 +46,7 @@ try {
   const page = await browser.newPage({ deviceScaleFactor: 1 })
   // Evidence screenshots always show the full look: headless Chromium renders in software,
   // where render quality "Auto" would drop to Low (no shadows, no AO).
+  // eslint-disable-next-line no-undef -- runs in the page, not in Node
   await page.addInitScript(() => window.localStorage.setItem('terraform.renderQuality', 'high'))
 
   for (const viewport of viewports) {
