@@ -52,7 +52,7 @@ function boundaryState(footprint: Footprint, studyArea: readonly Vec2[]): Bounda
  * Terrain sample points for a footprint: corners, points along each edge and an interior
  * grid, so a hump or dip inside the outline is found as well as one under a corner.
  */
-function samplePoints(footprint: Footprint): Vec2[] {
+export function footprintSamplePoints(footprint: Footprint): Vec2[] {
   const ring = footprint.vertices
   // ponytail: fixed-density grid, ~15 samples per side; switch to terrain-cell nodes if precision matters.
   const spacing = Math.max(2, Math.sqrt(polygonArea(ring)) / 15)
@@ -83,7 +83,7 @@ function terrainIssues(groundTiers: readonly MassTier[], site: SiteContext): Cle
   let cut = 0
   let cutFlagged = false
   for (const tier of groundTiers) {
-    const heights = samplePoints(tier.footprint).map(([east, north]) => site.heightAt(east, north))
+    const heights = footprintSamplePoints(tier.footprint).map(([east, north]) => site.heightAt(east, north))
     floating = Math.max(floating, tier.baseElevation - Math.min(...heights))
     const tierCut = Math.max(...heights) - tier.baseElevation
     cut = Math.max(cut, tierCut)

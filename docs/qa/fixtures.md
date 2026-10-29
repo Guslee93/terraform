@@ -70,12 +70,18 @@ Fixtures are the source of truth for domain tests. If an implementation disagree
 | Zero-area polygon | rejected |
 | Negative width / storey count | rejected with field-specific error |
 | Storey count 0 or 41 | rejected; v1 range 1–40 |
-| Footprint fully inside parcel | `Within demo envelope` |
-| Footprint crossing parcel edge | `Exceeds demo envelope`, offending mass highlighted |
-| Footprint fully outside parcel | `Exceeds demo envelope`, outside area not counted as coverage |
-| Height 9.6 m vs 12 m limit | `Within` |
-| Height 16.0 m vs 12 m limit | `Exceeds` |
-| No constraint configured | `Not evaluated` |
+| Footprint fully inside parcel | `Within demo envelope` — `src/features/analysis/constraints.test.ts` "footprint fully inside parcel and setback, 9.6 m vs 12 m limit → Within demo envelope" |
+| Footprint crossing parcel edge | `Exceeds demo envelope`, offending mass highlighted — "footprint crossing the parcel edge → Exceeds, with the offending part outside the boundary" (48 m² outside the boundary, 96 m² outside the 4 m setback) |
+| Footprint fully outside parcel | `Exceeds demo envelope`, outside area not counted as coverage — "footprint fully outside the parcel → Exceeds …"; coverage side in `src/features/massing/metrics.test.ts` |
+| Footprint inside parcel, over the setback line | `Exceeds`, `outside-setback` only — "footprint inside the parcel but over the setback line" |
+| Footprint on the setback line exactly | `Within` (slivers < 0.01 m² ignored) — "a footprint sharing the setback line exactly is within" |
+| Height 9.6 m vs 12 m limit | `Within` — same test as the first row |
+| Height 16.0 m vs 12 m limit | `Exceeds`, 4.0 m excess — "height 16.0 m vs 12 m limit → Exceeds with a 4 m excess" |
+| No constraint configured | `Not evaluated` — "no constraint configured → Not evaluated for the scenario and every mass" |
+| Setback of a 40 × 50 m boundary by 4 m | 32 × 42 m = 1 344 m² — "insets a rectangle exactly" |
+| Setback of the L-shaped boundary by 1 m | 95 − π/4 ≈ 94.21 m², one simple ring, rounded reflex corner — "handles an L-shaped (concave) boundary" |
+| Setback of a dumbbell boundary (2 m neck) by 2 m | two simple rings, 2 × 36 m² + lenses — "splits a notched (dumbbell) boundary into two polygons" |
+| Height reference (ADR-0008) | grade = lowest terrain under the ground tier; the same mass reads 9.6 m from grade and 8.6 m from datum on a 1:10 slope — "height reference (ADR-0008)" |
 
 ## 4. Solar verification protocol
 

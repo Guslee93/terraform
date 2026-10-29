@@ -104,3 +104,44 @@ export function multiPolygonArea(polygons: MultiPolygonRings): number {
 export function outerRings(polygons: MultiPolygonRings): Ring[] {
   return polygons.flatMap((rings) => (rings[0] ? [rings[0]] : []))
 }
+
+/** Segments per full circle for round joins at reflex corners of `insetPolygon`. */
+const INSET_ARC_SEGMENTS = 48
+
+/**
+ * Planar inward offset of a simple ring by `distance` metres: the ring's area minus every
+ * point within `distance` of its boundary. Exact along edges; reflex corners are rounded with
+ * an inscribed 48-gon, so the setback there is up to 0.2 % short. Robust for concave rings:
+ * the result may be several polygons or empty when the ring is too narrow.
+ */
+export function insetPolygon(ring: Ring, distance: number): MultiPolygonRings {
+  if (!(distance >= 0) || !Number.isFinite(distance)) throw new Error('Inset distance must be a finite, non-negative number')
+  if (ring.length < 3) return []
+  if (distance === 0) return [[ring]]
+
+  const strips: PolygonRings[] = []
+  const disc: Vec2[] = []
+  for (let step = 0; step < INSET_ARC_SEGMENTS; step += 1) {
+    const angle = (2 * Math.PI * step) / INSET_ARC_SEGMENTS
+    disc.push([Math.cos(angle) * distance, Math.sin(angle) * distance])
+  }
+  for (let index = 0; index < ring.length; index += 1) {
+    const a = ring[index]
+    const b = ring[(index + 1) % ring.length]
+    if (!a || !b) continue
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1])
+    if (length === 0) continue
+    const nx = (-(b[1] - a[1]) / length) * distance
+    const ny = ((b[0] - a[0]) / length) * distance
+    strips.push([
+      [
+        [a[0] - nx, a[1] - ny],
+        [b[0] - nx, b[1] - ny],
+        [b[0] + nx, b[1] + ny],
+        [a[0] + nx, a[1] + ny],
+      ],
+    ])
+    strips.push([disc.map(([x, y]): Vec2 => [a[0] + x, a[1] + y])])
+  }
+  return differencePolygons([[ring]], strips)
+}
