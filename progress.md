@@ -298,3 +298,10 @@
 - Verification: `npm run lint` ✅ (after a directive for the pre-existing `window` use in `scripts/capture.mjs`) · `npm run typecheck` ✅ · `npm run test` ✅ 669 tests / 55 files · `npm run build` ✅.
 - Failed attempts: two hand-derived inset areas (L-shape, dumbbell) were wrong, not the code — the corner square at a reflex vertex and the lens at a neck were missed; expectations corrected with the derivation in the test. One metrics fixture overlapped the L-shape in plan; moved.
 - Open: owner to accept ADR-0007/0008; hidden-mass counting and the noon preset (handoff §2); `docs/reviews/M3-*` not started; UI (C8–C10) builds against handoff §4.
+
+### M3 gate review (2026-10-29)
+
+- Fable F1–F5 (domain core), Codex C8–C11 (UI), DeepSeek D28–D34 (tests, evidence, reference data) merged on `main`.
+- Claude review: 7 evidence images viewed; envelope evidence recaptured in daylight with a realistic mass; height-limit plane made readable; ESLint ignores venvs.
+- Suite: lint 0 · 699 unit tests · build ✅ · e2e 18 passed (1 opt-in evidence spec skipped).
+- Record: `docs/reviews/M3-code-review.md` — reviewer pass with follow-ups; owner sign-off pending.

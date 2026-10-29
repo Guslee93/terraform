@@ -1,6 +1,6 @@
 # Terraform — Agent Operating Guide
 
-**Status:** M1 complete · M2 massing engine next
+**Status:** M3 reviewer pass (owner sign-off pending) · M4 scenarios next · M6 site import P1–P2 done
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
 **Product type:** architectural portfolio prototype, not a commercial SaaS
 

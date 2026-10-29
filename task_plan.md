@@ -63,12 +63,12 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 
 ### Phase 4 — M3 Live analysis
 
-- [ ] Areas, volume, coverage
-- [ ] Solar + shadows + DST
-- [ ] Demo constraints and warnings
-- [ ] Independent sun reference
-- [ ] QA-06/10/11
-- **Status:** pending
+- [x] Areas, volume, coverage (ADR-0007 floor-level GFA)
+- [x] Solar + shadows + DST (time controls, night state, quality profiles)
+- [x] Demo constraints and warnings (ADR-0008 height reference)
+- [x] Independent sun reference (NREL SPA + NOAA oracle)
+- [x] QA-06/10/11/15
+- **Status:** reviewer pass 2026-10-29 (`docs/reviews/M3-code-review.md`); owner sign-off pending
 
 ### Phase 5 — M4 Scenarios and comparison
 
