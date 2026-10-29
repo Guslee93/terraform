@@ -101,6 +101,14 @@ SunCalc is the implementation library, but it is not its own reference. For each
 | 2026-12-21 23:00 | 331.82° | −51.21° | 331.82° | −50.73° | 0.48° |
 Independent reference generated with pvlib 0.15.2 (NREL SPA, `nrel_numpy` method). SunCalc is the implementation library. Both use the same azimuth convention: degrees clockwise from true north. DST transitions resolved via zoneinfo (Europe/Oslo).
 
+Automated comparison (`src/features/analysis/sun-reference.test.ts`):
+
+- The four noon rows above: suncalc within **0.05°** of the independent value — "fixtures §4 row … suncalc within 0.05° of the independent value".
+- Every daytime row of `docs/qa/sun-reference/nrel_spa_reference.json` (Oslo and Tromsø, hourly on the four dates, 80+ rows): suncalc **and** a second independent oracle within **0.5°** of NREL SPA — "… suncalc and NOAA within 0.5° of NREL".
+- Second oracle: the NOAA general solar position equations implemented in the test suite only (`src/features/analysis/__fixtures__/noaa-oracle.ts`), compared with suncalc at every hour of 2026 at Oslo and Tromsø while above the horizon: elevation and azimuth within **0.5°**, and both agree whether the sun is up except within 0.5° of the horizon — "NOAA oracle vs suncalc, hourly through 2026".
+- The reference table's local labels round-trip through `resolveLocalTime` to its UTC instants.
+- Rows below the horizon are not compared: refraction models diverge there (0.48° at −51°).
+
 Additional checks:
 
 - DST boundary `2026-03-29T01:30:00Z` resolves to 03:30 local, not 02:30 — `src/features/analysis/time.test.ts` "fixtures §4: 01:30Z on 2026-03-29 reads 03:30 local, not 02:30".
