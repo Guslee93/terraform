@@ -9,6 +9,8 @@ export default tseslint.config(
       'dist/**',
       'coverage/**',
       'playwright-report/**',
+      // Local Python venvs (e.g. docs/qa/sun-reference) ship vendored JS that is not ours.
+      '**/venv/**',
       'test-results/**',
       'node_modules/**',
     ],

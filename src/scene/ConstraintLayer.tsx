@@ -20,6 +20,9 @@ export type ConstraintLayerProps = {
 const noRaycast = () => null
 const AMBER = '#B8822B'
 const ACCENT = '#355E79'
+/** Margin of the per-mass height-limit plane beyond the footprint: at least 8 m or 40 % of its span. */
+const PLANE_RIM_M = 8
+const PLANE_RIM_FRACTION = 0.4
 
 function DrapedRing({ ring, sitePackage, dashed = false }: { ring: Ring; sitePackage: SitePackage; dashed?: boolean }) {
   const first = ring[0]
@@ -40,8 +43,10 @@ export function ConstraintLayer({ sitePackage, constraints, envelope, selectedVo
   const north = footprint.map((point) => point[1])
   const minEast = Math.min(...east), maxEast = Math.max(...east)
   const minNorth = Math.min(...north), maxNorth = Math.max(...north)
-  const paddingEast = datum ? 0 : (maxEast - minEast) * 0.05
-  const paddingNorth = datum ? 0 : (maxNorth - minNorth) * 0.05
+  // A per-mass plane needs a visible rim around the building, or it hides inside a tall mass.
+  const rim = (span: number) => (datum ? 0 : Math.max(PLANE_RIM_M, span * PLANE_RIM_FRACTION))
+  const paddingEast = rim(maxEast - minEast)
+  const paddingNorth = rim(maxNorth - minNorth)
   const west = minEast - paddingEast, right = maxEast + paddingEast
   const south = minNorth - paddingNorth, top = maxNorth + paddingNorth
   const outline: [number, number, number][] = [[west, elevation, -south], [right, elevation, -south], [right, elevation, -top], [west, elevation, -top], [west, elevation, -south]]
@@ -54,9 +59,9 @@ export function ConstraintLayer({ sitePackage, constraints, envelope, selectedVo
     {showPlane && <>
       <mesh position={enuToThreeXyz([(west + right) / 2, (south + top) / 2, elevation])} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast}>
         <planeGeometry args={[right - west, top - south]} />
-        <meshBasicMaterial color={ACCENT} transparent opacity={0.08} depthWrite={false} side={DoubleSide} />
+        <meshBasicMaterial color={ACCENT} transparent opacity={0.18} depthWrite={false} side={DoubleSide} />
       </mesh>
-      <Line points={outline} color={ACCENT} lineWidth={1} transparent opacity={0.35} depthWrite={false} raycast={noRaycast} />
+      <Line points={outline} color={ACCENT} lineWidth={1.5} transparent opacity={0.7} depthWrite={false} raycast={noRaycast} />
     </>}
   </group>
 }

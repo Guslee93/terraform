@@ -60,9 +60,12 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   await page.waitForTimeout(1200)
   await shoot('m3-below-horizon-21dec-1800')
 
-  // Envelope violation: draw a mass across the study boundary in the top view, then return to
-  // the Iso preset. The Constraints tab shows Exceeds demo envelope and the warning lists the
-  // setback reason; the selected mass keeps the height-limit plane visible in the close-up.
+  // Envelope violation, in daylight (21 June 15:00, the default view): a realistic ~24 × 30 m
+  // mass straddling the study boundary's west edge (±95 m; terrain ends at ±111.9 m), raised to 7 storeys (22.4 m) so it
+  // also breaks the 18 m limit and the height-limit plane visibly cuts through it.
+  await page.getByRole('button', { name: 'Summer solstice' }).click()
+  await page.getByLabel('Local time').fill('900')
+  await expect(page.getByText('2026-06-21 15:00 CEST')).toBeVisible()
   await page.getByRole('button', { name: 'Top' }).click()
   await page.waitForTimeout(500)
   await page.getByRole('button', { name: 'Draw footprint' }).click()
@@ -71,10 +74,10 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   if (!box) throw new Error('The 3D site viewport region was not found')
   const cx = box.x + box.width / 2
   const cy = box.y + box.height / 2
-  // 0.26 × viewport height east/west ≈ ±103 m: across the ±95 m boundary, inside the terrain grid.
-  const step = Math.round(box.height * 0.26)
-  for (const [dx, dy] of [[-step, -80], [step, -80], [step, 80], [-step, 80]]) {
-    await page.mouse.click(cx + dx, cy + dy)
+  // Top view scale: 0.26 × viewport height ≈ 103 m, so metres → px = box.height * 0.26 / 103.
+  const px = (metres: number) => Math.round((metres * box.height * 0.26) / 103)
+  for (const [east, north] of [[-106, 15], [-82, 15], [-82, -15], [-106, -15]]) {
+    await page.mouse.click(cx + px(east), cy - px(north))
   }
   await page.getByRole('button', { name: 'Draw footprint' }).evaluate((button) => button.blur())
   await page.keyboard.press('Enter')
@@ -82,18 +85,23 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   // The created mass is selected; confirm on the Model tab (the Name field lives there).
   await page.getByRole('tab', { name: 'Model' }).click()
   await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
+  const storeys = page.getByRole('textbox', { name: 'Storeys' })
+  await storeys.fill('7')
+  await storeys.press('Enter')
+  await expect(storeys).toHaveValue('7')
 
   await page.getByRole('button', { name: 'Iso' }).click()
   await page.waitForTimeout(800)
   await page.getByRole('tab', { name: 'Constraints' }).click()
   await expect(page.getByRole('heading', { name: 'Exceeds demo envelope' })).toBeVisible()
   await expect(page.getByRole('button', { name: /outside the setback/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /above the limit/ })).toBeVisible()
   await page.waitForTimeout(1500)
   await shoot('m3-envelope-violation-iso')
 
   // Close-up: dolly towards the target so the translucent height-limit plane above the mass reads.
   await page.mouse.move(cx, cy)
-  for (let index = 0; index < 5; index += 1) {
+  for (let index = 0; index < 3; index += 1) {
     await page.mouse.wheel(0, -700)
     await page.waitForTimeout(250)
   }

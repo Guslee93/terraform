@@ -35,8 +35,8 @@ describe('ConstraintLayer', () => {
     const mesh = nodes.find((node) => node.type === 'mesh')
     expect(mesh?.props.position).toEqual([0, heightReference === 'grade' ? 17 : 18, -0])
     expect(mesh?.props.raycast?.()).toBeNull()
-    expect(nodes.find((node) => node.type === 'planeGeometry')?.props.args).toEqual(heightReference === 'grade' ? [22, 11] : [40, 50])
-    expect(nodes.find((node) => node.type === 'meshBasicMaterial')?.props).toMatchObject({ opacity: 0.08, depthWrite: false })
+    expect(nodes.find((node) => node.type === 'planeGeometry')?.props.args).toEqual(heightReference === 'grade' ? [36, 26] : [40, 50])
+    expect(nodes.find((node) => node.type === 'meshBasicMaterial')?.props).toMatchObject({ opacity: 0.18, depthWrite: false })
   })
 
   it('does not render a grade plane without a selection', () => {
