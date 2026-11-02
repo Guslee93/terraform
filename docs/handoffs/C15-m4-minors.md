@@ -17,6 +17,8 @@ You may edit only `src/components/studio/**`, `src/components/ui/**` and their t
 5. **Single import control.** "Import project…" is a styled label and a visible native file input doing one job. Hide the native input (visually hidden, still focusable via its label — keyboard users must be able to open it with Enter or Space) so there is one control.
 6. **Missing menu tests.** In `ScenarioMenu.test.tsx` (pass a real `site`/package, not `site={null}`): the status dot and Concept GFA line per scenario; row **Delete** confirmation (Cancel keeps the scenario; confirm removes it); **Reset** confirmation; items disabled while a gesture is open; Tab-out closes the menu; focus after rename (items 1–2). jsdom stubs `showModal`, so don't try to test native dialog Esc or focus trapping here; DeepSeek covers that in e2e.
 
+7. **Focus after a confirmation closes (found by DeepSeek's D36 e2e).** Opening Reset, Delete or Reset demo from the menu closes the menu, so when the native confirmation closes (Escape or Cancel) there is nothing to return focus to and it drops to `<body>`. After any confirmation closes without confirming, focus must return to the scenario menu trigger (after a confirmed action, to the trigger as well). Add a unit test with a stubbed `showModal`/`close`. The e2e `Escape cancels a confirmation dialog and restores focus to the scenario menu` (marked `test.fixme` on `deepseek/d36`) will prove it once that branch is merged.
+
 Optional, only if trivial and the layout holds: column headers in the comparison table read "A · <name>" and "B · <name>" instead of bare "A" and "B".
 
 ## Done when
