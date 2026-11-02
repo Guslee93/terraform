@@ -5,7 +5,7 @@ import { createMemoryStore, StoreError, type ScenarioStore } from '../../feature
 import { createScenarioRepository } from '../../features/scenarios/repository'
 import { addVolume } from '../../features/editor/commands'
 import { createRectangleFootprint, createTier, createVolume } from '../../features/massing/factories'
-import { ProjectBackup, RecoveryStrip } from './ProjectRecovery'
+import { ProjectBackup, projectFileName, RecoveryStrip } from './ProjectRecovery'
 import { useScenarioProject, type ScenarioProject } from './useScenarioProject'
 
 let project: ScenarioProject
@@ -90,15 +90,55 @@ describe('project recovery', () => {
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('project.siteId This backup belongs to a different site.'))
     expect(project.scenarios).toEqual(before)
   })
+  it('warns about unreadable records and allows cancelling to export first', async () => {
+    const store = createMemoryStore()
+    await store.putScenario({ siteId: 's', id: 'broken', json: '{' })
+    const user = await setup(store)
+    const file = new File(['{}'], 'project.json', { type: 'application/json' })
+    Object.defineProperty(file, 'text', { value: async () => '{}' })
+    await user.upload(screen.getByLabelText('Import project…'), file)
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent("including any saved records that couldn't be opened.")
+    expect(dialog).toHaveTextContent('Export your project first if you want to keep them.')
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Export project' }))
+    expect(URL.createObjectURL).toHaveBeenCalled()
+    expect(await store.listScenarios('s')).toContainEqual(expect.objectContaining({ id: 'broken' }))
+  })
+  it('provides one labelled import input operable with Enter and Space', async () => {
+    const user = await setup(createMemoryStore())
+    const input = screen.getByLabelText('Import project…')
+    expect(input).toHaveClass('sr-only')
+    const click = vi.spyOn(input, 'click')
+    await user.click(screen.getByRole('button', { name: 'Export project' }))
+    await user.tab()
+    expect(input).toHaveFocus()
+    await user.keyboard('{Enter} ')
+    expect(click).toHaveBeenCalledTimes(2)
+  })
   it('confirms import and reports bad JSON without changing scenarios', async () => {
     const user = await setup(createMemoryStore())
     const before = project.scenarios
     const file = new File(['{'], 'bad.json', { type: 'application/json' })
     Object.defineProperty(file, 'text', { value: async () => '{' })
     await user.upload(screen.getByLabelText('Import project…'), file)
-    expect(screen.getByRole('dialog')).toHaveTextContent('Importing replaces every scenario for this site.')
+    expect(screen.getByRole('dialog')).toHaveTextContent("Importing replaces every scenario for this site, including any saved records that couldn't be opened.")
     await user.click(screen.getByRole('button', { name: 'Import project' }))
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent("This file couldn't be imported: $"))
     expect(project.scenarios).toEqual(before)
+  })
+})
+
+describe('projectFileName', () => {
+  it('uses the local calendar date across a UTC year boundary', () => {
+    vi.stubEnv('TZ', 'America/Los_Angeles')
+    try {
+      const date = new Date('2027-01-01T07:30:00Z')
+      expect(date.getDate()).toBe(31)
+      expect(projectFileName('compact-infill', date)).toBe('terraform_compact-infill_20261231.json')
+    } finally { vi.unstubAllEnvs() }
+  })
+  it('pads single-digit months and days', () => {
+    expect(projectFileName('s', new Date(2026, 0, 2, 12))).toBe('terraform_s_20260102.json')
   })
 })

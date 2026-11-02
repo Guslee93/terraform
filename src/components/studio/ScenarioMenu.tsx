@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { evaluateEnvelope, ENVELOPE_STATUS_LABEL, type EnvelopeSite } from '../../features/analysis/constraints'
 import { floorLevels, scenarioMetrics } from '../../features/massing/metrics'
 import { ConfirmDialog, type Confirmation } from '../ui/ConfirmDialog'
@@ -15,6 +15,27 @@ export function ScenarioMenu({ project, site }: { project: ScenarioProject; site
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
+  const restoreTrigger = useRef(false)
+  useEffect(() => {
+    if (!confirmation && restoreTrigger.current) {
+      restoreTrigger.current = false
+      trigger.current?.focus()
+    }
+  }, [confirmation])
+  const renameButtons = useRef(new Map<string, HTMLButtonElement>())
+  const renameFocus = useRef<string | null>(null)
+  const finishRename = (scenarioId: string) => {
+    renameFocus.current = scenarioId
+    setRenaming(null)
+  }
+  useLayoutEffect(() => {
+    if (renameFocus.current) {
+      (renameButtons.current.get(renameFocus.current) ?? trigger.current)?.focus()
+      renameFocus.current = null
+    } else if (renaming && !project.scenarios.some((scenario) => scenario.id === renaming)) {
+      trigger.current?.focus()
+    }
+  })
   const id = useId()
   const disabled = !project.ready || project.editor.interaction.kind !== 'idle'
   const close = () => { setOpen(false); setRenaming(null); setError(null); trigger.current?.focus() }
@@ -28,7 +49,11 @@ export function ScenarioMenu({ project, site }: { project: ScenarioProject; site
   }, [open])
   const confirm = (value: Confirmation) => { setConfirmation(value); setOpen(false) }
   return (
-    <div ref={root} className="relative" onKeyDown={(event) => {
+    <div ref={root} className="relative" onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        setOpen(false); setRenaming(null); setError(null)
+      }
+    }} onKeyDown={(event) => {
       if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); close() }
       if (!open || event.target instanceof HTMLInputElement) return
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -60,14 +85,14 @@ export function ScenarioMenu({ project, site }: { project: ScenarioProject; site
                 event.preventDefault()
                 const problem = project.actions.rename(scenario.id, name)
                 setError(problem)
-                if (!problem) setRenaming(null)
+                if (!problem) finishRename(scenario.id)
               }}>
                 <label className="sr-only" htmlFor={`${id}-name`}>Scenario name</label>
-                <input autoFocus id={`${id}-name`} className={inputClass} value={name} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); setRenaming(null); setError(null) } }} />
+                <input autoFocus id={`${id}-name`} className={inputClass} value={name} disabled={disabled} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); finishRename(scenario.id); setError(null) } }} />
                 {error && <p id={`${id}-error`} role="alert" className="text-caption text-warning-ink">{error}</p>}
                 <button type="submit" disabled={disabled} className={textButtonSmClass}>Save name</button>
               </form> : <div className="ml-4 flex flex-wrap gap-x-4">
-                <button type="button" disabled={disabled} className={textButtonSmClass} onClick={() => { setRenaming(scenario.id); setName(scenario.name); setError(null) }}>Rename</button>
+                <button ref={(button) => { if (button) renameButtons.current.set(scenario.id, button); else renameButtons.current.delete(scenario.id) }} type="button" disabled={disabled} className={textButtonSmClass} onClick={() => { setRenaming(scenario.id); setName(scenario.name); setError(null) }}>Rename</button>
                 <button type="button" disabled={disabled} className={textButtonSmClass} onClick={() => { project.actions.duplicate(scenario.id); close() }}>Duplicate</button>
                 <button type="button" disabled={disabled} className={textButtonSmClass} onClick={() => confirm({ title: `Reset ${scenario.name}?`, message: 'Remove the buildings and notes from this scenario?', action: 'Reset scenario', onConfirm: () => project.actions.resetScenario(scenario.id) })}>Reset</button>
                 {project.canRemove && <button type="button" disabled={disabled} className={textButtonSmClass} onClick={() => confirm({ title: `Delete ${scenario.name}?`, message: 'This removes the scenario and its undo history.', action: 'Delete scenario', onConfirm: async () => { const problem = await project.actions.remove(scenario.id); if (problem) throw new Error(problem) } })}>Delete</button>}
@@ -80,7 +105,7 @@ export function ScenarioMenu({ project, site }: { project: ScenarioProject; site
           <button type="button" disabled={disabled || project.storage === 'read-only'} className={textButtonSmClass} onClick={() => confirm({ title: 'Reset demo?', message: 'Remove every scenario for this site and start again with empty Concept A and B?', action: 'Reset demo', onConfirm: project.actions.resetDemo })}>Reset demo…</button>
         </div>
       </div>}
-      {confirmation && <ConfirmDialog confirmation={confirmation} onClose={() => { setConfirmation(null); trigger.current?.focus() }} />}
+      {confirmation && <ConfirmDialog confirmation={confirmation} onClose={() => { restoreTrigger.current = true; setConfirmation(null) }} />}
     </div>
   )
 }

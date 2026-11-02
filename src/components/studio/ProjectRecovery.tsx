@@ -4,11 +4,17 @@ import { ConfirmDialog, type Confirmation } from '../ui/ConfirmDialog'
 import { textButtonSmClass } from '../ui/controls'
 import type { ScenarioProject } from './useScenarioProject'
 
+export function projectFileName(siteId: string, date = new Date()): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `terraform_${siteId}_${date.getFullYear()}${month}${day}.json`
+}
+
 export function downloadProject(json: string, siteId: string) {
   const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
   const link = document.createElement('a')
   link.href = url
-  link.download = `terraform_${siteId}_${new Date().toISOString().slice(0,10).replaceAll('-', '')}.json`
+  link.download = projectFileName(siteId)
   document.body.append(link)
   link.click()
   link.remove()
@@ -62,15 +68,15 @@ export function ProjectBackup({ project, siteId }: { project: ScenarioProject; s
   return <div className="mt-3 border-t border-line pt-3">
     <div className="flex flex-wrap gap-4">
       <button type="button" className={textButtonSmClass} disabled={disabled} onClick={() => { try { downloadProject(project.actions.exportProject(), siteId); setMessage('Project exported.') } catch (error) { report(error) } }}>Export project</button>
-      <label htmlFor={inputId} className="flex min-h-9 items-center text-body-sm">Import project…</label>
-      <input id={inputId} type="file" accept=".json,application/json" className="w-full text-caption file:mr-3 file:rounded-control file:border file:border-line file:bg-surface-paper file:p-2 file:text-ink" disabled={disabled || project.storage !== 'persistent'} onChange={async (event) => {
+      <label htmlFor={inputId} className="flex min-h-9 items-center text-body-sm focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus">Import project…
+      <input id={inputId} type="file" accept=".json,application/json" className="sr-only" onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click() } }} disabled={disabled || project.storage !== 'persistent'} onChange={async (event) => {
         const file = event.currentTarget.files?.[0]
         event.currentTarget.value = ''
         if (!file) return
         setBusy(true); setMessage(null)
         try {
           const json = await file.text()
-          setConfirmation({ title: 'Import project?', message: 'Importing replaces every scenario for this site.', action: 'Import project', onConfirm: async () => {
+          setConfirmation({ title: 'Import project?', message: "Importing replaces every scenario for this site, including any saved records that couldn't be opened." + (project.skipped.length > 0 ? ' Export your project first if you want to keep them.' : ''), action: 'Import project', onConfirm: async () => {
             try {
               // Prevent a backup for a different site from replacing the current editor's site context.
               let raw: unknown
@@ -85,6 +91,7 @@ export function ProjectBackup({ project, siteId }: { project: ScenarioProject; s
         } catch (error) { report(error) }
         finally { setBusy(false) }
       }} />
+      </label>
     </div>
     {project.storage !== 'persistent' && <p className="mt-2 text-caption text-ink-secondary">Import requires writable browser storage. Export remains available.</p>}
     {message && <p role="status" className="mt-2 text-body-sm">{message}</p>}
