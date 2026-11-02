@@ -29,6 +29,7 @@ import { Inspector, type PanelGroup } from './Inspector'
 import { MetricsPanel } from './MetricsPanel'
 import type { SnapshotResult, SnapshotRequest } from '../../scene/ScenarioSnapshots'
 import { ComparePanel } from './ComparePanel'
+import { ProjectBackup, RecoveryStrip } from './ProjectRecovery'
 import { ScenarioMenu } from './ScenarioMenu'
 import { ScenarioNotes } from './ScenarioNotes'
 import { StudioTopBar } from './StudioTopBar'
@@ -343,6 +344,8 @@ export function StudioShell({
           onPairChange={(a, b) => setComparePair([a, b])}
           onEdit={(id) => { project.actions.switchTo(id); closeCompare() }} onClose={closeCompare}
         /> : <Inspector
+          recovery={<RecoveryStrip project={project} siteId={site.id} />}
+          backup={<ProjectBackup project={project} siteId={site.id} />}
           notes={<ScenarioNotes key={`${shown.id}:${shown.notes}`} notes={shown.notes} disabled={!editable || !idle} onCommit={project.actions.setNotes} />}
           check={
             <ConstraintsPanel

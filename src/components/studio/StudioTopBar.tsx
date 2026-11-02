@@ -43,7 +43,7 @@ export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, save
         {site.title}
         <span className="ml-2 text-caption text-ink-secondary">{site.subtitle}</span>
       </p>
-      <div className="ml-auto flex items-center gap-7">
+      <div className="ml-auto flex max-w-full flex-wrap items-center gap-x-5 gap-y-1">
         <div className="flex flex-wrap items-center text-body-sm text-ink">
           {scenarioMenu ?? scenario}
           <span aria-live="polite" className={saveStatus.state === 'error' || storage !== 'persistent' ? 'ml-1.5 text-caption text-warning-ink' : 'ml-1.5 text-caption text-ink-secondary'}>

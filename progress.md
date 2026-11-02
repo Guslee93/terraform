@@ -386,3 +386,12 @@
 
 - Added comparison panel with pair selectors, neutral B − A metrics, envelope disclaimer, notes, Edit A/B and matched snapshots in the existing WebGL context. Capture restores the live scene even on failure; no second context or blank placeholder images.
 - Targeted comparison/capture tests: 3 pass. Lint and typecheck pass. Fixed new test-only errors found by checks (RTL exact option and row accessible-name spacing).
+
+### M4 C14 and UI handoff verification (2026-11-02)
+
+- Added recovery strips and project export/import in Site and sources. Confirmation precedes import/discard; bad JSON and wrong-site files leave the project unchanged. Original newer-format data is exported separately from the temporary working project.
+- Review caught and reproduced inactive rename reverting on session restore. A minimal hook correction applies the rename command to the parked session, preserving undo history; regression passes.
+- Full suite initially found one old shell test depending on MassLayer being a direct Canvas child. Updated it to traverse the live scenario group without changing its drag/envelope assertions. Final lint, 766 tests (77 files), typecheck and build pass.
+- Full existing browser suite: 22 passed, 1 opt-in evidence test skipped with one worker. No e2e source files modified. Browser verification in isolated storage confirms distinct matched thumbnails, switch/reload, corrupt recovery and original newer-format download with zero page errors. Six screenshots captured and viewed, including 1024/375 menu checks with no horizontal overflow.
+- Report: docs/reviews/M4-codex-ui-review.md (self-review, not the independent M4 gate). Studio bundle 345.93 kB raw / 110.42 kB gzip; existing Three.js size/deprecation warnings remain.
+- D35 integration, D36/D37, independent gate and ADR-0011 acceptance remain. No merge. Existing hook failure-reporting and camera-bookmark gaps are recorded for integration.

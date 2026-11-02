@@ -18,6 +18,21 @@ async function open(store: ScenarioStore) {
 }
 
 describe('useScenarioProject', () => {
+  it('keeps an inactive rename when restoring its parked editor history', async () => {
+    const { result } = await open(createMemoryStore())
+    const a = result.current.scenarios[0]!.id
+    const b = result.current.scenarios[1]!.id
+    act(() => result.current.dispatch({ type: 'command', command: addVolume(block('kept')) }))
+    act(() => result.current.actions.switchTo(b))
+    act(() => { result.current.actions.rename(a, 'Courtyard option') })
+    act(() => result.current.actions.switchTo(a))
+    expect(result.current.editor.history.document.name).toBe('Courtyard option')
+    expect(result.current.editor.history.document.volumes[0]?.id).toBe('kept')
+    act(() => result.current.dispatch({ type: 'undo' }))
+    expect(result.current.editor.history.document.name).toBe('Concept A')
+    expect(result.current.editor.history.document.volumes[0]?.id).toBe('kept')
+  })
+
   it('exports the original newer-version project and rows verbatim without overwriting them', async () => {
     const store = createMemoryStore()
     const projectRow = { siteId: SITE, json: '{ "schemaVersion": 99, "futureIndex": ["future"] }' }

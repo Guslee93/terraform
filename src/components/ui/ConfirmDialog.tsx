@@ -15,7 +15,7 @@ export function ConfirmDialog({ confirmation, onClose }: { confirmation: Confirm
     return () => dialog?.close()
   }, [])
   return (
-    <dialog ref={ref} aria-labelledby={titleId} onCancel={(event) => { if (busy) event.preventDefault(); else onClose() }} className="m-auto w-[min(420px,calc(100%-32px))] rounded-card border border-line bg-surface p-6 text-ink backdrop:bg-ink/30">
+    <dialog ref={ref} aria-labelledby={titleId} onCancel={(event) => { if (busy) event.preventDefault(); else onClose() }} className="m-auto w-[calc(100vw_-_2rem)] max-w-[420px] rounded-card border border-line bg-surface p-6 text-ink backdrop:bg-ink/30">
       <h2 id={titleId} className="text-title">{confirmation.title}</h2>
       <p className="mt-3 text-body-sm">{confirmation.message}</p>
       {error && <p role="alert" className="mt-3 text-body-sm text-warning-ink">{error}</p>}

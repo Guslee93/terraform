@@ -6,7 +6,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 
 ## Current Phase
 
-**M4 — Scenario UI next.** S1–S4 and studio persistence integration are at `cc02494`; C12–C14 are assigned to this worktree. See `docs/handoffs/M4-codex-resumption.md` for the verified resumption state and recovery-export API issue. Historical M2 acceptance checkboxes below have not been independently reconciled.
+**M4 — UI implemented; integration and gate next.** C12–C14 are on `m4/ui`; see `docs/reviews/M4-codex-ui-review.md` for evidence and remaining work. Historical M2 acceptance checkboxes below have not been independently reconciled.
 
 ## Phases
 
@@ -73,11 +73,11 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 ### Phase 5 — M4 Scenarios and comparison
 
 - [x] Domain CRUD, autosave, migrations and studio hook
-- [ ] C12 scenario menu and notes
-- [ ] C14 recovery and backup UI (newer-version raw-export API gap reported)
-- [ ] Matched-camera comparison
+- [x] C12 scenario menu and notes
+- [x] C14 recovery and backup UI (raw-export API repaired)
+- [x] C13 matched-camera comparison
 - [ ] QA-09/12/14
-- **Status:** in_progress — C12–C14 handoff; D35 committed separately, integration outstanding; D36/D37 and review gate pending
+- **Status:** in_progress — C12–C14 implemented and locally verified; D35 integration, D36/D37 and independent review gate pending
 
 ### Phase 6 — M5 Portfolio polish
 

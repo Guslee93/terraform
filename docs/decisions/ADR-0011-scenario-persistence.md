@@ -130,3 +130,7 @@ The site package stays shared, immutable data. A project export is `{ schemaVers
   - create, rename, duplicate and remove;
   - memory mode never writes;
   - export includes unsaved edits.
+
+### Implementation clarification — recovery export (2026-11-02)
+
+The UI hook keeps `exportProject()` for the current working scenarios, including unsaved in-memory edits. `exportSavedData()` calls the repository separately for recovery. When the stored project cannot be opened (notably a newer format), that recovery envelope retains `rawProject` (the original `{ siteId, json }` row) and `unreadable` scenario row strings verbatim. These bytes are not migrated or overwritten; a raw recovery envelope is not a current-format importable project. ADR status remains proposed pending owner acceptance.

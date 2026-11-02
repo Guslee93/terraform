@@ -1,5 +1,7 @@
 # M4 — Codex resumption audit (2026-11-02)
 
+**Subsequent update:** the owner asked to proceed. Recovery export was repaired and C12–C14 implemented. See `docs/reviews/M4-codex-ui-review.md`; the audit below records the initial state.
+
 ## Verified checkout
 
 - Worktree: `/Users/gustavekamanzi/Downloads/2026/Terraform-m4ui`.

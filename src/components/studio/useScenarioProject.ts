@@ -211,6 +211,10 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
     }
     const document = data.stored.get(id)
     if (!document) return null
+    const parked = sessions.current.get(id)
+    if (parked) sessions.current = new Map(sessions.current).set(id, reduceEditor(parked, {
+      type: 'command', command: updateScenarioDetails({ name: trimmed }),
+    }))
     const renamed = { ...document, name: trimmed, updatedAt: now() }
     setData({ ...data, stored: new Map(data.stored).set(id, renamed) })
     if (persistent) autosave.commit(renamed)
@@ -285,7 +289,7 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
 
   const discardSkipped = async (id: string) => {
     if (!data) return
-    if (persistent) await repository.deleteScenario(id).catch(() => undefined)
+    if (persistent) await repository.deleteScenario(id)
     setData({ ...data, skipped: data.skipped.filter((record) => record.id !== id) })
   }
 

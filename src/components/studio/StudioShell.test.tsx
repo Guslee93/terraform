@@ -1,6 +1,6 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Children, isValidElement, type ComponentProps } from 'react'
+import { Children, isValidElement, type ComponentProps, type ReactNode } from 'react'
 import { moveGesture } from '../../features/editor/interaction'
 import { MassLayer } from '../../scene/MassLayer'
 import { ConstraintLayer } from '../../scene/ConstraintLayer'
@@ -19,6 +19,9 @@ import * as factories from '../../features/massing/factories'
 import * as solar from '../../features/analysis/sun'
 import * as webgl from '../../scene/webglSupport'
 import { RENDER_QUALITY_KEY } from '../../scene/renderQuality'
+import { createScenarioRepository } from '../../features/scenarios/repository'
+import { createMemoryStore } from '../../features/scenarios/store'
+import { createDefaultProject } from '../../features/scenarios/project'
 import { StudioShell } from './StudioShell'
 
 // Exercise the real shell/viewport/HUD wiring without needing a GPU in jsdom.
@@ -61,6 +64,24 @@ afterEach(() => {
 })
 
 describe('studio rendering states', () => {
+  it('disables Compare for one scenario and enables it after creating another', async () => {
+    const repository = createScenarioRepository(createMemoryStore(), { now: () => '2026-11-02T00:00:00Z', appVersion: 'test' })
+    const { project, scenarios } = createDefaultProject('compact-infill', '2026-11-02T00:00:00Z')
+    await repository.saveScenario(scenarios[0]!)
+    await repository.saveProject({ ...project, scenarioIds: [project.activeScenarioId] })
+    const site = SITES.find((entry) => entry.id === 'compact-infill')!
+    render(<MemoryRouter><StudioShell site={site} sitePackage={sitePackage} packageStatus="ready" packageError={null} onRetry={() => {}} repository={repository} /></MemoryRouter>)
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Concept A' }))
+    expect(screen.getByRole('button', { name: 'Compare' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'New scenario' }))
+    expect(screen.getByRole('button', { name: 'Compare' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Compare' }))
+    expect(await screen.findByRole('table')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Edit B' }))
+    expect(screen.getByRole('button', { name: 'Concept A' })).toBeVisible()
+  })
+
   it('updates coverage, envelope and amber tint during a live drag, then restores them on Escape', () => {
     const tier = factories.createTier({ id: 'ground', footprint: factories.createRectangleFootprint(10, 10), storeys: 1 })
     const volume = factories.createVolume({ id: 'moving', name: 'Moving wing', tiers: [tier] })
@@ -70,7 +91,12 @@ describe('studio rendering states', () => {
       terrain: { ...sitePackage.terrain, heights: sitePackage.terrain.heights.map((row) => row.map(() => 0)) },
       studyArea: { ...sitePackage.studyArea, polygon: [[-20, -25], [20, -25], [20, 25], [-20, 25], [-20, -25]] },
     })
-    const sceneChildren = () => Children.toArray(vi.mocked(Canvas).mock.lastCall?.[0].children)
+    const sceneChildren = () => {
+      const children = Children.toArray(vi.mocked(Canvas).mock.lastCall?.[0].children)
+      const live = children.find((child) => isValidElement<{ name?: string }>(child) && child.props.name === 'live-scenario')
+      if (!isValidElement<{ children: ReactNode }>(live)) throw new Error('Missing live scenario group')
+      return Children.toArray(live.props.children)
+    }
     const massLayer = sceneChildren().find((child) => isValidElement<ComponentProps<typeof MassLayer>>(child) && child.type === MassLayer)
     if (!isValidElement<ComponentProps<typeof MassLayer>>(massLayer)) throw new Error('Missing mass adapter')
     const dispatch = massLayer.props.dispatch

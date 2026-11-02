@@ -34,6 +34,8 @@ const LAYER_ROWS: ReadonlyArray<{
 
 type InspectorProps = {
   /** Section 1: the design check. */
+  recovery?: ReactNode
+  backup?: ReactNode
   notes?: ReactNode
   check: ReactNode
   /** Section 2: scenario figures. */
@@ -97,6 +99,8 @@ function Group({ id, title, meta, open, onToggle, children }: {
 
 /** The studio's right panel (draft 4): check → figures → buildings → groups. Always visible. */
 export function Inspector({
+  recovery,
+  backup,
   notes,
   check,
   figures,
@@ -145,6 +149,7 @@ export function Inspector({
 
   return (
     <aside aria-label="Inspector" className="tf-rise flex min-h-0 flex-col overflow-y-auto rounded-card bg-surface [animation-delay:80ms]">
+      {recovery}
       {check}
       {figures}
 
@@ -269,6 +274,7 @@ export function Inspector({
             <Row label="Frame" value="Local ENU · metres" />
             <Row label="Constraints" value="Illustrative only" />
           </dl>
+          {backup}
           <p className="mt-2 text-caption text-ink-secondary">
             <Link to="/about#data" className="underline decoration-line underline-offset-2 hover:text-ink">
               Data notes
