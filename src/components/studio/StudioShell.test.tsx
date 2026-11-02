@@ -64,6 +64,42 @@ afterEach(() => {
 })
 
 describe('studio rendering states', () => {
+  it('shows accessible loading status and motion-safe placeholders in both editor columns, then the editor', () => {
+    const site = SITES.find((entry) => entry.id === 'compact-infill')!
+    const view = (ready: boolean) => (
+      <MemoryRouter>
+        <StudioShell site={site} sitePackage={ready ? sitePackage : null} packageStatus={ready ? 'ready' : 'loading'} packageError={null} onRetry={() => {}} />
+      </MemoryRouter>
+    )
+    const { container, rerender } = render(view(false))
+    expect(screen.getByRole('status')).toHaveTextContent('Loading site package')
+    expect(Canvas).not.toHaveBeenCalled()
+    expect(screen.queryByRole('region', { name: 'Scenario' })).not.toBeInTheDocument()
+    const placeholders = container.querySelectorAll('.motion-safe\\:animate-pulse')
+    expect(placeholders).toHaveLength(2)
+    for (const placeholder of placeholders) {
+      expect(placeholder).toHaveClass('motion-reduce:animate-none')
+      expect(placeholder.closest('[aria-hidden="true"]')).not.toBeNull()
+    }
+    rerender(view(true))
+    expect(screen.queryByText('Loading site package')).not.toBeInTheDocument()
+    expect(screen.getByTestId('canvas')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Scenario' })).toBeInTheDocument()
+  })
+
+  it.each([null, 'Unexpected token < in JSON at position 0'])('offers plain-language recovery for a missing or failed package (%s)', async (packageError) => {
+    const site = SITES.find((entry) => entry.id === 'compact-infill')!
+    const onRetry = vi.fn()
+    render(<MemoryRouter><StudioShell site={site} sitePackage={null} packageStatus="error" packageError={packageError} onRetry={onRetry} /></MemoryRouter>)
+    expect(screen.getByRole('heading', { name: 'The site model could not be loaded.' })).toBeVisible()
+    expect(screen.getByText('The site package is missing or could not be read. Try again, or choose another site.')).toBeVisible()
+    if (packageError) expect(screen.queryByText(packageError)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to sites' })).toHaveAttribute('href', '/#sites')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Try again' }))
+    expect(onRetry).toHaveBeenCalledOnce()
+    expect(Canvas).not.toHaveBeenCalled()
+  })
+
   it('disables Compare for one scenario and enables it after creating another', async () => {
     const repository = createScenarioRepository(createMemoryStore(), { now: () => '2026-11-02T00:00:00Z', appVersion: 'test' })
     const { project, scenarios } = createDefaultProject('compact-infill', '2026-11-02T00:00:00Z')

@@ -66,7 +66,8 @@ describe('MassFields', () => {
     expect(onCommand).not.toHaveBeenCalled()
     expect(field).toHaveValue('3')
     expect(field).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByText('Enter a whole number of storeys.')).toBeInTheDocument()
+    expect(field).toHaveAccessibleDescription('Storeys need a positive whole number. Enter a whole number of storeys.')
+    expect(screen.getByText('Storeys need a positive whole number. Enter a whole number of storeys.')).toBeInTheDocument()
   })
 
   it('QA-16: shows the domain error and keeps the prior value when a command is refused', async () => {
@@ -93,7 +94,9 @@ describe('MassFields', () => {
     await user.type(base, 'abc{Enter}')
     expect(onCommand).not.toHaveBeenCalled()
     expect(base).toHaveValue('0.00')
-    expect(screen.getByText('Enter a number in metres.')).toBeInTheDocument()
+    expect(base).toHaveAttribute('aria-invalid', 'true')
+    expect(base).toHaveAccessibleDescription('This value is not a number. Enter a number in metres.')
+    expect(screen.getByText('This value is not a number. Enter a number in metres.')).toBeInTheDocument()
   })
 
   it('reverts a draft on Escape without committing', async () => {
