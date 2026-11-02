@@ -38,7 +38,7 @@ The work order said not to edit `src/features/**`, `useScenarioProject.ts` or it
 
 ## Still needed before the M4 gate
 
-1. Integrate DeepSeek's D35 fixtures (`416773a`): move their v1 parsing checks onto `migrateScenario`.
+1. ~~Integrate DeepSeek's D35 fixtures~~ — done (see `progress.md`).
 2. D36 e2e and D37 evidence (`docs/handoffs/D36-D37-m4-e2e-evidence.md`).
 3. Camera bookmarks: the schema allows them; nothing saves or restores one yet (FR-041). Decide whether M4 needs it or the scenario's camera stays a studio-wide setting.
 4. The open minors above, then `docs/reviews/M4-code-review.md` and owner acceptance of ADR-0011.

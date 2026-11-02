@@ -17,7 +17,7 @@
   },
   "scenarios": [
     {
-      "schemaVersion": 1,
+      "schemaVersion": 2,
       "id": "scenario-export-a",
       "siteId": "compact-infill",
       "name": "Concept A",
@@ -63,10 +63,13 @@
             }
           ]
         }
-      ]
+      ],
+      "notes": "",
+      "createdAt": "2026-11-02T00:00:00.000Z",
+      "updatedAt": "2026-11-02T00:00:00.000Z"
     },
     {
-      "schemaVersion": 1,
+      "schemaVersion": 2,
       "id": "scenario-export-b",
       "siteId": "compact-infill",
       "name": "Concept B",
@@ -75,7 +78,10 @@
         "minStoreys": 1,
         "maxStoreys": 40
       },
-      "volumes": []
+      "volumes": [],
+      "notes": "",
+      "createdAt": "2026-11-02T00:00:00.000Z",
+      "updatedAt": "2026-11-02T00:00:00.000Z"
     }
   ]
 }

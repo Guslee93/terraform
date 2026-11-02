@@ -402,3 +402,11 @@
 - Fixes: thumbnail pending/failed states; `remove`/`resetDemo` hit storage first and throw on failure; wrong-site import guard in the repository; menu role and shortcut exemption; stale compare pair; plural.
 - Verification: lint ✅ · typecheck ✅ · 770 unit tests ✅ · build ✅ · e2e 22 passed, 1 skipped.
 - Next: D35 fixtures integration, D36/D37 (work order written), camera-bookmark decision, M4 gate.
+
+### D35 integration (2026-11-02)
+
+- DeepSeek's fixtures (`416773a`) cherry-picked onto `main` (only `agent-log.md` conflicted; both rows kept).
+- Its test ran against the old reader, so 6 of 13 tests failed on the v2 code. Rewritten to use the production paths: v1 and v0 migrate to exactly `stepped-v2.expected.json`; every broken file is reported with its kind and path and skipped on load without a crash, kept verbatim; the index naming a missing scenario is repaired; export bundle round-trips through import and export; a legacy bundle still imports; a wrong-site bundle is refused and writes nothing.
+- Fixture fix: D35's `export-bundle.json` was labelled format 2 but held format-1 scenarios. Kept as `export-bundle-legacy.json`; a true v2 bundle is generated from it by `generate-v2.ts` (through the real migration). README explains why `generate.ts` must not be re-run on current code.
+- Verification: lint ✅ · typecheck ✅ · 779 unit tests ✅ · build ✅.
+- Next: D36/D37 for DeepSeek (work order ready), camera-bookmark decision, M4 gate.

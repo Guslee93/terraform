@@ -1,156 +1,109 @@
 /**
- * D35 — M4 persisted-document fixture validation.
+ * M4 persisted-document fixtures (D35 by DeepSeek; integrated onto the v2 code by Claude).
  *
- * These tests run against the pre-M4 code (v1 serialiser) and verify that the
- * fixture files are correctly formed. When Claude merges this branch, the v1
- * parsing checks will be moved onto the new migration function; the fixture
- * files themselves stay unchanged.
+ * The v0/v1/corrupt/newer files are real pre-M4 serialiser output, so these tests prove the
+ * production migration and loading paths against them, not just that the files are well formed.
  */
-
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import * as fs from 'fs'
-import * as path from 'path'
+import { migrateScenario, parseStoredScenario, ScenarioLoadError } from '../migrate'
+import { decodeProject } from '../project'
+import { createScenarioRepository, type LoadResult } from '../repository'
+import { createMemoryStore } from '../store'
 
-import { parseScenarioDocument, serializeScenario } from '../../massing/serialize'
-import { MassingValidationError } from '../../massing/validation'
+const NOW = '2026-11-02T00:00:00.000Z'
+const text = (name: string) => readFileSync(new URL(name, import.meta.url), 'utf8')
+const json = (name: string): Record<string, unknown> => JSON.parse(text(name))
 
-function load(name: string): string {
-  return fs.readFileSync(path.join(__dirname, name), 'utf-8')
-}
-
-function issuePaths(json: string): string[] {
+function loadError(run: () => unknown): ScenarioLoadError {
   try {
-    parseScenarioDocument(json)
+    run()
   } catch (error) {
-    if (error instanceof MassingValidationError) return error.issues.map((issue) => issue.path)
+    if (error instanceof ScenarioLoadError) return error
     throw error
   }
-  return []
+  throw new Error('expected a ScenarioLoadError')
 }
 
-describe('M4 persistence fixtures', () => {
-  describe('stepped-v1.json', () => {
-    it('parses with parseScenarioDocument', () => {
-      const doc = parseScenarioDocument(load('stepped-v1.json'))
-      expect(doc.schemaVersion).toBe(1)
-      expect(doc.id).toBe('scenario-stepped')
-      expect(doc.siteId).toBe('sloped-edge')
-      expect(doc.name).toBe('Stepped mass')
-    })
+function ready(result: LoadResult) {
+  if (result.status !== 'ready') throw new Error(`expected ready, got ${result.status}`)
+  return result
+}
 
-    it('round-trips through serializeScenario', () => {
-      const json = load('stepped-v1.json')
-      const doc = parseScenarioDocument(json)
-      expect(serializeScenario(doc)).toBe(json.trim())
-    })
+const options = { now: () => NOW, appVersion: '0.1.0' }
 
-    it('has the expected stepped geometry', () => {
-      const doc = parseScenarioDocument(load('stepped-v1.json'))
-      expect(doc.volumes).toHaveLength(1)
-      const volume = doc.volumes[0]!
-      const tiers = volume.tiers
-      expect(tiers).toHaveLength(2)
-      // Lower tier: 20 x 10 m, 3 storeys at 3.2 m
-      expect(tiers[0]!.storeys).toBe(3)
-      expect(tiers[0]!.storeyHeight).toBe(3.2)
-      expect(tiers[0]!.baseElevation).toBe(0)
-      // Upper tier: 10 x 8 m, 2 storeys at 3.2 m, sitting on lower tier
-      expect(tiers[1]!.storeys).toBe(2)
-      expect(tiers[1]!.storeyHeight).toBe(3.2)
-      expect(tiers[1]!.baseElevation).toBe(9.6)
-    })
+describe('migration fixtures', () => {
+  it('v1 migrates to exactly the expected v2 document', () => {
+    expect(parseStoredScenario(text('stepped-v1.json'), NOW)).toEqual(json('stepped-v2.expected.json'))
   })
 
-  describe('stepped-v0.json (unversioned)', () => {
-    it('is v1 minus schemaVersion, and nothing else differs', () => {
-      const v0 = JSON.parse(load('stepped-v0.json')) as Record<string, unknown>
-      const v1 = JSON.parse(load('stepped-v1.json')) as Record<string, unknown>
-      expect(v0).not.toHaveProperty('schemaVersion')
-      expect(v1).toHaveProperty('schemaVersion')
-      const v0WithVersion = { ...v0, schemaVersion: 1 }
-      expect(v0WithVersion).toEqual(v1)
-    })
+  it('v0 (no schemaVersion) is v1 minus the version and migrates to the same v2 document', () => {
+    expect({ ...json('stepped-v0.json'), schemaVersion: 1 }).toEqual(json('stepped-v1.json'))
+    expect(parseStoredScenario(text('stepped-v0.json'), NOW)).toEqual(json('stepped-v2.expected.json'))
   })
 
-  describe('stepped-v2.expected.json (expected migration)', () => {
-    it('has schemaVersion 2 and the new fields', () => {
-      const doc = JSON.parse(load('stepped-v2.expected.json')) as Record<string, unknown>
-      expect(doc.schemaVersion).toBe(2)
-      expect(doc).toHaveProperty('notes')
-      expect(doc).toHaveProperty('createdAt')
-      expect(doc).toHaveProperty('updatedAt')
-      expect(doc).not.toHaveProperty('camera')
-    })
-
-    it('preserves all v1 fields unchanged', () => {
-      const v1 = JSON.parse(load('stepped-v1.json')) as Record<string, unknown>
-      const v2 = JSON.parse(load('stepped-v2.expected.json')) as Record<string, unknown>
-      for (const key of ['id', 'siteId', 'name', 'assumptions', 'volumes'] as const) {
-        expect(v2[key]).toEqual(v1[key])
-      }
-    })
+  it('keeps the stepped geometry through migration (20×10 m × 3, 10×8 m × 2 at 9.6 m)', () => {
+    const [volume] = parseStoredScenario(text('stepped-v1.json'), NOW).volumes
+    expect(volume?.tiers.map((tier) => [tier.storeys, tier.storeyHeight, tier.baseElevation])).toEqual([[3, 3.2, 0], [2, 3.2, 9.6]])
   })
 
-  describe('corrupt-truncated.json', () => {
-    it('is rejected as invalid JSON ($)', () => {
-      expect(issuePaths(load('corrupt-truncated.json'))).toEqual(['$'])
-    })
+  it('reports each broken file with its kind and path', () => {
+    expect(loadError(() => parseStoredScenario(text('corrupt-truncated.json'), NOW))).toMatchObject({ kind: 'corrupt', path: '$' })
+    expect(loadError(() => parseStoredScenario(text('corrupt-shape.json'), NOW))).toMatchObject({ kind: 'corrupt' })
+    expect(loadError(() => parseStoredScenario(text('corrupt-shape.json'), NOW)).path).toMatch(/footprint/)
+    expect(loadError(() => parseStoredScenario(text('invalid-geometry.json'), NOW))).toMatchObject({ kind: 'corrupt' })
+    expect(loadError(() => parseStoredScenario(text('invalid-geometry.json'), NOW)).path).toMatch(/footprint/)
+    expect(loadError(() => migrateScenario(json('newer-version.json'), NOW))).toMatchObject({ kind: 'newer-version', version: 99, path: 'schemaVersion' })
+  })
+})
+
+describe('project fixtures through the repository', () => {
+  it('a project index naming a missing scenario file loads what exists and reports the rest', async () => {
+    const store = createMemoryStore()
+    const index = decodeProject(json('project-index.json'))
+    const present = { ...json('stepped-v2.expected.json'), id: 'scenario-concept-a', siteId: 'compact-infill', name: 'Concept A' }
+    await store.putProject({ siteId: index.siteId, json: text('project-index.json') })
+    await store.putScenario({ id: 'scenario-concept-a', siteId: index.siteId, json: JSON.stringify(present) })
+    const result = ready(await createScenarioRepository(store, options).load(index.siteId))
+    expect(result.scenarios.map((scenario) => scenario.id)).toEqual(['scenario-concept-a'])
+    expect(result.skipped.map((record) => [record.id, record.reason])).toEqual([['scenario-missing-file', 'missing']])
+    expect(result.repaired).toBe(true)
+    expect(result.project.scenarioIds).toEqual(['scenario-concept-a'])
   })
 
-  describe('corrupt-shape.json', () => {
-    it('is rejected because a tier is missing footprint', () => {
-      const paths = issuePaths(load('corrupt-shape.json'))
-      expect(paths).toHaveLength(1)
-      expect(paths[0]).toMatch(/footprint/)
-    })
+  it('every broken scenario file is skipped on load, never a crash, and kept verbatim', async () => {
+    const store = createMemoryStore()
+    const files = ['corrupt-truncated.json', 'corrupt-shape.json', 'invalid-geometry.json', 'newer-version.json']
+    for (const [index, file] of files.entries()) await store.putScenario({ id: `bad-${index}`, siteId: 'sloped-edge', json: text(file) })
+    const result = ready(await createScenarioRepository(store, options).load('sloped-edge'))
+    expect(result.skipped.map((record) => record.reason)).toEqual(['corrupt', 'corrupt', 'corrupt', 'newer-version'])
+    expect(result.skipped.map((record) => record.json)).toEqual(files.map(text))
+  })
+})
+
+describe('export bundle fixtures', () => {
+  it('imports a format-2 bundle and exports it again unchanged (FR-048 round trip)', async () => {
+    const repository = createScenarioRepository(createMemoryStore(), options)
+    const imported = ready(await repository.importProject(text('export-bundle.json'), 'compact-infill'))
+    const bundle = json('export-bundle.json') as { scenarios: unknown[]; project: unknown }
+    expect(imported.scenarios).toEqual(bundle.scenarios)
+    expect(imported.project).toEqual(bundle.project)
+    const exported = JSON.parse(await repository.exportProject('compact-infill')) as { scenarios: unknown[]; project: unknown; provenance: unknown }
+    expect(exported.scenarios).toEqual(bundle.scenarios)
+    expect(exported.project).toEqual(bundle.project)
+    expect(exported.provenance).toEqual({ siteId: 'compact-infill', appVersion: '0.1.0', exportedAt: NOW })
   })
 
-  describe('invalid-geometry.json', () => {
-    it('is rejected due to self-intersecting footprint', () => {
-      const paths = issuePaths(load('invalid-geometry.json'))
-      const crossingIssues = paths.filter((p) => p.includes('footprint'))
-      expect(crossingIssues.length).toBeGreaterThan(0)
-    })
+  it('a bundle written with format-1 scenarios still imports, upgraded to format 2', async () => {
+    const repository = createScenarioRepository(createMemoryStore(), options)
+    const imported = ready(await repository.importProject(text('export-bundle-legacy.json'), 'compact-infill'))
+    expect(imported.scenarios.every((scenario) => scenario.schemaVersion === 2 && scenario.notes === '')).toBe(true)
+    expect(imported.scenarios.map((scenario) => scenario.volumes.length)).toEqual([1, 0])
   })
 
-  describe('newer-version.json', () => {
-    it('is rejected with schemaVersion path', () => {
-      expect(issuePaths(load('newer-version.json'))).toContain('schemaVersion')
-    })
-  })
-
-  describe('project-index.json', () => {
-    it('is valid JSON with the expected shape', () => {
-      const record = JSON.parse(load('project-index.json')) as Record<string, unknown>
-      expect(record.schemaVersion).toBe(2)
-      expect(record.siteId).toBe('compact-infill')
-      expect(record.scenarioIds).toEqual(['scenario-concept-a', 'scenario-missing-file'])
-      expect(record).toHaveProperty('activeScenarioId')
-      expect(record).toHaveProperty('updatedAt')
-    })
-  })
-
-  describe('export-bundle.json', () => {
-    it('has the export shape with provenance and two scenarios', () => {
-      const bundle = JSON.parse(load('export-bundle.json')) as Record<string, unknown>
-      expect(bundle.schemaVersion).toBe(2)
-      expect(bundle).toHaveProperty('provenance')
-      expect(bundle).toHaveProperty('project')
-      expect(bundle).toHaveProperty('scenarios')
-      const scenarios = bundle.scenarios as Record<string, unknown>[]
-      expect(scenarios).toHaveLength(2)
-      expect(scenarios[0]!.name).toBe('Concept A')
-      expect(scenarios[1]!.name).toBe('Concept B')
-      expect(scenarios.every((s) => s.siteId === 'compact-infill')).toBe(true)
-    })
-
-    it('has scenarios that parse and serialize', () => {
-      const bundle = JSON.parse(load('export-bundle.json')) as Record<string, unknown>
-      const scenarios = bundle.scenarios as Record<string, unknown>[]
-      for (const raw of scenarios) {
-        const doc = parseScenarioDocument(JSON.stringify(raw))
-        expect(serializeScenario(doc)).toBe(JSON.stringify(raw))
-      }
-    })
+  it('refuses the bundle for a different site and writes nothing', async () => {
+    const repository = createScenarioRepository(createMemoryStore(), options)
+    await expect(repository.importProject(text('export-bundle.json'), 'sloped-edge')).rejects.toMatchObject({ kind: 'corrupt', path: 'project.siteId' })
+    expect(await repository.load('compact-infill')).toEqual({ status: 'empty' })
   })
 })
