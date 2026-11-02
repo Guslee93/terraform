@@ -14,13 +14,13 @@ export function SceneUnavailable({
   return (
     <div className="grid h-full place-items-center bg-viewport p-8">
       <div className="max-w-sm text-center">
-        <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-warning">
+        <p className="text-label text-warning-ink">
           {reason === 'unsupported' ? 'WebGL unavailable' : 'Rendering interrupted'}
         </p>
-        <h2 className="mt-3 font-display text-[26px] leading-tight text-ink">
+        <h2 className="mt-3 text-title text-ink">
           3D view unavailable
         </h2>
-        <p className="mt-3 text-[12.5px] leading-relaxed text-ink-secondary">
+        <p className="mt-3 text-body-sm leading-relaxed text-ink-secondary">
           {reason === 'unsupported'
             ? "WebGL isn't available in this browser."
             : 'The 3D renderer could not start or stopped unexpectedly.'}{' '}
@@ -31,7 +31,7 @@ export function SceneUnavailable({
           <button
             type="button"
             onClick={onRetry}
-            className="mt-5 inline-flex min-h-9 items-center rounded-[var(--radius-control)] border border-line bg-surface px-3.5 text-[12px] font-medium text-ink transition-colors hover:bg-surface-muted"
+            className="mt-5 inline-flex min-h-9 items-center rounded-control border border-line bg-surface px-3.5 text-body-sm font-medium text-ink transition-colors hover:bg-muted-fill"
           >
             Try again
           </button>

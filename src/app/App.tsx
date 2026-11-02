@@ -15,9 +15,9 @@ function RouteFallback() {
       <div className="text-center">
         <span
           aria-hidden="true"
-          className="mx-auto block size-7 animate-pulse rounded-full border border-line bg-surface-muted"
+          className="mx-auto block size-7 animate-pulse rounded-full border border-line bg-muted-fill"
         />
-        <p className="mt-3 text-[9px] uppercase tracking-[0.18em] text-ink-secondary">
+        <p className="mt-3 text-label text-ink-secondary">
           Preparing the studio
         </p>
       </div>

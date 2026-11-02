@@ -1,40 +1,59 @@
 :root {
-  /* PRD §7.2 proposed tokens. Keep these names stable; map to Tailwind below. */
-  --bg-app: #f5f5f1;
-  --surface: #ffffff;
-  --surface-muted: #efefea;
-  --surface-subtle: #fbfbf8;
-  --surface-sunken: #f1f2ec;
-  --surface-viewport: #f4f2ee;
-  --ink-primary: #202521;
-  --ink-secondary: #69716c;
-  --ink-hover: #2c332d;
-  --border: #dde1da;
-  --border-strong: #c8cec5;
-  --border-dashed: #cdd2ca;
-  --accent: #355e79;
-  --accent-soft: #e1ebf0;
-  --positive: #477d65;
-  --warning: #b8822b;
-  --warning-ink: #7a5414;
-  --danger: #b9584f;
-  --focus: #245f93;
-  --radius-card: 12px;
-  --radius-control: 8px;
+  /* Studio v2 tokens (design contract §2). Keep names stable; map to Tailwind in global.css. */
+
+  /* Ground & surfaces */
+  --bg-app: #e8e8e5;
+  --surface: #f3f3f1;
+  --surface-hover: #f5f5f3;
+  --surface-paper: #fafaf8;
+  --surface-viewport: #f3f3f1;
+  --surface-inverse: #141414;
+
+  /* Ink */
+  --ink-primary: #141414;
+  --ink-secondary: #646461;
+  --ink-disabled: #a3a3a0;
+  --ink-on-inverse: #f2f2f0;
+  --ink-on-inverse-2: #9a9a96;
+
+  /* Lines */
+  --border: #d6d6d2;
+  --border-strong: #141414;
+  --muted-fill: #e2e2de;
+
+  /* Accent: proposal / selection only */
+  --accent: #1f3bd6;
+  --accent-strong: #172da8;
+  --accent-light: #4c62e0;
+  --accent-soft: #e6e9fb;
+
+  /* Sun: data marks only, never text below 24 px */
+  --sun-low: #f7c948;
+  --sun-high: #e8590c;
+  --sun-mid: #f08c00;
+  --sun-dot: #f59f00;
+  --sun-winter: #e0a800;
+  --sun-glow: #ffd43b;
+
+  /* Status */
+  --positive: #2f7a4c;
+  --warning: #c98a16; /* lines, icons, rings, bars only */
+  --warning-ink: #8a5a00; /* any warning text */
+  --warning-soft: #fbf1de;
+  --danger: #b4372e;
+
+  /* Neutral data series (mass B, C) */
+  --series-2: #141414;
+  --series-3: #9a9a96;
+
+  --focus: var(--accent);
+
+  /* Spacing (contract §4). Radii are theme tokens in global.css. No elevation: no shadows. */
+  --gap-grid: 12px;
 
   /* Typefaces are self-hosted through @fontsource-variable so the demo works offline. */
-  --typeface-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', sans-serif;
-  --typeface-display: 'Newsreader Variable', 'Newsreader', ui-serif, Georgia,
-    'Times New Roman', serif;
+  --typeface-sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
+  --typeface-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, monospace;
 
-  /* Scene palette (PRD §7.2). */
-  --scene-terrain: #dde3da;
-  --scene-context: #d2d4cc;
-  --scene-massing: #f2efe7;
-  --scene-parcel: #355e79;
-  --scene-setback: #b8822b;
-
-  --shadow-soft: 0 1px 2px rgb(32 37 33 / 4%), 0 18px 42px -26px rgb(32 37 33 / 32%);
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.2, 0.7, 0.1, 1);
 }

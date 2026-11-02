@@ -33,13 +33,13 @@ export function AboutPage() {
 
       <main className="tf-measure pb-20 pt-14 lg:pt-20">
         <div className="max-w-3xl">
-          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-ink-secondary">
+          <p className="text-label text-ink-secondary">
             About the prototype
           </p>
-          <h1 className="mt-4 text-balance font-display text-[clamp(2.6rem,5.4vw,4rem)] leading-[0.98] tracking-[-0.025em] text-ink">
+          <h1 className="mt-4 text-balance text-figure-l text-ink">
             A credible architectural tool, presented as a study.
           </h1>
-          <p className="mt-6 max-w-[58ch] text-[15px] leading-[1.75] text-ink-secondary">
+          <p className="mt-6 max-w-[58ch] text-body leading-[1.75] text-ink-secondary">
             Terraform explores a narrow, difficult question: can a browser-based workspace make
             conceptual massing feel spatial, accountable and genuinely useful — without pretending to
             be software it is not?
@@ -48,10 +48,10 @@ export function AboutPage() {
 
         <div className="mt-14 grid gap-12 border-t border-line pt-12 lg:grid-cols-[220px_1fr] lg:gap-16">
           <aside className="lg:sticky lg:top-28 lg:self-start">
-            <p className="text-[9px] font-medium uppercase tracking-[0.18em] text-ink-secondary">
+            <p className="text-label text-ink-secondary">
               Scope
             </p>
-            <ul className="mt-4 space-y-3 text-[12px] text-ink-secondary">
+            <ul className="mt-4 space-y-3 text-body-sm text-ink-secondary">
               <li className="flex gap-2">
                 <Icon name="cube" size={15} className="mt-px shrink-0 text-accent" />
                 Conceptual massing
@@ -69,11 +69,11 @@ export function AboutPage() {
                 Curated static site packages
               </li>
             </ul>
-            <div className="mt-8 rounded-[var(--radius-card)] border border-line bg-surface p-4">
-              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-warning">
+            <div className="mt-8 rounded-card border border-line bg-surface p-4">
+              <p className="text-label text-warning-ink">
                 Illustrative constraints
               </p>
-              <p className="mt-2 text-[11.5px] leading-relaxed text-ink-secondary">
+              <p className="mt-2 text-body-sm leading-relaxed text-ink-secondary">
                 Envelope checks are demonstration logic, not planning advice or a legal
                 determination.
               </p>
@@ -83,12 +83,12 @@ export function AboutPage() {
           <div className="max-w-2xl space-y-11">
             {sections.map((section) => (
               <section key={section.title}>
-                <h2 className="font-display text-[28px] leading-tight tracking-[-0.01em] text-ink">
+                <h2 className="text-figure-l text-ink">
                   {section.title}
                 </h2>
                 <div className="mt-3 space-y-4">
                   {section.body.map((paragraph) => (
-                    <p key={paragraph} className="text-[13.5px] leading-[1.8] text-ink-secondary">
+                    <p key={paragraph} className="text-body leading-[1.8] text-ink-secondary">
                       {paragraph}
                     </p>
                   ))}
@@ -97,20 +97,20 @@ export function AboutPage() {
             ))}
 
             <section id="data" className="scroll-mt-28">
-              <h2 className="font-display text-[28px] leading-tight tracking-[-0.01em] text-ink">
+              <h2 className="text-figure-l text-ink">
                 Data sources
               </h2>
-              <p className="mt-3 text-[13.5px] leading-[1.8] text-ink-secondary">
+              <p className="mt-3 text-body leading-[1.8] text-ink-secondary">
                 Both sites are static packages built offline. No live GIS service is queried at
                 runtime. Each package records its sources, licence, acquisition date and
                 simplifications in its own attribution file.
               </p>
               <ul className="mt-5 space-y-3">
-                <li className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary">
+                <li className="rounded-card border border-line bg-surface p-4">
+                  <p className="text-label text-ink-secondary">
                     Building footprints
                   </p>
-                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-secondary">
+                  <p className="mt-1.5 text-body-sm leading-relaxed text-ink-secondary">
                     <a
                       href="https://www.openstreetmap.org/copyright"
                       target="_blank"
@@ -131,11 +131,11 @@ export function AboutPage() {
                     . Derived footprints are simplified and redistributed under the same licence.
                   </p>
                 </li>
-                <li className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary">
+                <li className="rounded-card border border-line bg-surface p-4">
+                  <p className="text-label text-ink-secondary">
                     Terrain
                   </p>
-                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-secondary">
+                  <p className="mt-1.5 text-body-sm leading-relaxed text-ink-secondary">
                     <a
                       href="https://www.kartverket.no/api-og-data/vilkar-for-bruk/"
                       target="_blank"
@@ -156,32 +156,32 @@ export function AboutPage() {
                     .
                   </p>
                 </li>
-                <li className="rounded-[var(--radius-card)] border border-line bg-surface p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary">
+                <li className="rounded-card border border-line bg-surface p-4">
+                  <p className="text-label text-ink-secondary">
                     Study boundary
                   </p>
-                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-secondary">
+                  <p className="mt-1.5 text-body-sm leading-relaxed text-ink-secondary">
                     The dashed boundary is an authored study-area rectangle. It is not a cadastral
                     parcel, property boundary, zoning designation or planning constraint.
                   </p>
                 </li>
               </ul>
-              <p className="mt-3 text-[12.5px] leading-relaxed text-ink-secondary">
+              <p className="mt-3 text-body-sm leading-relaxed text-ink-secondary">
                 Streets, trees, parks, grass, woods and water areas come from the same
                 OpenStreetMap extract as the building footprints, are simplified, and are drawn at
                 illustrative widths and sizes.
               </p>
             </section>
 
-            <section className="rounded-[var(--radius-card)] border border-line bg-surface p-6">
-              <h2 className="font-display text-[24px] leading-tight text-ink">Technical stack</h2>
-              <p className="mt-3 text-[12.5px] leading-relaxed text-ink-secondary">
+            <section className="rounded-card border border-line bg-surface p-6">
+              <h2 className="text-title text-ink">Technical stack</h2>
+              <p className="mt-3 text-body-sm leading-relaxed text-ink-secondary">
                 TypeScript, React and Vite; Three.js with React Three Fiber and Drei; Zustand for
                 editor state; Tailwind CSS with design tokens; IndexedDB for local scenario
                 persistence; SunCalc and robust polygon geometry for analysis. Vitest, React Testing
                 Library and Playwright cover the test surface.
               </p>
-              <p className="mt-3 text-[12.5px] leading-relaxed text-ink-secondary">
+              <p className="mt-3 text-body-sm leading-relaxed text-ink-secondary">
                 No backend, authentication, payments or telemetry. AI generation is deferred to an
                 optional later phase and is not part of v1.
               </p>

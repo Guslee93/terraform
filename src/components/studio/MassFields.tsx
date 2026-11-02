@@ -37,14 +37,14 @@ const USE_LABELS: Record<MassUse, string> = {
   other: 'Other',
 }
 
-const labelClass = 'text-[10px] uppercase tracking-[0.12em] text-ink-secondary'
+const labelClass = 'text-label text-ink-secondary'
 const actionClass =
-  'inline-flex h-7 items-center justify-center gap-1 rounded-[var(--radius-control)] border border-line bg-surface px-2 text-[11px] text-ink transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-45'
+  'inline-flex h-7 items-center justify-center gap-1 rounded-control border border-line bg-surface px-2 text-body-sm text-ink transition-colors hover:bg-muted-fill disabled:cursor-not-allowed disabled:opacity-45'
 const ROTATE_STEP = Math.PI / 12
 /** Gap between an original and its duplicate, in metres. */
 const DUPLICATE_GAP_M = 5
 const controlClass =
-  'h-8 w-full rounded-[var(--radius-control)] border border-line bg-surface px-2 text-[12px] tabular-nums text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-45 aria-[invalid=true]:border-danger'
+  'h-8 w-full rounded-control border border-line bg-surface px-2 text-body-sm tabular-nums text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-45 aria-[invalid=true]:border-danger'
 
 /**
  * Text field that commits on Enter or blur and reverts on Escape. When `onCommit` reports a
@@ -114,14 +114,14 @@ function Field({
         {unit && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-2 grid place-items-center text-[11px] text-ink-secondary"
+            className="pointer-events-none absolute inset-y-0 right-2 grid place-items-center text-body-sm text-ink-secondary"
           >
             {unit}
           </span>
         )}
       </div>
       {error && (
-        <p id={`${id}-error`} aria-live="polite" className="mt-1 text-[10.5px] leading-snug text-danger">
+        <p id={`${id}-error`} aria-live="polite" className="mt-1 text-body-sm leading-snug text-danger">
           {error}
         </p>
       )}
@@ -141,7 +141,7 @@ function Toggle({
   onChange: (checked: boolean) => void
 }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[6px] px-1.5 py-1.5 text-[11.5px] text-ink transition-colors hover:bg-surface-muted has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45">
+    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-control px-1.5 py-1.5 text-body-sm text-ink transition-colors hover:bg-muted-fill has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45">
       <span>{label}</span>
       <input
         type="checkbox"
@@ -158,7 +158,7 @@ function Readout({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-line/70 py-2 last:border-b-0">
       <dt className={labelClass}>{label}</dt>
-      <dd className="text-[11.5px] font-medium tabular-nums text-ink">{children}</dd>
+      <dd className="text-body-sm font-medium tabular-nums text-ink">{children}</dd>
     </div>
   )
 }
@@ -354,19 +354,19 @@ export function MassFields({
       </div>
 
       {panelError && (
-        <p aria-live="polite" className="text-[10.5px] leading-snug text-danger">
+        <p aria-live="polite" className="text-body-sm leading-snug text-danger">
           {panelError}
         </p>
       )}
 
       {warnings.length > 0 && (
-        <div className="rounded-[6px] border border-warning/40 bg-warning/10 px-2.5 py-2">
-          <ul aria-label="Clearance warnings" className="space-y-0.5 text-[11px] leading-snug text-warning-ink">
+        <div className="rounded-control border border-warning/40 bg-warning/10 px-2.5 py-2">
+          <ul aria-label="Clearance warnings" className="space-y-0.5 text-body-sm leading-snug text-warning-ink">
             {warnings.map((warning) => (
               <li key={warning.kind}>{warning.message}</li>
             ))}
           </ul>
-          <p className="mt-1 text-[10px] text-warning-ink/80">Illustrative check · not planning advice</p>
+          <p className="mt-1 text-body-sm text-warning-ink/80">Illustrative check · not planning advice</p>
         </div>
       )}
 
@@ -374,7 +374,7 @@ export function MassFields({
         <Readout label="Height">{tierHeight(tier).toFixed(1)} m</Readout>
         <Readout label="Footprint">{Math.round(tierFootprintArea(tier))} m²</Readout>
       </dl>
-      <p className="text-[10px] leading-relaxed text-ink-secondary">
+      <p className="text-body-sm leading-relaxed text-ink-secondary">
         Base elevation is relative to the site origin. Values derive from the model geometry.
       </p>
     </div>

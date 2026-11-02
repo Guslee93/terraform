@@ -249,28 +249,28 @@ export function StudioShell({
             </>
           ) : (
             <div className="tf-paper-grid grid h-full place-items-center bg-viewport p-4">
-              <div className="w-full max-w-[23rem] rounded-[14px] border border-line bg-surface/95 p-6 text-center shadow-[var(--shadow-soft)] backdrop-blur-md">
-                <p className="text-[9px] font-medium uppercase tracking-[0.18em] text-accent">
+              <div className="w-full max-w-[23rem] rounded-card border border-line bg-surface/95 p-6 text-center backdrop-blur-md">
+                <p className="text-label text-accent">
                   {site.title} · {packageStatus === 'error' ? 'Package error' : 'Loading'}
                 </p>
-                <h1 className="mt-2.5 text-balance font-display text-[26px] leading-[1.05] tracking-[-0.01em] text-ink">
+                <h1 className="mt-2.5 text-balance text-title text-ink">
                   {packageStatus === 'error'
                     ? 'The site model could not be loaded.'
                     : 'Preparing the curated site package.'}
                 </h1>
-                <p className="mx-auto mt-3 max-w-[36ch] text-[11.5px] leading-relaxed text-ink-secondary">
+                <p className="mx-auto mt-3 max-w-[36ch] text-body-sm leading-relaxed text-ink-secondary">
                   {packageStatus === 'error'
                     ? packageError ?? 'The package is unavailable.'
                     : 'Loading terrain, context buildings and the study boundary from the local package.'}
                 </p>
                 {packageStatus === 'error' ? (
-                  <Button className="mt-4 min-h-9 px-3.5 text-[11.5px]" onClick={onRetry}>
+                  <Button className="mt-4 min-h-9 px-3.5 text-body-sm" onClick={onRetry}>
                     Try again
                   </Button>
                 ) : (
                   <span
                     aria-hidden="true"
-                    className="mx-auto mt-5 block size-6 animate-pulse rounded-full border border-line bg-surface-muted"
+                    className="mx-auto mt-5 block size-6 animate-pulse rounded-full border border-line bg-muted-fill"
                   />
                 )}
               </div>
@@ -279,10 +279,10 @@ export function StudioShell({
 
           {packageStatus !== 'ready' && (
             <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
-              <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
+              <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm">
                 Local package
               </span>
-              <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm sm:hidden">
+              <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm sm:hidden">
                 Read-only preview
               </span>
             </div>
@@ -295,10 +295,10 @@ export function StudioShell({
                 aria-live="polite"
                 className={
                   editor.error
-                    ? 'max-w-[44ch] rounded-[6px] border border-danger/40 bg-surface/95 px-3 py-1.5 text-center text-[11px] text-danger shadow-sm backdrop-blur-sm'
+                    ? 'max-w-[44ch] rounded-control border border-danger/40 bg-surface/95 px-3 py-1.5 text-center text-body-sm text-danger backdrop-blur-sm'
                     : editor.tool === 'draw'
-                      ? 'max-w-[44ch] rounded-[6px] border border-line bg-surface/95 px-3 py-1.5 text-center text-[11px] text-ink-secondary shadow-sm backdrop-blur-sm'
-                      : 'max-w-[44ch] rounded-[6px] border border-warning/40 bg-surface/95 px-3 py-1.5 text-center text-[11px] text-warning-ink shadow-sm backdrop-blur-sm'
+                      ? 'max-w-[44ch] rounded-control border border-line bg-surface/95 px-3 py-1.5 text-center text-body-sm text-ink-secondary backdrop-blur-sm'
+                      : 'max-w-[44ch] rounded-control border border-warning/40 bg-surface/95 px-3 py-1.5 text-center text-body-sm text-warning-ink backdrop-blur-sm'
                 }
               >
                 {editor.error ??
@@ -312,7 +312,7 @@ export function StudioShell({
           <button
             type="button"
             onClick={() => setInspectorOpen(true)}
-            className="absolute bottom-3 left-3 z-10 inline-flex min-h-8 items-center gap-1.5 rounded-[6px] border border-line bg-surface/90 px-2.5 text-[10px] font-medium text-ink-secondary shadow-sm backdrop-blur-sm transition-colors hover:text-ink min-[1100px]:hidden"
+            className="absolute bottom-3 left-3 z-10 inline-flex min-h-8 items-center gap-1.5 rounded-control border border-line bg-surface/90 px-2.5 text-body-sm font-medium text-ink-secondary backdrop-blur-sm transition-colors hover:text-ink min-[1100px]:hidden"
           >
             <Icon name="layers" size={13} />
             Site notes
@@ -348,7 +348,7 @@ export function StudioShell({
         />
       </div>
 
-      <footer className="flex h-9 shrink-0 items-center justify-between gap-4 border-t border-line bg-surface px-3 text-[10px] uppercase tracking-[0.12em] text-ink-secondary">
+      <footer className="flex h-9 shrink-0 items-center justify-between gap-4 border-t border-line bg-surface px-3 text-label text-ink-secondary">
         <span className="truncate">
           {site.title}
           <span className="hidden sm:inline"> · {scenario}</span>

@@ -12,9 +12,9 @@ export type SunPanelProps = {
   location: SiteManifest['location']
 }
 
-const buttonClass = 'min-h-10 rounded-[var(--radius-control)] border border-line px-2 text-[11.5px] hover:bg-surface-muted aria-pressed:border-accent aria-pressed:bg-accent-soft aria-pressed:text-accent'
-const labelClass = 'text-[10px] uppercase tracking-[0.12em] text-ink-secondary'
-const controlClass = 'mt-1 min-h-10 w-full rounded-[var(--radius-control)] border border-line bg-surface px-2 text-[12px] tabular-nums'
+const buttonClass = 'min-h-10 rounded-control border border-line px-2 text-body-sm hover:bg-muted-fill aria-pressed:border-accent aria-pressed:bg-accent-soft aria-pressed:text-accent'
+const labelClass = 'text-label text-ink-secondary'
+const controlClass = 'mt-1 min-h-10 w-full rounded-control border border-line bg-surface px-2 text-body-sm tabular-nums'
 const clockLabel = (minute: number) => `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`
 const isLocalDate = (value: string): value is LocalDate => /^\d{4}-\d{2}-\d{2}$/.test(value)
 
@@ -68,7 +68,7 @@ export function SunPanel({ time, onChange, state, resolved, location }: SunPanel
       : `linear-gradient(to right, ${daylight} ${set}%, ${night} ${set}%, ${night} ${rise}%, ${daylight} ${rise}%)`
 
   return (
-    <section aria-label="Sun controls" className="space-y-4 text-[11.5px]">
+    <section aria-label="Sun controls" className="space-y-4 text-body-sm">
       <div aria-live="polite" aria-atomic="true" className="space-y-1 tabular-nums">
         <p className="font-medium">{describeSunState(state)}</p>
         <p className="text-ink-secondary">{formatLocalLabel(resolved.instant, timeZone)}</p>
@@ -109,7 +109,7 @@ export function SunPanel({ time, onChange, state, resolved, location }: SunPanel
       {resolved.kind !== 'normal' && <p className="text-ink-secondary">{resolved.kind === 'gap-shifted'
         ? `This time doesn't exist on this date (clocks change); showing ${toLocalWallClock(resolved.instant, timeZone).time}.`
         : 'This time occurs twice; showing the earlier (summer time).'}</p>}
-      <p className="text-[10px] leading-relaxed text-ink-secondary">Geometric sun direction for this site (suncalc). Not a daylight or sun-hours assessment.</p>
+      <p className="text-body-sm leading-relaxed text-ink-secondary">Geometric sun direction for this site (suncalc). Not a daylight or sun-hours assessment.</p>
     </section>
   )
 }

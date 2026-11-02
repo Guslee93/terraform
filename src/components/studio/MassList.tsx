@@ -30,17 +30,17 @@ export function MassList({ items, selectedId, onSelect }: MassListProps) {
               aria-current={selected ? true : undefined}
               onClick={() => onSelect(item.id)}
               className={cn(
-                'flex w-full items-center justify-between gap-3 rounded-[6px] border border-transparent px-2 py-1.5 text-left transition-colors hover:bg-surface-muted',
+                'flex w-full items-center justify-between gap-3 rounded-control border border-transparent px-2 py-1.5 text-left transition-colors hover:bg-muted-fill',
                 selected && 'border-line bg-accent-soft hover:bg-accent-soft',
               )}
             >
               <span className="min-w-0">
-                <span className={cn('block truncate text-[11.5px] font-medium', item.hidden ? 'text-ink-secondary' : 'text-ink')}>
+                <span className={cn('block truncate text-body-sm font-medium', item.hidden ? 'text-ink-secondary' : 'text-ink')}>
                   {item.name}
                 </span>
-                <span className="block text-[10.5px] tabular-nums text-ink-secondary">{item.detail}</span>
+                <span className="block text-body-sm tabular-nums text-ink-secondary">{item.detail}</span>
               </span>
-              <span className="flex shrink-0 items-center gap-1.5 text-[9.5px] uppercase tracking-[0.1em]">
+              <span className="flex shrink-0 items-center gap-1.5 text-label">
                 {item.warning && <span className="text-warning-ink">Needs attention</span>}
                 {item.hidden && <span className="text-ink-secondary">Hidden</span>}
               </span>

@@ -76,8 +76,8 @@ type InspectorProps = {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-line/70 py-2.5 last:border-b-0">
-      <dt className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">{label}</dt>
-      <dd className="text-right text-[11.5px] font-medium text-ink">{value}</dd>
+      <dt className="text-label text-ink-secondary">{label}</dt>
+      <dd className="text-right text-body-sm font-medium text-ink">{value}</dd>
     </div>
   )
 }
@@ -180,8 +180,8 @@ export function Inspector({
                 aria-selected={tab.id === activeTab}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  'relative rounded-[6px] px-2.5 py-1.5 text-[11px] font-medium text-ink-secondary transition-colors',
-                  'hover:bg-surface-muted hover:text-ink',
+                  'relative rounded-control px-2.5 py-1.5 text-body-sm font-medium text-ink-secondary transition-colors',
+                  'hover:bg-muted-fill hover:text-ink',
                   tab.id === activeTab &&
                     'bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
                 )}
@@ -197,7 +197,7 @@ export function Inspector({
               aria-label="Close inspector"
               title="Close inspector"
               onClick={onClose}
-              className="inline-grid size-9 shrink-0 place-items-center rounded-[var(--radius-control)] border border-transparent text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink"
+              className="inline-grid size-9 shrink-0 place-items-center rounded-control border border-transparent text-ink-secondary transition-colors hover:bg-muted-fill hover:text-ink"
             >
               <Icon name="close" size={16} />
             </button>
@@ -211,14 +211,14 @@ export function Inspector({
           className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
         >
           {activeTab === 'constraints' && <ConstraintsPanel {...constraintsPanel} />}
-          {activeTab === 'sun' && (sunPanel ? <SunPanel {...sunPanel} /> : <p className="text-[11.5px] text-ink-secondary">Sun controls appear when the site package is ready.</p>)}
+          {activeTab === 'sun' && (sunPanel ? <SunPanel {...sunPanel} /> : <p className="text-body-sm text-ink-secondary">Sun controls appear when the site package is ready.</p>)}
           {activeTab === 'model' && <>
           <MetricsPanel metrics={metrics} />
           {masses.length > 0 && (
             <section aria-labelledby="masses-heading" className="mb-6">
               <h2
                 id="masses-heading"
-                className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
+                className="text-label text-ink-secondary"
               >
                 Masses
               </h2>
@@ -236,11 +236,11 @@ export function Inspector({
             <div className="flex items-center justify-between">
               <h2
                 id="selection-heading"
-                className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
+                className="text-label text-ink-secondary"
               >
                 Selection
               </h2>
-              <span className="rounded-full border border-line px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-ink-secondary">
+              <span className="rounded-full border border-line px-2 py-0.5 text-label text-ink-secondary">
                 {selected ? '1 selected' : 'Nothing selected'}
               </span>
             </div>
@@ -258,16 +258,16 @@ export function Inspector({
                 />
                 {selectedMetrics && <SelectedFloors metrics={selectedMetrics} />}
                 {!canEdit && (
-                  <p className="mt-2 text-[10px] text-ink-secondary">Massing is read-only on small screens.</p>
+                  <p className="mt-2 text-body-sm text-ink-secondary">Massing is read-only on small screens.</p>
                 )}
               </div>
             ) : (
-              <div className="mt-3 rounded-[var(--radius-card)] border border-dashed border-line-dashed bg-surface-subtle px-4 py-4 text-center">
+              <div className="mt-3 rounded-card border border-dashed border-line bg-surface-paper px-4 py-4 text-center">
                 <span className="mx-auto grid size-8 place-items-center rounded-full border border-line bg-surface text-ink-secondary">
                   <Icon name="cube" size={16} />
                 </span>
-                <p className="mt-2.5 text-[12.5px] font-medium text-ink">No mass selected</p>
-                <p className="mx-auto mt-1 max-w-[30ch] text-[11.5px] leading-relaxed text-ink-secondary">
+                <p className="mt-2.5 text-body-sm font-medium text-ink">No mass selected</p>
+                <p className="mx-auto mt-1 max-w-[30ch] text-body-sm leading-relaxed text-ink-secondary">
                   {packageStatus !== 'ready'
                     ? 'Massing tools appear when the site package is ready.'
                     : canEdit
@@ -281,7 +281,7 @@ export function Inspector({
           <section aria-labelledby="site-heading" className="mt-6">
             <h2
               id="site-heading"
-              className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
+              className="text-label text-ink-secondary"
             >
               Site package
             </h2>
@@ -309,7 +309,7 @@ export function Inspector({
               <Row label="Frame" value="Local ENU · metres" />
               <Row label="Constraints" value="Illustrative only" />
             </dl>
-            <p className="mt-2 text-[10px] leading-relaxed text-ink-secondary">
+            <p className="mt-2 text-body-sm leading-relaxed text-ink-secondary">
               Buildings © OpenStreetMap contributors (ODbL). Terrain © Kartverket (CC BY 4.0).{' '}
               <Link to="/about#data" className="underline decoration-line underline-offset-2 hover:text-ink">
                 Data notes
@@ -322,7 +322,7 @@ export function Inspector({
           <section aria-labelledby="layers-heading" className="mt-6">
             <h2
               id="layers-heading"
-              className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
+              className="text-label text-ink-secondary"
             >
               Layers
             </h2>
@@ -330,7 +330,7 @@ export function Inspector({
               {LAYER_ROWS.filter((row) => !row.asset || manifest?.assetPaths[row.asset]).map((row) => (
                 <label
                   key={row.id}
-                  className="flex cursor-pointer items-center justify-between gap-3 rounded-[6px] px-1.5 py-1.5 text-[11.5px] text-ink transition-colors hover:bg-surface-muted"
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-control px-1.5 py-1.5 text-body-sm text-ink transition-colors hover:bg-muted-fill"
                 >
                   <span>{row.label}</span>
                   <input
@@ -343,7 +343,7 @@ export function Inspector({
               ))}
             </div>
             <div className="mt-3">
-              <label htmlFor="render-quality" className="text-[11.5px] text-ink">
+              <label htmlFor="render-quality" className="text-body-sm text-ink">
                 Render quality
               </label>
               <select
@@ -354,14 +354,14 @@ export function Inspector({
                   const value = event.currentTarget.value
                   if (isRenderPreference(value)) onRenderPreferenceChange(value)
                 }}
-                className="mt-1 block min-h-9 w-full rounded-[var(--radius-control)] border border-line bg-surface px-2 text-[11.5px] text-ink"
+                className="mt-1 block min-h-9 w-full rounded-control border border-line bg-surface px-2 text-body-sm text-ink"
               >
                 <option value="auto">Auto</option>
                 <option value="high">High</option>
                 <option value="balanced">Balanced</option>
                 <option value="low">Low</option>
               </select>
-              <p id="render-quality-hint" className="mt-1 text-[10px] leading-relaxed text-ink-secondary">
+              <p id="render-quality-hint" className="mt-1 text-body-sm leading-relaxed text-ink-secondary">
                 Auto lowers quality on software rendering.
               </p>
             </div>
@@ -370,7 +370,7 @@ export function Inspector({
           {activeTab === 'model' && <section aria-labelledby="assumptions-heading" className="mt-6">
             <h2
               id="assumptions-heading"
-              className="text-[10px] font-medium uppercase tracking-[0.16em] text-ink-secondary"
+              className="text-label text-ink-secondary"
             >
               Assumptions
             </h2>
@@ -379,15 +379,15 @@ export function Inspector({
               <Row label="Height mode" value="Storey-driven" />
               <Row label="Units" value="Metres · 2 dp" />
             </dl>
-            <p className="mt-2 text-[10.5px] leading-relaxed text-ink-secondary">
+            <p className="mt-2 text-body-sm leading-relaxed text-ink-secondary">
               Storey height and display units used by the massing model.
             </p>
           </section>}
 
           <section className="mt-5 flex gap-2.5 border-t border-line pt-3">
             <Icon name="info" size={14} className="mt-px shrink-0 text-warning" />
-            <p className="text-[10px] leading-relaxed text-ink-secondary">
-              <span className="font-medium uppercase tracking-[0.1em] text-warning-ink">
+            <p className="text-body-sm leading-relaxed text-ink-secondary">
+              <span className="font-medium uppercase text-warning-ink">
                 Illustrative constraint.
               </span>{' '}
               Envelope checks are not planning advice or a compliance determination.
@@ -396,7 +396,7 @@ export function Inspector({
 
         </div>
 
-        <div className="border-t border-line px-4 py-2.5 text-[10px] uppercase tracking-[0.12em] text-ink-secondary">
+        <div className="border-t border-line px-4 py-2.5 text-label text-ink-secondary">
           {site.dataStatus === 'curated-demo' ? 'Curated Oslo demonstration' : 'Licensed source'}
         </div>
       </aside>

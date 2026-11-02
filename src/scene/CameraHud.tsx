@@ -13,20 +13,20 @@ export function CameraHud({ layers, night = false }: { layers?: SceneLayers; nig
   return (
     <>
       <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
-        <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
+        <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm">
           Curated demo
         </span>
         {night && (
-          <span role="status" className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm">
+          <span role="status" className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm">
             Sun below horizon
           </span>
         )}
-        <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-secondary shadow-sm backdrop-blur-sm sm:hidden">
+        <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm sm:hidden">
           Read-only preview
         </span>
       </div>
       <div className="pointer-events-none absolute right-3 top-12 z-10 flex flex-col items-center gap-1 sm:right-4 sm:top-4">
-        <div className="relative grid size-10 place-items-center rounded-full border border-line bg-surface/85 shadow-sm backdrop-blur-sm">
+        <div className="relative grid size-10 place-items-center rounded-full border border-line bg-surface/85 backdrop-blur-sm">
           <svg
             aria-hidden="true"
             width="18"
@@ -41,7 +41,7 @@ export function CameraHud({ layers, night = false }: { layers?: SceneLayers; nig
             <path d="M12 20V4M12 4 7 9M12 4l5 5" />
           </svg>
         </div>
-        <span className="text-[9px] uppercase tracking-[0.14em] text-ink-secondary">N</span>
+        <span className="text-label text-ink-secondary">N</span>
       </div>
 
       <div
@@ -51,7 +51,7 @@ export function CameraHud({ layers, night = false }: { layers?: SceneLayers; nig
         <div className="flex items-center gap-2">
           <span aria-hidden="true" className="w-5 border-t border-dashed border-accent" />
           <span
-            className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary"
+            className="text-label text-ink-secondary"
             title="Authored study area — not a cadastral parcel"
           >
             Study boundary
@@ -60,37 +60,37 @@ export function CameraHud({ layers, night = false }: { layers?: SceneLayers; nig
         {layers?.setback && (
           <div className="flex items-center gap-2">
             <span aria-hidden="true" className="w-5 border-t border-dashed border-warning" />
-            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary" title="Illustrative constraint — not planning advice">Setback</span>
+            <span className="text-label text-ink-secondary" title="Illustrative constraint — not planning advice">Setback</span>
           </div>
         )}
         {terrainOn && (
           <div className="flex items-center gap-2">
             <span
               aria-hidden="true"
-              className="rounded-[2px]"
+              className=""
               style={{ width: '12px', height: '8px', backgroundColor: '#CBDBC5' }}
             />
-            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">Green space</span>
+            <span className="text-label text-ink-secondary">Green space</span>
           </div>
         )}
         {terrainOn && (
           <div className="flex items-center gap-2">
             <span
               aria-hidden="true"
-              className="rounded-[2px]"
+              className=""
               style={{ width: '12px', height: '8px', backgroundColor: '#BCD6E6' }}
             />
-            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">Water</span>
+            <span className="text-label text-ink-secondary">Water</span>
           </div>
         )}
         {streetsOn && (
           <div className="flex items-center gap-2">
             <span
               aria-hidden="true"
-              className="rounded-[2px] border border-line"
+              className="border border-line"
               style={{ width: '12px', height: '8px', backgroundColor: '#E2E1DD' }}
             />
-            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">Streets</span>
+            <span className="text-label text-ink-secondary">Streets</span>
           </div>
         )}
         {treesOn && (
@@ -100,7 +100,7 @@ export function CameraHud({ layers, night = false }: { layers?: SceneLayers; nig
               className="rounded-full"
               style={{ width: '8px', height: '8px', backgroundColor: '#9BBA94' }}
             />
-            <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">Trees</span>
+            <span className="text-label text-ink-secondary">Trees</span>
           </div>
         )}
       </div>
@@ -113,7 +113,7 @@ export function CameraHud({ layers, night = false }: { layers?: SceneLayers; nig
           className="h-1.5 border-x border-b border-ink-secondary/70"
           style={{ width: `${scaleWidthPx}px` }}
         />
-        <span className="text-[10px] uppercase tracking-[0.12em] text-ink-secondary">
+        <span className="text-label text-ink-secondary">
           {scaleLabel}
         </span>
       </div>

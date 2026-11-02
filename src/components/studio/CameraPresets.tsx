@@ -19,7 +19,7 @@ export function CameraPresets({ active, onSelect }: CameraPresetsProps) {
     <div
       role="group"
       aria-label="Camera presets"
-      className="absolute bottom-3 right-3 z-10 flex items-center gap-0.5 rounded-[var(--radius-control)] border border-line bg-surface/90 p-0.5 shadow-sm backdrop-blur-sm"
+      className="absolute bottom-3 right-3 z-10 flex items-center gap-0.5 rounded-control border border-line bg-surface/90 p-0.5 backdrop-blur-sm"
     >
       {PRESETS.map((preset) => (
         <button
@@ -29,7 +29,7 @@ export function CameraPresets({ active, onSelect }: CameraPresetsProps) {
           aria-pressed={active === preset.id}
           title={preset.title}
           className={cn(
-            'min-h-7 rounded-[5px] px-2 text-[10px] font-medium uppercase tracking-[0.1em] text-ink-secondary transition-colors hover:bg-surface-muted hover:text-ink',
+            'min-h-7 rounded-control px-2 text-label text-ink-secondary transition-colors hover:bg-muted-fill hover:text-ink',
             active === preset.id && 'bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
           )}
         >

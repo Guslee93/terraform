@@ -27,7 +27,7 @@ type ToolRailProps = {
 }
 
 const historyButtonClass =
-  'grid size-9 place-items-center rounded-[var(--radius-control)] text-ink-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent sm:size-10'
+  'grid size-9 place-items-center rounded-control text-ink-secondary transition-colors duration-150 hover:bg-muted-fill hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent sm:size-10'
 
 export function ToolRail({
   activeTool,
@@ -59,8 +59,8 @@ export function ToolRail({
           }}
           className={cn(
             tool.id === 'draw' && 'max-sm:hidden',
-            'relative grid size-9 place-items-center rounded-[var(--radius-control)] border border-transparent text-ink-secondary transition-colors duration-150 sm:size-10',
-            'hover:bg-surface-muted hover:text-ink',
+            'relative grid size-9 place-items-center rounded-control border border-transparent text-ink-secondary transition-colors duration-150 sm:size-10',
+            'hover:bg-muted-fill hover:text-ink',
             tool.id === activeTool &&
               'border-line bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
           )}
@@ -69,7 +69,7 @@ export function ToolRail({
         </button>
       ))}
 
-      <span className="mt-2 text-[9px] uppercase tracking-[0.12em] text-ink-secondary [writing-mode:vertical-rl]">
+      <span className="mt-2 text-label text-ink-secondary [writing-mode:vertical-rl]">
         Tools
       </span>
 
@@ -87,7 +87,7 @@ export function ToolRail({
         <span aria-hidden="true" className="h-px w-6 bg-line" />
         <span
           aria-hidden="true"
-          className="grid size-8 place-items-center rounded-full border border-line text-[9px] font-medium text-ink-secondary"
+          className="grid size-8 place-items-center rounded-full border border-line text-body-sm font-medium text-ink-secondary"
           title="North is up in the default isometric view"
         >
           N

@@ -28,7 +28,7 @@ Use the following stack with **exact pinned versions** in `package.json` and a c
 | Geometry | Turf | 7.4.0 |
 | Unit/component tests | Vitest + React Testing Library + jsdom | 5.0.5 / 16.3.3 / 30.1.3 |
 | E2E | Playwright | 1.64.1 |
-| Fonts | Inter Variable + Newsreader Variable (self-hosted) | 5.3.0 |
+| Fonts | Geist Variable + Geist Mono Variable (self-hosted; was Inter + Newsreader, ADR-0009) | 5.3.0 |
 
 ## Rationale
 

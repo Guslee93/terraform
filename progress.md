@@ -305,3 +305,11 @@
 - Claude review: 7 evidence images viewed; envelope evidence recaptured in daylight with a realistic mass; height-limit plane made readable; ESLint ignores venvs.
 - Suite: lint 0 · 699 unit tests · build ✅ · e2e 18 passed (1 opt-in evidence spec skipped).
 - Record: `docs/reviews/M3-code-review.md` — reviewer pass with follow-ups; **owner signed off M3 on 2026-10-29**.
+
+### Studio v2 redesign — round 1 (2026-11-02)
+
+- Input: `docs/design/ui-redesign-spec.md` (copied from the owner's spec). Contract §1–§7 rewritten from spec §2–§8; §8 notes scene constants are the single source; §12 gate gains the spec §11.3 checks.
+- Round 1: `tokens.css` replaced (cool ground/surfaces, one blue accent, sun data palette, warning ink); Inter + Newsreader → Geist + Geist Mono 5.3.0 (ADR-0009, proposed); ten type-scale `@utility` classes; radii as theme tokens; mechanical class codemod over 23 components: no `text-[…]`, `tracking-[…]`, `shadow-*` or `rounded-[…]` classes remain; warning text uses `--warning-ink`.
+- Deviation from the mechanical mapping: 9–11 px copy that was not uppercase became `text-body-sm`, so only labels are uppercase.
+- Verification: lint ✅ · 699 unit tests ✅ · build ✅ · browser check at 1440×900 (landing + studio render in Geist, no console errors). e2e and `npm run capture` not run (layout unchanged until round 2).
+- Not started: spec round 2 (primitives, studio grid, drawer, insight tiles), round 3 (motion, scene palette §9).

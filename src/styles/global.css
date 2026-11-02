@@ -4,26 +4,116 @@
 @theme inline {
   --color-app: var(--bg-app);
   --color-surface: var(--surface);
-  --color-surface-muted: var(--surface-muted);
-  --color-surface-subtle: var(--surface-subtle);
-  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-paper: var(--surface-paper);
+  --color-surface-inverse: var(--surface-inverse);
   --color-viewport: var(--surface-viewport);
   --color-ink: var(--ink-primary);
   --color-ink-secondary: var(--ink-secondary);
-  --color-ink-hover: var(--ink-hover);
+  --color-ink-disabled: var(--ink-disabled);
+  --color-ink-on-inverse: var(--ink-on-inverse);
+  --color-ink-on-inverse-2: var(--ink-on-inverse-2);
   --color-line: var(--border);
   --color-line-strong: var(--border-strong);
-  --color-line-dashed: var(--border-dashed);
+  --color-muted-fill: var(--muted-fill);
   --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-light: var(--accent-light);
   --color-accent-soft: var(--accent-soft);
+  --color-sun-low: var(--sun-low);
+  --color-sun-high: var(--sun-high);
+  --color-sun-mid: var(--sun-mid);
+  --color-sun-dot: var(--sun-dot);
+  --color-sun-winter: var(--sun-winter);
+  --color-sun-glow: var(--sun-glow);
   --color-positive: var(--positive);
   --color-warning: var(--warning);
   --color-warning-ink: var(--warning-ink);
+  --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
   --color-focus: var(--focus);
 
+  /* Radii live here (not tokens.css) so the theme names do not self-reference. */
+  --radius-card: 14px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+
   --font-sans: var(--typeface-sans);
-  --font-display: var(--typeface-display);
+  --font-mono: var(--typeface-mono);
+}
+
+/* Type scale (design contract §3.2). Each utility carries family, weight, tracking and case. */
+@utility text-hero {
+  font-family: var(--typeface-sans);
+  font-size: 112px;
+  line-height: 0.85;
+  font-weight: 300;
+  letter-spacing: -0.065em;
+  font-variant-numeric: tabular-nums;
+}
+@utility text-display {
+  font-family: var(--typeface-mono);
+  font-size: 76px;
+  line-height: 0.9;
+  font-weight: 300;
+  letter-spacing: -0.07em;
+  font-variant-numeric: tabular-nums;
+}
+@utility text-figure-l {
+  font-family: var(--typeface-sans);
+  font-size: 64px;
+  line-height: 0.9;
+  font-weight: 300;
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+}
+@utility text-figure {
+  font-family: var(--typeface-mono);
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+@utility text-figure-s {
+  font-family: var(--typeface-sans);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+@utility text-title {
+  font-family: var(--typeface-sans);
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+@utility text-body {
+  font-size: 14px;
+  line-height: 1.45;
+}
+@utility text-body-sm {
+  font-size: 13px;
+  line-height: 1.4;
+}
+@utility text-label {
+  font-family: var(--typeface-mono);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+@utility text-unit {
+  font-family: var(--typeface-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-secondary);
 }
 
 @layer base {
@@ -94,13 +184,9 @@
 
   .tf-paper-grid {
     background-image:
-      linear-gradient(to right, rgb(32 37 33 / 4%) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(32 37 33 / 4%) 1px, transparent 1px);
+      linear-gradient(to right, rgb(20 20 20 / 4%) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(20 20 20 / 4%) 1px, transparent 1px);
     background-size: 32px 32px;
-  }
-
-  .tf-vignette {
-    box-shadow: inset 0 0 0 1px rgb(32 37 33 / 6%), inset 0 -80px 80px -80px rgb(32 37 33 / 12%);
   }
 
   @media (prefers-reduced-motion: reduce) {

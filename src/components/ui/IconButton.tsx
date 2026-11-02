@@ -22,7 +22,7 @@ export function IconButton({
       title={label}
       aria-pressed={active || undefined}
       className={cn(
-        'inline-grid size-9 shrink-0 place-items-center rounded-[var(--radius-control)] border border-transparent text-ink-secondary transition-colors duration-150 hover:bg-surface-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent',
+        'inline-grid size-9 shrink-0 place-items-center rounded-control border border-transparent text-ink-secondary transition-colors duration-150 hover:bg-muted-fill hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent',
         active && 'border-line bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
         className,
       )}

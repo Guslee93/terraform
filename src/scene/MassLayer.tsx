@@ -162,7 +162,7 @@ function RoofHandle({
     <Html position={roofHandlePosition(tier)} center zIndexRange={[20, 10]}>
       <div className="flex flex-col items-center gap-1">
         {dragLabel && (
-          <span className="whitespace-nowrap rounded-[4px] bg-ink px-1.5 py-0.5 text-[10.5px] font-medium tabular-nums text-surface shadow-sm">
+          <span className="whitespace-nowrap rounded-control bg-ink px-1.5 py-0.5 text-body-sm font-medium tabular-nums text-surface">
             {dragLabel}
           </span>
         )}
@@ -171,7 +171,7 @@ function RoofHandle({
           aria-label={`Drag to change storeys of ${tier.name}`}
           title="Drag up or down to change storeys"
           onPointerDown={onPointerDown}
-          className="grid size-5 cursor-ns-resize touch-none place-items-center rounded-full border-2 border-accent bg-surface shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="grid size-5 cursor-ns-resize touch-none place-items-center rounded-full border-2 border-accent bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
         </button>

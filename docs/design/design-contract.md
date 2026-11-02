@@ -1,111 +1,141 @@
 # Terraform — Design contract
 
 - **Source:** PRD §7, §11, §12.3
-- **Status:** Active for M0–M5
+- **Status:** Active for M0–M5 · Studio v2 revision 2026-11-02 (ADR-0009)
 - **Reviewer:** `design-ui-finish-gate-reviewer`
 - **Implementation:** `src/styles/tokens.css`, `src/styles/global.css`
+- **Detailed spec:** `docs/design/ui-redesign-spec.md` (section numbers below match it); approved prototype `terraform-live-sun.html` is the visual source of truth
 
 This document is the written contract the visual gate reviews against. It is intentionally stricter than "make it look nice". Change it by ADR, not by ad-hoc component styling.
 
 ## 1. Principles
 
-1. **Canvas first.** At least ~70% of working width belongs to the model when panels are closed.
-2. **Architectural calm.** Quiet surfaces, precise linework, measured negative space, editorial typography.
-3. **Data legibility.** Units, method and status are visible without turning the inspector into a spreadsheet.
-4. **Quiet confidence.** No bouncy SaaS motion, no gradient soup, no glassmorphism for its own sake.
-5. **Semantic colour only.** Amber warning, red error, subdued green valid, blue-grey selection. Never colour as decoration.
-6. **One product, not a template.** Avoid generic dashboard cards, oversized rounded pills and interchangeable hero sections.
+1. **Canvas first, data second.** The model viewport and the key figures own the page; detail moves into a drawer.
+2. **Editorial calm.** One cool ground, slightly lighter cards, hairlines only where they separate information. No shadows.
+3. **Numbers carry the hierarchy.** Large, thin figures; small mono uppercase labels (`02 / SITE COVERAGE`).
+4. **Colour has a job.** Blue = selected / proposal. Yellow → orange = sun. Amber = needs attention. Everything else is ink on grey.
+5. **Plain controls.** A tab is a word with an underline; a tool is a line icon.
+6. **Motion is small and purposeful.** Build in once; only live things keep moving.
 
 ## 2. Tokens
 
+Source: `src/styles/tokens.css` (spec §2). Never add a hex to a component; add a token first.
+
 | Token | Value | Use |
 |---|---|---|
-| `--bg-app` | `#F5F5F1` | Page background |
-| `--surface` | `#FFFFFF` | Panels, cards, bars |
-| `--surface-muted` | `#EFEFEA` | Hover, subtle fills |
-| `--surface-viewport` | `#E8EBE7` | 3D background and thumbnail backdrop |
-| `--ink-primary` | `#202521` | Primary text, primary button |
-| `--ink-secondary` | `#69716C` | Secondary text, labels |
-| `--border` | `#DDE1DA` | Hairlines, panel borders |
-| `--accent` | `#355E79` | Selection, links, key figures |
-| `--accent-soft` | `#E1EBF0` | Active tool, selected tab |
-| `--positive` | `#477D65` | Valid / within envelope |
-| `--warning` | `#B8822B` | Illustrative constraint, caution |
-| `--danger` | `#B9584F` | Invalid geometry, destructive |
-| `--focus` | `#245F93` | Focus ring |
-| `--radius-card` | `12px` | Cards, panels, modals |
-| `--radius-control` | `8px` | Buttons, inputs, tabs |
+| `--bg-app` | `#E8E8E5` | Page ground |
+| `--surface` | `#F3F3F1` | Cards, panels |
+| `--surface-hover` | `#F5F5F3` | Card hover |
+| `--surface-paper` | `#FAFAF8` | Inset strips, parcel fill, inputs |
+| `--surface-viewport` | `#F3F3F1` | 3D viewport card |
+| `--surface-inverse` | `#141414` | Dark readouts, tooltips, toast |
+| `--ink-primary` | `#141414` | Text, primary button |
+| `--ink-secondary` | `#646461` | Secondary text, labels |
+| `--ink-disabled` | `#A3A3A0` | Disabled controls only |
+| `--ink-on-inverse` / `-2` | `#F2F2F0` / `#9A9A96` | Text on inverse |
+| `--border` | `#D6D6D2` | Hairlines |
+| `--border-strong` | `#141414` | 1 px rule above metric rows and axes |
+| `--muted-fill` | `#E2E2DE` | Empty gauge pills and tracks; interim control hover |
+| `--accent` | `#1F3BD6` | Selected / proposal only (+ `-strong #172DA8`, `-light #4C62E0`, `-soft #E6E9FB`) |
+| `--sun-low` … `--sun-glow` | `#F7C948` `#F08C00` `#F59F00` `#E8590C` `#E0A800` `#FFD43B` | Sun marks only, never text < 24 px |
+| `--positive` | `#2F7A4C` | Pass track |
+| `--warning` | `#C98A16` | Lines, icons, rings, bars only |
+| `--warning-ink` | `#8A5A00` | Any warning text |
+| `--warning-soft` | `#FBF1DE` | Warning fill |
+| `--danger` | `#B4372E` | Over limit, invalid |
+| `--series-2` / `--series-3` | `#141414` / `#9A9A96` | Mass B, C in charts |
+| `--focus` | `= --accent` | Focus ring |
 
-Rules: never introduce a new hex in a component; add a token first. Borders are 1 px. Shadows are soft and restrained (`--shadow-soft`), never neon.
+Rules:
+- Exactly one accent in the chrome; never for links, generic buttons or decoration.
+- Amber is never text; warning text uses `--warning-ink`.
+- No gradients, glows or shadows in the chrome (exception: the flat 35 % sun glow in the sun-path diagram, and the stripe/barcode patterns).
+- **Open decision:** sun orange and warning amber are close in hue. They are separated by shape (warnings always carry the ⚠ triangle or a dashed amber line). If testing shows confusion, warnings move to red (`#B4372E` lines, `#8F2A22` text).
+
+Tailwind utilities keep the existing short names for existing roles (`bg-app`, `bg-surface`, `text-ink`, `text-ink-secondary`, `border-line`, `bg-viewport`) and use token names for new ones (ADR-0009 §4).
 
 ## 3. Typography
 
-| Role | Face | Size / weight |
+| Role | Family | Package |
 |---|---|---|
-| Wordmark | Inter | 12 px, 600, tracking 0.24em, uppercase |
-| Hero | Newsreader | `clamp(2.9rem, 6.2vw, 4.6rem)`, 400, line-height 0.96 |
+| UI, headings, large hero numbers | Geist Variable | `@fontsource-variable/geist` 5.3.0 |
+| Figures, labels, axes, HUD, codes | Geist Mono Variable | `@fontsource-variable/geist-mono` 5.3.0 |
 
-## 4. Layout
+Type scale (Tailwind `@utility` in `global.css`; each carries family, weight, tracking and case):
 
-### Studio (desktop ≥1100 px)
+| Utility | Size / line-height | Weight | Family | Tracking | Use |
+|---|---|---|---|---|---|
+| `text-hero` | 112 / 0.85 | 300 | Geist | −0.065em | Coverage number |
+| `text-display` | 76 / 0.9 | 300 | Mono | −0.07em | Sun clock |
+| `text-figure-l` | 64 / 0.9 | 300 | Geist | −0.06em | Tile hero figures; landing/About headings |
+| `text-figure` | 30 / 1.1 | 300 | Mono | −0.04em | Metric row figures |
+| `text-figure-s` | 28 / 1.1 | 300 | Geist | −0.04em | Per-block figures |
+| `text-title` | 17 / 1.3 | 500 | Geist | −0.01em | Section titles |
+| `text-body` | 14 / 1.45 | 400 | Geist | 0 | Nav, body |
+| `text-body-sm` | 13 / 1.4 | 400 | Geist | 0 | Rows, checks, meta |
+| `text-label` | 11 / 1.3 | 400 | Mono | +0.08em, UPPERCASE | All small labels, codes, axes, HUD |
+| `text-unit` | 12 | 400 | Mono | 0 | Superscript units, ink-secondary |
 
-- Top bar: **56 px**, surface background, 1 px bottom border.
-- Tool rail: **56 px**, icon-only 40 px targets, 8 px radius.
-- Inspector: **336 px**, 300–360 px allowed; collapsible.
-- Bottom bar: **36 px**, status and disclaimers.
-- Canvas: remaining width/height, never letterboxed by panels.
-- Overlays: 12–16 px inset, max two floating cards at once.
+Rules: smallest text 11 px; only labels are uppercase; section label pattern `NN / NAME` with optional right-aligned meta; numbers use a space thousands separator (`3 664`), one decimal for % and m; live figures use `tabular-nums`. No `text-[…]` or `tracking-[…]` classes in `src/`.
 
-### Responsive
+## 4. Spacing, radii, elevation
 
-- `<1100 px`: inspector becomes a right drawer with backdrop; canvas remains primary.
-- `<768 px`: landing stacks; studio is explicitly read-only with a clear notice; no broken editing controls.
-- Touch targets ≥40 px; no hover-only affordances.
-- Test at 1440×900, 1280×800, 1920×1080 and 390×844.
+| Token | Value | Use |
+|---|---|---|
+| `--gap-grid` | 12 px | Gap between cards |
+| Page padding | 22 top / 28 sides / 28 bottom (16 px < 640 px) | Outer page |
+| Card padding | 20–24 px (tiles 20/22, large panels 24/28) | Inner card |
+| `rounded-card` | 14 px | Cards, panels |
+| `rounded-control` | 8 px | Inputs, segments |
+| `rounded-pill` | 999 px | Round buttons, pills, dots |
+| Hairline | 1 px `--border` | Dividers |
+| Rule | 1 px `--border-strong` | Above metric rows, under axes |
+| Underline | 1.5 px `--ink-primary` | Active tab/view, text buttons |
+
+Elevation: none. No `shadow-*` and no ad-hoc `rounded-[…]` in `src/`. Card hover = `--surface-hover`, 200 ms.
 
 ## 5. Components
 
+Primitives live in `src/components/ui/` (spec §5 has full specs):
+
 | Component | Contract |
 |---|---|
-| Primary button | `--ink-primary` fill, white text, 40 px min height; one per view region |
-| Secondary button | Surface fill, 1 px border, ink text |
-| Ghost button | Text only, muted → ink on hover |
-| Icon button | 36–40 px square, 8 px radius, tooltip + `aria-label` |
-| Segmented control | 6 px radius, active `--accent-soft`, no sliding pill theatre |
-| Inspector card | 12 px radius, 1 px border, 16–20 px padding, clear title/subtitle |
-| Numeric input | Suffix unit inside field, 2 dp display, explicit error text below |
-| Tooltip | Dark ink background, 11 px text, 4 px radius, 120 ms delay max |
-| Toast | Bottom-left, surface, 1 px border, semantic accent bar; max 2 stacked |
-| Modal | Only for destructive confirmation, methodology or export options |
-| Empty state | One sentence, one action, no illustration clutter |
+| Text button (default) | `text-body` ink, 1.5 px underline, optional 14 px icon; hover underline → accent |
+| Solid button (rare) | Ink pill, white text, 36 px tall, one decisive action per view |
+| Round icon button | 28 px circle, 1 px ink border, 44 px hit area (Play) |
+| Rail icon button | 40 px, 16 px line icon ink-secondary; active = ink + 1.5 × 20 px bar on the rail hairline; `aria-pressed` |
+| Tabs | Text + 14 px icon, 30 px apart; active ink with 1.5 px underline (`scaleX` 350 ms); disabled `--ink-disabled`, `aria-disabled` |
+| Segmented text control | `text-label` items 20 px apart, underline pattern, `role="group"` + `aria-pressed` |
+| Card | `--surface`, `rounded-card`, no border, header slot (label left, meta/action right, min-height 28 px) |
+| Metric | Label (13 px icon) → `text-figure` + superscript unit; row = 4 columns under a rule, hairlines between |
+| Numeric input | 40 px, `rounded-control`, `--surface-paper`, 1 px border, Geist Mono 14; label above in `text-label`; focus border accent |
+| Check row | `18px 1fr auto`, top hairline; pass = ink check icon; attention = amber triangle + `--warning-ink` text |
+| Legend swatch | 14 px lines (solid / dashed / dotted); 7 × 7 px square areas |
+| Toast | `--surface-inverse` bar, 32 px, Geist Mono 12, 2.5 s, `role="status"` |
+
+Icons: one line family on a 16 grid, 1.4 px stroke, round caps, `currentColor`, no fill except Play (spec §6 has final paths). Icon-only buttons need `aria-label`; decorative icons `aria-hidden`.
+
+Layout (spec §7): desktop ≥ 1200 px is a 5-column grid (`540px 394px` rows): viewport spans 3, panel 02 spans 2 (coverage / sun / constraints by tab), five insight tiles below. Mass list, selection fields and groups live in a 392 px right drawer. 640–1199 px: 2 columns; < 640 px: 1 column, drawer becomes a bottom sheet. No horizontal page scroll at any width. Insight tiles are presentational only: they read existing selectors and show `—` + `NOT AVAILABLE FOR THIS SITE` when a value is missing.
 
 ## 6. States
 
-- Hover: background shift or border darkening; no scale bounce over 1.02.
-- Focus: 2 px `--focus` ring with 2 px offset, always visible.
-- Active: `--accent-soft` fill + `--accent` text.
-- Disabled: 35–50% opacity, cursor not allowed, tooltip explains the milestone — or remove from release UI.
-- Loading: skeleton or quiet pulse, never an indefinite spinner.
+- Hover: colour or background change over 200 ms; no scale.
+- Focus: 2 px `--focus` outline, 2 px offset, always visible.
+- Active: ink text + 1.5 px underline (tabs, views) or rail bar; selection = accent.
+- Disabled: `--ink-disabled`, not-allowed cursor, or removed from the release path.
+- Loading: quiet pulse, never an indefinite spinner.
 - Error: specific cause + recovery action; preserve previously valid input.
 - Empty: explain what will appear and the next action.
 
 ## 7. Motion
 
-- Duration 120–200 ms for controls; 300 ms for panels; 700–1000 ms for site-entry camera.
-- Easing `--ease-out` for entrances; linear or short easing for drag response.
-- Never animate a control that must track a pointer.
-- Respect `prefers-reduced-motion`: disable camera fly-ins, pulses and decorative transitions.
-- Selected mass outline is 1–2 px equivalent; no flashing.
+Easing `--ease-out: cubic-bezier(.2,.7,.1,1)`. Mount animations run once per mount (cards fade + rise 800 ms, staggered 50 ms; figures count up; bars and stripes grow); data changes tween between values (numbers 400 ms, bars 300 ms). Only four things move while idle: the selected-mass anchor ring, the current-sun ring, the setback marching ants and the local-session dot. Full timing table: spec §8. CSS keyframes for mount and loops; `requestAnimationFrame` only for count-up and sun travel; no animation library.
 
-| Section title | Newsreader | `clamp(2rem, 4vw, 3rem)`, 400 |
-| Panel title | Newsreader | 24–28 px, 400 |
-| Body | Inter | 13.5–15 px, 400, line-height 1.6–1.8 |
-| Control label | Inter | 12–13 px, 500 |
-| Micro label | Inter | 9–10 px, 500, uppercase, tracking 0.12–0.22em |
-| Numeric data | Inter | 11.5–13 px, 500, tabular numbers where available |
-
+`prefers-reduced-motion: reduce` turns all of it off: durations 0.01 ms, no loops, camera snaps, sun playback steps. Never animate a control that tracks a pointer.
 
 ## 8. 3D scene palette
+
+Scene colours are TypeScript constants in `src/scene/*`; they are the single source (the `--scene-*` CSS tokens were deleted, ADR-0009). Spec §9 proposes a cooler palette (white masses with ink edges, blue selected mass, animated amber setback); it is not applied yet and the table below is the current state.
 
 "White model" look — see `docs/design/scene-look-plan.md`. Separation comes from light, shadow and linework, not hue.
 
@@ -142,7 +172,7 @@ Lighting: one directional sun at the real Oslo position for 21 June, 15:00 (`DEM
 
 ## 10. Content and voice
 
-- Sentence case for UI labels; uppercase only for micro labels.
+- Sentence case for titles and body; uppercase only for `text-label`.
 - Verbs first: `Add mass`, `Fit site`, `Export PNG`.
 - State the method: `Concept GFA`, `Ground footprint`, `Illustrative max height`.
 - Disclaimers are short, visible and not buried in a modal.
@@ -169,8 +199,11 @@ Lighting: one directional sun at the real Oslo position for 21 June, 15:00 (`DEM
 
 - [ ] Hero and section hierarchy read at a glance; no orphan micro-labels.
 - [ ] Studio canvas dominates; inspector does not crowd it at 1440×900.
-- [ ] All tokens match §2; no stray hex values in components.
-- [ ] Type scale matches §3; line lengths are controlled.
+- [ ] All tokens match §2; no stray hex values in components (except scene constants and `SiteStudyGraphic`).
+- [ ] Type scale matches §3; `rg "text-\[|tracking-\[|shadow-|rounded-\[" src` finds no class names.
+- [ ] Only Geist and Geist Mono load; they work offline.
+- [ ] Blue, sun and amber appear only where §2 allows (spec §11.3).
+- [ ] Every number in a tile matches the store; tiles show "Not available" correctly.
 - [ ] Every interactive state (hover/focus/active/disabled/loading/error) is designed.
 - [ ] Empty and error states are intentional, not browser default.
 - [ ] No inactive main-path control at M5.
@@ -178,4 +211,4 @@ Lighting: one directional sun at the real Oslo position for 21 June, 15:00 (`DEM
 - [ ] Screenshots at the three desktop viewports plus one mobile read-only view.
 - [ ] The result looks like an architectural product, not a generic dashboard.
 
-Avoid weights above 600. Italic is reserved for the hero accent and editorial moments, not UI labels.
+Avoid weights above 500. No italic in the UI.
