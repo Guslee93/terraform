@@ -17,8 +17,6 @@
   --color-line-strong: var(--border-strong);
   --color-muted-fill: var(--muted-fill);
   --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-accent-light: var(--accent-light);
   --color-accent-soft: var(--accent-soft);
   --color-sun-low: var(--sun-low);
   --color-sun-high: var(--sun-high);
@@ -31,8 +29,6 @@
   --color-warning-ink: var(--warning-ink);
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
-  --color-series-2: var(--series-2);
-  --color-series-3: var(--series-3);
   --color-focus: var(--focus);
 
   /* Radii live here (not tokens.css) so the theme names do not self-reference. */
@@ -44,8 +40,6 @@
   --font-sans: var(--typeface-sans);
   --font-mono: var(--typeface-mono);
 
-  /* Studio grid breakpoint (contract §5 layout): 1200 px, in rem so it sorts after sm/md/lg. */
-  --breakpoint-studio: 75rem;
 }
 
 /* Type scale (design contract §3.2). Each utility carries family, weight, tracking and case. */
@@ -194,10 +188,6 @@
     padding-inline: 1.5rem;
   }
 
-  .tf-hairline {
-    border-color: color-mix(in srgb, var(--border) 88%, transparent);
-  }
-
   .tf-paper-grid {
     background-image:
       linear-gradient(to right, rgb(20 20 20 / 4%) 1px, transparent 1px),
@@ -210,19 +200,9 @@
     animation: tf-ping 2.4s var(--ease-out) infinite;
   }
 
-  /* Drawer: slides in from the right; a bottom sheet below 640 px. */
-  .tf-drawer {
-    animation: tf-drawer-in 320ms var(--ease-out);
-  }
-
-  .tf-drawer-content {
-    animation: tf-fade-in 200ms var(--ease-out) 120ms both;
-  }
-
-  @media (max-width: 639px) {
-    .tf-drawer {
-      animation-name: tf-sheet-in;
-    }
+  /* Surfaces build in once on mount (contract §7); delay via inline animation-delay. */
+  .tf-rise {
+    animation: tf-rise 500ms var(--ease-out) both;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -248,20 +228,12 @@
   }
 }
 
-@keyframes tf-drawer-in {
-  from {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes tf-sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-}
-
-@keyframes tf-fade-in {
+@keyframes tf-rise {
   from {
     opacity: 0;
+    transform: translateY(8px);
   }
 }
+
+
+

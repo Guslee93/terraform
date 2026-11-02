@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import { Edges, Html, Line } from '@react-three/drei'
-import { useThree, type ThreeEvent } from '@react-three/fiber'
-import { Plane, Raycaster, Vector2, Vector3 } from 'three'
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
+import { Plane, Raycaster, Vector2, Vector3, type Group } from 'three'
 import type { Vec2 } from '../lib/coordinates'
 import { tierHeight } from '../features/massing/aggregate'
 import type { MassTier, MassVolume } from '../features/massing/types'
@@ -24,6 +24,11 @@ const MASS_COLOR = soften('#C9DBE5')
 const INVALID_COLOR = '#EBC9C4'
 /** Amber tint for clearance warnings (design contract: amber = warning). */
 const WARNING_COLOR = soften('#EFD9AC')
+/** New masses rise from the ground once, over this many seconds (contract §7); off for reduced motion. */
+const RISE_SECONDS = 0.5
+const reducedMotion = () =>
+  typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 /** The selected mass is the one solid accent object in the scene (draft 4). */
 const SELECTED_FILL = '#3550E0'
 const SELECTED_EDGE = '#172DA8'
@@ -130,7 +135,17 @@ function TierMesh({
     [geometry, storeyLines],
   )
 
+  // Grow from the ground on first mount only; edits and drags keep the full height.
+  const group = useRef<Group>(null)
+  const rise = useRef(reducedMotion() ? 1 : 0)
+  useFrame((_, delta) => {
+    if (rise.current >= 1 || !group.current) return
+    rise.current = Math.min(rise.current + delta / RISE_SECONDS, 1)
+    group.current.scale.y = Math.max(1 - (1 - rise.current) ** 3, 0.001)
+  })
+
   return (
+    <group ref={group} scale={[1, rise.current >= 1 ? 1 : 0.001, 1]}>
     <mesh
       geometry={geometry}
       castShadow
@@ -156,10 +171,11 @@ function TierMesh({
         <lineBasicMaterial color={selected ? '#FFFFFF' : MASS_LINE_COLOR} transparent opacity={selected ? 0.25 : MASS_LINE_OPACITY} />
       </lineSegments>
     </mesh>
+    </group>
   )
 }
 
-/** Leader stem and label chip above the mass's top north corner (draft 4). Presentational only. */
+/** Leader stem and label chip above the mass's top north-east corner (draft 4). Presentational only. */
 function Annotation({ volume, annotation, selected }: { volume: MassVolume; annotation: MassAnnotation; selected: boolean }) {
   const anchor = useMemo(() => {
     const top = volume.tiers.reduce((best, tier) => (tierTop(tier) > tierTop(best) ? tier : best))

@@ -35,8 +35,8 @@ Source: `src/styles/tokens.css` (spec §2). Never add a hex to a component; add 
 
 | Token | Value | Use |
 |---|---|---|
-| `--bg-app` | `#E8E8E5` | Page ground |
-| `--surface` | `#F3F3F1` | Cards, panels |
+| `--bg-app` | `#E4E4E1` | Page ground (draft 4) |
+| `--surface` | `#F1F1EF` | Cards, panels (draft 4) |
 | `--surface-hover` | `#F5F5F3` | Card hover |
 | `--surface-paper` | `#FAFAF8` | Inset strips, parcel fill, inputs |
 | `--surface-viewport` | `#F3F3F1` | 3D viewport card |
@@ -48,14 +48,13 @@ Source: `src/styles/tokens.css` (spec §2). Never add a hex to a component; add 
 | `--border` | `#D6D6D2` | Hairlines |
 | `--border-strong` | `#141414` | 1 px rule above metric rows and axes |
 | `--muted-fill` | `#E2E2DE` | Empty gauge pills and tracks; interim control hover |
-| `--accent` | `#1F3BD6` | Selected / proposal only (+ `-strong #172DA8`, `-light #4C62E0`, `-soft #E6E9FB`) |
+| `--accent` | `#1F3BD6` | Selected / proposal only (+ `-soft #E6E9FB`) |
 | `--sun-low` … `--sun-glow` | `#F7C948` `#F08C00` `#F59F00` `#E8590C` `#E0A800` `#FFD43B` | Sun marks only, never text < 24 px |
 | `--positive` | `#2F7A4C` | Pass track |
 | `--warning` | `#C98A16` | Lines, icons, rings, bars only |
 | `--warning-ink` | `#8A5A00` | Any warning text |
 | `--warning-soft` | `#FBF1DE` | Warning fill |
 | `--danger` | `#B4372E` | Over limit, invalid |
-| `--series-2` / `--series-3` | `#141414` / `#9A9A96` | Mass B, C in charts |
 | `--focus` | `= --accent` | Focus ring |
 
 Rules:

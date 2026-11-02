@@ -143,7 +143,7 @@ export function SunBand({ time, onChange, state, location, playback }: SunProps)
               if (slot === current) return <span key={slot} className="h-11 w-[2px] bg-accent" />
               const share = peak > 0 && elevation > 0 ? elevation / peak : 0
               return share > 0 ? (
-                <span key={slot} className="w-[1.2px]" style={{ height: 4 + 36 * share, background: `color-mix(in srgb, #D9772F ${Math.round(40 + share * 60)}%, #EBC66A)` }} />
+                <span key={slot} className="w-[1.2px]" style={{ height: 4 + 36 * share, background: `color-mix(in srgb, var(--sun-high) ${Math.round(40 + share * 60)}%, var(--sun-low))` }} />
               ) : (
                 <span key={slot} className="h-0.5 w-px bg-ink-disabled" />
               )
@@ -154,7 +154,7 @@ export function SunBand({ time, onChange, state, location, playback }: SunProps)
             aria-label="Local time"
             min={0}
             max={1439}
-            step={5}
+            step={1}
             value={time.minuteOfDay}
             aria-valuetext={clockLabel(time.minuteOfDay)}
             onChange={(event) => setMinute(Number(event.target.value))}
@@ -176,21 +176,32 @@ export function SunBand({ time, onChange, state, location, playback }: SunProps)
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
           />
         </div>
-        <div className="mt-1 flex justify-between border-t border-ink pt-1.5 font-mono text-caption text-ink-secondary">
-          <span>00</span>
-          {times ? <span>{clockLabel(times.sunrise)}</span> : <span>{day.kind === 'polar-day' ? 'Polar day' : 'Polar night'}</span>}
-          <span>12</span>
-          {times && <span>{clockLabel(times.sunset)}</span>}
-          <span>24</span>
+        {/* Labels sit at their own minute, matching the to-scale bar above (review). */}
+        <div className="relative mt-1 h-5 border-t border-ink pt-1.5 font-mono text-caption text-ink-secondary">
+          {[
+            { at: 0, label: '00' },
+            { at: 720, label: '12' },
+            { at: 1440, label: '24' },
+            ...(times ? [{ at: times.sunrise, label: clockLabel(times.sunrise) }, { at: times.sunset, label: clockLabel(times.sunset) }] : []),
+          ].sort((a, b) => a.at - b.at).map((tick) => (
+            <span
+              key={tick.label}
+              className="absolute top-1.5 -translate-x-1/2 first:translate-x-0 last:-translate-x-full"
+              style={{ left: `${(tick.at / 1440) * 100}%` }}
+            >
+              {tick.label}
+            </span>
+          ))}
+          {!times && <span className="absolute left-1/2 top-1.5 ml-8">{day.kind === 'polar-day' ? 'Polar day' : 'Polar night'}</span>}
         </div>
       </div>
 
       <div className="flex items-center gap-3 max-sm:justify-between">
-        {state.belowHorizon ? (
-          <p className="text-right text-caption text-ink-secondary"><span role="status">Sun below horizon</span></p>
-        ) : (
-          <p className="text-right text-caption text-ink-secondary">Azimuth {Math.round(state.azimuthDeg)}°<br />Altitude {Math.round(state.elevationDeg)}°</p>
-        )}
+        {/* The live region stays mounted so the night state is announced when it appears. */}
+        <p className="text-right text-caption text-ink-secondary">
+          <span role="status">{state.belowHorizon ? 'Sun below horizon' : ''}</span>
+          {!state.belowHorizon && <>Azimuth {Math.round(state.azimuthDeg)}°<br />Altitude {Math.round(state.elevationDeg)}°</>}
+        </p>
         <PlayButton playback={playback} />
       </div>
     </section>

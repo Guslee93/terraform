@@ -10,10 +10,6 @@ export const textButtonClass =
 export const textButtonSmClass =
   'inline-flex min-h-9 items-center gap-1.5 border-b border-ink/30 py-1 text-body-sm text-ink transition-colors duration-200 hover:border-ink disabled:cursor-not-allowed disabled:border-ink-disabled disabled:text-ink-disabled'
 
-/** §5.6 segmented text control item; pair with aria-pressed. */
-export const segmentClass =
-  'inline-flex min-h-9 items-center border-b-[1.5px] border-transparent text-label text-ink-secondary transition-colors duration-200 hover:text-ink aria-pressed:border-ink aria-pressed:text-ink'
-
 /** §5.9 numeric/text input and select. */
 export const inputClass =
   'h-10 w-full rounded-control border border-line bg-surface-paper px-2.5 font-mono text-body tabular-nums text-ink transition-colors focus:border-accent disabled:cursor-not-allowed disabled:text-ink-disabled aria-[invalid=true]:border-danger'

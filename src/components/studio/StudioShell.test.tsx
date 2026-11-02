@@ -157,6 +157,29 @@ describe('studio rendering states', () => {
     expect(claims).toHaveLength(0)
   })
 
+  it('lets Enter reach a group summary instead of the editor', () => {
+    renderStudio()
+    const summary = screen.getByText('Layers and render quality').closest('summary')
+    if (!summary) throw new Error('Missing Layers summary')
+    summary.focus()
+    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    summary.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(false)
+  })
+
+  it('shows one height and floor count for a mass whether it is visible or hidden', async () => {
+    const lower = factories.createTier({ id: 'lower', footprint: factories.createRectangleFootprint(10, 10), storeys: 3, storeyHeight: 3 })
+    const upper = factories.createTier({ id: 'upper', footprint: factories.createRectangleFootprint(6, 6), storeys: 2, storeyHeight: 3, baseElevation: 9 })
+    const volume = factories.createVolume({ id: 'stepped', name: 'Stepped wing', tiers: [lower, upper] })
+    vi.spyOn(factories, 'createScenario').mockReturnValue(factories.createScenario({ siteId: 'compact-infill', volumes: [volume] }))
+    renderStudio({ ...sitePackage, terrain: { ...sitePackage.terrain, heights: sitePackage.terrain.heights.map((row) => row.map(() => 0)) } })
+    const masses = screen.getByRole('list', { name: 'Masses' })
+    expect(within(masses).getByText('5 floors · 15.0 m · 2 tiers')).toBeInTheDocument()
+    await userEvent.setup().click(within(masses).getByRole('button', { name: /Stepped wing/ }))
+    await userEvent.setup().click(screen.getByRole('checkbox', { name: 'Visible' }))
+    expect(within(screen.getByRole('list', { name: 'Masses' })).getByText('5 floors · 15.0 m · 2 tiers')).toBeInTheDocument()
+  })
+
   it('applies and persists quality, including after remount', async () => {
     const user = userEvent.setup()
     const { unmount } = renderStudio()

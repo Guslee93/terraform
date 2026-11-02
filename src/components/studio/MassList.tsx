@@ -43,7 +43,7 @@ export function MassList({ items, selectedId, onSelect }: MassListProps) {
             >
               <span
                 aria-hidden="true"
-                className={cn('size-1.5 rounded-pill', item.warning ? (selected ? 'bg-sun-low' : 'bg-warning') : 'bg-positive')}
+                className={cn('size-1.5 rounded-pill', selected ? 'bg-ink-on-inverse' : item.warning ? 'bg-warning' : 'bg-positive')}
               />
               <span className="min-w-0">
                 <span className={cn('block truncate', selected ? 'text-body' : 'text-body-sm', item.hidden && !selected && 'text-ink-secondary')}>

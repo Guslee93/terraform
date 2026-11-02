@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-29 · **Branch:** `deepseek/round6` (worktree `../Terraform-ds4`) · **Role:** `engineering-senior-developer` / QA
 - **Ingress:** `docs/milestones/M3-live-analysis.md` (Evidence section), `docs/qa/fixtures.md`, `docs/plans/M3-fable-plan.md` §10 D33 and §11 (M3 gate)
-- **Screenshots:** `docs/screenshots/m3-*.png` (fixed cameras, 1440×900, render quality pinned High)
+- **Screenshots:** `docs/screenshots/m3-*.png` (fixed cameras, 1440×900, render quality pinned High) — recaptured 2026-11-02 on the Studio v2 editor layout (ADR-0010); values unchanged, chrome changed
 
 All fixture rows are asserted by the named tests; the values under "Actual" are the values those
 assertions enforce. The full suite ran green on this branch: `npm run lint` ✅ · `npm run typecheck`

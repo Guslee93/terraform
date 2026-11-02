@@ -142,7 +142,7 @@ export function Inspector({
   }, [focusGroup, focusNonce])
 
   return (
-    <aside aria-label="Inspector" className="flex min-h-0 flex-col overflow-y-auto rounded-card bg-surface">
+    <aside aria-label="Inspector" className="tf-rise flex min-h-0 flex-col overflow-y-auto rounded-card bg-surface [animation-delay:80ms]">
       {check}
       {figures}
 
@@ -273,9 +273,9 @@ export function Inspector({
           </p>
         </Group>
 
-        <Group id="assumptions" title="Assumptions" meta="3.2 m storey" open={openGroups.has('assumptions')} onToggle={(open) => toggleGroup('assumptions', open)}>
+        <Group id="assumptions" title="Assumptions" meta="Default storey 3.2 m" open={openGroups.has('assumptions')} onToggle={(open) => toggleGroup('assumptions', open)}>
           <dl>
-            <Row label="Storey height" value="3.2 m" />
+            <Row label="Default storey height" value="3.2 m" />
             <Row label="Height mode" value="Storey-driven" />
             <Row label="Units" value="Metres · 2 dp" />
           </dl>

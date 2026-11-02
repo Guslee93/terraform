@@ -67,7 +67,7 @@ try {
       })
 
       if (viewport.width >= 1280) {
-        await page.getByRole('button', { name: 'Top' }).click()
+        await page.getByRole('button', { name: 'Plan', exact: true }).click()
         await page.waitForTimeout(1000)
         await page.screenshot({
           path: `${OUT}/${PREFIX}-${site}-${viewport.name}-top.png`,

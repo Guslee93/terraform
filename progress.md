@@ -334,3 +334,11 @@
 - Fixes found on the way: list rows and scene labels showed different heights (storeys × storey height vs envelope height) → both use the envelope height; Tallest without envelope data said "above grade" → now "Above site origin"; toolbar and views overlapped at 1024 px → views drop to a second row below 1280 px; phone canvas squeezed by the sun band → fixed 360 px scene below 640 px.
 - Verification: lint ✅ · typecheck ✅ · 705 unit tests ✅ · build ✅ · e2e 18 passed, 1 opt-in skipped · browser check at 1440, 1024 and 375 px.
 - e2e migration done by a subagent (e2e/ only); its one failure was the 1024 px overlap above, fixed in product code.
+
+### Studio v2 close-out (2026-11-02)
+
+- Review: `docs/reviews/studio-v2-code-review.md` — pass with follow-ups after fixes (1 blocker: false "saved locally" claim; Enter on group summaries; tab order; one height/floor count via `massSummary`; sun axis label positions; dead code).
+- Evidence: `docs/screenshots/studio-v2-*.png` (capture script now uses "Plan") and the M3 evidence set recaptured on the new layout; evidence spec scrolls the panel to the design check before the violation shot.
+- Motion (re-scoped round 3): one-time surface fade-in, figure tweens, masses rise once; reduced motion off. Warning toast removed (design check covers it).
+- Verification: lint ✅ · typecheck ✅ · 710 unit tests ✅ · build ✅ · e2e 18 passed, 1 opt-in skipped.
+- ADR-0009 and ADR-0010 accepted by the owner (2026-11-02). Open: keyboard e2e follow-up; then M4.

@@ -64,7 +64,7 @@ export function ConstraintsPanel({ envelope, limits, heightReference, onHeightRe
 
   return (
     <section aria-label="Envelope constraints" className="px-6 pb-5 pt-5">
-      <p className="text-caption text-ink-secondary">Design check</p>
+      <h2 className="text-caption text-ink-secondary">Design check</h2>
       {checks.length > 0 ? (
         <p className="mt-2 flex items-end gap-4">
           <span className="text-figure-l text-ink">{attention}<sup className="ml-1 align-[0.9em] text-body text-ink-secondary">/{checks.length}</sup></span>

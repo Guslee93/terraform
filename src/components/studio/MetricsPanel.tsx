@@ -1,6 +1,7 @@
 import { LEVEL_TOLERANCE_M, type ScenarioMetrics, type VolumeMetrics } from '../../features/massing/metrics'
 import { labelClass } from '../ui/controls'
-import { Figure } from '../ui/Metric'
+import { Figure } from '../ui/Figure'
+import { useTween } from '../ui/useTween'
 import { cn } from '../../lib/cn'
 import type { ReactNode } from 'react'
 import { formatArea, formatMetres, formatNumber } from './format'
@@ -13,6 +14,11 @@ function FigureCell({ label, children, note, className }: { label: string; child
       {note && <dd className="mt-1.5 text-caption text-ink-secondary">{note}</dd>}
     </div>
   )
+}
+
+/** A figure that eases to new values (contract §7), formatted like every other figure. */
+function TweenFigure({ value, decimals = 0, unit, className }: { value: number; decimals?: number; unit: string; className: string }) {
+  return <Figure value={formatNumber(useTween(value), decimals)} unit={unit} className={className} />
 }
 
 /** A 2 px track with an ink fill, an amber overrun past `limit` and a limit tick. Shares are 0–1. */
@@ -57,25 +63,25 @@ export function MetricsPanel({ metrics, tallestM, limitM, reference }: {
       </div>
       <dl className="grid grid-cols-2 border-t border-line">
         <FigureCell label="Floor area" note={<>Concept GFA · ratio {formatNumber(metrics.conceptGfaRatio, 2)}</>}>
-          <Figure value={formatNumber(metrics.gfaM2)} unit="m²" className="text-figure-s text-ink" />
+          <TweenFigure value={metrics.gfaM2} unit="m²" className="text-figure-s text-ink" />
         </FigureCell>
         <FigureCell label="Tallest" note={tallestM === undefined ? 'Above site origin' : limitM ? `Limit ${formatNumber(limitM, 0)} m above ${reference ?? 'grade'}` : `Above ${reference ?? 'grade'}`}>
-          <Figure value={formatNumber(tallest, 1)} unit="m" className={cn('text-figure-s', over ? 'text-warning-ink' : 'text-ink')} />
+          <TweenFigure value={tallest} decimals={1} unit="m" className={cn('text-figure-s', over ? 'text-warning-ink' : 'text-ink')} />
           {limitM ? <Track share={tallest / scale} limit={limitM / scale} /> : null}
         </FigureCell>
         <FigureCell label="Footprint" note={<>{formatNumber(metrics.coverageWithinParcel * 100, 1)} % of study area{metrics.footprintOutsideParcelM2 > 0 && <span className="text-warning-ink"> · <span>Outside study area</span> <span>{formatArea(metrics.footprintOutsideParcelM2)} outside</span></span>}</>}>
-          <Figure value={formatNumber(metrics.groundFootprintM2)} unit="m²" className="text-figure-s text-ink" />
+          <TweenFigure value={metrics.groundFootprintM2} unit="m²" className="text-figure-s text-ink" />
           <Track share={metrics.coverageWithinParcel} colour="bg-accent" />
         </FigureCell>
         <FigureCell label="Volume">
-          <Figure value={formatNumber(metrics.volumeM3)} unit="m³" className="text-figure-s text-ink" />
+          <TweenFigure value={metrics.volumeM3} unit="m³" className="text-figure-s text-ink" />
         </FigureCell>
       </dl>
     </section>
   )
 }
 
-/** Method notes for the metrics; lives in the drawer so panel 02 stays a fixed height. */
+/** Method notes for the metrics, in the panel's "About these numbers" group. */
 export function MetricsNotes({ metrics }: { metrics: ScenarioMetrics | null }) {
   return (
     <div className="space-y-2 text-body-sm leading-relaxed text-ink-secondary">

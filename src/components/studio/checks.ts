@@ -11,13 +11,6 @@ export type CheckSummary = {
   readonly evaluated: number
 }
 
-const plural = (count: number) => `${count} ${count === 1 ? 'mass' : 'masses'}`
-
-/** Value text for a check row: `3 / 3 OK` or `1 MASS`. */
-export function checkValue(check: CheckSummary): string {
-  return check.failing === 0 ? `${check.evaluated} / ${check.evaluated} OK` : plural(check.failing).toUpperCase()
-}
-
 /**
  * Groups the envelope result and clearance warnings the studio already computes into one row
  * per check (spec §7.7.5). Adds no new analysis: every row counts existing per-mass results.

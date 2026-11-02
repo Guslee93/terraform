@@ -23,14 +23,15 @@ export function StudioTopBar({ site, scenario, canFit, onFitSite }: StudioTopBar
       <div className="ml-auto flex items-center gap-7">
         <p className="text-body-sm text-ink" title="Scenario switching arrives with scenarios (M4)">
           {scenario}
-          <span className="ml-1.5 text-caption text-ink-secondary">saved locally</span>
+          {/* Nothing persists scenarios until M4 (review blocker): say so, not "saved". */}
+          <span className="ml-1.5 text-caption text-ink-secondary">local session</span>
         </p>
         {canFit && (
-          <button type="button" onClick={onFitSite} title="Fit site (F)" className="text-caption text-ink transition-colors duration-200 hover:text-accent">
+          <button type="button" onClick={onFitSite} title="Fit site (F)" className="min-h-6 text-caption text-ink transition-colors duration-200 hover:text-accent">
             Fit site
           </button>
         )}
-        <Link to="/about" className="text-caption text-ink transition-colors duration-200 hover:text-accent">
+        <Link to="/about" className="inline-flex min-h-6 items-center text-caption text-ink transition-colors duration-200 hover:text-accent">
           About
         </Link>
       </div>

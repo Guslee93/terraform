@@ -95,6 +95,8 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Exceeds demo envelope' })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Mass 1 is outside the setback/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /above the limit/ })).toBeVisible()
+  // Show the design check, not the fields the Storeys edit scrolled to.
+  await page.getByRole('complementary', { name: 'Inspector' }).evaluate((panel) => panel.scrollTo(0, 0))
   await page.waitForTimeout(1500)
   await shoot('m3-envelope-violation-iso')
 

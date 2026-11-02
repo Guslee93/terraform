@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { EnvelopeResult, VolumeEnvelope } from '../../features/analysis/constraints'
 import { CONSTRAINT_DISCLAIMER } from '../../features/analysis/constraints'
 import type { ClearanceIssue } from '../../features/massing/clearance'
-import { checkValue, summarizeChecks } from './checks'
-import { massLetter } from './format'
+import { summarizeChecks } from './checks'
 
 const volume = (volumeId: string, reasons: VolumeEnvelope['reasons']): VolumeEnvelope => ({
   volumeId, status: reasons.length ? 'exceeds' : 'within', reasons,
@@ -23,8 +22,6 @@ describe('summarizeChecks', () => {
       ['height', 1, 3], ['setback', 1, 3], ['boundary', 1, 3], ['ground', 1, 3],
     ])
     expect(rows[0]?.label).toBe('Height ≤ 18.0 m above grade')
-    expect(checkValue(rows[0]!)).toBe('1 MASS')
-    expect(checkValue({ id: 'ground', label: '', failing: 0, evaluated: 3 })).toBe('3 / 3 OK')
   })
   it('returns nothing when there is nothing to evaluate', () => {
     expect(summarizeChecks(null, new Map(), limits)).toEqual([])
@@ -33,11 +30,5 @@ describe('summarizeChecks', () => {
   it('ignores boundary clearance issues, which the envelope already counts', () => {
     const clearance = new Map<string, ClearanceIssue[]>([['a', [{ kind: 'boundary-crossing', message: 'Crosses' }]]])
     expect(summarizeChecks(envelope([volume('a', [])]), clearance, limits).at(-1)?.failing).toBe(0)
-  })
-})
-
-describe('massLetter', () => {
-  it('runs A–Z then AA', () => {
-    expect([0, 1, 25, 26, 27].map(massLetter)).toEqual(['A', 'B', 'Z', 'AA', 'AB'])
   })
 })

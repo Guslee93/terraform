@@ -1,6 +1,6 @@
 # ADR-0010 — Studio editor layout (draft 4)
 
-- **Status:** Proposed (owner to accept)
+- **Status:** Accepted (owner, 2026-11-02)
 - **Date:** 2026-11-02
 - **Deciders:** Project owner, `design-ux-architect`
 - **Related:** ADR-0009, `docs/design/ui-redesign-spec.md` §7, `docs/design/ux-assessment.md`, image `docs/design/ux-assessment/06-proposed-dashboard-v4.png`

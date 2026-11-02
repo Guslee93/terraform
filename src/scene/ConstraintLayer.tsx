@@ -18,8 +18,8 @@ export type ConstraintLayerProps = {
 }
 
 const noRaycast = () => null
-const AMBER = '#B8822B'
-const ACCENT = '#355E79'
+export const AMBER = '#B8822B'
+export const ACCENT = '#355E79'
 /** Margin of the per-mass height-limit plane beyond the footprint: at least 8 m or 40 % of its span. */
 const PLANE_RIM_M = 8
 const PLANE_RIM_FRACTION = 0.4

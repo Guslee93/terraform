@@ -12,7 +12,6 @@ import {
   reduceEditor,
 } from '../../features/editor/interaction'
 import { scenarioMetrics } from '../../features/massing/metrics'
-import { tierHeight } from '../../features/massing/aggregate'
 import { checkClearance, type ClearanceIssue } from '../../features/massing/clearance'
 import { createScenario } from '../../features/massing/factories'
 import { sampleTerrainHeight } from '../../features/sites/geometry'
@@ -29,7 +28,8 @@ import { Icon } from '../ui/Icon'
 import { CameraPresets } from './CameraPresets'
 import { summarizeChecks } from './checks'
 import { ConstraintsPanel } from './ConstraintsPanel'
-import { formatArea, formatNumber } from './format'
+import { formatArea, formatMetres } from './format'
+import { massSummary } from './massSummary'
 import { Inspector, type PanelGroup } from './Inspector'
 import { MetricsPanel } from './MetricsPanel'
 import { StudioTopBar } from './StudioTopBar'
@@ -104,19 +104,20 @@ export function StudioShell({
     heightAt: (east, north) => sampleTerrainHeight(sitePackage.terrain, east, north),
     constraints,
   }) : null, [analysisDocument, sitePackage, constraints])
+  // One height and floor count per mass for the list, the scene labels and Tallest (ADR-0010 §4).
+  const summaries = useMemo(() => {
+    if (!sitePackage) return new Map<string, ReturnType<typeof massSummary>>()
+    const site = {
+      studyArea: normalizeRing(sitePackage.studyArea.polygon),
+      heightAt: (east: number, north: number) => sampleTerrainHeight(sitePackage.terrain, east, north),
+      constraints,
+    }
+    return new Map(shown.volumes.map((volume) => [volume.id, massSummary(volume, site, heightReference)]))
+  }, [shown.volumes, sitePackage, constraints, heightReference])
   const warnedVolumes = useMemo(() => new Set([
     ...clearance.keys(),
     ...(envelope?.perVolume.filter((volume) => volume.status === 'exceeds').map((volume) => volume.volumeId) ?? []),
   ]), [clearance, envelope])
-  const warningSummary = (() => {
-    if (clearance.size === 0) return null
-    if (clearance.size > 1) return `${clearance.size} masses need attention`
-    const first = clearance.entries().next().value
-    if (!first) return null
-    const [volumeId, issues] = first
-    const name = shown.volumes.find((volume) => volume.id === volumeId)?.name ?? 'A mass'
-    return `${name}: ${issues.map((issue) => issue.message.toLowerCase()).join(' · ')}`
-  })()
 
   const selectedVolume = shown.volumes.find(
     (volume) => volume.id === editor.history.selection.volumeId,
@@ -130,13 +131,12 @@ export function StudioShell({
       : null
 
   const masses = shown.volumes.map((volume) => {
-    const base = volume.tiers[0]
+    const summary = summaries.get(volume.id)
     const tiers = volume.tiers.length > 1 ? ` · ${volume.tiers.length} tiers` : ''
     return {
       id: volume.id,
       name: volume.name,
-      // Same height as the design check and the scene label: the envelope reference (grade/datum).
-      detail: base ? `${volume.tiers.reduce((sum, tier) => sum + tier.storeys, 0)} floors · ${(envelope?.perVolume.find((entry) => entry.volumeId === volume.id)?.heightM ?? tierHeight(base)).toFixed(1)} m${tiers}` : '',
+      detail: summary ? `${summary.floors} floors · ${formatMetres(summary.heightM)}${tiers}` : '',
       gfa: (() => {
         const entry = metrics?.perVolume.find((candidate) => candidate.volumeId === volume.id)
         return entry ? formatArea(entry.gfaM2) : undefined
@@ -195,7 +195,7 @@ export function StudioShell({
       if (event.key === 'Escape') dispatch({ type: 'key', key: 'Escape' })
 
       if (event.key === 'Enter' || event.key === 'Backspace') {
-        if (target?.closest('button, a')) return
+        if (target?.closest('button, a, summary')) return
         event.preventDefault()
         dispatch({ type: 'key', key: event.key })
       }
@@ -206,13 +206,15 @@ export function StudioShell({
   }, [requestCamera])
 
   const checks = useMemo(() => summarizeChecks(envelope, clearance, sitePackage?.manifest.constraints ?? null), [envelope, clearance, sitePackage])
-  const heightOf = useMemo(() => new Map(envelope?.perVolume.map((volume) => [volume.volumeId, volume.heightM]) ?? []), [envelope])
-  const annotations = useMemo(() => new Map<string, MassAnnotation>((metrics?.perVolume ?? []).map((entry) => [entry.volumeId, {
-    title: entry.name,
-    detail: `${entry.storeys.length} fl · ${formatNumber(heightOf.get(entry.volumeId) ?? entry.maxHeightM, 1)} m`,
-    status: warnedVolumes.has(entry.volumeId) ? 'attention' : 'pass',
-  }])), [metrics, heightOf, warnedVolumes])
-  const tallestM = Math.max(0, ...heightOf.values())
+  const annotations = useMemo(() => new Map<string, MassAnnotation>(analysisDocument.volumes.flatMap((volume) => {
+    const summary = summaries.get(volume.id)
+    return summary ? [[volume.id, {
+      title: volume.name,
+      detail: `${summary.floors} fl · ${formatMetres(summary.heightM)}`,
+      status: warnedVolumes.has(volume.id) ? 'attention' : 'pass',
+    }] as const] : []
+  })), [analysisDocument, summaries, warnedVolumes])
+  const visibleHeights = analysisDocument.volumes.flatMap((volume) => summaries.get(volume.id)?.heightM ?? [])
   const limits = sitePackage?.manifest.constraints ?? null
 
   return (
@@ -225,8 +227,19 @@ export function StudioShell({
       />
 
       <main className="grid flex-1 gap-2 px-4 pb-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_392px]">
-        <section aria-label="Studio viewport" className="flex h-[min(720px,78dvh)] min-w-0 flex-col overflow-hidden rounded-card bg-viewport max-sm:h-auto lg:h-auto">
+        <section aria-label="Studio viewport" className="tf-rise flex h-[min(720px,78dvh)] min-w-0 flex-col overflow-hidden rounded-card bg-viewport max-sm:h-auto lg:h-auto">
           <div className="relative min-h-0 flex-1 max-sm:h-[360px] max-sm:flex-none">
+            {/* First in tab order: the toolbar sits top-left, before the views (review). */}
+            <ToolRail
+              ready={packageStatus === 'ready'}
+              activeTool={editor.tool}
+              onSelect={selectTool}
+              canUndo={editable && idle && editor.history.undoStack.length > 0}
+              canRedo={editable && idle && editor.history.redoStack.length > 0}
+              onUndo={() => dispatch({ type: 'undo' })}
+              onRedo={() => dispatch({ type: 'redo' })}
+              onOpenLayers={() => setPanelFocus((current) => ({ group: 'layers', nonce: current.nonce + 1 }))}
+            />
             {packageStatus === 'ready' && sitePackage && solar ? (
               <>
                 <ViewportCanvas
@@ -273,17 +286,9 @@ export function StudioShell({
               </div>
             )}
 
-            <ToolRail
-              activeTool={editor.tool}
-              onSelect={selectTool}
-              canUndo={editable && idle && editor.history.undoStack.length > 0}
-              canRedo={editable && idle && editor.history.redoStack.length > 0}
-              onUndo={() => dispatch({ type: 'undo' })}
-              onRedo={() => dispatch({ type: 'redo' })}
-              onOpenLayers={() => setPanelFocus((current) => ({ group: 'layers', nonce: current.nonce + 1 }))}
-            />
 
-            {packageStatus === 'ready' && (editor.error || editor.tool === 'draw' || warningSummary) && (
+            {/* Errors and draw instructions only: warnings live in the design check (assessment #5). */}
+            {packageStatus === 'ready' && (editor.error || editor.tool === 'draw') && (
               <div className="pointer-events-none absolute inset-x-0 top-16 z-10 flex justify-center px-6">
                 <p
                   role="status"
@@ -294,11 +299,7 @@ export function StudioShell({
                   )}
                 >
                   {editor.error && <Icon name="warn" size={12} className="mr-1.5 inline text-danger" />}
-                  {!editor.error && editor.tool !== 'draw' && <Icon name="warn" size={12} className="mr-1.5 inline text-warning" />}
-                  {editor.error ??
-                    (editor.tool === 'draw'
-                      ? 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'
-                      : `${warningSummary} · illustrative check`)}
+                  {editor.error ?? 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'}
                 </p>
               </div>
             )}
@@ -322,11 +323,13 @@ export function StudioShell({
               clearance={clearance}
             />
           }
-          figures={<MetricsPanel metrics={metrics} tallestM={heightOf.size > 0 ? tallestM : undefined} limitM={limits?.maxHeightMeters ?? null} reference={heightReference} />}
+          figures={<MetricsPanel metrics={metrics} tallestM={visibleHeights.length > 0 ? Math.max(...visibleHeights) : undefined} limitM={limits?.maxHeightMeters ?? null} reference={heightReference} />}
           sun={solar && sitePackage ? (
             <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} />
           ) : null}
-          sunMeta={`${shortDate(sunTime.date)} · ${sitePackage ? `${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° N` : ''}`}
+          sunMeta={sitePackage
+            ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
+            : shortDate(sunTime.date)}
           metrics={metrics}
           site={site}
           manifest={sitePackage?.manifest ?? null}

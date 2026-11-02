@@ -1,6 +1,6 @@
 # ADR-0009 — Studio v2 typefaces and tokens
 
-- **Status:** Proposed (owner to accept)
+- **Status:** Accepted (owner, 2026-11-02)
 - **Date:** 2026-11-02
 - **Deciders:** Project owner, `design-ui-designer`
 - **Related:** ADR-0001 (stack and pinned versions), `docs/design/ui-redesign-spec.md`, `docs/design/design-contract.md`
