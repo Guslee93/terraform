@@ -228,7 +228,7 @@ describe('draw footprint', () => {
       key('Enter'),
     )
     expect(state.history.document).toBe(base)
-    expect(state.error).toBe('Footprint edges must not cross.')
+    expect(state.error).toBe("Footprint edges must not cross. Move a corner so the outline doesn't overlap itself.")
     expect(state.interaction.kind === 'drawing' && state.interaction.vertices).toHaveLength(4)
   })
 

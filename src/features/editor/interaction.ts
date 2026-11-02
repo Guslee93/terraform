@@ -144,7 +144,9 @@ function message(error: unknown): string {
     const first = error.issues[0]
     if (first) {
       const field = first.path.split('.').pop()?.replace(/\[\d+\]$/, '') ?? ''
-      return `${FIELD_LABELS[field] ?? 'This edit'} ${first.message}.`
+      const hint = first.message === 'edges must not cross' ? ' Move a corner so the outline doesn\'t overlap itself.'
+        : first.message.startsWith('area must be at least') ? ' Make the shape larger.' : ''
+      return `${FIELD_LABELS[field] ?? 'This edit'} ${first.message}.${hint}`
     }
   }
   return error instanceof Error ? error.message : 'The edit could not be applied.'
