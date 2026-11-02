@@ -50,7 +50,7 @@ describe('project recovery', () => {
     const store = createMemoryStore()
     await store.putScenario({ siteId: 's', id: 'broken', json: '{' })
     const user = await setup(store)
-    expect(screen.getByText("1 saved scenarios couldn't be opened.")).toBeInTheDocument()
+    expect(screen.getByText("1 saved scenario couldn't be opened.")).toBeInTheDocument()
     await user.click(screen.getByText('Details'))
     await user.click(screen.getByRole('button', { name: 'Discard' }))
     expect(await store.listScenarios('s')).toHaveLength(1)

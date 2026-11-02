@@ -5,9 +5,12 @@ import type { ScenarioDocument } from '../../features/massing/types'
 import { inputClass, textButtonSmClass } from '../ui/controls'
 import { formatNumber } from './format'
 
-export function ComparePanel({ scenarios, a, b, site, images, cameraLabel, disabled, onPairChange, onEdit, onClose }: {
+/** 'pending' = a capture for the current view hasn't finished; 'failed' = it ran and couldn't render. */
+export type Thumbnails = 'pending' | 'failed' | readonly [string, string]
+
+export function ComparePanel({ scenarios, a, b, site, thumbnails, cameraLabel, disabled, onPairChange, onEdit, onClose }: {
   scenarios: readonly ScenarioDocument[]; a: ScenarioDocument; b: ScenarioDocument; site: EnvelopeSite
-  images: readonly [string, string] | null; cameraLabel: string; disabled: boolean
+  thumbnails: Thumbnails; cameraLabel: string; disabled: boolean
   onPairChange: (a: string, b: string) => void; onEdit: (id: string) => void; onClose: () => void
 }) {
   const selectRef = useRef<HTMLSelectElement>(null)
@@ -21,7 +24,9 @@ export function ComparePanel({ scenarios, a, b, site, images, cameraLabel, disab
         <select ref={index === 0 ? selectRef : undefined} id={`compare-${index}`} className={`${inputClass} mt-1 font-sans`} value={document.id} onChange={(event) => index === 0 ? onPairChange(event.target.value, b.id) : onPairChange(a.id, event.target.value)}>
           {scenarios.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
         </select>
-        {images ? <img className="mt-3 aspect-video w-full rounded-chip object-contain" src={images[index]} alt={`${document.name}, ${cameraLabel} camera view`} /> : <p className="mt-3 flex aspect-video items-center bg-surface-paper p-2 text-caption text-ink-secondary">Thumbnail unavailable in this browser</p>}
+        {typeof thumbnails === 'string'
+          ? <p role={thumbnails === 'pending' ? 'status' : undefined} className="mt-3 flex aspect-video items-center bg-surface-paper p-2 text-caption text-ink-secondary">{thumbnails === 'pending' ? 'Updating thumbnails…' : 'Thumbnail unavailable in this browser'}</p>
+          : <img className="mt-3 aspect-video w-full rounded-chip object-contain" src={thumbnails[index]} alt={`${document.name}, ${cameraLabel} camera view`} />}
         <p className="mt-2 break-words text-body-sm">{document.name}</p>
         <p className="text-caption text-ink-secondary">Same camera · same sun time</p>
         <button type="button" disabled={disabled} className={textButtonSmClass} onClick={() => onEdit(document.id)}>Edit {index === 0 ? 'A' : 'B'}</button>

@@ -36,7 +36,7 @@ export interface ScenarioRepository {
   /** Backup JSON (FR-048): readable scenarios plus unreadable records verbatim. */
   exportProject(siteId: string): Promise<string>
   /** Validate and migrate the whole bundle first; write it in one transaction or not at all. */
-  importProject(json: string): Promise<LoadResult>
+  importProject(json: string, expectedSiteId?: string): Promise<LoadResult>
 }
 
 type Options = { now: () => string; appVersion: string }
@@ -186,8 +186,11 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
       }
       return JSON.stringify(bundle, null, 2)
     },
-    async importProject(json) {
+    async importProject(json, expectedSiteId) {
       const { project, scenarios } = decodeBundle(json)
+      if (expectedSiteId !== undefined && project.siteId !== expectedSiteId) {
+        throw new ScenarioLoadError('corrupt', 'project.siteId', `This backup is for site "${project.siteId}", not "${expectedSiteId}"`)
+      }
       const rows = scenarios.map((document) => ({ id: document.id, siteId: document.siteId, json: serializeScenario(document) }))
       await enqueue(`project:${project.siteId}`, () => store.replaceSite({ siteId: project.siteId, json: JSON.stringify(project) }, rows))
       return load(project.siteId)

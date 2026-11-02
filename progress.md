@@ -395,3 +395,10 @@
 - Full existing browser suite: 22 passed, 1 opt-in evidence test skipped with one worker. No e2e source files modified. Browser verification in isolated storage confirms distinct matched thumbnails, switch/reload, corrupt recovery and original newer-format download with zero page errors. Six screenshots captured and viewed, including 1024/375 menu checks with no horizontal overflow.
 - Report: docs/reviews/M4-codex-ui-review.md (self-review, not the independent M4 gate). Studio bundle 345.93 kB raw / 110.42 kB gzip; existing Three.js size/deprecation warnings remain.
 - D35 integration, D36/D37, independent gate and ADR-0011 acceptance remain. No merge. Existing hook failure-reporting and camera-bookmark gaps are recorded for integration.
+
+### M4 UI integration (2026-11-02)
+
+- Codex built C12–C14 on `m4/ui` (3 commits); fast-forwarded into `main`. Independent review: `docs/reviews/M4-ui-independent-review.md` (no blockers; 2 majors, 6 minors fixed here).
+- Fixes: thumbnail pending/failed states; `remove`/`resetDemo` hit storage first and throw on failure; wrong-site import guard in the repository; menu role and shortcut exemption; stale compare pair; plural.
+- Verification: lint ✅ · typecheck ✅ · 770 unit tests ✅ · build ✅ · e2e 22 passed, 1 skipped.
+- Next: D35 fixtures integration, D36/D37 (work order written), camera-bookmark decision, M4 gate.

@@ -33,7 +33,7 @@ export function RecoveryStrip({ project, siteId }: { project: ScenarioProject; s
       {project.storage === 'memory' && <p>This browser can't store data, so changes last only until you close the tab.</p>}
       {project.storage === 'read-only' && <p>These scenarios were saved by a newer version of Terraform (format {project.newerVersion}) and can't be opened here. Nothing will be overwritten.</p>}
       {failed && <p>{project.saveStatus.state === 'error' && project.saveStatus.kind === 'quota' ? 'Browser storage is full.' : 'Browser storage is unavailable.'} Export a backup before closing this tab.</p>}
-      {project.skipped.length > 0 && <p>{project.skipped.length} saved scenarios couldn't be opened.</p>}
+      {project.skipped.length > 0 && <p>{project.skipped.length} saved {project.skipped.length === 1 ? 'scenario' : 'scenarios'} couldn't be opened.</p>}
     </div>
     <div className="flex flex-wrap gap-x-4">
       <button type="button" disabled={busy} className={textButtonSmClass} onClick={() => void exportData(project.storage === 'read-only')}>{project.storage === 'read-only' ? 'Export saved data' : project.skipped.length ? 'Export raw data' : 'Export project'}</button>

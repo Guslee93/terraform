@@ -13,7 +13,7 @@ const a = scenario('a', 3), b = scenario('b', 7)
 describe('ComparePanel', () => {
   it('shows QA-12 numbers, neutral deltas, notes, disclaimer and fallback; activates B', async () => {
     const onEdit = vi.fn()
-    render(<ComparePanel scenarios={[a,b]} a={a} b={b} site={site} images={null} cameraLabel="top" disabled={false} onEdit={onEdit} onPairChange={vi.fn()} onClose={vi.fn()} />)
+    render(<ComparePanel scenarios={[a,b]} a={a} b={b} site={site} thumbnails="failed" cameraLabel="top" disabled={false} onEdit={onEdit} onPairChange={vi.fn()} onClose={vi.fn()} />)
     const row = screen.getByRole('rowheader', { name: /Concept GFA/ }).closest('tr')!
     expect(within(row).getAllByRole('cell').map((cell) => cell.textContent)).toEqual(['600','1\u2009400','+800 m²'])
     expect(screen.getByText('+12.0 m')).toBeInTheDocument()
@@ -22,9 +22,15 @@ describe('ComparePanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Edit B' }))
     expect(onEdit).toHaveBeenCalledWith('b')
   })
+
+  it('says "Updating" while a capture is pending, never "unavailable"', () => {
+    render(<ComparePanel scenarios={[a,b]} a={a} b={b} site={site} thumbnails="pending" cameraLabel="top" disabled={false} onEdit={vi.fn()} onPairChange={vi.fn()} onClose={vi.fn()} />)
+    expect(screen.getAllByText('Updating thumbnails…')).toHaveLength(2)
+    expect(screen.queryByText('Thumbnail unavailable in this browser')).not.toBeInTheDocument()
+  })
   it('labels matched snapshots and changes the selected pair', async () => {
     const onPairChange = vi.fn()
-    render(<ComparePanel scenarios={[a,b]} a={a} b={b} site={site} images={['data:image/png;base64,a','data:image/png;base64,b']} cameraLabel="top" disabled={false} onEdit={vi.fn()} onPairChange={onPairChange} onClose={vi.fn()} />)
+    render(<ComparePanel scenarios={[a,b]} a={a} b={b} site={site} thumbnails={['data:image/png;base64,a','data:image/png;base64,b']} cameraLabel="top" disabled={false} onEdit={vi.fn()} onPairChange={onPairChange} onClose={vi.fn()} />)
     expect(screen.getByRole('img', { name: 'Concept A, top camera view' })).toBeInTheDocument()
     await userEvent.selectOptions(screen.getByLabelText('Scenario A'), 'b')
     expect(onPairChange).toHaveBeenCalledWith('b', 'b')

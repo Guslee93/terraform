@@ -116,4 +116,19 @@ describe('useScenarioProject', () => {
     expect(bundle.provenance).toEqual({ siteId: SITE, appVersion: expect.any(String), exportedAt: now() })
     expect(bundle.scenarios[0].volumes[0].id).toBe('unsaved')
   })
+
+  it('a failed delete or reset throws and leaves the screen as it was (review)', async () => {
+    const memory = createMemoryStore()
+    const failing: ScenarioStore = {
+      ...memory,
+      deleteScenario: () => Promise.reject(new StoreError('unavailable', 'delete failed')),
+      clearSite: () => Promise.reject(new StoreError('unavailable', 'reset failed')),
+    }
+    const { result } = await open(failing)
+    await act(() => result.current.actions.flush())
+    const before = result.current.scenarios.map((document) => document.id)
+    await act(async () => { await expect(result.current.actions.remove(before[1]!)).rejects.toThrow('delete failed') })
+    await act(async () => { await expect(result.current.actions.resetDemo()).rejects.toThrow('reset failed') })
+    expect(result.current.scenarios.map((document) => document.id)).toEqual(before)
+  })
 })

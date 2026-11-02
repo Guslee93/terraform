@@ -62,6 +62,12 @@ export function StudioShell({
   const [comparePair, setComparePair] = useState<readonly [string, string] | null>(null)
   const [snapshot, setSnapshot] = useState<SnapshotResult | null>(null)
   const compareTrigger = useRef<HTMLButtonElement>(null)
+  // A deleted scenario can't stay in the compare pair: close Compare and return focus (review).
+  useEffect(() => {
+    if (!comparePair || comparePair.every((id) => project.scenarios.some((item) => item.id === id))) return
+    setComparePair(null)
+    compareTrigger.current?.focus()
+  }, [comparePair, project.scenarios])
   const [heightReference, setHeightReference] = useState<HeightReference>('grade')
   const [sunTime, setSunTime] = useState<SunTime>({ date: '2026-06-21', minuteOfDay: 900 })
   const solar = useMemo(() => {
@@ -194,7 +200,8 @@ export function StudioShell({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.closest('input, select, textarea, dialog, [contenteditable="true"]')) return
+      // The scenario menu is a text-entry surface: letters there are not shortcuts.
+      if (target?.closest('input, select, textarea, dialog, [role="group"][aria-label="Scenarios"], [contenteditable="true"]')) return
 
       if (event.key === 'f' || event.key === 'F') {
         event.preventDefault()
@@ -339,7 +346,7 @@ export function StudioShell({
 
         {compareA && compareB && envelopeSite ? <ComparePanel
           scenarios={project.scenarios} a={compareA} b={compareB} site={envelopeSite}
-          images={snapshot?.request === snapshotRequest ? snapshot.images : null}
+          thumbnails={snapshot?.request !== snapshotRequest ? 'pending' : snapshot.images ?? 'failed'}
           cameraLabel={cameraPreset} disabled={!idle}
           onPairChange={(a, b) => setComparePair([a, b])}
           onEdit={(id) => { project.actions.switchTo(id); closeCompare() }} onClose={closeCompare}

@@ -231,6 +231,13 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
     if (!data || editor.interaction.kind !== 'idle') return null
     if (data.project.scenarioIds.length <= 1) return 'A project keeps at least one scenario.'
     const project = removeFromProject(data.project, id, now())
+    // Storage first: if it fails this throws and nothing on screen changes, so the UI never
+    // shows a deletion that didn't happen (review).
+    if (persistent) {
+      autosave.discard(id)
+      await repository.deleteScenario(id)
+      await repository.saveProject(project).catch(() => undefined) // a stale index is repaired on load
+    }
     const stored = new Map(id === activeId ? data.stored : parkActive(data))
     stored.delete(id)
     sessions.current = dropSession(sessions.current, id)
@@ -240,10 +247,6 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
     }
     setData({ ...data, project, stored })
     autosave.discard(id)
-    if (persistent) {
-      saveProject(project)
-      await repository.deleteScenario(id).catch(() => undefined)
-    }
     return null
   }
 
@@ -260,8 +263,9 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
   /** Back to the packaged baseline: Concept A and B, empty (ADR-0011 §4). */
   const resetDemo = async () => {
     if (!data || data.storage === 'read-only') return
+    // Storage first; a failure throws before anything on screen changes.
+    if (persistent) await repository.resetSite(siteId)
     for (const id of data.project.scenarioIds) autosave.discard(id)
-    if (persistent) await repository.resetSite(siteId).catch(() => undefined)
     apply(persistent ? { status: 'empty' } : { status: 'unavailable', reason: "This browser can't store data" })
   }
 
@@ -284,7 +288,7 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
   const importProject = async (json: string) => {
     if (!persistent) throw new Error('Importing needs browser storage, which is unavailable here.')
     await autosave.flush()
-    apply(await repository.importProject(json))
+    apply(await repository.importProject(json, siteId))
   }
 
   const discardSkipped = async (id: string) => {

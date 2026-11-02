@@ -147,4 +147,20 @@ describe('scenario repository', () => {
     expect(bundle.unreadable).toEqual([{ id: project.scenarioIds[1], json: '{"broken":' }])
     expect(bundle.provenance).toEqual({ siteId: SITE, appVersion: '0.1.0', exportedAt: NOW })
   })
+
+  it('refuses a backup for another site and writes nothing (review)', async () => {
+    const { repository, a, b } = await seeded()
+    const bundle = JSON.parse(await repository.exportProject(SITE))
+    await expect(repository.importProject(JSON.stringify(bundle), 'sloped-edge')).rejects.toMatchObject({ kind: 'corrupt', path: 'project.siteId' })
+    expect(ready(await repository.load(SITE)).scenarios).toEqual([a, b])
+  })
+
+  it('exports the raw project row and raw records verbatim when the project is from a newer version', async () => {
+    const { store, repository, project } = await seeded()
+    const rawProject = JSON.stringify({ ...project, schemaVersion: 5 })
+    await store.putProject({ siteId: SITE, json: rawProject })
+    const bundle = JSON.parse(await repository.exportProject(SITE))
+    expect(bundle.rawProject).toEqual({ siteId: SITE, json: rawProject })
+    expect(bundle.unreadable).toHaveLength(2)
+  })
 })
