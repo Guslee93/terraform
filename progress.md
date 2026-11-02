@@ -410,3 +410,4 @@
 - Fixture fix: D35's `export-bundle.json` was labelled format 2 but held format-1 scenarios. Kept as `export-bundle-legacy.json`; a true v2 bundle is generated from it by `generate-v2.ts` (through the real migration). README explains why `generate.ts` must not be re-run on current code.
 - Verification: lint ✅ · typecheck ✅ · 779 unit tests ✅ · build ✅.
 - Next: D36/D37 for DeepSeek (work order ready), camera-bookmark decision, M4 gate.
+- Camera bookmarks deferred out of M4 by the owner (ADR-0011 §9); the unused optional `camera` field stays in format 2.

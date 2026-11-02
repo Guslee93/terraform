@@ -174,7 +174,11 @@ Edits are limited to `e2e/`. If it finds a product bug, it reports it rather tha
 - Deltas are neutral; envelope status and the disclaimer appear in the comparison.
 - `npm run lint`, `typecheck`, `test`, `build` and `test:e2e` pass; `docs/reviews/M4-code-review.md` and `M4-evidence.md` written; agent log and progress updated.
 
-## 9. Open questions for the owner
+## 9. Decisions and open questions
+
+- **Decided (owner, 2026-11-02):** camera bookmarks are out of M4; the optional `camera` field stays in the schema unused (ADR-0011 §9).
+
+### Open questions for the owner
 
 1. **Default content.** Should Concept A and B both start empty (as planned), or should B start as a copy of A once A has masses?
 2. **Compare placement.** Should Compare replace the right panel (as planned, keeping the 3D view), or take over the whole studio area with two large thumbnails?

@@ -81,6 +81,10 @@ The site package stays shared, immutable data. A project export is `{ schemaVers
 - **Deltas:** B − A, with a sign and a unit, worded neutrally. No green/red, and no "better" or "worse" (FR-081).
 - **Thumbnails:** both use the same camera preset and the same sun date and time (FR-082, FR-084), rendered in sequence with the existing WebGL context. A second live 3D view is P1 and stays out.
 
+### 9. Camera bookmarks are deferred (owner, 2026-11-02)
+
+The M4 brief lists camera bookmarks among what a scenario owns (FR-041). M4 does not save or restore one: the studio camera stays a session-wide setting, and Compare renders both scenarios from the current preset. The optional `camera` field stays in format 2, so a later release can start using it without a migration. Revisit at M5 if the demo needs a saved view per scenario.
+
 ## Consequences
 
 - Every `createScenario` call now produces timestamps. Tests that compare whole documents inject `now`.

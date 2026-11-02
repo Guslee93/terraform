@@ -40,5 +40,5 @@ The work order said not to edit `src/features/**`, `useScenarioProject.ts` or it
 
 1. ~~Integrate DeepSeek's D35 fixtures~~ — done (see `progress.md`).
 2. D36 e2e and D37 evidence (`docs/handoffs/D36-D37-m4-e2e-evidence.md`).
-3. Camera bookmarks: the schema allows them; nothing saves or restores one yet (FR-041). Decide whether M4 needs it or the scenario's camera stays a studio-wide setting.
+3. ~~Camera bookmarks~~ — deferred out of M4 by the owner (ADR-0011 §9).
 4. The open minors above, then `docs/reviews/M4-code-review.md` and owner acceptance of ADR-0011.
