@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "scenario-stepped",
+  "siteId": "sloped-edge",
+  "name": "Stepped mass",
+  "assumptions": {
+    "defaultStoreyHeight": 3.2,
+    "minStoreys": 1,
+    "maxStoreys": 40
+  },
+  "volumes": [
+    {
+      "id": "volume-main",
+      "name": "Block A",
+      "visible": true,
+      "locked": false,
+      "tiers": [
+        {
+          "id": "tier-lower",
+          "name": "Lower",
+          "baseElevation": 0,
+          "storeys": 3,
+          "storeyHeight": 3.2,
+          "use": "residential"
+        },
+        {
+          "id": "tier-upper",
+          "name": "Upper",
+          "footprint": {
+            "vertices": [
+              [
+                -5,
+                -4
+              ],
+              [
+                5,
+                -4
+              ],
+              [
+                5,
+                4
+              ],
+              [
+                -5,
+                4
+              ]
+            ]
+          },
+          "baseElevation": 9.6,
+          "storeys": 2,
+          "storeyHeight": 3.2,
+          "use": "commercial"
+        }
+      ]
+    }
+  ]
+}

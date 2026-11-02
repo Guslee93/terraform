@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "provenance": {
+    "siteId": "compact-infill",
+    "appVersion": "1.0.0",
+    "exportedAt": "2026-11-02T00:00:00.000Z"
+  },
+  "project": {
+    "schemaVersion": 2,
+    "siteId": "compact-infill",
+    "activeScenarioId": "scenario-export-a",
+    "scenarioIds": [
+      "scenario-export-a",
+      "scenario-export-b"
+    ],
+    "updatedAt": "2026-11-02T00:00:00.000Z"
+  },
+  "scenarios": [
+    {
+      "schemaVersion": 1,
+      "id": "scenario-export-a",
+      "siteId": "compact-infill",
+      "name": "Concept A",
+      "assumptions": {
+        "defaultStoreyHeight": 3.2,
+        "minStoreys": 1,
+        "maxStoreys": 40
+      },
+      "volumes": [
+        {
+          "id": "volume-export",
+          "name": "Export mass",
+          "visible": true,
+          "locked": false,
+          "tiers": [
+            {
+              "id": "tier-export",
+              "name": "Main block",
+              "footprint": {
+                "vertices": [
+                  [
+                    -10,
+                    -5
+                  ],
+                  [
+                    10,
+                    -5
+                  ],
+                  [
+                    10,
+                    5
+                  ],
+                  [
+                    -10,
+                    5
+                  ]
+                ]
+              },
+              "baseElevation": 0,
+              "storeys": 3,
+              "storeyHeight": 3.2,
+              "use": "residential"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "id": "scenario-export-b",
+      "siteId": "compact-infill",
+      "name": "Concept B",
+      "assumptions": {
+        "defaultStoreyHeight": 3.2,
+        "minStoreys": 1,
+        "maxStoreys": 40
+      },
+      "volumes": []
+    }
+  ]
+}

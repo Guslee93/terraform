@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "scenario-invalid",
+  "siteId": "compact-infill",
+  "name": "Bow-tie",
+  "assumptions": {
+    "defaultStoreyHeight": 3.2,
+    "minStoreys": 1,
+    "maxStoreys": 40
+  },
+  "volumes": [
+    {
+      "id": "volume-bowtie",
+      "name": "Self-intersecting",
+      "visible": true,
+      "locked": false,
+      "tiers": [
+        {
+          "id": "tier-bowtie",
+          "name": "Bow-tie",
+          "footprint": {
+            "vertices": [
+              [
+                0,
+                0
+              ],
+              [
+                10,
+                0
+              ],
+              [
+                0,
+                10
+              ],
+              [
+                10,
+                10
+              ]
+            ]
+          },
+          "baseElevation": 0,
+          "storeys": 3,
+          "storeyHeight": 3.2,
+          "use": "residential"
+        }
+      ]
+    }
+  ]
+}

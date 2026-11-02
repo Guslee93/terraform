@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "siteId": "compact-infill",
+  "activeScenarioId": "scenario-concept-a",
+  "scenarioIds": [
+    "scenario-concept-a",
+    "scenario-missing-file"
+  ],
+  "updatedAt": "2026-11-02T00:00:00.000Z"
+}
