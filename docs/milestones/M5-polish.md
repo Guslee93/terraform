@@ -13,7 +13,7 @@ Turn the working tool into a credible portfolio product: polished states, export
 
 ## Deliverables
 
-1. **PNG export** — viewport scale and 2× where supported, hide gizmos/outlines, optional north arrow/title/date/legend, attribution in metadata, filename `terraform_<site>_<scenario>_<yyyymmdd>.png`.
+1. ~~**PNG export**~~ — **dropped by the owner, 2026-11-02 (ADR-0012).** Original scope kept for the record: viewport scale and 2× where supported, hide gizmos/outlines, optional north arrow/title/date/legend, attribution in metadata, filename `terraform_<site>_<scenario>_<yyyymmdd>.png`.
 2. **Landing and onboarding** — refined hero, site cards, 3-step coach marks (skippable, dismissed once), reset demo with confirmation.
 3. **Complete states** — loading skeletons, empty, WebGL fallback, missing asset, corrupt storage, quota warning, invalid polygon, export complete.
 4. **Responsive read-only experience** — <1100 px inspector drawer; mobile read-only presentation, no broken controls.
@@ -35,7 +35,7 @@ Turn the working tool into a credible portfolio product: polished states, export
 
 ## Acceptance
 
-- Full workflow: land → choose site → orbit → edit mass → change sun → duplicate → compare → export → reload.
+- Full workflow: land → choose site → orbit → edit mass → change sun → duplicate → compare → reload (the PNG export step was dropped, ADR-0012).
 - No inactive main-path control; every button and metric works.
 - Visual gate passes at 1440×900, 1280×800, 1920×1080; mobile read-only is coherent.
 - Lighthouse/performance baseline recorded; no console errors.

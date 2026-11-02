@@ -81,7 +81,7 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 
 ### Phase 6 — M5 Portfolio polish
 
-- [ ] PNG export, onboarding, states
+- [ ] ~~PNG export~~ (dropped, ADR-0012), onboarding, states
 - [ ] Accessibility and performance passes
 - [ ] Deployment and case study
 - [ ] Final visual/code gates
