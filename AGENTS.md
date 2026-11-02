@@ -58,7 +58,7 @@ src/
     massing/           (M2) immutable geometry, factories, validation
     analysis/          (M3) areas, solar, constraints
     scenarios/         (M4) CRUD, persistence, comparison
-    exports/           (M5) PNG capture, JSON
+    exports/           (reserved) PNG export dropped from v1 (ADR-0012); JSON backup lives in scenarios/
   scene/               R3F canvas, lighting, camera, future mesh factories
   data/                cached raw source data (OSM XML, elevation responses)
   lib/                 coordinates, units, shared utilities
@@ -87,7 +87,7 @@ docs/
 | **M2** | Massing model, add/draw/transform/storeys/tiers, validation, undo/redo | QA-03–08; stepped forms correct |
 | **M3** | Areas/volume/coverage, solar + shadows, date/time controls, demo envelope checks | Fixtures match; sun reference verified; disclaimers visible |
 | **M4** | Scenario CRUD, autosave, migrations, matched-camera comparison | QA-09/12 after reload |
-| **M5** | PNG export, landing/polish, empty/error states, case study, deployment, a11y/perf | Full 3-minute workflow in production build; final visual gate |
+| **M5** | Landing/polish, empty/error states, case study, deployment, a11y/perf | Full 3-minute workflow in production build; final visual gate |
 | **M6** | Optional AI suggestions, report, GLB, map context | Separate gate; never destabilises v1 |
 
 Full briefs: `docs/milestones/M0-foundation.md` … `M6-optional.md`.
