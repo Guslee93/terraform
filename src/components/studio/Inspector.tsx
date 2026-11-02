@@ -34,6 +34,7 @@ const LAYER_ROWS: ReadonlyArray<{
 
 type InspectorProps = {
   /** Section 1: the design check. */
+  notes?: ReactNode
   check: ReactNode
   /** Section 2: scenario figures. */
   figures: ReactNode
@@ -96,6 +97,7 @@ function Group({ id, title, meta, open, onToggle, children }: {
 
 /** The studio's right panel (draft 4): check → figures → buildings → groups. Always visible. */
 export function Inspector({
+  notes,
   check,
   figures,
   sun,
@@ -192,6 +194,7 @@ export function Inspector({
         )}
       </section>
 
+      {notes}
       <div className="mt-auto px-6">
         {sun && (
           <Group id="sun" title="Sun" meta={sunMeta} open={openGroups.has('sun')} onToggle={(open) => toggleGroup('sun', open)}>

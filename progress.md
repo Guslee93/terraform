@@ -367,3 +367,17 @@
 - Codex work order: `docs/handoffs/C12-C14-m4-ui.md`, written against the real hook API.
 - Verification: lint ✅ · typecheck ✅ · 749 unit tests ✅ · build ✅ · e2e 22 passed, 1 opt-in skipped.
 - Bundle: the studio chunk is 324 kB raw / 105 kB gzipped (+122 / +40 kB), from Dexie's first use; recorded in ADR-0011.
+
+### M4 Codex resumption audit (2026-11-02)
+
+- Confirmed clean m4/ui checkout at cc02494; read C12–C14 handoff, M4 plan/brief, ADR-0011, relevant PRD, design contract and frontend skill. Installed locked dependencies with npm ci.
+- D35 is now committed separately at 416773a on deepseek/d35; not integrated here. Corrected task_plan.md's stale current-phase heading without claiming historical M2 acceptance closure.
+- Recorded docs/handoffs/M4-codex-resumption.md. Found C14 contract gap: read-only newer-version export through the hook returns fresh defaults, not original saved data; repository export also omits the raw project index. Work order says stop/report missing API capabilities; requested authorization to take over the bounded hook/domain repair. No production files changed.
+- Verification: lint pass; 749 tests / 73 files pass; typecheck + build pass (existing bundle warning). E2E initially blocked by sandbox localhost EPERM; approved retry: 20 passed, 1 skipped, 2 failed. Both failures pass on targeted one-worker rerun (render-quality reload and committed roof drag). Parallel suite stability is not established.
+- Audit-only documentation; no UI screenshots, milestone completion, commits or merges. A documentation patch initially failed because it expected an absent heading; corrected without changing application files.
+
+### M4 repair and C12 (2026-11-02)
+
+- Owner asked to proceed after the protected-API repair proposal. Added exportSavedData on the hook; newer-version repository export preserves rawProject plus unreadable scenario rows. Regression test verifies verbatim original data, unchanged storage, and separate export of current unsaved edits.
+- C12: scenario disclosure/list, metrics/status, keyboard navigation, rename errors, duplicate/create/delete/reset confirmations, and notes committed on blur. Native dialog shared with upcoming recovery UI.
+- Targeted verification: repository/hook 18 tests pass; menu/hook 10 tests pass; typecheck and lint pass. Full suite and screenshots follow C13/C14.

@@ -172,8 +172,8 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
     async exportProject(siteId) {
       const result = await load(siteId)
       if (result.status !== 'ready') {
-        const { rows } = await readSite(siteId)
-        return JSON.stringify({ schemaVersion: SCENARIO_SCHEMA_VERSION, provenance: { siteId, appVersion, exportedAt: now() }, unreadable: rows.map(({ id, json }) => ({ id, json })) })
+        const { projectRow, rows } = await readSite(siteId)
+        return JSON.stringify({ schemaVersion: SCENARIO_SCHEMA_VERSION, provenance: { siteId, appVersion, exportedAt: now() }, rawProject: projectRow ?? null, unreadable: rows.map(({ id, json }) => ({ id, json })) })
       }
       const bundle: ProjectExport = {
         schemaVersion: SCENARIO_SCHEMA_VERSION,

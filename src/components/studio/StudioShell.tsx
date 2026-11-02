@@ -27,6 +27,8 @@ import { formatArea, formatMetres } from './format'
 import { massSummary } from '../../features/analysis/massSummary'
 import { Inspector, type PanelGroup } from './Inspector'
 import { MetricsPanel } from './MetricsPanel'
+import { ScenarioMenu } from './ScenarioMenu'
+import { ScenarioNotes } from './ScenarioNotes'
 import { StudioTopBar } from './StudioTopBar'
 import { SunBand, SunDetails, shortDate, useSunPlayback } from './SunPanel'
 import { ToolRail, type ToolId } from './ToolRail'
@@ -99,11 +101,12 @@ export function StudioShell({
     [analysisDocument, sitePackage],
   )
   const constraints = useMemo(() => sitePackage ? constraintsFromManifest(sitePackage.manifest.constraints, heightReference) : null, [sitePackage, heightReference])
-  const envelope = useMemo(() => sitePackage ? evaluateEnvelope(analysisDocument, {
+  const envelopeSite = useMemo(() => sitePackage ? ({
     studyArea: normalizeRing(sitePackage.studyArea.polygon),
-    heightAt: (east, north) => sampleTerrainHeight(sitePackage.terrain, east, north),
+    heightAt: (east: number, north: number) => sampleTerrainHeight(sitePackage.terrain, east, north),
     constraints,
-  }) : null, [analysisDocument, sitePackage, constraints])
+  }) : null, [sitePackage, constraints])
+  const envelope = useMemo(() => envelopeSite ? evaluateEnvelope(analysisDocument, envelopeSite) : null, [analysisDocument, envelopeSite])
   // One height and floor count per mass for the list, the scene labels and Tallest (ADR-0010 §4).
   const summaries = useMemo(() => {
     if (!sitePackage) return new Map<string, ReturnType<typeof massSummary>>()
@@ -222,6 +225,7 @@ export function StudioShell({
       <StudioTopBar
         site={site}
         scenario={scenario}
+        scenarioMenu={<ScenarioMenu project={project} site={envelopeSite} />}
         saveStatus={project.saveStatus}
         storage={project.storage}
         canFit={packageStatus === 'ready'}
@@ -313,6 +317,7 @@ export function StudioShell({
         </section>
 
         <Inspector
+          notes={<ScenarioNotes key={`${shown.id}:${shown.notes}`} notes={shown.notes} disabled={!editable || !idle} onCommit={project.actions.setNotes} />}
           check={
             <ConstraintsPanel
               envelope={envelope}

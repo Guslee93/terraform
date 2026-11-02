@@ -18,6 +18,25 @@ async function open(store: ScenarioStore) {
 }
 
 describe('useScenarioProject', () => {
+  it('exports the original newer-version project and rows verbatim without overwriting them', async () => {
+    const store = createMemoryStore()
+    const projectRow = { siteId: SITE, json: '{ "schemaVersion": 99, "futureIndex": ["future"] }' }
+    const scenarioRow = { siteId: SITE, id: 'future', json: '{ "schemaVersion": 99, "futureGeometry": "keep me" }' }
+    await store.putProject(projectRow)
+    await store.putScenario(scenarioRow)
+    const { result } = await open(store)
+    expect(result.current.storage).toBe('read-only')
+    act(() => result.current.dispatch({ type: 'command', command: addVolume(block('temporary')) }))
+    await act(() => result.current.actions.flush())
+    const saved = JSON.parse(await result.current.actions.exportSavedData())
+    expect(saved.rawProject).toEqual(projectRow)
+    expect(saved.unreadable).toEqual([{ id: scenarioRow.id, json: scenarioRow.json }])
+    expect(saved.scenarios).toBeUndefined()
+    expect(JSON.parse(result.current.actions.exportProject()).scenarios[0].volumes[0].id).toBe('temporary')
+    expect(await store.getProject(SITE)).toEqual(projectRow)
+    expect(await store.listScenarios(SITE)).toEqual([scenarioRow])
+  })
+
   it('starts with Concept A and B and saves them on the first visit', async () => {
     const store = createMemoryStore()
     const { result } = await open(store)

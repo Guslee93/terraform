@@ -301,7 +301,7 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
     dispatch: dispatchEditor satisfies (event: EditorEvent) => void,
     saveStatus,
     canRemove: (data?.project.scenarioIds.length ?? 0) > 1,
-    actions: { switchTo, create, duplicate, rename, setNotes, remove, resetScenario, resetDemo, exportProject, importProject, discardSkipped, flush: () => autosave.flush() },
+    actions: { switchTo, create, duplicate, rename, setNotes, remove, resetScenario, resetDemo, exportProject, exportSavedData: () => repository.exportProject(siteId), importProject, discardSkipped, flush: () => autosave.flush() },
   }
 }
 
