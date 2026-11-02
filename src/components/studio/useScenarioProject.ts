@@ -89,7 +89,13 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
     let skipped: readonly SkippedRecord[] = []
     if (result.status === 'ready') {
       ;({ project, scenarios, skipped } = result)
-      if (result.repaired) repository.saveProject(project).catch(() => undefined)
+      if (result.repaired) {
+        // Persist the repaired index and its scenarios (generated defaults, migrated rows), so the
+        // index never names ids that aren't stored (review m5).
+        for (const document of scenarios) autosave.commit(document)
+        void autosave.flush()
+        repository.saveProject(project).catch(() => undefined)
+      }
     } else {
       ;({ project, scenarios } = createDefaultProject(siteId, at))
       if (result.status === 'empty') {
@@ -235,7 +241,13 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
     // shows a deletion that didn't happen (review).
     if (persistent) {
       autosave.discard(id)
-      await repository.deleteScenario(id)
+      try {
+        await repository.deleteScenario(id)
+      } catch (error) {
+        const kept = latest(id)
+        if (kept) autosave.commit(kept) // the scenario still exists: don't drop its unsaved edits (review m1)
+        throw error
+      }
       await repository.saveProject(project).catch(() => undefined) // a stale index is repaired on load
     }
     const stored = new Map(id === activeId ? data.stored : parkActive(data))
@@ -264,8 +276,14 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
   const resetDemo = async () => {
     if (!data || data.storage === 'read-only') return
     // Storage first; a failure throws before anything on screen changes.
-    if (persistent) await repository.resetSite(siteId)
-    for (const id of data.project.scenarioIds) autosave.discard(id)
+    // Settle in-flight writes first, then drop pending ones, so none can land after the reset (review M2).
+    const ids = data.project.scenarioIds
+    if (persistent) {
+      await autosave.flush()
+      for (const id of ids) autosave.discard(id)
+      await repository.resetSite(siteId)
+    }
+    for (const id of ids) autosave.discard(id)
     apply(persistent ? { status: 'empty' } : { status: 'unavailable', reason: "This browser can't store data" })
   }
 
@@ -288,7 +306,17 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
   const importProject = async (json: string) => {
     if (!persistent) throw new Error('Importing needs browser storage, which is unavailable here.')
     await autosave.flush()
-    apply(await repository.importProject(json, siteId))
+    const ids = data?.project.scenarioIds ?? []
+    for (const id of ids) autosave.discard(id) // nothing may re-write the old ids over the import (review M2)
+    let result: LoadResult
+    try {
+      result = await repository.importProject(json, siteId)
+    } catch (error) {
+      for (const document of scenarios) autosave.commit(document) // a refused file changes nothing
+      throw error
+    }
+    for (const id of ids) autosave.discard(id)
+    apply(result)
   }
 
   const discardSkipped = async (id: string) => {

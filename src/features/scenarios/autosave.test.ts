@@ -97,4 +97,40 @@ describe('autosave', () => {
     expect(save).not.toHaveBeenCalled()
     expect(autosave.status()).toEqual({ state: 'saved' })
   })
+  it('keeps an edit committed while an earlier scenario is still saving (review M1)', async () => {
+    const timers = manualTimers()
+    const saved: string[] = []
+    let release: () => void = () => undefined
+    const save = vi.fn(async (document: ScenarioDocument) => {
+      if (document.id === 'a') await new Promise<void>((resolve) => { release = resolve })
+      saved.push(`${document.id}:${document.name}`)
+    })
+    const autosave = createAutosave({ save, now: () => NOW, schedule: timers.schedule })
+    autosave.commit(doc('a', 'a1'))
+    autosave.commit(doc('b', 'b1'))
+    const flushing = autosave.flush()
+    await Promise.resolve()
+    autosave.commit(doc('b', 'b2')) // lands while a is writing
+    release()
+    await flushing
+    await autosave.flush()
+    expect(saved).toContain('b:b2')
+    expect(autosave.status()).toEqual({ state: 'saved' })
+  })
+
+  it('does not resurrect a discarded scenario when its in-flight write fails (review m2)', async () => {
+    const timers = manualTimers()
+    let fail: () => void = () => undefined
+    const save = vi.fn(() => new Promise<void>((_, reject) => { fail = () => reject(new Error('x')) }))
+    const autosave = createAutosave({ save, now: () => NOW, schedule: timers.schedule })
+    autosave.commit(doc('a'))
+    const flushing = autosave.flush()
+    await Promise.resolve()
+    autosave.discard('a')
+    fail()
+    await flushing
+    save.mockClear()
+    await autosave.flush()
+    expect(save).not.toHaveBeenCalled()
+  })
 })

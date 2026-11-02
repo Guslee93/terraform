@@ -42,6 +42,8 @@ export function createAutosave({
   },
 }: Options): Autosave {
   const pending = new Map<string, ScenarioDocument>()
+  /** Ids discarded since their last write began, so a failed in-flight write can't resurrect them. */
+  const dropped = new Set<string>()
   const listeners = new Set<(status: SaveStatus) => void>()
   let current: SaveStatus = { state: 'saved' }
   let cancelTimer: (() => void) | null = null
@@ -70,14 +72,18 @@ export function createAutosave({
     if (pending.size === 0) return
     set({ state: 'saving' })
     let failure: StoreErrorKind | null = null
-    for (const [id, document] of [...pending]) {
+    for (const id of [...pending.keys()]) {
+      // Read at write time: an edit committed while an earlier id was saving must not be lost (review M1).
+      const document = pending.get(id)
+      if (!document) continue
       pending.delete(id)
+      dropped.delete(id)
       try {
         await save({ ...document, updatedAt: now() })
       } catch (error) {
         failure = error instanceof StoreError ? error.kind : 'unavailable'
-        // Keep it for the next attempt unless a newer edit arrived meanwhile.
-        if (!pending.has(id)) pending.set(id, document)
+        // Keep it for the next attempt unless a newer edit arrived or it was discarded meanwhile.
+        if (!pending.has(id) && !dropped.has(id)) pending.set(id, document)
       }
     }
     if (failure) set({ state: 'error', kind: failure })
@@ -99,6 +105,7 @@ export function createAutosave({
     flush,
     discard(scenarioId) {
       pending.delete(scenarioId)
+      dropped.add(scenarioId)
       if (pending.size === 0 && current.state === 'unsaved') set({ state: 'saved' })
     },
     status: () => current,

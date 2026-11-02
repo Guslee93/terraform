@@ -53,10 +53,10 @@ describe('project recovery', () => {
     expect(screen.getByText("1 saved scenario couldn't be opened.")).toBeInTheDocument()
     await user.click(screen.getByText('Details'))
     await user.click(screen.getByRole('button', { name: 'Discard' }))
-    expect(await store.listScenarios('s')).toHaveLength(1)
+    expect((await store.listScenarios('s')).filter((row) => row.id === 'broken')).toHaveLength(1)
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Discard' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(await store.listScenarios('s')).toHaveLength(0)
+    expect((await store.listScenarios('s')).filter((row) => row.id === 'broken')).toHaveLength(0)
   })
   it('keeps the record and shows an error if discarding fails', async () => {
     const store = createMemoryStore()
@@ -67,7 +67,7 @@ describe('project recovery', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Discard' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Deletion failed')
     expect(project.skipped).toHaveLength(1)
-    expect(await store.listScenarios('s')).toHaveLength(1)
+    expect((await store.listScenarios('s')).filter((row) => row.id === 'broken')).toHaveLength(1)
   })
   it('shows quota recovery and retry after an edit fails to save', async () => {
     const store = createMemoryStore()
