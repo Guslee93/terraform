@@ -12,7 +12,7 @@
 |---|---|
 | 1 PNG export | **Dropped by the owner (ADR-0012).** |
 | 2 Landing and onboarding | Landing, About and site cards still use the pre-v2 look (spec §10 marks them M5). No coach marks. "Reset demo" exists in the scenario menu. |
-| 3 States | Loading, WebGL fallback, corrupt and quota states exist (M3, M4). Missing: a skeleton for the studio, missing-asset state, invalid-polygon message review, export-complete state. |
+| 3 States | Loading, WebGL fallback, corrupt and quota states exist (M3, M4). Missing: a skeleton for the studio, missing-asset state, invalid-polygon message review. |
 | 4 Responsive | Studio stacks below 1024 px; below 640 px it is read-only. Needs a pass at 1024, 768 and 390 px with the new layout. |
 | 5 Accessibility | Keyboard e2e and contrast checks exist for the studio; no audit of landing/About, no canvas instructions review, no recorded checklist. |
 | 6 Performance | `scripts/measure-fps.mjs` exists (60 fps @1×, ~46 fps @2× on an M1 Pro, scene-look round). Studio chunk is 346 kB raw / 110 kB gzip after M4. No bundle budget or recorded baseline for the new layout. |
@@ -32,7 +32,7 @@
 ## 3. Phases
 
 ```text
-Phase 0  Claude: E1 export contract, P1 punch list        DeepSeek: D39 baseline on current main (before polish, so we can see the change)
+Phase 0  Claude: P1 punch list        DeepSeek: D39 baseline on current main (before polish, so we can see the change)
 Phase 1  Codex: C16 → C17 → C18 → C19 (one branch, review between items)
 Phase 2  DeepSeek: D38, D40, D41   Claude subagents: walkthrough + a11y audit
 Phase 3  Deployment (owner picks host) → case study + demo script → final review → M5 gate
