@@ -313,3 +313,15 @@
 - Deviation from the mechanical mapping: 9–11 px copy that was not uppercase became `text-body-sm`, so only labels are uppercase.
 - Verification: lint ✅ · 699 unit tests ✅ · build ✅ · browser check at 1440×900 (landing + studio render in Geist, no console errors). e2e and `npm run capture` not run (layout unchanged until round 2).
 - Not started: spec round 2 (primitives, studio grid, drawer, insight tiles), round 3 (motion, scene palette §9).
+
+### Studio v2 redesign — round 2 (2026-11-02)
+
+- Primitives: 16-grid icon set (spec §6), `controls.ts` (text button, segments, inputs), `Card`/`CardHeader`, `Metric`/`MetricRow`/`CheckRow`/`Figure`.
+- Layout: studio is now the spec §7.1 grid (viewport 3 cols + panel 02 2 cols, five tiles; 2 cols 640–1199 px; 1 col below). Top bar holds the tabs (Model, Sun, Constraints); the inspector became a right drawer (bottom sheet < 640 px) that opens on selection or from the rail's layers button.
+- Panel 02 by tab: coverage gauge + metric row; Sun panel (clock, metrics, presets, playback); Constraints panel (hero count, summary bar, limit rows, offending masses, disclaimer directly after the status).
+- Tiles: 03 gross area stripes, 04 sun clock + day barcode (the `Local time` slider, 15 min / Shift 1 h / Home–End sunrise–sunset), 05 sun path (selected date, solstices, equinox from `sunDirection`), 06 height + floor stack + ruler vs the package height limit, 07 checks.
+- Scene: two-line leader annotation per visible mass (metrics values); viewport clear colour → `#F3F3F1`.
+- Deviations from the spec, all to avoid inventing data: the gauge has no limit pill (packages carry no coverage limit); metric row is Concept GFA / Footprint / Volume / Max height (no BRA/BYA); checks are the four the app evaluates (height, setback, study area, terrain contact), counted per mass by `summarizeChecks`. Compare tab stays hidden until M4. Scenario name has no chevron (no switcher yet). Legend shows only ≥ 1680 px.
+- Tests: unit tests updated for the new structure (+ `checks.test.ts`, barcode keyboard test); e2e open the drawer from the rail before using layers, wait on the viewport region instead of `137 simplified`, and the legend test became an HUD-overlap + no-horizontal-scroll test at five widths.
+- Verification: lint ✅ · typecheck ✅ · 704 unit tests ✅ · build ✅ · e2e 17 passed, 1 opt-in skipped · browser check at 1680, 1024 and 375 px (grid, drawer, tiles with a drawn mass, no horizontal scroll).
+- Bugs found by e2e and fixed: Esc during a roof drag also closed the drawer (now an idle Esc only); the drawer covered panel 02 on the Sun/Constraints tabs (those tabs now close it, Model reopens it for a selection); the night status read `· Sun below horizon`; the legend touched the camera views at 1680 px. OSM/Kartverket attribution moved into the always-visible footer.

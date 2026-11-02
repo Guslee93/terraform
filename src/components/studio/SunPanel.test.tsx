@@ -3,13 +3,19 @@ import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { sunState } from '../../features/analysis/sun'
 import { localDayMinuteToInstant } from '../../features/analysis/time'
-import { SunPanel, type SunTime } from './SunPanel'
+import { SunPanel, SunTile, useSunPlayback, type SunTime } from './SunPanel'
 
 function Harness({ latitude = 59.91, initial = { date: '2026-06-21', minuteOfDay: 900 } }: { latitude?: number; initial?: SunTime }) {
   const [time, setTime] = useState(initial)
   const location = { latitude, longitude: 10.75, timeZone: 'Europe/Oslo' }
   const resolved = localDayMinuteToInstant(time.date, time.minuteOfDay, location.timeZone)
-  return <SunPanel time={time} onChange={setTime} location={location} resolved={resolved} state={sunState(resolved.instant, latitude, location.longitude, location.timeZone)} />
+  const state = sunState(resolved.instant, latitude, location.longitude, location.timeZone)
+  const playback = useSunPlayback(setTime)
+  // Panel 02 and tile 04 share time and playback, as in the studio.
+  return <>
+    <SunPanel time={time} onChange={setTime} location={location} resolved={resolved} state={state} playback={playback} />
+    <SunTile time={time} onChange={setTime} location={location} state={state} playback={playback} />
+  </>
 }
 
 beforeEach(() => vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))))
@@ -19,9 +25,9 @@ describe('Sun panel', () => {
   it('changes the readout with date and time presets', () => {
     render(<Harness />)
     const original = screen.getByText(/Elevation/).textContent
-    fireEvent.click(screen.getByRole('button', { name: 'Winter solstice' }))
+    fireEvent.click(screen.getByRole('button', { name: /Winter solstice/ }))
     expect(screen.getByText('2026-12-21 15:00 CET')).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Winter solstice' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /Winter solstice/ })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Noon' }))
     expect(screen.getByText('2026-12-21 12:00 CET')).toBeVisible()
     expect(screen.getByText(/Elevation/).textContent).not.toBe(original)
@@ -43,18 +49,18 @@ describe('Sun panel', () => {
 
   it('shows polar day at a Tromsø-like latitude', () => {
     render(<Harness latitude={69.65} />)
-    expect(screen.getByText('Polar day')).toBeVisible()
+    expect(screen.getAllByText('Polar day')[0]).toBeVisible()
     expect(screen.queryByText(/Geometric sunrise/)).not.toBeInTheDocument()
   })
 
   it('plays at the selected speed, wraps midnight and pauses', () => {
     vi.useFakeTimers()
     render(<Harness initial={{ date: '2026-06-21', minuteOfDay: 1430 }} />)
-    fireEvent.change(screen.getByLabelText('Playback speed'), { target: { value: '120' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+    fireEvent.click(screen.getByRole('button', { name: '120 min/s' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[0]!)
     act(() => vi.advanceTimersByTime(1000))
     expect(screen.getByRole('slider')).toHaveValue('110')
-    fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Pause' })[0]!)
     act(() => vi.advanceTimersByTime(1000))
     expect(screen.getByRole('slider')).toHaveValue('110')
   })
@@ -63,19 +69,28 @@ describe('Sun panel', () => {
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
     vi.useFakeTimers()
     render(<Harness />)
-    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[0]!)
     act(() => vi.advanceTimersByTime(999))
     expect(screen.getByRole('slider')).toHaveValue('900')
     act(() => vi.advanceTimersByTime(1))
     expect(screen.getByRole('slider')).toHaveValue('915')
   })
 
+  it('moves 15 minutes per arrow key and an hour with Shift on the day barcode', () => {
+    render(<Harness />)
+    const slider = screen.getByRole('slider', { name: 'Local time' })
+    fireEvent.keyDown(slider, { key: 'ArrowRight' })
+    expect(slider).toHaveAttribute('aria-valuetext', '15:15')
+    fireEvent.keyDown(slider, { key: 'ArrowLeft', shiftKey: true })
+    expect(slider).toHaveAttribute('aria-valuetext', '14:15')
+  })
+
   it('pauses when the browser tab is hidden', () => {
     render(<Harness />)
-    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[0]!)
     const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
     fireEvent(document, new Event('visibilitychange'))
-    expect(screen.getByRole('button', { name: 'Play' })).toBeVisible()
+    expect(screen.getAllByRole('button', { name: 'Play' })).toHaveLength(2)
     hidden.mockRestore()
   })
 })

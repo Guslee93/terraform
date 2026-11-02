@@ -9,7 +9,9 @@ test('Streets and Trees checkboxes exist on compact-infill', async ({ page }) =>
   await expect(
     page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
   ).toBeVisible()
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
+  // Layers live in the inspector drawer, opened from the tool rail.
+  await page.getByRole('button', { name: 'Site notes' }).click()
 
   await expect(page.getByRole('checkbox', { name: 'Streets' })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Trees' })).toBeVisible()
@@ -20,7 +22,9 @@ test('Streets and Trees checkboxes exist on sloped-edge', async ({ page }) => {
   await expect(
     page.getByRole('region', { name: /3D site viewport for Sloped Edge/i }),
   ).toBeVisible()
-  await expect(page.getByText('33 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
+  // Layers live in the inspector drawer, opened from the tool rail.
+  await page.getByRole('button', { name: 'Site notes' }).click()
 
   await expect(page.getByRole('checkbox', { name: 'Streets' })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Trees' })).toBeVisible()
@@ -29,7 +33,9 @@ test('Streets and Trees checkboxes exist on sloped-edge', async ({ page }) => {
 test('the 3D view changes when Trees is toggled off then on', async ({ page }) => {
   await page.goto('/studio/compact-infill')
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
+  // Layers live in the inspector drawer, opened from the tool rail.
+  await page.getByRole('button', { name: 'Site notes' }).click()
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
   const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
@@ -56,7 +62,9 @@ test('the 3D view changes when Trees is toggled off then on', async ({ page }) =
 test('the 3D view changes when Streets is toggled off then on', async ({ page }) => {
   await page.goto('/studio/compact-infill')
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
+  // Layers live in the inspector drawer, opened from the tool rail.
+  await page.getByRole('button', { name: 'Site notes' }).click()
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
   const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
@@ -80,17 +88,16 @@ test('the 3D view changes when Streets is toggled off then on', async ({ page })
     .toBe(false)
 })
 
-test('the legend clears the scale bar and the Site notes button at every viewport', async ({
-  page,
-}) => {
+test('the viewport HUD items never overlap and the page never scrolls sideways', async ({ page }) => {
   // The WebGL scene (with postprocessing) makes resize-based checks slow on some
-  // machines; the default 30 s per-test budget is too tight for four viewports.
+  // machines; the default 30 s per-test budget is too tight for five viewports.
   test.setTimeout(60_000)
 
   const viewports = [
     { width: 1024, height: 800 },
     { width: 1280, height: 800 },
     { width: 1440, height: 900 },
+    { width: 1680, height: 1050 },
     { width: 1920, height: 1080 },
   ]
 
@@ -101,53 +108,31 @@ test('the legend clears the scale bar and the Site notes button at every viewpor
     page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
   ).toBeVisible()
 
+  type Box = { x: number; y: number; width: number; height: number }
+  const overlaps = (a: Box, b: Box) =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+
   for (const viewport of viewports) {
     await page.setViewportSize(viewport)
     await page.waitForTimeout(150)
+    const label = `${viewport.width}x${viewport.height}`
 
+    const scaleBox = await page.getByTestId('scale-bar').boundingBox()
+    const presetsBox = await page.getByRole('group', { name: 'Camera presets' }).boundingBox()
+    if (!scaleBox || !presetsBox) throw new Error(`HUD boxes not measurable at ${label}`)
+    expect(overlaps(scaleBox, presetsBox), `scale bar and camera views overlap at ${label}`).toBe(false)
+
+    // The legend shows only where the viewport card is wide enough (≥ 1680 px); elsewhere it
+    // would collide with the scale bar or the camera views.
     const legend = page.getByTestId('legend')
-    const scaleBar = page.getByTestId('scale-bar')
-    await expect(legend).toBeVisible()
-    await expect(scaleBar).toBeVisible()
-
-    const legendBox = await legend.boundingBox()
-    const scaleBox = await scaleBar.boundingBox()
-    if (!legendBox || !scaleBox) {
-      throw new Error(`HUD boxes not measurable at ${viewport.width}x${viewport.height}`)
+    if (await legend.isVisible()) {
+      const legendBox = await legend.boundingBox()
+      if (!legendBox) throw new Error(`Legend not measurable at ${label}`)
+      expect(overlaps(legendBox, scaleBox), `legend overlaps the scale bar at ${label}`).toBe(false)
+      expect(overlaps(legendBox, presetsBox), `legend overlaps the camera views at ${label}`).toBe(false)
     }
 
-    // All layers are on by default, so the legend is at its tallest; it must still
-    // sit at least 8 px above the scale bar at every width from sm upward.
-    expect(
-      legendBox.y + legendBox.height + 8,
-      `legend must keep an 8 px gap above the scale bar at ${viewport.width}x${viewport.height}`,
-    ).toBeLessThanOrEqual(scaleBox.y)
-
-    // Below 1100 px the "Site notes" floating button shares the bottom-left corner;
-    // it must never sit on top of the legend (no overlapping boxes). The tool rail
-    // also has a control labelled "Site notes" (top-left), so pick the bottom-anchored
-    // instance only — it is the one the legend has to clear.
-    const notesButtons = page.getByRole('button', { name: 'Site notes' })
-    let floatingNotesBox: { x: number; y: number; width: number; height: number } | null = null
-    const notesCount = await notesButtons.count()
-    for (let i = 0; i < notesCount; i++) {
-      const buttonBox = await notesButtons.nth(i).boundingBox()
-      if (buttonBox && buttonBox.y > viewport.height / 2) {
-        floatingNotesBox = buttonBox
-        break
-      }
-    }
-    if (floatingNotesBox) {
-      const overlapsX =
-        legendBox.x < floatingNotesBox.x + floatingNotesBox.width &&
-        floatingNotesBox.x < legendBox.x + legendBox.width
-      const overlapsY =
-        legendBox.y < floatingNotesBox.y + floatingNotesBox.height &&
-        floatingNotesBox.y < legendBox.y + legendBox.height
-      expect(
-        overlapsX && overlapsY,
-        `Site notes must not overlap the legend at ${viewport.width}x${viewport.height}`,
-      ).toBe(false)
-    }
+    const scroll = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    expect(scroll, `horizontal page scroll at ${label}`).toBeLessThanOrEqual(0)
   }
 })

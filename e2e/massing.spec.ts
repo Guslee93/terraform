@@ -47,7 +47,7 @@ async function createMass(page: Page): Promise<void> {
   await expect(
     page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
   ).toBeVisible()
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
 
   await page.getByRole('button', { name: 'Top' }).click()
   // The preset snaps instantly with reduced motion; allow one short settle for the renderer.

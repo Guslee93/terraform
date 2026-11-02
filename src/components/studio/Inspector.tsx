@@ -1,36 +1,21 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { SiteManifest } from '../../features/sites/manifest'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
 import type { SceneLayers } from '../../scene/ViewportCanvas'
 import { isRenderPreference, type RenderPreference } from '../../scene/renderQuality'
 import { cn } from '../../lib/cn'
+import { checkboxClass, inputClass, labelClass, textButtonSmClass } from '../ui/controls'
 import { Icon } from '../ui/Icon'
 import type { MassingCommand } from '../../features/editor/history'
 import type { ClearanceIssue } from '../../features/massing/clearance'
 import type { MassTier, MassVolume } from '../../features/massing/types'
 import type { ScenarioMetrics } from '../../features/massing/metrics'
-import { MetricsPanel, SelectedFloors } from './MetricsPanel'
-import { ConstraintsPanel, type ConstraintsPanelProps } from './ConstraintsPanel'
-import { SunPanel, type SunPanelProps } from './SunPanel'
+import { MetricsNotes, SelectedFloors } from './MetricsPanel'
 import { MassFields } from './MassFields'
 import { MassList, type MassListItem } from './MassList'
 
-export type InspectorTab = 'model' | 'sun' | 'constraints' | 'compare'
-
-type Tab = {
-  id: InspectorTab
-  label: string
-  available: boolean
-  note?: string
-}
-
-const TABS: readonly Tab[] = [
-  { id: 'model', label: 'Model', available: true },
-  { id: 'sun', label: 'Sun', available: true },
-  { id: 'constraints', label: 'Constraints', available: true },
-  { id: 'compare', label: 'Compare', available: false, note: 'M4' },
-]
+export type DrawerGroup = 'notes' | 'site' | 'layers' | 'assumptions'
 
 const LAYER_ROWS: ReadonlyArray<{
   id: keyof SceneLayers
@@ -48,9 +33,7 @@ const LAYER_ROWS: ReadonlyArray<{
 ]
 
 type InspectorProps = {
-  constraintsPanel: ConstraintsPanelProps
   metrics: ScenarioMetrics | null
-  sunPanel: SunPanelProps | null
   site: SiteSummary
   manifest: SiteManifest | null
   packageStatus: 'loading' | 'ready' | 'error'
@@ -58,11 +41,12 @@ type InspectorProps = {
   onToggleLayer: (layer: keyof SceneLayers) => void
   renderPreference: RenderPreference
   onRenderPreferenceChange: (preference: RenderPreference) => void
-  activeTab: InspectorTab
-  onTabChange: (tab: InspectorTab) => void
   isOpen: boolean
   onClose: () => void
+  /** Below 640 px the drawer is a modal bottom sheet; otherwise a non-modal side panel. */
   isDrawer: boolean
+  /** Group to open and scroll to when the drawer opens (the Layers rail button). */
+  focusGroup?: DrawerGroup | null
   selected: { volume: MassVolume; tier: MassTier; warnings?: readonly ClearanceIssue[] } | null
   canEdit: boolean
   /** Editing allowed right now (false on small screens or during a gesture). */
@@ -71,21 +55,43 @@ type InspectorProps = {
   masses: readonly MassListItem[]
   onSelectMass: (volumeId: string) => void
   onSelectTier: (tierId: string) => void
+  onAddMass?: () => void
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-line/70 py-2.5 last:border-b-0">
-      <dt className="text-label text-ink-secondary">{label}</dt>
-      <dd className="text-right text-body-sm font-medium text-ink">{value}</dd>
+    <div className="flex items-start justify-between gap-4 border-b border-line py-2.5 last:border-b-0">
+      <dt className={labelClass}>{label}</dt>
+      <dd className="text-right text-body-sm text-ink">{value}</dd>
     </div>
   )
 }
 
+/** §7.4 collapsible group: a 48 px row with a top hairline, a meta label and a rotating chevron. */
+function Group({ id, title, meta, open, onToggle, children }: {
+  id: DrawerGroup
+  title: string
+  meta?: string
+  open: boolean
+  onToggle: (open: boolean) => void
+  children: ReactNode
+}) {
+  return (
+    <details id={`drawer-group-${id}`} open={open} onToggle={(event) => onToggle(event.currentTarget.open)} className="group border-t border-line">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 text-body text-ink [&::-webkit-details-marker]:hidden">
+        <span>{title}</span>
+        <span className="flex items-center gap-3">
+          {meta && <span className={labelClass}>{meta}</span>}
+          <Icon name="chevron-down" size={14} className="text-ink-secondary transition-transform duration-200 group-open:rotate-180" />
+        </span>
+      </summary>
+      <div className="pb-4">{children}</div>
+    </details>
+  )
+}
+
 export function Inspector({
-  constraintsPanel,
   metrics,
-  sunPanel,
   site,
   manifest,
   packageStatus,
@@ -93,11 +99,10 @@ export function Inspector({
   onToggleLayer,
   renderPreference,
   onRenderPreferenceChange,
-  activeTab,
-  onTabChange,
   isOpen,
   onClose,
   isDrawer,
+  focusGroup = null,
   selected,
   canEdit,
   editingEnabled,
@@ -105,10 +110,32 @@ export function Inspector({
   masses,
   onSelectMass,
   onSelectTier,
+  onAddMass,
 }: InspectorProps) {
   const panelRef = useRef<HTMLElement>(null)
-  const selectedMetrics = metrics?.perVolume.find((entry) => entry.volumeId === selected?.volume.id)
   const closeRef = useRef<HTMLButtonElement>(null)
+  const selectedMetrics = metrics?.perVolume.find((entry) => entry.volumeId === selected?.volume.id)
+  const [openGroups, setOpenGroups] = useState<ReadonlySet<DrawerGroup>>(new Set())
+  const toggleGroup = (group: DrawerGroup, open: boolean) => setOpenGroups((current) => {
+    if (current.has(group) === open) return current
+    const next = new Set(current)
+    if (open) next.add(group)
+    else next.delete(group)
+    return next
+  })
+
+  // The Layers rail button opens the drawer at its group (spec §12 q6).
+  useEffect(() => {
+    if (!isOpen || !focusGroup) return
+    setOpenGroups((current) => new Set(current).add(focusGroup))
+    const frame = window.requestAnimationFrame(() => {
+      const group = document.getElementById(`drawer-group-${focusGroup}`)
+      // jsdom has no scrollIntoView.
+      group?.scrollIntoView?.({ block: 'nearest' })
+      group?.querySelector('summary')?.focus()
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [isOpen, focusGroup])
 
   useEffect(() => {
     if (!isDrawer || !isOpen) return
@@ -143,16 +170,16 @@ export function Inspector({
     }
   }, [isDrawer, isOpen])
 
-  if (isDrawer && !isOpen) return null
+  if (!isOpen) return null
 
   return (
     <>
-      {isDrawer && isOpen && (
+      {isDrawer && (
         <button
           type="button"
           aria-label="Dismiss inspector"
           onClick={onClose}
-          className="fixed inset-x-0 bottom-0 top-14 z-30 bg-ink/20 backdrop-blur-[1px]"
+          className="fixed inset-0 z-30 bg-ink/20"
         />
       )}
 
@@ -162,87 +189,43 @@ export function Inspector({
         role={isDrawer ? 'dialog' : undefined}
         aria-modal={isDrawer ? true : undefined}
         className={cn(
-          'flex flex-col border-l border-line bg-surface',
+          'tf-drawer z-40 flex flex-col bg-surface',
           isDrawer
-            ? 'fixed bottom-0 right-0 top-14 z-40 w-[min(360px,92vw)]'
-            : 'static w-[336px]',
+            ? 'fixed inset-x-0 bottom-0 max-h-[85dvh] rounded-t-card'
+            : 'fixed bottom-7 right-7 top-[72px] w-[392px] max-w-[calc(100vw-56px)] rounded-card border-l border-line',
         )}
       >
-        <div className="flex items-center justify-between border-b border-line px-3 py-2">
-          <div role="tablist" aria-label="Inspector sections" className="flex gap-0.5">
-            {TABS.filter((tab) => tab.available).map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                id={`inspector-tab-${tab.id}`}
-                aria-controls="inspector-panel"
-                aria-selected={tab.id === activeTab}
-                onClick={() => onTabChange(tab.id)}
-                className={cn(
-                  'relative rounded-control px-2.5 py-1.5 text-body-sm font-medium text-ink-secondary transition-colors',
-                  'hover:bg-muted-fill hover:text-ink',
-                  tab.id === activeTab &&
-                    'bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
-                )}
-              >
-                {tab.label}
+        <div className="flex items-center justify-between gap-3 px-6 pb-2 pt-5">
+          <h2 className="text-label text-ink">Masses</h2>
+          <div className="flex items-center gap-4">
+            {onAddMass && canEdit && packageStatus === 'ready' && (
+              <button type="button" onClick={onAddMass} className={textButtonSmClass}>
+                <Icon name="draw" size={14} />
+                Add mass
               </button>
-            ))}
-          </div>
-          {isDrawer && (
+            )}
             <button
               ref={closeRef}
               type="button"
               aria-label="Close inspector"
               title="Close inspector"
               onClick={onClose}
-              className="inline-grid size-9 shrink-0 place-items-center rounded-control border border-transparent text-ink-secondary transition-colors hover:bg-muted-fill hover:text-ink"
+              className="grid size-10 place-items-center text-ink-secondary transition-colors duration-200 hover:text-ink"
             >
               <Icon name="close" size={16} />
             </button>
-          )}
+          </div>
         </div>
 
-        <div
-          role="tabpanel"
-          id="inspector-panel"
-          aria-labelledby={`inspector-tab-${activeTab}`}
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
-        >
-          {activeTab === 'constraints' && <ConstraintsPanel {...constraintsPanel} />}
-          {activeTab === 'sun' && (sunPanel ? <SunPanel {...sunPanel} /> : <p className="text-body-sm text-ink-secondary">Sun controls appear when the site package is ready.</p>)}
-          {activeTab === 'model' && <>
-          <MetricsPanel metrics={metrics} />
+        <div className="tf-drawer-content min-h-0 flex-1 overflow-y-auto px-6 pb-4">
           {masses.length > 0 && (
-            <section aria-labelledby="masses-heading" className="mb-6">
-              <h2
-                id="masses-heading"
-                className="text-label text-ink-secondary"
-              >
-                Masses
-              </h2>
-              <div className="mt-2">
-                <MassList
-                  items={masses}
-                  selectedId={selected?.volume.id ?? null}
-                  onSelect={onSelectMass}
-                />
-              </div>
-            </section>
+            <MassList items={masses} selectedId={selected?.volume.id ?? null} onSelect={onSelectMass} />
           )}
 
-          <section aria-labelledby="selection-heading">
+          <section aria-labelledby="selection-heading" className="py-5">
             <div className="flex items-center justify-between">
-              <h2
-                id="selection-heading"
-                className="text-label text-ink-secondary"
-              >
-                Selection
-              </h2>
-              <span className="rounded-full border border-line px-2 py-0.5 text-label text-ink-secondary">
-                {selected ? '1 selected' : 'Nothing selected'}
-              </span>
+              <h3 id="selection-heading" className="text-label text-ink">Selection</h3>
+              <span className={labelClass}>{selected ? '1 selected' : 'Nothing selected'}</span>
             </div>
 
             {selected ? (
@@ -262,12 +245,9 @@ export function Inspector({
                 )}
               </div>
             ) : (
-              <div className="mt-3 rounded-card border border-dashed border-line bg-surface-paper px-4 py-4 text-center">
-                <span className="mx-auto grid size-8 place-items-center rounded-full border border-line bg-surface text-ink-secondary">
-                  <Icon name="cube" size={16} />
-                </span>
-                <p className="mt-2.5 text-body-sm font-medium text-ink">No mass selected</p>
-                <p className="mx-auto mt-1 max-w-[30ch] text-body-sm leading-relaxed text-ink-secondary">
+              <div className="mt-3 rounded-control bg-surface-paper px-4 py-4">
+                <p className="text-body-sm font-medium text-ink">No mass selected</p>
+                <p className="mt-1 text-body-sm leading-relaxed text-ink-secondary">
                   {packageStatus !== 'ready'
                     ? 'Massing tools appear when the site package is ready.'
                     : canEdit
@@ -278,14 +258,12 @@ export function Inspector({
             )}
           </section>
 
-          <section aria-labelledby="site-heading" className="mt-6">
-            <h2
-              id="site-heading"
-              className="text-label text-ink-secondary"
-            >
-              Site package
-            </h2>
-            <dl className="mt-2">
+          <Group id="notes" title="About these numbers" meta="Method" open={openGroups.has('notes')} onToggle={(open) => toggleGroup('notes', open)}>
+            <MetricsNotes metrics={metrics} />
+          </Group>
+
+          <Group id="site" title="Site package" meta={manifest ? `${manifest.statistics.buildingCount} buildings` : undefined} open={openGroups.has('site')} onToggle={(open) => toggleGroup('site', open)}>
+            <dl>
               <Row label="Site" value={site.title} />
               <Row label="Morphology" value={site.morphology} />
               <Row
@@ -315,35 +293,27 @@ export function Inspector({
                 Data notes
               </Link>
             </p>
-          </section>
+          </Group>
 
-          </>}
-
-          <section aria-labelledby="layers-heading" className="mt-6">
-            <h2
-              id="layers-heading"
-              className="text-label text-ink-secondary"
-            >
-              Layers
-            </h2>
-            <div className="mt-2 space-y-0.5">
+          <Group id="layers" title="Layers & render quality" meta={renderPreference} open={openGroups.has('layers')} onToggle={(open) => toggleGroup('layers', open)}>
+            <div className="space-y-0.5">
               {LAYER_ROWS.filter((row) => !row.asset || manifest?.assetPaths[row.asset]).map((row) => (
                 <label
                   key={row.id}
-                  className="flex cursor-pointer items-center justify-between gap-3 rounded-control px-1.5 py-1.5 text-body-sm text-ink transition-colors hover:bg-muted-fill"
+                  className="flex min-h-9 cursor-pointer items-center justify-between gap-3 text-body-sm text-ink"
                 >
                   <span>{row.label}</span>
                   <input
                     type="checkbox"
                     checked={layers[row.id]}
                     onChange={() => onToggleLayer(row.id)}
-                    className="size-3.5 accent-[var(--accent)]"
+                    className={checkboxClass}
                   />
                 </label>
               ))}
             </div>
             <div className="mt-3">
-              <label htmlFor="render-quality" className="text-body-sm text-ink">
+              <label htmlFor="render-quality" className={labelClass}>
                 Render quality
               </label>
               <select
@@ -354,7 +324,7 @@ export function Inspector({
                   const value = event.currentTarget.value
                   if (isRenderPreference(value)) onRenderPreferenceChange(value)
                 }}
-                className="mt-1 block min-h-9 w-full rounded-control border border-line bg-surface px-2 text-body-sm text-ink"
+                className={cn(inputClass, 'mt-1')}
               >
                 <option value="auto">Auto</option>
                 <option value="high">High</option>
@@ -365,16 +335,10 @@ export function Inspector({
                 Auto lowers quality on software rendering.
               </p>
             </div>
-          </section>
+          </Group>
 
-          {activeTab === 'model' && <section aria-labelledby="assumptions-heading" className="mt-6">
-            <h2
-              id="assumptions-heading"
-              className="text-label text-ink-secondary"
-            >
-              Assumptions
-            </h2>
-            <dl className="mt-2">
+          <Group id="assumptions" title="Assumptions" meta="3.2 m storey" open={openGroups.has('assumptions')} onToggle={(open) => toggleGroup('assumptions', open)}>
+            <dl>
               <Row label="Storey height" value="3.2 m" />
               <Row label="Height mode" value="Storey-driven" />
               <Row label="Units" value="Metres · 2 dp" />
@@ -382,21 +346,18 @@ export function Inspector({
             <p className="mt-2 text-body-sm leading-relaxed text-ink-secondary">
               Storey height and display units used by the massing model.
             </p>
-          </section>}
+          </Group>
 
-          <section className="mt-5 flex gap-2.5 border-t border-line pt-3">
-            <Icon name="info" size={14} className="mt-px shrink-0 text-warning" />
-            <p className="text-body-sm leading-relaxed text-ink-secondary">
-              <span className="font-medium uppercase text-warning-ink">
-                Illustrative constraint.
-              </span>{' '}
+          <p className="flex gap-2.5 border-t border-line pt-3 text-body-sm leading-relaxed text-ink-secondary">
+            <Icon name="warn" size={14} className="mt-0.5 shrink-0 text-warning" />
+            <span>
+              <span className="font-medium text-warning-ink">Illustrative constraint.</span>{' '}
               Envelope checks are not planning advice or a compliance determination.
-            </p>
-          </section>
-
+            </span>
+          </p>
         </div>
 
-        <div className="border-t border-line px-4 py-2.5 text-label text-ink-secondary">
+        <div className="border-t border-line px-6 py-2.5 text-label text-ink-secondary">
           {site.dataStatus === 'curated-demo' ? 'Curated Oslo demonstration' : 'Licensed source'}
         </div>
       </aside>

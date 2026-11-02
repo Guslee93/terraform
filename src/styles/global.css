@@ -42,6 +42,9 @@
 
   --font-sans: var(--typeface-sans);
   --font-mono: var(--typeface-mono);
+
+  /* Studio grid breakpoint (contract §5 layout): 1200 px, in rem so it sorts after sm/md/lg. */
+  --breakpoint-studio: 75rem;
 }
 
 /* Type scale (design contract §3.2). Each utility carries family, weight, tracking and case. */
@@ -107,6 +110,13 @@
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+/* Mono 12 px values: check-row values, toast, HUD readouts (spec §5.10, §7.3). */
+@utility text-mono-sm {
+  font-family: var(--typeface-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
 }
 @utility text-unit {
   font-family: var(--typeface-mono);
@@ -189,6 +199,26 @@
     background-size: 32px 32px;
   }
 
+  /* Live motion (contract §7): the session dot, current sun and selected mass rings. */
+  .tf-ping {
+    animation: tf-ping 2.4s var(--ease-out) infinite;
+  }
+
+  /* Drawer: slides in from the right; a bottom sheet below 640 px. */
+  .tf-drawer {
+    animation: tf-drawer-in 320ms var(--ease-out);
+  }
+
+  .tf-drawer-content {
+    animation: tf-fade-in 200ms var(--ease-out) 120ms both;
+  }
+
+  @media (max-width: 639px) {
+    .tf-drawer {
+      animation-name: tf-sheet-in;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -198,5 +228,34 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+@keyframes tf-ping {
+  from {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes tf-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes tf-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes tf-fade-in {
+  from {
+    opacity: 0;
   }
 }

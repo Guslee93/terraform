@@ -4,95 +4,59 @@ import { cn } from '../../lib/cn'
 
 export type ToolId = 'select' | 'draw' | 'layers'
 
-type Tool = {
-  id: ToolId
-  label: string
-  icon: IconName
-}
-
-const TOOLS: readonly Tool[] = [
-  { id: 'select', label: 'Select', icon: 'cursor' },
-  { id: 'draw', label: 'Draw footprint', icon: 'polygon' },
-  { id: 'layers', label: 'Site notes', icon: 'layers' },
-]
-
 type ToolRailProps = {
   activeTool: ToolId
   onSelect: (tool: ToolId) => void
   onOpenLayers: () => void
+  layersOpen: boolean
   canUndo: boolean
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
 }
 
-const historyButtonClass =
-  'grid size-9 place-items-center rounded-control text-ink-secondary transition-colors duration-150 hover:bg-muted-fill hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent sm:size-10'
+/** §5.4 rail icon button: 44 px hit area, line icon, active bar on the rail hairline. */
+function RailButton({ label, icon, pressed, disabled, onClick, className }: {
+  label: string
+  icon: IconName
+  pressed?: boolean
+  disabled?: boolean
+  onClick: () => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={pressed}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'relative grid size-11 place-items-center text-ink-secondary transition-colors duration-200 hover:text-ink disabled:cursor-not-allowed disabled:text-ink-disabled',
+        pressed && 'text-ink',
+        className,
+      )}
+    >
+      {pressed && <span aria-hidden="true" className="absolute -left-px top-1/2 h-5 w-[1.5px] -translate-y-1/2 bg-ink" />}
+      <Icon name={icon} size={16} />
+    </button>
+  )
+}
 
-export function ToolRail({
-  activeTool,
-  onSelect,
-  onOpenLayers,
-  canUndo,
-  canRedo,
-  onUndo,
-  onRedo,
-}: ToolRailProps) {
+/** Vertical tool rail inside the viewport card (spec §7.3): select, draw, layers, undo, redo. */
+export function ToolRail({ activeTool, onSelect, onOpenLayers, layersOpen, canUndo, canRedo, onUndo, onRedo }: ToolRailProps) {
   return (
     <nav
       aria-label="Studio tools"
-      className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-line bg-surface py-2 sm:w-14"
+      className="absolute left-[22px] top-16 z-10 flex flex-col border-l border-line"
     >
-      {TOOLS.map((tool) => (
-        <button
-          key={tool.id}
-          type="button"
-          aria-pressed={tool.id === 'layers' ? undefined : activeTool === tool.id}
-          aria-label={tool.label}
-          title={tool.label}
-          onClick={() => {
-            if (tool.id === 'layers') {
-              onOpenLayers()
-              return
-            }
-            onSelect(tool.id)
-          }}
-          className={cn(
-            tool.id === 'draw' && 'max-sm:hidden',
-            'relative grid size-9 place-items-center rounded-control border border-transparent text-ink-secondary transition-colors duration-150 sm:size-10',
-            'hover:bg-muted-fill hover:text-ink',
-            tool.id === activeTool &&
-              'border-line bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
-          )}
-        >
-          <Icon name={tool.icon} size={17} />
-        </button>
-      ))}
-
-      <span className="mt-2 text-label text-ink-secondary [writing-mode:vertical-rl]">
-        Tools
-      </span>
-
+      <RailButton label="Select" icon="cursor" pressed={activeTool === 'select'} onClick={() => onSelect('select')} />
+      <RailButton label="Draw footprint" icon="draw" pressed={activeTool === 'draw'} onClick={() => onSelect('draw')} className="max-sm:hidden" />
+      <RailButton label="Site notes" icon="layers" pressed={layersOpen} onClick={onOpenLayers} />
       {/* Editing is read-only below 640 px, so history controls are hidden there too. */}
-      <div className="mt-3 flex flex-col items-center gap-1 border-t border-line pt-3 max-sm:hidden">
-        <button type="button" aria-label="Undo" title="Undo" disabled={!canUndo} onClick={onUndo} className={historyButtonClass}>
-          <Icon name="undo" size={17} />
-        </button>
-        <button type="button" aria-label="Redo" title="Redo" disabled={!canRedo} onClick={onRedo} className={historyButtonClass}>
-          <Icon name="redo" size={17} />
-        </button>
-      </div>
-
-      <div className="mt-auto flex flex-col items-center gap-2 pb-1">
-        <span aria-hidden="true" className="h-px w-6 bg-line" />
-        <span
-          aria-hidden="true"
-          className="grid size-8 place-items-center rounded-full border border-line text-body-sm font-medium text-ink-secondary"
-          title="North is up in the default isometric view"
-        >
-          N
-        </span>
-      </div>
+      <RailButton label="Undo" icon="undo" disabled={!canUndo} onClick={onUndo} className="max-sm:hidden" />
+      <RailButton label="Redo" icon="redo" disabled={!canRedo} onClick={onRedo} className="max-sm:hidden" />
     </nav>
   )
 }

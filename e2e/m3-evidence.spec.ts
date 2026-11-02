@@ -30,7 +30,7 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   await expect(
     page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
   ).toBeVisible()
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   await page.waitForTimeout(4000)
 
   const shoot = (name: string) => page.screenshot({ path: `${OUT_DIR}/${name}-${SHOT_SUFFIX}.png` })

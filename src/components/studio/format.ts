@@ -11,3 +11,12 @@ export const formatVolume = (value: number) => `${number(value, 0)} m³`
 export const formatMetres = (value: number) => `${number(value, 1)} m`
 export const formatPercent = (ratio: number) => `${number(ratio * 100, 1)} %`
 export const formatRatio = (value: number) => number(value, 2)
+
+/** Figure without its unit, for `Figure` (unit set separately). */
+export const formatNumber = (value: number, decimals = 0) => number(value, decimals)
+
+/** Short mass code used across the annotation, tiles and drawer: A, B, …, Z, AA, AB. */
+export function massLetter(index: number): string {
+  const letter = String.fromCharCode(65 + (index % 26))
+  return index < 26 ? letter : massLetter(Math.floor(index / 26) - 1) + letter
+}

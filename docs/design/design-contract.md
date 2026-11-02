@@ -117,6 +117,8 @@ Icons: one line family on a 16 grid, 1.4 px stroke, round caps, `currentColor`, 
 
 Layout (spec §7): desktop ≥ 1200 px is a 5-column grid (`540px 394px` rows): viewport spans 3, panel 02 spans 2 (coverage / sun / constraints by tab), five insight tiles below. Mass list, selection fields and groups live in a 392 px right drawer. 640–1199 px: 2 columns; < 640 px: 1 column, drawer becomes a bottom sheet. No horizontal page scroll at any width. Insight tiles are presentational only: they read existing selectors and show `—` + `NOT AVAILABLE FOR THIS SITE` when a value is missing.
 
+Implementation notes (round 2, 2026-11-02): site packages carry no coverage limit, so the gauge shows used/remaining only and no limit pill; the metric row is Concept GFA · Footprint · Volume · Max height (never BRA/BYA); tile 07 lists the four checks the app evaluates (height, setback, study area, terrain contact) counted per mass. The Compare tab stays hidden until M4. The viewport legend shows from 1680 px, after the scale bar; below that the Layers drawer group describes the layers. The breakpoint is the `studio:` variant (75rem).
+
 ## 6. States
 
 - Hover: colour or background change over 200 ms; no scale.

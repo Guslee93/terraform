@@ -14,6 +14,8 @@ import {
 } from '../features/editor/interaction'
 import { DEFAULT_GRID_STEP_M } from '../features/editor/snapping'
 import type { OrbitControlsHandle } from './CameraRig'
+import { enuToThreeXyz } from '../lib/coordinates'
+import { tierTop } from '../features/massing/aggregate'
 import { createStoreyLineGeometry, createTierGeometry, roofHandlePosition } from './massGeometry'
 
 // Accent-family tint: the proposal is the only coloured object against the white context.
@@ -34,7 +36,11 @@ type MassLayerProps = {
   heightAt: (east: number, north: number) => number
   /** Ids of volumes with clearance warnings. */
   warnedVolumes: ReadonlySet<string>
+  /** Two-line leader labels per volume id, built from the scenario metrics (spec §7.3). */
+  annotations?: ReadonlyMap<string, MassAnnotation>
 }
+
+export type MassAnnotation = { readonly title: string; readonly detail: string }
 
 type StartDrag = (plane: Plane, toPoint: (hit: Vector3) => Vec2) => void
 
@@ -149,6 +155,31 @@ function TierMesh({
   )
 }
 
+/** Leader line and mono label from the mass's top north corner (spec §7.3). Presentational only. */
+function Annotation({ volume, annotation, selected }: { volume: MassVolume; annotation: MassAnnotation; selected: boolean }) {
+  const anchor = useMemo(() => {
+    const top = volume.tiers.reduce((best, tier) => (tierTop(tier) > tierTop(best) ? tier : best))
+    const corner = top.footprint.vertices.reduce((best, vertex) => (vertex[1] + vertex[0] > best[1] + best[0] ? vertex : best))
+    return enuToThreeXyz([corner[0], corner[1], tierTop(top)])
+  }, [volume])
+  const colour = selected ? 'var(--accent)' : 'var(--ink-primary)'
+  return (
+    <Html position={anchor} zIndexRange={[15, 5]} style={{ pointerEvents: 'none' }}>
+      <div aria-hidden="true" className="relative -translate-y-full" style={{ color: colour }}>
+        <svg width="64" height="40" className="block overflow-visible">
+          <path d="M0 40 L32 8 H64" fill="none" stroke="currentColor" strokeWidth={selected ? 1 : 0.6} />
+          <circle cx="0" cy="40" r="2.5" fill="currentColor" />
+          {selected && <circle cx="0" cy="40" r="2.5" fill="none" stroke="currentColor" className="tf-ping [transform-box:fill-box] [transform-origin:center]" />}
+        </svg>
+        <div className="absolute left-[68px] top-0 whitespace-nowrap text-mono-sm uppercase leading-tight">
+          <p>{annotation.title}</p>
+          <p className={selected ? '' : 'text-ink-secondary'}>{annotation.detail}</p>
+        </div>
+      </div>
+    </Html>
+  )
+}
+
 function RoofHandle({
   tier,
   dragLabel,
@@ -203,6 +234,7 @@ export function MassLayer({
   controlsRef,
   heightAt,
   warnedVolumes,
+  annotations,
 }: MassLayerProps) {
   const document = displayedDocument(editor)
   const { selection } = editor.history
@@ -280,6 +312,16 @@ export function MassLayer({
         editor.tool === 'select' && (
         <RoofHandle tier={selectedTier.tier} dragLabel={dragLabel} onPointerDown={startRoof} />
       )}
+
+      {annotations && interaction.kind !== 'drawing' &&
+        document.volumes
+          .filter((volume) => volume.visible)
+          .map((volume) => {
+            const annotation = annotations.get(volume.id)
+            return annotation ? (
+              <Annotation key={volume.id} volume={volume} annotation={annotation} selected={selection.volumeId === volume.id} />
+            ) : null
+          })}
 
       {interaction.kind === 'drawing' && (
         <DrawOverlay vertices={interaction.vertices} cursor={interaction.cursor} heightAt={heightAt} />

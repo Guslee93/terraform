@@ -16,6 +16,7 @@ import {
 import type { MassingCommand } from '../../features/editor/history'
 import { formatInputValue, parseStoreys } from '../../features/editor/inspectorInput'
 import { Icon } from '../ui/Icon'
+import { checkboxClass, inputClass, labelClass, textButtonSmClass } from '../ui/controls'
 
 type MassFieldsProps = {
   volume: MassVolume
@@ -37,14 +38,11 @@ const USE_LABELS: Record<MassUse, string> = {
   other: 'Other',
 }
 
-const labelClass = 'text-label text-ink-secondary'
-const actionClass =
-  'inline-flex h-7 items-center justify-center gap-1 rounded-control border border-line bg-surface px-2 text-body-sm text-ink transition-colors hover:bg-muted-fill disabled:cursor-not-allowed disabled:opacity-45'
+const actionClass = textButtonSmClass
 const ROTATE_STEP = Math.PI / 12
 /** Gap between an original and its duplicate, in metres. */
 const DUPLICATE_GAP_M = 5
-const controlClass =
-  'h-8 w-full rounded-control border border-line bg-surface px-2 text-body-sm tabular-nums text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-45 aria-[invalid=true]:border-danger'
+const controlClass = inputClass
 
 /**
  * Text field that commits on Enter or blur and reverts on Escape. When `onCommit` reports a
@@ -141,14 +139,14 @@ function Toggle({
   onChange: (checked: boolean) => void
 }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-control px-1.5 py-1.5 text-body-sm text-ink transition-colors hover:bg-muted-fill has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-45">
+    <label className="flex min-h-9 cursor-pointer items-center justify-between gap-3 text-body-sm text-ink has-[:disabled]:cursor-not-allowed has-[:disabled]:text-ink-disabled">
       <span>{label}</span>
       <input
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="size-3.5 accent-[var(--accent)]"
+        className={checkboxClass}
       />
     </label>
   )
@@ -156,9 +154,9 @@ function Toggle({
 
 function Readout({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-line/70 py-2 last:border-b-0">
+    <div className="flex items-baseline justify-between gap-4 border-b border-line py-2 last:border-b-0">
       <dt className={labelClass}>{label}</dt>
-      <dd className="text-body-sm font-medium tabular-nums text-ink">{children}</dd>
+      <dd className="font-mono text-body-sm tabular-nums text-ink">{children}</dd>
     </div>
   )
 }
@@ -197,7 +195,7 @@ export function MassFields({
 
   return (
     <div className="space-y-3 text-left">
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
         <button
           type="button"
           disabled={disabled}
@@ -255,7 +253,7 @@ export function MassFields({
                 type="button"
                 aria-pressed={candidate.id === tier.id}
                 onClick={() => onSelectTier(candidate.id)}
-                className={`${actionClass} aria-pressed:border-accent aria-pressed:bg-accent-soft aria-pressed:text-accent`}
+                className={`${actionClass} border-transparent aria-pressed:border-ink`}
               >
                 Tier {index + 1}
               </button>
@@ -288,7 +286,7 @@ export function MassFields({
         onCommit={(text) => volumeCommand({ name: text.trim() })}
       />
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-3">
         <Field
           label="Storeys"
           value={String(tier.storeys)}
@@ -360,13 +358,13 @@ export function MassFields({
       )}
 
       {warnings.length > 0 && (
-        <div className="rounded-control border border-warning/40 bg-warning/10 px-2.5 py-2">
+        <div className="rounded-control bg-warning-soft px-2.5 py-2">
           <ul aria-label="Clearance warnings" className="space-y-0.5 text-body-sm leading-snug text-warning-ink">
             {warnings.map((warning) => (
               <li key={warning.kind}>{warning.message}</li>
             ))}
           </ul>
-          <p className="mt-1 text-body-sm text-warning-ink/80">Illustrative check · not planning advice</p>
+          <p className="mt-1 text-body-sm text-warning-ink">Illustrative check · not planning advice</p>
         </div>
       )}
 

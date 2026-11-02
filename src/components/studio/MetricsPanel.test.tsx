@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { createRectangleFootprint, createScenario, createTier, createVolume } from '../../features/massing/factories'
 import { scenarioMetrics } from '../../features/massing/metrics'
 import type { Vec2 } from '../../lib/coordinates'
-import { MetricsPanel, SelectedFloors } from './MetricsPanel'
+import { MetricsNotes, MetricsPanel, SelectedFloors } from './MetricsPanel'
 
 const studyArea: Vec2[] = [[-20, -25], [20, -25], [20, 25], [-20, 25]]
 const lower = createTier({ footprint: createRectangleFootprint(20, 10), storeys: 3, storeyHeight: 3.2 })
@@ -15,11 +15,13 @@ describe('Metrics panel', () => {
     const selected = metrics.perVolume[0]
     if (!selected) throw new Error('Missing fixture volume')
     render(<><MetricsPanel metrics={metrics} /><SelectedFloors metrics={selected} /></>)
-    expect(within(screen.getByRole('region', { name: 'Metrics' })).getByText('760 m²')).toBeVisible()
+    const panel = screen.getByRole('region', { name: /Site coverage/ })
+    expect(within(panel).getByText('760')).toBeVisible()
+    expect(within(panel).getByRole('img', { name: /Site coverage 10\.0 percent/ })).toBeInTheDocument()
     expect(within(screen.getByRole('region', { name: 'Selected mass metrics' })).getByText('760 m²')).toBeVisible()
     expect(within(screen.getByRole('list', { name: 'Floors' })).getAllByRole('listitem')).toHaveLength(5)
     expect(screen.getByText('Floor 5 · 12.8 m')).toBeVisible()
-    expect(screen.getByText('above site origin')).toBeVisible()
+    expect(screen.getByText(/^Height above site origin/)).toBeVisible()
   })
 
   it.each([0, 20])('shows outside area only when the footprint crosses the boundary (centre %s)', (east) => {
@@ -40,7 +42,7 @@ describe('Metrics panel', () => {
 
   it('explains interpenetrating floor levels', () => {
     const metrics = scenarioMetrics(createScenario({ siteId: 'fixture', volumes: [createVolume({ tiers: [lower] }), createVolume({ tiers: [lower] })] }), studyArea)
-    render(<MetricsPanel metrics={metrics} />)
+    render(<MetricsNotes metrics={metrics} />)
     expect(screen.getByText('Buildings overlap at some floor levels; overlap counted once.')).toBeVisible()
   })
 })

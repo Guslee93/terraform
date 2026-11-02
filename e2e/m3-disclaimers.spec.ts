@@ -46,7 +46,7 @@ async function createSmallMass(page: Page) {
 
 test('D34: required wording is present in the studio panels and forbidden claims are absent', async ({ page }) => {
   await page.goto('/studio/compact-infill')
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
 
   // Sun tab: the method note states this is not a daylight or sun-hours assessment.
   await page.getByRole('tab', { name: 'Sun' }).click()

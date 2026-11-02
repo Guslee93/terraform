@@ -15,7 +15,7 @@ import { createRectangleFootprint, createScenario, createTier, createVolume } fr
 import { scenarioMetrics } from '../../features/massing/metrics'
 import type { Vec2 } from '../../lib/coordinates'
 import { ConstraintsPanel } from './ConstraintsPanel'
-import { MetricsPanel, SelectedFloors } from './MetricsPanel'
+import { MetricsNotes, MetricsPanel, SelectedFloors } from './MetricsPanel'
 import { SunPanel, type SunTime } from './SunPanel'
 
 // D34 — claim and disclaimer audit (docs/plans/M3-fable-plan.md §10, AGENTS.md §7).
@@ -85,8 +85,7 @@ describe('D34 claim and disclaimer audit', () => {
     const metrics = scenarioMetrics(createScenario({ siteId: 'fixture', volumes: [createVolume({ tiers: [steppedLower, steppedUpper] })] }), studyArea)
     const selected = metrics.perVolume[0]
     if (!selected) throw new Error('Missing fixture volume')
-    render(<><MetricsPanel metrics={metrics} /><SelectedFloors metrics={selected} /></>)
-    fireEvent.click(screen.getByText('About these numbers'))
+    render(<><MetricsNotes metrics={metrics} /><SelectedFloors metrics={selected} /></>)
     const braNotes = screen.getAllByText(/Concept GFA is not BRA, BYA or %-BRA/)
     expect(braNotes).toHaveLength(2)
     for (const note of braNotes) expect(note).toBeVisible()

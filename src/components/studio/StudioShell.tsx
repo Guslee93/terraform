@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
@@ -23,11 +23,20 @@ import type { SitePackage } from '../../features/sites/package'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
 import { readRenderPreference, writeRenderPreference } from '../../scene/renderQuality'
 import { ViewportCanvas, type SceneLayers } from '../../scene/ViewportCanvas'
-import { Button } from '../ui/Button'
+import type { MassAnnotation } from '../../scene/MassLayer'
+import { cn } from '../../lib/cn'
+import { Card, CardHeader } from '../ui/Card'
+import { textButtonClass } from '../ui/controls'
 import { Icon } from '../ui/Icon'
 import { CameraPresets } from './CameraPresets'
-import { Inspector, type InspectorTab } from './Inspector'
-import { StudioTopBar } from './StudioTopBar'
+import { summarizeChecks } from './checks'
+import { ConstraintsPanel } from './ConstraintsPanel'
+import { formatArea, formatNumber, massLetter } from './format'
+import { ChecksTile, GrossAreaTile, HeightTile, SunPathTile, type TileMass } from './InsightTiles'
+import { Inspector, type DrawerGroup } from './Inspector'
+import { MetricsPanel } from './MetricsPanel'
+import { StudioTopBar, STUDIO_TABPANEL_ID, type StudioTab } from './StudioTopBar'
+import { SunPanel, SunTile, useSunPlayback } from './SunPanel'
 import { ToolRail, type ToolId } from './ToolRail'
 
 type PackageStatus = 'loading' | 'ready' | 'error'
@@ -58,12 +67,11 @@ export function StudioShell({
     const resolved = localDayMinuteToInstant(sunTime.date, sunTime.minuteOfDay, timeZone)
     return { resolved, state: sunState(resolved.instant, latitude, longitude, timeZone) }
   }, [sunTime, sitePackage])
-  const [activeTab, setActiveTab] = useState<InspectorTab>('model')
+  const [activeTab, setActiveTab] = useState<StudioTab>('model')
+  const playback = useSunPlayback(setSunTime)
+  const [drawerFocus, setDrawerFocus] = useState<DrawerGroup | null>(null)
   const [renderPreference, setRenderPreference] = useState(readRenderPreference)
   const [inspectorOpen, setInspectorOpen] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(() =>
-    window.matchMedia('(min-width: 1100px)').matches,
-  )
   // Below 640 px the studio is a read-only preview (M0 visual gate).
   const [editable, setEditable] = useState(() => window.matchMedia('(min-width: 640px)').matches)
   const [layers, setLayers] = useState<SceneLayers>({
@@ -133,6 +141,10 @@ export function StudioShell({
       id: volume.id,
       name: volume.name,
       detail: base ? `${base.storeys} storeys · ${tierHeight(base).toFixed(1)} m${tiers}` : '',
+      gfa: (() => {
+        const entry = metrics?.perVolume.find((candidate) => candidate.volumeId === volume.id)
+        return entry ? formatArea(entry.gfaM2) : undefined
+      })(),
       hidden: !volume.visible,
       warning: warnedVolumes.has(volume.id),
     }
@@ -143,6 +155,20 @@ export function StudioShell({
     dispatch({ type: 'select', selection: { volumeId, tierId } })
   }
   const idle = editor.interaction.kind === 'idle'
+  const idleRef = useRef(idle)
+  useEffect(() => {
+    idleRef.current = idle
+  }, [idle])
+
+  // The drawer covers panel 02, so Sun and Constraints close it; Model brings back a selection.
+  const changeTab = (tab: StudioTab) => {
+    setActiveTab(tab)
+    if (tab !== 'model') setInspectorOpen(false)
+    else if (editor.history.selection.volumeId) {
+      setDrawerFocus(null)
+      setInspectorOpen(true)
+    }
+  }
 
   const runCommand = (command: MassingCommand) => {
     const problem = commandError(editor, command)
@@ -159,12 +185,13 @@ export function StudioShell({
     setLayers((current) => ({ ...current, [layer]: !current[layer] }))
   }
 
+  // Selecting a mass opens the drawer at its fields (spec §7.4).
+  const selectionId = editor.history.selection.volumeId
   useEffect(() => {
-    const query = window.matchMedia('(min-width: 1100px)')
-    const update = () => setIsDesktop(query.matches)
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [])
+    if (!selectionId) return
+    setDrawerFocus(null)
+    setInspectorOpen(true)
+  }, [selectionId])
 
   useEffect(() => {
     const query = window.matchMedia('(min-width: 640px)')
@@ -191,7 +218,8 @@ export function StudioShell({
       }
 
       if (event.key === 'Escape') {
-        setInspectorOpen(false)
+        // Esc cancels a gesture first; only an idle Esc closes the drawer.
+        if (idleRef.current) setInspectorOpen(false)
         dispatch({ type: 'key', key: 'Escape' })
       }
 
@@ -206,169 +234,209 @@ export function StudioShell({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [requestCamera])
 
-  return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-app text-ink">
-      <StudioTopBar
-        site={site}
-        scenario={scenario}
-        canFit={packageStatus === 'ready'}
-        onFitSite={() => requestCamera('isometric')}
-        onToggleInspector={() => setInspectorOpen((open) => !open)}
-        inspectorOpen={inspectorOpen}
-      />
+  const checks = useMemo(() => summarizeChecks(envelope, clearance, sitePackage?.manifest.constraints ?? null), [envelope, clearance, sitePackage])
+  const letters = useMemo(() => new Map(shown.volumes.map((volume, index) => [volume.id, massLetter(index)])), [shown.volumes])
+  const tileMasses = useMemo<TileMass[]>(() => (metrics?.perVolume ?? []).map((entry) => ({
+    id: entry.volumeId,
+    letter: letters.get(entry.volumeId) ?? '?',
+    name: entry.name,
+    gfaM2: entry.gfaM2,
+    floors: entry.storeys.length,
+    heightM: envelope?.perVolume.find((volume) => volume.volumeId === entry.volumeId)?.heightM ?? entry.maxHeightM,
+  })), [metrics, envelope, letters])
+  const annotations = useMemo(() => new Map<string, MassAnnotation>(tileMasses.map((mass) => [mass.id, {
+    title: `${mass.letter} · ${formatNumber(mass.heightM, 1)} m`,
+    detail: `${mass.floors} fl · ${formatNumber(mass.gfaM2)} m²`,
+  }])), [tileMasses])
+  const selectedId = editor.history.selection.volumeId
 
-      <div className="flex min-h-0 flex-1">
-        <ToolRail
-          activeTool={editor.tool}
-          onSelect={selectTool}
-          canUndo={editable && idle && editor.history.undoStack.length > 0}
-          canRedo={editable && idle && editor.history.redoStack.length > 0}
-          onUndo={() => dispatch({ type: 'undo' })}
-          onRedo={() => dispatch({ type: 'redo' })}
-          onOpenLayers={() => setInspectorOpen(true)}
+  const tileClass = 'min-h-[360px] studio:min-h-0'
+  const ready = packageStatus === 'ready' && sitePackage && solar
+
+  return (
+    <div className="min-h-dvh bg-app px-4 pb-7 pt-[22px] text-ink sm:px-7">
+      <div className="mx-auto max-w-[1680px]">
+        <StudioTopBar
+          site={site}
+          scenario={scenario}
+          canFit={packageStatus === 'ready'}
+          onFitSite={() => requestCamera('isometric')}
+          activeTab={activeTab}
+          onTabChange={changeTab}
         />
 
-        <main className="relative min-w-0 flex-1 overflow-hidden" aria-label="Studio viewport">
-          {packageStatus === 'ready' && sitePackage && solar ? (
-            <>
-              <ViewportCanvas
-                sitePackage={sitePackage}
-                sun={solar.state}
-                constraints={constraints}
-                envelope={envelope}
-                layers={layers}
-                presetId={cameraPreset}
-                cameraNonce={cameraNonce}
-                editor={editor}
-                dispatch={dispatch}
-                editable={editable}
-                warnedVolumes={warnedVolumes}
-                renderPreference={renderPreference}
-              />
-              <CameraPresets active={cameraPreset} onSelect={requestCamera} />
-            </>
-          ) : (
-            <div className="tf-paper-grid grid h-full place-items-center bg-viewport p-4">
-              <div className="w-full max-w-[23rem] rounded-card border border-line bg-surface/95 p-6 text-center backdrop-blur-md">
-                <p className="text-label text-accent">
-                  {site.title} · {packageStatus === 'error' ? 'Package error' : 'Loading'}
-                </p>
-                <h1 className="mt-2.5 text-balance text-title text-ink">
-                  {packageStatus === 'error'
-                    ? 'The site model could not be loaded.'
-                    : 'Preparing the curated site package.'}
-                </h1>
-                <p className="mx-auto mt-3 max-w-[36ch] text-body-sm leading-relaxed text-ink-secondary">
-                  {packageStatus === 'error'
-                    ? packageError ?? 'The package is unavailable.'
-                    : 'Loading terrain, context buildings and the study boundary from the local package.'}
-                </p>
-                {packageStatus === 'error' ? (
-                  <Button className="mt-4 min-h-9 px-3.5 text-body-sm" onClick={onRetry}>
-                    Try again
-                  </Button>
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="mx-auto mt-5 block size-6 animate-pulse rounded-full border border-line bg-muted-fill"
-                  />
-                )}
+        <main className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 studio:grid-cols-5 studio:grid-rows-[540px_394px]">
+          <Card aria-label="Studio viewport" className="h-[420px] bg-viewport sm:col-span-2 sm:h-[520px] studio:col-span-3 studio:h-auto">
+            {ready ? (
+              <>
+                <ViewportCanvas
+                  sitePackage={sitePackage}
+                  sun={solar.state}
+                  constraints={constraints}
+                  envelope={envelope}
+                  layers={layers}
+                  presetId={cameraPreset}
+                  cameraNonce={cameraNonce}
+                  editor={editor}
+                  dispatch={dispatch}
+                  editable={editable}
+                  warnedVolumes={warnedVolumes}
+                  annotations={annotations}
+                  renderPreference={renderPreference}
+                />
+                <CameraPresets active={cameraPreset} onSelect={requestCamera} />
+              </>
+            ) : (
+              <div className="grid h-full place-items-center p-4">
+                <div className="w-full max-w-[23rem] text-center">
+                  <p className="text-label text-ink-secondary">
+                    01 / Massing · {packageStatus === 'error' ? 'Package error' : 'Loading'}
+                  </p>
+                  <h1 className="mt-2.5 text-balance text-title text-ink">
+                    {packageStatus === 'error'
+                      ? 'The site model could not be loaded.'
+                      : 'Preparing the curated site package.'}
+                  </h1>
+                  <p className="mx-auto mt-3 max-w-[36ch] text-body-sm leading-relaxed text-ink-secondary">
+                    {packageStatus === 'error'
+                      ? packageError ?? 'The package is unavailable.'
+                      : 'Loading terrain, context buildings and the study boundary from the local package.'}
+                  </p>
+                  {packageStatus === 'error' ? (
+                    <button type="button" className={`${textButtonClass} mt-4`} onClick={onRetry}>
+                      Try again
+                    </button>
+                  ) : (
+                    <span aria-hidden="true" className="mx-auto mt-5 block size-6 animate-pulse rounded-pill bg-muted-fill" />
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {packageStatus !== 'ready' && (
-            <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:top-4">
-              <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm">
-                Local package
-              </span>
-              <span className="rounded-full border border-line bg-surface/90 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm sm:hidden">
-                Read-only preview
-              </span>
-            </div>
-          )}
+            <ToolRail
+              activeTool={editor.tool}
+              onSelect={selectTool}
+              canUndo={editable && idle && editor.history.undoStack.length > 0}
+              canRedo={editable && idle && editor.history.redoStack.length > 0}
+              onUndo={() => dispatch({ type: 'undo' })}
+              onRedo={() => dispatch({ type: 'redo' })}
+              layersOpen={inspectorOpen && drawerFocus === 'layers'}
+              onOpenLayers={() => {
+                setDrawerFocus('layers')
+                setInspectorOpen(true)
+              }}
+            />
 
-          {packageStatus === 'ready' && (editor.error || editor.tool === 'draw' || warningSummary) && (
-            <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-16 sm:top-4">
-              <p
-                role="status"
-                aria-live="polite"
-                className={
-                  editor.error
-                    ? 'max-w-[44ch] rounded-control border border-danger/40 bg-surface/95 px-3 py-1.5 text-center text-body-sm text-danger backdrop-blur-sm'
-                    : editor.tool === 'draw'
-                      ? 'max-w-[44ch] rounded-control border border-line bg-surface/95 px-3 py-1.5 text-center text-body-sm text-ink-secondary backdrop-blur-sm'
-                      : 'max-w-[44ch] rounded-control border border-warning/40 bg-surface/95 px-3 py-1.5 text-center text-body-sm text-warning-ink backdrop-blur-sm'
-                }
-              >
-                {editor.error ??
-                  (editor.tool === 'draw'
-                    ? 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'
-                    : `${warningSummary} · illustrative check`)}
-              </p>
-            </div>
-          )}
+            {packageStatus === 'ready' && (editor.error || editor.tool === 'draw' || warningSummary) && (
+              <div className="pointer-events-none absolute inset-x-0 top-[22px] z-10 flex justify-center px-40">
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className={cn(
+                    'max-w-[52ch] rounded-control bg-surface-inverse px-3 py-2 text-center text-mono-sm',
+                    editor.error ? 'text-ink-on-inverse' : 'text-ink-on-inverse-2',
+                  )}
+                >
+                  {editor.error && <Icon name="warn" size={12} className="mr-1.5 inline text-danger" />}
+                  {!editor.error && editor.tool !== 'draw' && <Icon name="warn" size={12} className="mr-1.5 inline text-warning" />}
+                  {editor.error ??
+                    (editor.tool === 'draw'
+                      ? 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'
+                      : `${warningSummary} · illustrative check`)}
+                </p>
+              </div>
+            )}
+          </Card>
 
-          <button
-            type="button"
-            onClick={() => setInspectorOpen(true)}
-            className="absolute bottom-3 left-3 z-10 inline-flex min-h-8 items-center gap-1.5 rounded-control border border-line bg-surface/90 px-2.5 text-body-sm font-medium text-ink-secondary backdrop-blur-sm transition-colors hover:text-ink min-[1100px]:hidden"
+          <div
+            role="tabpanel"
+            id={STUDIO_TABPANEL_ID}
+            aria-labelledby={`studio-tab-${activeTab}`}
+            className="min-h-[360px] sm:col-span-2 studio:min-h-0"
           >
-            <Icon name="layers" size={13} />
-            Site notes
-          </button>
+            {activeTab === 'model' && <MetricsPanel metrics={metrics} />}
+            {activeTab === 'sun' && (solar && sitePackage
+              ? <SunPanel time={sunTime} onChange={setSunTime} {...solar} location={sitePackage.manifest.location} playback={playback} />
+              : <PendingCard code="02" title="Sun position" />)}
+            {activeTab === 'constraints' && (
+              <ConstraintsPanel
+                envelope={envelope}
+                limits={sitePackage?.manifest.constraints ?? null}
+                heightReference={heightReference}
+                onHeightReferenceChange={setHeightReference}
+                masses={masses}
+                onSelectMass={selectMass}
+                checks={checks}
+              />
+            )}
+          </div>
 
+          <div className={tileClass}><GrossAreaTile masses={tileMasses} selectedId={selectedId} /></div>
+          <div className={tileClass}>
+            {solar && sitePackage
+              ? <SunTile time={sunTime} onChange={setSunTime} state={solar.state} location={sitePackage.manifest.location} playback={playback} />
+              : <PendingCard code="04" title="Sun" />}
+          </div>
+          <div className={tileClass}>
+            {solar && sitePackage
+              ? <SunPathTile date={sunTime.date} state={solar.state} location={sitePackage.manifest.location} />
+              : <PendingCard code="05" title="Sun path" />}
+          </div>
+          <div className={tileClass}>
+            <HeightTile masses={tileMasses} selectedId={selectedId} limitM={sitePackage?.manifest.constraints.maxHeightMeters ?? null} reference={heightReference} />
+          </div>
+          <div className={cn(tileClass, 'sm:col-span-2 studio:col-span-1')}>
+            <ChecksTile
+              checks={checks}
+              onOpenCheck={() => {
+                changeTab('constraints')
+                document.getElementById(STUDIO_TABPANEL_ID)?.scrollIntoView?.({ block: 'nearest' })
+              }}
+            />
+          </div>
         </main>
 
-        <Inspector
-          constraintsPanel={{ envelope, limits: sitePackage?.manifest.constraints ?? null, heightReference, onHeightReferenceChange: setHeightReference, masses, onSelectMass: selectMass }}
-          metrics={metrics}
-          sunPanel={solar && sitePackage ? { time: sunTime, onChange: setSunTime, ...solar, location: sitePackage.manifest.location } : null}
-          site={site}
-          manifest={sitePackage?.manifest ?? null}
-          packageStatus={packageStatus}
-          layers={layers}
-          onToggleLayer={toggleLayer}
-          renderPreference={renderPreference}
-          onRenderPreferenceChange={(preference) => setRenderPreference(writeRenderPreference(preference))}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isOpen={inspectorOpen}
-          onClose={() => setInspectorOpen(false)}
-          isDrawer={!isDesktop}
-          selected={selected}
-          canEdit={editable}
-          editingEnabled={editable && idle}
-          onCommand={runCommand}
-          masses={masses}
-          onSelectMass={selectMass}
-          onSelectTier={(tierId) =>
-            dispatch({ type: 'select', selection: { volumeId: editor.history.selection.volumeId, tierId } })
-          }
-        />
+        <footer className="mt-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-1 text-label text-ink-secondary">
+          <span>{site.title} · {scenario} · Local ENU metres</span>
+          <span>Illustrative constraints · not planning advice</span>
+          {/* Licence attribution stays on screen, not only in the drawer (ODbL, CC BY 4.0). */}
+          <Link to="/about#data" className="transition-colors duration-200 hover:text-ink">Buildings © OpenStreetMap contributors (ODbL) · Terrain © Kartverket (CC BY 4.0)</Link>
+        </footer>
       </div>
 
-      <footer className="flex h-9 shrink-0 items-center justify-between gap-4 border-t border-line bg-surface px-3 text-label text-ink-secondary">
-        <span className="truncate">
-          {site.title}
-          <span className="hidden sm:inline"> · {scenario}</span>
-        </span>
-        <span className="hidden sm:inline">Illustrative constraints · not planning advice</span>
-        <span className="sm:hidden">Not planning advice</span>
-        {packageStatus === 'ready' ? (
-          <Link
-            to="/about#data"
-            className="hidden shrink-0 items-center gap-1.5 transition-colors hover:text-ink lg:inline-flex"
-          >
-            Data: OSM · Kartverket
-          </Link>
-        ) : (
-          <span className="hidden shrink-0 items-center gap-1.5 lg:inline-flex">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-warning" />
-            {packageStatus === 'error' ? 'Package unavailable' : 'Preparing package'}
-          </span>
-        )}
-      </footer>
+      <Inspector
+        metrics={metrics}
+        site={site}
+        manifest={sitePackage?.manifest ?? null}
+        packageStatus={packageStatus}
+        layers={layers}
+        onToggleLayer={toggleLayer}
+        renderPreference={renderPreference}
+        onRenderPreferenceChange={(preference) => setRenderPreference(writeRenderPreference(preference))}
+        isOpen={inspectorOpen}
+        onClose={() => setInspectorOpen(false)}
+        isDrawer={!editable}
+        focusGroup={drawerFocus}
+        selected={selected}
+        canEdit={editable}
+        editingEnabled={editable && idle}
+        onCommand={runCommand}
+        masses={masses}
+        onSelectMass={selectMass}
+        onSelectTier={(tierId) =>
+          dispatch({ type: 'select', selection: { volumeId: editor.history.selection.volumeId, tierId } })
+        }
+        onAddMass={() => selectTool('draw')}
+      />
     </div>
+  )
+}
+
+function PendingCard({ code, title }: { code: string; title: string }) {
+  return (
+    <Card className="flex h-full flex-col px-[22px] pb-5 pt-5">
+      <CardHeader code={code} title={title} />
+      <p className="mt-auto text-label text-ink-secondary">Appears when the site package is ready</p>
+    </Card>
   )
 }

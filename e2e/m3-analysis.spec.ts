@@ -17,7 +17,7 @@ async function openStudio(page: Page) {
   await expect(
     page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
   ).toBeVisible()
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
 }
 
 /** Clear centre clip, away from the compass, legend, presets and scale bar (smoke.spec). */

@@ -16,7 +16,7 @@ import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
 import type { SunDirection } from '../features/analysis/sun'
 import type { EnvelopeConstraints, EnvelopeResult } from '../features/analysis/constraints'
 import { ConstraintLayer } from './ConstraintLayer'
-import { MassLayer } from './MassLayer'
+import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
 import { webglRendererName } from './rendererTier'
@@ -57,13 +57,14 @@ type ViewportProps = {
   dispatch: (event: EditorEvent) => void
   editable: boolean
   warnedVolumes: ReadonlySet<string>
+  annotations?: ReadonlyMap<string, MassAnnotation>
   renderPreference: RenderPreference
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
 const CLICK_TOLERANCE_PX = 4
 
-const VIEWPORT_BACKGROUND = '#F4F2EE'
+const VIEWPORT_BACKGROUND = '#F3F3F1'
 const CONTEXT_COLOR = '#FAF9F6'
 const EDGE_COLOR = '#7E7D7A'
 /** One line-weight knob. 0.85 matches Hektar's thin mid-grey outline (≈ 140/255 on white walls). */
@@ -314,6 +315,7 @@ export function ViewportCanvas({
   dispatch,
   editable,
   warnedVolumes,
+  annotations,
   renderPreference,
 }: ViewportProps) {
   const controlsRef = useRef<OrbitControlsHandle>(null)
@@ -399,6 +401,7 @@ export function ViewportCanvas({
               controlsRef={controlsRef}
               heightAt={heightAt}
               warnedVolumes={warnedVolumes}
+              annotations={annotations}
             />
 
             <CameraRig

@@ -8,6 +8,7 @@ function setup(overrides: Partial<Parameters<typeof ToolRail>[0]> = {}) {
     activeTool: 'select' as const,
     onSelect: vi.fn(),
     onOpenLayers: vi.fn(),
+    layersOpen: false,
     canUndo: true,
     canRedo: false,
     onUndo: vi.fn(),

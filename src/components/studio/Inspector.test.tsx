@@ -21,18 +21,14 @@ const site = requireSite('compact-infill')
 const layers = { terrain: true, context: true, streets: true, trees: true, parcel: true, setback: true, heightLimit: true }
 const baseProps: ComponentProps<typeof Inspector> = {
   site,
-  sunPanel: null,
   metrics: null,
-  constraintsPanel: { envelope: null, limits: null, heightReference: 'grade', onHeightReferenceChange: () => {}, masses: [], onSelectMass: () => {} },
   manifest: null,
   packageStatus: 'ready',
   layers,
   onToggleLayer: () => undefined,
   renderPreference: 'auto',
   onRenderPreferenceChange: () => undefined,
-  activeTab: 'model',
-  onTabChange: () => undefined,
-  isOpen: false,
+  isOpen: true,
   onClose: () => undefined,
   isDrawer: false,
   selected: null,
@@ -67,6 +63,7 @@ describe('Inspector drawer', () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
     render(<Inspector {...baseProps} onRenderPreferenceChange={onChange} />)
+    await user.click(screen.getByText('Layers & render quality'))
     const quality = screen.getByRole('combobox', { name: 'Render quality' })
     expect(quality).toHaveValue('auto')
     expect(quality).toHaveAccessibleDescription('Auto lowers quality on software rendering.')
@@ -79,7 +76,7 @@ describe('Inspector drawer', () => {
   })
 
   it('does not render when closed', () => {
-    const { container } = render(<Inspector {...baseProps} isDrawer />)
+    const { container } = render(<Inspector {...baseProps} isOpen={false} isDrawer />)
 
     expect(container).toBeEmptyDOMElement()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -101,7 +98,7 @@ describe('Inspector drawer', () => {
     expect(opener).toHaveFocus()
   })
 
-  it('renders as a static panel on desktop', () => {
+  it('renders as a non-modal side panel on desktop', () => {
     render(<Inspector {...baseProps} />)
 
     expect(screen.getByRole('complementary', { name: 'Inspector' })).toBeInTheDocument()

@@ -1,5 +1,5 @@
 import type { CameraPresetId } from '../../features/sites/manifest'
-import { cn } from '../../lib/cn'
+import { segmentClass } from '../ui/controls'
 
 const PRESETS: ReadonlyArray<{ id: CameraPresetId; label: string; title: string }> = [
   { id: 'isometric', label: 'Iso', title: 'Isometric view' },
@@ -14,12 +14,13 @@ type CameraPresetsProps = {
   onSelect: (preset: CameraPresetId) => void
 }
 
+/** §5.6 segmented text control, bottom-right of the viewport card. */
 export function CameraPresets({ active, onSelect }: CameraPresetsProps) {
   return (
     <div
       role="group"
       aria-label="Camera presets"
-      className="absolute bottom-3 right-3 z-10 flex items-center gap-0.5 rounded-control border border-line bg-surface/90 p-0.5 backdrop-blur-sm"
+      className="absolute bottom-3 right-5 z-10 flex flex-wrap items-center justify-end gap-x-5"
     >
       {PRESETS.map((preset) => (
         <button
@@ -28,10 +29,7 @@ export function CameraPresets({ active, onSelect }: CameraPresetsProps) {
           onClick={() => onSelect(preset.id)}
           aria-pressed={active === preset.id}
           title={preset.title}
-          className={cn(
-            'min-h-7 rounded-control px-2 text-label text-ink-secondary transition-colors hover:bg-muted-fill hover:text-ink',
-            active === preset.id && 'bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent',
-          )}
+          className={`${segmentClass} min-w-6 justify-center`}
         >
           {preset.label}
         </button>

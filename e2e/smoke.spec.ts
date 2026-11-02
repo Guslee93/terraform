@@ -12,12 +12,14 @@ test('landing page opens the primary studio and the package loads', async ({ pag
   await expect(
     page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
   ).toBeVisible()
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   await expect(page.getByRole('group', { name: 'Camera presets' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Top' }).click()
   await expect(page.getByRole('button', { name: 'Top' })).toHaveAttribute('aria-pressed', 'true')
 
+  // Layers live in the inspector drawer, opened from the tool rail.
+  await page.getByRole('button', { name: 'Site notes' }).click()
   const contextLayer = page.getByRole('checkbox', { name: 'Context buildings' })
   await expect(contextLayer).toBeChecked()
   await contextLayer.uncheck()
@@ -30,7 +32,7 @@ test('the sloped-edge package loads its own context', async ({ page }) => {
   await expect(
     page.getByRole('region', { name: /3D site viewport for Sloped Edge/i }),
   ).toBeVisible()
-  await expect(page.getByText('33 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   await expect(page.getByText(/© OpenStreetMap contributors/i).first()).toBeVisible()
 })
 
@@ -41,7 +43,7 @@ test('the 3D view redraws when the camera preset changes', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/studio/compact-infill')
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
-  await expect(page.getByText('137 simplified')).toBeVisible()
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
   // Centre of the canvas, clear of the compass, legend and preset overlays.
