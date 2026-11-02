@@ -188,10 +188,7 @@ test('QA-12: comparison rows and B − A deltas match the hand calculation', asy
   await expect(panel.getByRole('status')).toHaveCount(0)
 })
 
-// KNOWN PRODUCT BUG (C15 item 7): the menu closes when a confirmation opens, so focus has nowhere to
-// return to and drops to <body> after Escape or Cancel. Remove `.fixme` once ScenarioMenu restores
-// focus to its trigger when a confirmation closes.
-test.fixme('Escape cancels a confirmation dialog and restores focus to the scenario menu', async ({ page }) => {
+test('Escape cancels a confirmation dialog and restores focus to the scenario menu', async ({ page }) => {
   await openStudio(page)
   await expectSaved(page)
 

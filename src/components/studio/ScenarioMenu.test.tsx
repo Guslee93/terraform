@@ -142,6 +142,13 @@ describe('ScenarioMenu', () => {
     expect(screen.queryByLabelText('Scenarios')).not.toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: /notes/i })).toHaveFocus()
   })
+  it('stays open when plain text inside the menu is clicked', async () => {
+    const { user } = await setup()
+    const menu = screen.getByLabelText('Scenarios')
+    // A non-focusable click blurs the focused control with no new focus target (relatedTarget null).
+    await user.click(within(menu).getAllByText(/floors?/i)[0]!)
+    expect(screen.getByLabelText('Scenarios')).toBeInTheDocument()
+  })
   it('lists and switches scenarios, supports arrows and returns focus on Escape', async () => {
     const { user } = await setup()
     await user.keyboard('{ArrowDown}{ArrowDown}')

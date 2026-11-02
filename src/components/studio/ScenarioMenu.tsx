@@ -50,7 +50,10 @@ export function ScenarioMenu({ project, site }: { project: ScenarioProject; site
   const confirm = (value: Confirmation) => { setConfirmation(value); setOpen(false) }
   return (
     <div ref={root} className="relative" onBlur={(event) => {
-      if (!event.currentTarget.contains(event.relatedTarget)) {
+      // Only when focus lands on another element outside the menu. A click on plain text inside the
+      // menu also blurs with no target (relatedTarget null) and must not close it; real outside
+      // clicks are handled by the document listener.
+      if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) {
         setOpen(false); setRenaming(null); setError(null)
       }
     }} onKeyDown={(event) => {
