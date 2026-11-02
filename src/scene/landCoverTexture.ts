@@ -1,15 +1,16 @@
 import { CanvasTexture, SRGBColorSpace } from 'three'
 import type { LandCoverArea, LandCoverKind, TerrainData } from '../features/sites/package'
+import { soften } from './palette'
 
 /**
  * Plan colours, multiplied with the near-white terrain vertex colours, so the rendered result
  * lands on the muted Hektar-like swatches (green space ≈ #D3DCCB, water ≈ #C6DCE8).
  */
 const LANDCOVER_PAINT: Record<LandCoverKind, string> = {
-  grass: '#E4EADD',
-  park: '#DCE5D5',
-  wood: '#D2DECC',
-  water: '#CBE1EE',
+  grass: soften('#E4EADD'),
+  park: soften('#DCE5D5'),
+  wood: soften('#D2DECC'),
+  water: soften('#CBE1EE'),
 }
 /** Draw order: broad green first, water last so ponds sit on top of parks. */
 const PAINT_ORDER: readonly LandCoverKind[] = ['grass', 'park', 'wood', 'water']

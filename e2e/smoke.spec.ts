@@ -15,11 +15,11 @@ test('landing page opens the primary studio and the package loads', async ({ pag
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   await expect(page.getByRole('group', { name: 'Camera presets' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Top' }).click()
-  await expect(page.getByRole('button', { name: 'Top' })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Plan', exact: true })).toHaveAttribute('aria-pressed', 'true')
 
-  // Layers live in the inspector drawer, opened from the tool rail.
-  await page.getByRole('button', { name: 'Site notes' }).click()
+  // Layers live in a panel group; the toolbar's Layers button opens it.
+  await page.getByRole('button', { name: 'Layers', exact: true }).click()
   const contextLayer = page.getByRole('checkbox', { name: 'Context buildings' })
   await expect(contextLayer).toBeChecked()
   await contextLayer.uncheck()
@@ -52,7 +52,7 @@ test('the 3D view redraws when the camera preset changes', async ({ page }) => {
   // Let the scene (and the lazy AO chunk) settle before the reference frame.
   await page.waitForTimeout(2500)
   const iso = await page.screenshot({ clip })
-  await page.getByRole('button', { name: 'Top' }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await expect
     .poll(async () => (await page.screenshot({ clip })).equals(iso), { timeout: 10_000 })
     .toBe(false)

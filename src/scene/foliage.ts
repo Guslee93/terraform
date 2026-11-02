@@ -8,11 +8,12 @@ import {
   type BufferGeometry,
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { soften } from './palette'
 import type { TreeShape } from './treeVariants'
 
 export const FOLIAGE_VARIANTS = 6
 
-const GREENS = ['#A9CBA0', '#8FBB8A', '#C3DAB5', '#7FAE7E'] as const
+const GREENS = ['#A9CBA0', '#8FBB8A', '#C3DAB5', '#7FAE7E'].map((green) => soften(green))
 const RADII: Record<TreeShape, readonly [number, number, number]> = {
   round: [1, 0.8, 1],
   tall: [0.65, 1.45, 0.65],

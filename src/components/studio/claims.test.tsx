@@ -16,7 +16,7 @@ import { scenarioMetrics } from '../../features/massing/metrics'
 import type { Vec2 } from '../../lib/coordinates'
 import { ConstraintsPanel } from './ConstraintsPanel'
 import { MetricsNotes, MetricsPanel, SelectedFloors } from './MetricsPanel'
-import { SunPanel, type SunTime } from './SunPanel'
+import { SunDetails, useSunPlayback, type SunTime } from './SunPanel'
 
 // D34 — claim and disclaimer audit (docs/plans/M3-fable-plan.md §10, AGENTS.md §7).
 // Every rendered constraint status keeps the disclaimer adjacent; the metrics disclosure and the
@@ -53,7 +53,8 @@ function SunPanelHarness({ latitude = 59.91, initial = { date: '2026-06-21', min
   const [time, setTime] = useState(initial)
   const location = { latitude, longitude: 10.75, timeZone: 'Europe/Oslo' }
   const resolved = localDayMinuteToInstant(time.date, time.minuteOfDay, location.timeZone)
-  return <SunPanel time={time} onChange={setTime} location={location} resolved={resolved} state={sunState(resolved.instant, latitude, location.longitude, location.timeZone)} />
+  const playback = useSunPlayback(setTime)
+  return <SunDetails time={time} onChange={setTime} location={location} resolved={resolved} playback={playback} state={sunState(resolved.instant, latitude, location.longitude, location.timeZone)} />
 }
 
 beforeEach(() => vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))))
@@ -75,9 +76,10 @@ describe('D34 claim and disclaimer audit', () => {
     const onSelect = vi.fn()
     const envelope = envelopeFor('exceeds')
     render(<ConstraintsPanel envelope={envelope} limits={limits} heightReference="grade" onHeightReferenceChange={() => {}} masses={[{ id: 'volume', name: 'East wing', hidden: false, warning: true, detail: '' }]} onSelectMass={onSelect} />)
-    const warning = screen.getByRole('button', { name: /East wing.*outside the setback/ })
-    expect(warning).toHaveTextContent('outside the study area')
-    fireEvent.click(warning)
+    // One row per reason, each selecting the offending volume.
+    expect(screen.getByRole('button', { name: /East wing is outside the study area/ })).toBeVisible()
+    expect(screen.getByRole('button', { name: /East wing is .* above the limit/ })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: /East wing is outside the setback/ }))
     expect(onSelect).toHaveBeenCalledWith('volume')
   })
 

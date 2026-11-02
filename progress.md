@@ -325,3 +325,12 @@
 - Tests: unit tests updated for the new structure (+ `checks.test.ts`, barcode keyboard test); e2e open the drawer from the rail before using layers, wait on the viewport region instead of `137 simplified`, and the legend test became an HUD-overlap + no-horizontal-scroll test at five widths.
 - Verification: lint ✅ · typecheck ✅ · 704 unit tests ✅ · build ✅ · e2e 17 passed, 1 opt-in skipped · browser check at 1680, 1024 and 375 px (grid, drawer, tiles with a drawn mass, no horizontal scroll).
 - Bugs found by e2e and fixed: Esc during a roof drag also closed the drawer (now an idle Esc only); the drawer covered panel 02 on the Sun/Constraints tabs (those tabs now close it, Model reopens it for a selection); the night status read `· Sun below horizon`; the legend touched the camera views at 1680 px. OSM/Kartverket attribution moved into the always-visible footer.
+
+### Studio v2 — draft 4 editor layout (2026-11-02)
+
+- UX assessment (`docs/design/ux-assessment.md`, images 01–06) → owner chose the editor layout, then iterated four drafts against `References images UX UI/`; draft 4 approved and built (ADR-0010, proposed).
+- Built: two-column studio (canvas + always-visible panel), text toolbar and views, legend pill, sun band with the barcode slider, design check with one row per issue and the reference stated, scenario figures (Tallest uses the envelope reference everywhere), buildings with the selected mass as a solid accent row, collapsible groups. Scene colours softened through `soften()` (60 % saturation); selected mass solid blue; scene labels are chips with a status dot.
+- Removed: tabs, drawer, coverage gauge, insight tiles, `Card`/`Metric` primitives.
+- Fixes found on the way: list rows and scene labels showed different heights (storeys × storey height vs envelope height) → both use the envelope height; Tallest without envelope data said "above grade" → now "Above site origin"; toolbar and views overlapped at 1024 px → views drop to a second row below 1280 px; phone canvas squeezed by the sun band → fixed 360 px scene below 640 px.
+- Verification: lint ✅ · typecheck ✅ · 705 unit tests ✅ · build ✅ · e2e 18 passed, 1 opt-in skipped · browser check at 1440, 1024 and 375 px.
+- e2e migration done by a subagent (e2e/ only); its one failure was the 1024 px overlap above, fixed in product code.

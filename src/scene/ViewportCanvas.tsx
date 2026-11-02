@@ -64,7 +64,7 @@ type ViewportProps = {
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
 const CLICK_TOLERANCE_PX = 4
 
-const VIEWPORT_BACKGROUND = '#F3F3F1'
+const VIEWPORT_BACKGROUND = '#F1F1EF'
 const CONTEXT_COLOR = '#FAF9F6'
 const EDGE_COLOR = '#7E7D7A'
 /** One line-weight knob. 0.85 matches Hektar's thin mid-grey outline (≈ 140/255 on white walls). */
@@ -429,7 +429,7 @@ export function ViewportCanvas({
           </Canvas>
         </SceneErrorBoundary>
       )}
-      <CameraHud layers={layers} night={lightRig(sun, profile).night} />
+      <CameraHud layers={layers} />
     </div>
   )
 }

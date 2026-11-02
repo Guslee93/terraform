@@ -14,15 +14,19 @@ import {
 } from '../features/editor/interaction'
 import { DEFAULT_GRID_STEP_M } from '../features/editor/snapping'
 import type { OrbitControlsHandle } from './CameraRig'
+import { soften } from './palette'
 import { enuToThreeXyz } from '../lib/coordinates'
 import { tierTop } from '../features/massing/aggregate'
 import { createStoreyLineGeometry, createTierGeometry, roofHandlePosition } from './massGeometry'
 
 // Accent-family tint: the proposal is the only coloured object against the white context.
-const MASS_COLOR = '#C9DBE5'
+const MASS_COLOR = soften('#C9DBE5')
 const INVALID_COLOR = '#EBC9C4'
 /** Amber tint for clearance warnings (design contract: amber = warning). */
-const WARNING_COLOR = '#EFD9AC'
+const WARNING_COLOR = soften('#EFD9AC')
+/** The selected mass is the one solid accent object in the scene (draft 4). */
+const SELECTED_FILL = '#3550E0'
+const SELECTED_EDGE = '#172DA8'
 const SELECTION_COLOR = '#355E79'
 /** Storey bands and unselected outlines: a darker accent so they read on the tinted faces. */
 const MASS_LINE_COLOR = '#355E79'
@@ -40,7 +44,7 @@ type MassLayerProps = {
   annotations?: ReadonlyMap<string, MassAnnotation>
 }
 
-export type MassAnnotation = { readonly title: string; readonly detail: string }
+export type MassAnnotation = { readonly title: string; readonly detail: string; readonly status: 'attention' | 'pass' }
 
 type StartDrag = (plane: Plane, toPoint: (hit: Vector3) => Vec2) => void
 
@@ -136,7 +140,7 @@ function TierMesh({
     >
       {/* Faces pushed back so storey bands and edges lying on them do not z-fight. */}
       <meshStandardMaterial
-        color={invalid ? INVALID_COLOR : warning ? WARNING_COLOR : MASS_COLOR}
+        color={invalid ? INVALID_COLOR : selected ? SELECTED_FILL : warning ? WARNING_COLOR : MASS_COLOR}
         roughness={0.85}
         metalness={0}
         polygonOffset
@@ -144,37 +148,36 @@ function TierMesh({
         polygonOffsetUnits={1}
       />
       {selected ? (
-        <Edges color={SELECTION_COLOR} threshold={20} lineWidth={1.5} />
+        <Edges color={SELECTED_EDGE} threshold={20} lineWidth={1.5} />
       ) : (
         <Edges threshold={20} color={MASS_LINE_COLOR} transparent opacity={MASS_LINE_OPACITY} />
       )}
       <lineSegments geometry={storeyLines} raycast={() => null}>
-        <lineBasicMaterial color={MASS_LINE_COLOR} transparent opacity={MASS_LINE_OPACITY} />
+        <lineBasicMaterial color={selected ? '#FFFFFF' : MASS_LINE_COLOR} transparent opacity={selected ? 0.25 : MASS_LINE_OPACITY} />
       </lineSegments>
     </mesh>
   )
 }
 
-/** Leader line and mono label from the mass's top north corner (spec §7.3). Presentational only. */
+/** Leader stem and label chip above the mass's top north corner (draft 4). Presentational only. */
 function Annotation({ volume, annotation, selected }: { volume: MassVolume; annotation: MassAnnotation; selected: boolean }) {
   const anchor = useMemo(() => {
     const top = volume.tiers.reduce((best, tier) => (tierTop(tier) > tierTop(best) ? tier : best))
     const corner = top.footprint.vertices.reduce((best, vertex) => (vertex[1] + vertex[0] > best[1] + best[0] ? vertex : best))
     return enuToThreeXyz([corner[0], corner[1], tierTop(top)])
   }, [volume])
-  const colour = selected ? 'var(--accent)' : 'var(--ink-primary)'
   return (
     <Html position={anchor} zIndexRange={[15, 5]} style={{ pointerEvents: 'none' }}>
-      <div aria-hidden="true" className="relative -translate-y-full" style={{ color: colour }}>
-        <svg width="64" height="40" className="block overflow-visible">
-          <path d="M0 40 L32 8 H64" fill="none" stroke="currentColor" strokeWidth={selected ? 1 : 0.6} />
-          <circle cx="0" cy="40" r="2.5" fill="currentColor" />
-          {selected && <circle cx="0" cy="40" r="2.5" fill="none" stroke="currentColor" className="tf-ping [transform-box:fill-box] [transform-origin:center]" />}
-        </svg>
-        <div className="absolute left-[68px] top-0 whitespace-nowrap text-mono-sm uppercase leading-tight">
-          <p>{annotation.title}</p>
-          <p className={selected ? '' : 'text-ink-secondary'}>{annotation.detail}</p>
+      <div aria-hidden="true" className="relative flex -translate-x-1/2 -translate-y-full flex-col items-center">
+        <div className="whitespace-nowrap rounded-chip bg-surface/90 px-2.5 py-1.5 text-body-sm leading-tight">
+          <p className={selected ? 'flex items-center gap-1.5 font-medium text-accent' : 'flex items-center gap-1.5 font-medium text-ink'}>
+            <span className={annotation.status === 'attention' ? 'size-1.5 rounded-pill bg-warning' : 'size-1.5 rounded-pill bg-positive'} />
+            {annotation.title}
+          </p>
+          <p className="mt-0.5 font-mono text-caption text-ink-secondary">{annotation.detail}</p>
         </div>
+        <span className={selected ? 'h-9 w-px bg-accent' : 'h-9 w-px bg-ink'} />
+        <span className={selected ? '-mt-[3px] size-[5px] rounded-pill bg-accent' : '-mt-[3px] size-[5px] rounded-pill bg-ink'} />
       </div>
     </Html>
   )

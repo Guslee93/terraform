@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { sunState } from '../../features/analysis/sun'
 import { localDayMinuteToInstant } from '../../features/analysis/time'
-import { SunPanel, SunTile, useSunPlayback, type SunTime } from './SunPanel'
+import { SunBand, SunDetails, useSunPlayback, type SunTime } from './SunPanel'
 
 function Harness({ latitude = 59.91, initial = { date: '2026-06-21', minuteOfDay: 900 } }: { latitude?: number; initial?: SunTime }) {
   const [time, setTime] = useState(initial)
@@ -11,10 +11,10 @@ function Harness({ latitude = 59.91, initial = { date: '2026-06-21', minuteOfDay
   const resolved = localDayMinuteToInstant(time.date, time.minuteOfDay, location.timeZone)
   const state = sunState(resolved.instant, latitude, location.longitude, location.timeZone)
   const playback = useSunPlayback(setTime)
-  // Panel 02 and tile 04 share time and playback, as in the studio.
+  // The sun band and the panel's Sun group share time and playback, as in the studio.
   return <>
-    <SunPanel time={time} onChange={setTime} location={location} resolved={resolved} state={state} playback={playback} />
-    <SunTile time={time} onChange={setTime} location={location} state={state} playback={playback} />
+    <SunBand time={time} onChange={setTime} location={location} state={state} playback={playback} />
+    <SunDetails time={time} onChange={setTime} location={location} resolved={resolved} state={state} playback={playback} />
   </>
 }
 
@@ -57,10 +57,10 @@ describe('Sun panel', () => {
     vi.useFakeTimers()
     render(<Harness initial={{ date: '2026-06-21', minuteOfDay: 1430 }} />)
     fireEvent.click(screen.getByRole('button', { name: '120 min/s' }))
-    fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[0]!)
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
     act(() => vi.advanceTimersByTime(1000))
     expect(screen.getByRole('slider')).toHaveValue('110')
-    fireEvent.click(screen.getAllByRole('button', { name: 'Pause' })[0]!)
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
     act(() => vi.advanceTimersByTime(1000))
     expect(screen.getByRole('slider')).toHaveValue('110')
   })
@@ -69,7 +69,7 @@ describe('Sun panel', () => {
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
     vi.useFakeTimers()
     render(<Harness />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[0]!)
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
     act(() => vi.advanceTimersByTime(999))
     expect(screen.getByRole('slider')).toHaveValue('900')
     act(() => vi.advanceTimersByTime(1))
@@ -87,10 +87,10 @@ describe('Sun panel', () => {
 
   it('pauses when the browser tab is hidden', () => {
     render(<Harness />)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Play' })[0]!)
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
     const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
     fireEvent(document, new Event('visibilitychange'))
-    expect(screen.getAllByRole('button', { name: 'Play' })).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Play' })).toBeVisible()
     hidden.mockRestore()
   })
 })

@@ -24,18 +24,21 @@ describe('Constraints panel', () => {
     const headline = screen.getByRole('heading', { name: 'Exceeds demo envelope' })
     expect(headline).toHaveAttribute('aria-live', 'polite')
     expect(headline.nextElementSibling).toHaveTextContent('Illustrative constraint — not planning advice')
-    expect(screen.getByText('Max height 18.0 m · Setback 4.0 m')).toBeVisible()
-    const warning = screen.getByRole('button', { name: /East wing.*outside the setback/ })
-    expect(warning).toHaveTextContent('outside the study area')
+    expect(screen.getByText(/Limits: 18\.0 m height, 4\.0 m setback\./)).toBeVisible()
+    expect(screen.getByRole('button', { name: /East wing is outside the study area/ })).toBeVisible()
+    const warning = screen.getByRole('button', { name: /East wing is outside the setback/ })
     fireEvent.click(warning)
     expect(select).toHaveBeenCalledWith('crossing')
   })
 
   it('changes the reported height reference from Grade to Datum', () => {
     render(<Harness />)
-    expect(screen.getByRole('button')).toHaveTextContent('2.2 m above the limit (above grade, ref −1.0 m)')
+    const tall = () => screen.getByRole('button', { name: /above the limit/ })
+    expect(tall()).toHaveTextContent('East wing is 2.2 m above the limit')
+    expect(tall()).toHaveTextContent('Above grade, ref −1.0 m')
     fireEvent.change(screen.getByLabelText('Height measured from'), { target: { value: 'datum' } })
-    expect(screen.getByRole('button')).toHaveTextContent('1.2 m above the limit (above datum, ref 0.0 m)')
+    expect(tall()).toHaveTextContent('East wing is 1.2 m above the limit')
+    expect(tall()).toHaveTextContent('Above datum, ref 0.0 m')
   })
 
   it('shows Not evaluated when no package is available', () => {

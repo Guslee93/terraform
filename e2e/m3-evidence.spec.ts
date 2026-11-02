@@ -35,8 +35,9 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
 
   const shoot = (name: string) => page.screenshot({ path: `${OUT_DIR}/${name}-${SHOT_SUFFIX}.png` })
 
-  // Summer solstice day: morning (09:00) → noon (12:00) → evening (18:00), Iso camera.
-  await page.getByRole('tab', { name: 'Sun' }).click()
+  // Summer solstice day: morning (09:00) → noon (12:00) → evening (18:00), 3D camera.
+  // Time presets live in the collapsed Sun group of the inspector panel.
+  await page.getByRole('complementary', { name: 'Inspector' }).locator('summary').filter({ hasText: /^Sun/ }).click()
   await page.getByRole('button', { name: 'Morning' }).click()
   await page.waitForTimeout(1500)
   await shoot('m3-morning-21jun')
@@ -56,7 +57,7 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   await shoot('m3-noon-21dec')
 
   await page.getByRole('button', { name: 'Evening' }).click()
-  await expect(page.getByRole('status')).toHaveText('Sun below horizon')
+  await expect(page.getByRole('region', { name: 'Sun and shadows' }).getByRole('status')).toHaveText('Sun below horizon')
   await page.waitForTimeout(1200)
   await shoot('m3-below-horizon-21dec-1800')
 
@@ -66,9 +67,9 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   await page.getByRole('button', { name: 'Summer solstice' }).click()
   await page.getByLabel('Local time').fill('900')
   await expect(page.getByText('2026-06-21 15:00 CEST')).toBeVisible()
-  await page.getByRole('button', { name: 'Top' }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await page.waitForTimeout(500)
-  await page.getByRole('button', { name: 'Draw footprint' }).click()
+  await page.getByRole('button', { name: 'Draw building' }).click()
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
@@ -79,22 +80,20 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   for (const [east, north] of [[-106, 15], [-82, 15], [-82, -15], [-106, -15]]) {
     await page.mouse.click(cx + px(east), cy - px(north))
   }
-  await page.getByRole('button', { name: 'Draw footprint' }).evaluate((button) => button.blur())
+  await page.getByRole('button', { name: 'Draw building' }).evaluate((button) => button.blur())
   await page.keyboard.press('Enter')
 
-  // The created mass is selected; confirm on the Model tab (the Name field lives there).
-  await page.getByRole('tab', { name: 'Model' }).click()
+  // The created mass is selected; its Name field is in the panel's Buildings section.
   await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
   const storeys = page.getByRole('textbox', { name: 'Storeys' })
   await storeys.fill('7')
   await storeys.press('Enter')
   await expect(storeys).toHaveValue('7')
 
-  await page.getByRole('button', { name: 'Iso' }).click()
+  await page.getByRole('button', { name: '3D', exact: true }).click()
   await page.waitForTimeout(800)
-  await page.getByRole('tab', { name: 'Constraints' }).click()
   await expect(page.getByRole('heading', { name: 'Exceeds demo envelope' })).toBeVisible()
-  await expect(page.getByRole('button', { name: /outside the setback/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Mass 1 is outside the setback/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /above the limit/ })).toBeVisible()
   await page.waitForTimeout(1500)
   await shoot('m3-envelope-violation-iso')

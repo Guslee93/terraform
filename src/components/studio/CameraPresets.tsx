@@ -1,12 +1,12 @@
 import type { CameraPresetId } from '../../features/sites/manifest'
-import { segmentClass } from '../ui/controls'
+import { cn } from '../../lib/cn'
 
 const PRESETS: ReadonlyArray<{ id: CameraPresetId; label: string; title: string }> = [
-  { id: 'isometric', label: 'Iso', title: 'Isometric view' },
-  { id: 'top', label: 'Top', title: 'Top view' },
-  { id: 'north', label: 'N', title: 'View from the south, looking north' },
-  { id: 'south', label: 'S', title: 'View from the north, looking south' },
-  { id: 'eyeLevel', label: 'Eye', title: 'Eye-level view' },
+  { id: 'isometric', label: '3D', title: 'Isometric view' },
+  { id: 'top', label: 'Plan', title: 'Top view' },
+  { id: 'north', label: 'North', title: 'View from the south, looking north' },
+  { id: 'south', label: 'South', title: 'View from the north, looking south' },
+  { id: 'eyeLevel', label: 'Street', title: 'Eye-level view' },
 ]
 
 type CameraPresetsProps = {
@@ -14,13 +14,13 @@ type CameraPresetsProps = {
   onSelect: (preset: CameraPresetId) => void
 }
 
-/** §5.6 segmented text control, bottom-right of the viewport card. */
+/** Views as words with an underline for the active one, top-right of the canvas beside the compass. */
 export function CameraPresets({ active, onSelect }: CameraPresetsProps) {
   return (
     <div
       role="group"
       aria-label="Camera presets"
-      className="absolute bottom-3 right-5 z-10 flex flex-wrap items-center justify-end gap-x-5"
+      className="absolute right-14 top-[60px] z-10 flex items-center gap-5 rounded-chip bg-surface/85 px-2 py-0.5 xl:top-3.5"
     >
       {PRESETS.map((preset) => (
         <button
@@ -29,7 +29,7 @@ export function CameraPresets({ active, onSelect }: CameraPresetsProps) {
           onClick={() => onSelect(preset.id)}
           aria-pressed={active === preset.id}
           title={preset.title}
-          className={`${segmentClass} min-w-6 justify-center`}
+          className={cn('min-h-9 border-b border-transparent text-body-sm text-ink-secondary transition-colors duration-200 hover:text-ink aria-pressed:border-ink aria-pressed:text-ink')}
         >
           {preset.label}
         </button>

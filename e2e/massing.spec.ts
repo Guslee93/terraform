@@ -6,8 +6,8 @@ import { expect, test, type Page } from '@playwright/test'
 // then exercises the roof-drag transaction: Esc cancels a live drag, a committed
 // drag is one undo entry.
 //
-// Camera note: the draw deliberately happens in the `Top` preset (per the task
-// card). The roof drag happens in the `Iso` preset because the top view looks
+// Camera note: the draw deliberately happens in the `Plan` preset (per the task
+// card). The roof drag happens in the `3D` preset because the top view looks
 // straight down at the vertical drag plane, so the ray-plane intersection is
 // degenerate and the storeys preview saturates past the 1–40 validation limit
 // (any release would be rejected instead of committed). The iso view keeps the
@@ -49,11 +49,11 @@ async function createMass(page: Page): Promise<void> {
   ).toBeVisible()
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Top' }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   // The preset snaps instantly with reduced motion; allow one short settle for the renderer.
   await page.waitForTimeout(400)
 
-  await page.getByRole('button', { name: 'Draw footprint' }).click()
+  await page.getByRole('button', { name: 'Draw building' }).click()
   const centre = await viewportCentre(page)
   const step = 60
   const corners = [
@@ -66,9 +66,9 @@ async function createMass(page: Page): Promise<void> {
     await page.mouse.click(corner.x, corner.y)
   }
 
-  // Clicking the canvas does not move focus off the Draw footprint button.
+  // Clicking the canvas does not move focus off the Draw building button.
   // Without the blur, Enter would re-click that button and cancel the drawing.
-  await page.getByRole('button', { name: 'Draw footprint' }).evaluate((button) => button.blur())
+  await page.getByRole('button', { name: 'Draw building' }).evaluate((button) => button.blur())
   await page.keyboard.press('Enter')
 
   await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
@@ -78,7 +78,7 @@ async function createMass(page: Page): Promise<void> {
 
 /** Re-seat the camera in the isometric preset and return the handle centre. */
 async function moveToRoofDragView(page: Page): Promise<{ x: number; y: number }> {
-  await page.getByRole('button', { name: 'Iso' }).click()
+  await page.getByRole('button', { name: '3D', exact: true }).click()
   await page.waitForTimeout(400)
   return roofHandleCentre(page)
 }

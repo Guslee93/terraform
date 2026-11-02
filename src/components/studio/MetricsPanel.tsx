@@ -1,106 +1,77 @@
 import { LEVEL_TOLERANCE_M, type ScenarioMetrics, type VolumeMetrics } from '../../features/massing/metrics'
-import { Card, CardHeader } from '../ui/Card'
 import { labelClass } from '../ui/controls'
-import { Figure, Metric, MetricRow } from '../ui/Metric'
+import { Figure } from '../ui/Metric'
+import { cn } from '../../lib/cn'
+import type { ReactNode } from 'react'
 import { formatArea, formatMetres, formatNumber } from './format'
 
-const GAUGE = { width: 580, height: 300, cx: 290, cy: 272, r: 232, pill: 17, steps: 20 }
-
-/** Scale end for the coverage gauge: 50 %, or the next 5 % above the value. */
-export function gaugeScaleEnd(percent: number): number {
-  return Math.max(50, Math.ceil(percent / 5) * 5)
-}
-
-/**
- * Pill-arc coverage gauge (spec §7.8). The site packages carry no coverage limit, so the
- * gauge shows used and remaining only; a limit pill appears only when a limit is supplied.
- */
-function CoverageGauge({ percent }: { percent: number }) {
-  const end = gaugeScaleEnd(percent)
-  const pills = Array.from({ length: GAUGE.steps + 1 }, (_, index) => {
-    const value = (end * index) / GAUGE.steps
-    const angle = Math.PI - (index / GAUGE.steps) * Math.PI
-    return {
-      value,
-      x: GAUGE.cx + GAUGE.r * Math.cos(angle),
-      y: GAUGE.cy - GAUGE.r * Math.sin(angle),
-      used: percent > 0 && value <= percent + 1e-9,
-    }
-  })
-  const inner = GAUGE.r - 40
+function FigureCell({ label, children, note, className }: { label: string; children: ReactNode; note?: ReactNode; className?: string }) {
   return (
-    <svg
-      role="img"
-      aria-label={`Site coverage ${formatNumber(percent, 1)} percent of the study area; no coverage limit in this package`}
-      viewBox={`0 0 ${GAUGE.width} ${GAUGE.height}`}
-      className="block w-full"
-    >
-      <path
-        d={`M${GAUGE.cx - inner} ${GAUGE.cy} A${inner} ${inner} 0 0 1 ${GAUGE.cx + inner} ${GAUGE.cy}`}
-        fill="none"
-        stroke="var(--border)"
-        strokeDasharray="1 5"
-        strokeLinecap="round"
-      />
-      {pills.map((pill, index) => (
-        <g key={index}>
-          <circle cx={pill.x} cy={pill.y} r={GAUGE.pill} fill={pill.used ? 'var(--accent)' : 'var(--muted-fill)'} />
-          {index % 2 === 0 && (
-            <text
-              x={pill.x}
-              y={pill.y + 4}
-              textAnchor="middle"
-              fontFamily="var(--typeface-mono)"
-              fontSize={11}
-              fill={pill.used ? 'var(--ink-on-inverse)' : 'var(--ink-secondary)'}
-            >
-              {formatNumber(pill.value, 0)}
-            </text>
-          )}
-        </g>
-      ))}
-    </svg>
+    <div className={cn('border-b border-line px-6 py-3 odd:border-r', className)}>
+      <dt className="text-caption text-ink-secondary">{label}</dt>
+      <dd className="mt-2">{children}</dd>
+      {note && <dd className="mt-1.5 text-caption text-ink-secondary">{note}</dd>}
+    </div>
   )
 }
 
-/** Panel 02 on the Model tab: coverage gauge and the core metric row. */
-export function MetricsPanel({ metrics }: { metrics: ScenarioMetrics | null }) {
-  const empty = !metrics || metrics.buildingCount === 0
-  const percent = metrics ? metrics.coverageWithinParcel * 100 : 0
+/** A 2 px track with an ink fill, an amber overrun past `limit` and a limit tick. Shares are 0–1. */
+function Track({ share, limit, colour = 'bg-ink' }: { share: number; limit?: number; colour?: string }) {
+  const clamped = Math.min(Math.max(share, 0), 1)
+  const base = limit === undefined ? clamped : Math.min(clamped, limit)
   return (
-    <Card aria-labelledby="metrics-heading" className="flex h-full flex-col px-7 pb-6 pt-6">
-      <CardHeader id="metrics-heading" code="02" title="Site coverage" icon="footprint" meta="Of study area · no limit set" />
-      <div className="relative mx-auto mt-2 w-full max-w-[580px] flex-1">
-        <CoverageGauge percent={percent} />
-        <div className="absolute inset-x-0 bottom-0 flex flex-col items-center">
-          <p className="text-hero text-ink max-sm:text-figure-l">
-            <Figure value={formatNumber(percent, 1)} unit="%" />
-          </p>
-          <p className="mt-3 flex items-center gap-4 text-label text-ink-secondary">
-            <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="size-[7px] rounded-pill bg-accent" />Used</span>
-            <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="size-[7px] rounded-pill bg-muted-fill" />Remaining</span>
-          </p>
-        </div>
+    <span aria-hidden="true" className="relative mt-2.5 block h-[2px] bg-line">
+      <span className={cn('absolute inset-y-0 left-0', colour)} style={{ width: `${base * 100}%` }} />
+      {limit !== undefined && clamped > limit && <span className="absolute inset-y-0 bg-warning" style={{ left: `${limit * 100}%`, width: `${(clamped - limit) * 100}%` }} />}
+      {limit !== undefined && <span className="absolute -top-1 h-2.5 w-px bg-ink" style={{ left: `${limit * 100}%` }} />}
+    </span>
+  )
+}
+
+/**
+ * Panel section 2 (draft 4): scenario figures. Tallest uses the envelope reference (grade or
+ * datum), the same number as the design check and the scene labels.
+ */
+export function MetricsPanel({ metrics, tallestM, limitM, reference }: {
+  metrics: ScenarioMetrics | null
+  tallestM?: number
+  limitM?: number | null
+  reference?: string
+}) {
+  if (!metrics || metrics.buildingCount === 0) {
+    return (
+      <section aria-labelledby="metrics-heading" className="border-t border-line px-6 py-4">
+        <h2 id="metrics-heading" className="text-caption text-ink-secondary">Scenario</h2>
+        <p className="mt-2 text-body-sm text-ink-secondary">Draw a mass to see metrics.</p>
+      </section>
+    )
+  }
+  const tallest = tallestM ?? metrics.maxHeightM
+  const scale = limitM ? Math.max(limitM * 1.25, tallest) : 0
+  const over = limitM !== null && limitM !== undefined && tallest > limitM + 1e-3
+  return (
+    <section aria-labelledby="metrics-heading" className="border-t border-line">
+      <div className="flex justify-between px-6 pb-2 pt-4">
+        <h2 id="metrics-heading" className="text-caption text-ink-secondary">Scenario</h2>
+        <span className="text-caption text-ink-secondary">{metrics.buildingCount} {metrics.buildingCount === 1 ? 'building' : 'buildings'}</span>
       </div>
-      {empty ? (
-        <p className="mt-6 border-t border-line-strong pt-4 text-body-sm text-ink-secondary">Draw a mass to see metrics.</p>
-      ) : (
-        <>
-          <MetricRow className="mt-6">
-            <Metric label="Concept GFA" icon="area" value={formatNumber(metrics.gfaM2)} unit="m²" />
-            <Metric label="Footprint" icon="footprint" value={formatNumber(metrics.groundFootprintM2)} unit="m²" />
-            <Metric label="Volume" icon="cube" value={formatNumber(metrics.volumeM3)} unit="m³" />
-            <Metric label="Max height" icon="height" value={formatNumber(metrics.maxHeightM, 1)} unit="m" />
-          </MetricRow>
-          <p className="mt-3 text-label text-ink-secondary">
-            Height above site origin · GFA ratio {formatNumber(metrics.conceptGfaRatio, 2)} · {metrics.buildingCount} {metrics.buildingCount === 1 ? 'building' : 'buildings'}
-            {metrics.footprintOutsideParcelM2 > 0 && (
-              <span className="text-warning-ink"> · <span>Outside study area</span> <span>{formatArea(metrics.footprintOutsideParcelM2)} outside</span></span>
-            )}
-          </p>
-        </>
-      )}
-    </Card>
+      <dl className="grid grid-cols-2 border-t border-line">
+        <FigureCell label="Floor area" note={<>Concept GFA · ratio {formatNumber(metrics.conceptGfaRatio, 2)}</>}>
+          <Figure value={formatNumber(metrics.gfaM2)} unit="m²" className="text-figure-s text-ink" />
+        </FigureCell>
+        <FigureCell label="Tallest" note={tallestM === undefined ? 'Above site origin' : limitM ? `Limit ${formatNumber(limitM, 0)} m above ${reference ?? 'grade'}` : `Above ${reference ?? 'grade'}`}>
+          <Figure value={formatNumber(tallest, 1)} unit="m" className={cn('text-figure-s', over ? 'text-warning-ink' : 'text-ink')} />
+          {limitM ? <Track share={tallest / scale} limit={limitM / scale} /> : null}
+        </FigureCell>
+        <FigureCell label="Footprint" note={<>{formatNumber(metrics.coverageWithinParcel * 100, 1)} % of study area{metrics.footprintOutsideParcelM2 > 0 && <span className="text-warning-ink"> · <span>Outside study area</span> <span>{formatArea(metrics.footprintOutsideParcelM2)} outside</span></span>}</>}>
+          <Figure value={formatNumber(metrics.groundFootprintM2)} unit="m²" className="text-figure-s text-ink" />
+          <Track share={metrics.coverageWithinParcel} colour="bg-accent" />
+        </FigureCell>
+        <FigureCell label="Volume">
+          <Figure value={formatNumber(metrics.volumeM3)} unit="m³" className="text-figure-s text-ink" />
+        </FigureCell>
+      </dl>
+    </section>
   )
 }
 

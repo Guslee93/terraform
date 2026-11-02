@@ -28,9 +28,9 @@ async function expectNoForbiddenClaims(page: Page, where: string) {
 
 /** Draw one small mass inside the study boundary (same recipe as e2e/massing.spec.ts). */
 async function createSmallMass(page: Page) {
-  await page.getByRole('button', { name: 'Top' }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await page.waitForTimeout(400)
-  await page.getByRole('button', { name: 'Draw footprint' }).click()
+  await page.getByRole('button', { name: 'Draw building' }).click()
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
@@ -39,7 +39,7 @@ async function createSmallMass(page: Page) {
   for (const [dx, dy] of [[-60, -60], [60, -60], [60, 60], [-60, 60]]) {
     await page.mouse.click(cx + dx, cy + dy)
   }
-  await page.getByRole('button', { name: 'Draw footprint' }).evaluate((button) => button.blur())
+  await page.getByRole('button', { name: 'Draw building' }).evaluate((button) => button.blur())
   await page.keyboard.press('Enter')
   await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
 }
@@ -48,26 +48,26 @@ test('D34: required wording is present in the studio panels and forbidden claims
   await page.goto('/studio/compact-infill')
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
 
-  // Sun tab: the method note states this is not a daylight or sun-hours assessment.
-  await page.getByRole('tab', { name: 'Sun' }).click()
-  await expect(page.getByText('Not a daylight or sun-hours assessment.')).toBeVisible()
-  await expectNoForbiddenClaims(page, 'studio Sun tab')
+  const panel = page.getByRole('complementary', { name: 'Inspector' })
 
-  // Constraints tab: every status render keeps the disclaimer directly beneath the headline.
-  await page.getByRole('tab', { name: 'Constraints' }).click()
+  // Sun group: the method note states this is not a daylight or sun-hours assessment.
+  await panel.locator('summary').filter({ hasText: /^Sun/ }).click()
+  await expect(page.getByText('Geometric sun direction for this site (suncalc). Not a daylight or sun-hours assessment.')).toBeVisible()
+  await expectNoForbiddenClaims(page, 'studio Sun group')
+
+  // Design check: every status render keeps the disclaimer directly beneath the headline.
   await expect(page.getByRole('heading', { name: 'Within demo envelope' })).toBeVisible()
   await expect(page.getByText('Illustrative constraint — not planning advice')).toBeVisible()
   const headline = page.getByRole('heading', { name: 'Within demo envelope' })
   await expect(headline.locator('xpath=following-sibling::*[1]')).toHaveText('Illustrative constraint — not planning advice')
-  await expectNoForbiddenClaims(page, 'studio Constraints tab')
+  await expectNoForbiddenClaims(page, 'studio design check')
 
-  // Model tab: the metrics disclosure needs a mass to render.
-  await page.getByRole('tab', { name: 'Model' }).click()
+  // Metrics: the "About these numbers" group needs a mass to render its notes.
   await createSmallMass(page)
-  await page.getByText('About these numbers').click()
+  await panel.locator('summary').filter({ hasText: 'About these numbers' }).click()
   await expect(page.getByText('Concept GFA is not BRA, BYA or %-BRA.', { exact: true })).toBeVisible()
   await expect(page.locator('body')).toContainText('Concept GFA is not BRA, BYA or %-BRA.')
-  await expectNoForbiddenClaims(page, 'studio Model tab with metrics')
+  await expectNoForbiddenClaims(page, 'studio panel with metrics')
 })
 
 test('D34: marketing pages carry no forbidden claim', async ({ page }) => {

@@ -17,8 +17,8 @@ test('no WebGL leaves an accessible fallback and the inspector available', async
   await expect(page.getByRole('heading', { name: '3D view unavailable' })).toBeVisible()
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   await expect(page.locator('canvas')).toHaveCount(0)
-  // Layers live in the inspector drawer, opened from the tool rail.
-  await page.getByRole('button', { name: 'Site notes' }).click()
+  // Layers live in a panel group; the toolbar's Layers button opens it.
+  await page.getByRole('button', { name: 'Layers', exact: true }).click()
   const contextLayer = page.getByRole('checkbox', { name: 'Context buildings' })
   await contextLayer.uncheck()
   await expect(contextLayer).not.toBeChecked()
@@ -28,8 +28,8 @@ test('quality changes the rendered canvas both ways and persists after reload', 
   // Balanced has shadows but no AO, making this comparison practical on software GL too.
   await page.goto('/studio/compact-infill')
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in the inspector drawer, opened from the tool rail.
-  await page.getByRole('button', { name: 'Site notes' }).click()
+  // Layers live in a panel group; the toolbar's Layers button opens it.
+  await page.getByRole('button', { name: 'Layers', exact: true }).click()
   const quality = page.getByRole('combobox', { name: 'Render quality' })
   await quality.selectOption('balanced')
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
@@ -51,6 +51,6 @@ test('quality changes the rendered canvas both ways and persists after reload', 
   await expect.poll(async () => (await page.screenshot({ clip })).equals(low), { timeout: 10_000 }).toBe(false)
   await page.reload()
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  await page.getByRole('button', { name: 'Site notes' }).click()
+  await page.getByRole('button', { name: 'Layers', exact: true }).click()
   await expect(quality).toHaveValue('balanced')
 })

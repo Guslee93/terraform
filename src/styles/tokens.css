@@ -2,11 +2,11 @@
   /* Studio v2 tokens (design contract §2). Keep names stable; map to Tailwind in global.css. */
 
   /* Ground & surfaces */
-  --bg-app: #e8e8e5;
-  --surface: #f3f3f1;
+  --bg-app: #e4e4e1;
+  --surface: #f1f1ef;
   --surface-hover: #f5f5f3;
   --surface-paper: #fafaf8;
-  --surface-viewport: #f3f3f1;
+  --surface-viewport: #f1f1ef;
   --surface-inverse: #141414;
 
   /* Ink */
@@ -17,7 +17,7 @@
   --ink-on-inverse-2: #9a9a96;
 
   /* Lines */
-  --border: #d6d6d2;
+  --border: #d9d9d5;
   --border-strong: #141414;
   --muted-fill: #e2e2de;
 

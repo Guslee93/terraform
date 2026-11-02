@@ -10,8 +10,8 @@ test('Streets and Trees checkboxes exist on compact-infill', async ({ page }) =>
     page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
   ).toBeVisible()
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in the inspector drawer, opened from the tool rail.
-  await page.getByRole('button', { name: 'Site notes' }).click()
+  // Layers live in a panel group; the toolbar's Layers button opens it.
+  await page.getByRole('button', { name: 'Layers', exact: true }).click()
 
   await expect(page.getByRole('checkbox', { name: 'Streets' })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Trees' })).toBeVisible()
@@ -23,8 +23,8 @@ test('Streets and Trees checkboxes exist on sloped-edge', async ({ page }) => {
     page.getByRole('region', { name: /3D site viewport for Sloped Edge/i }),
   ).toBeVisible()
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in the inspector drawer, opened from the tool rail.
-  await page.getByRole('button', { name: 'Site notes' }).click()
+  // Layers live in a panel group; the toolbar's Layers button opens it.
+  await page.getByRole('button', { name: 'Layers', exact: true }).click()
 
   await expect(page.getByRole('checkbox', { name: 'Streets' })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Trees' })).toBeVisible()
@@ -34,8 +34,8 @@ test('the 3D view changes when Trees is toggled off then on', async ({ page }) =
   await page.goto('/studio/compact-infill')
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in the inspector drawer, opened from the tool rail.
-  await page.getByRole('button', { name: 'Site notes' }).click()
+  // Layers live in a panel group; the toolbar's Layers button opens it.
+  await page.getByRole('button', { name: 'Layers', exact: true }).click()
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
   const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
@@ -63,8 +63,8 @@ test('the 3D view changes when Streets is toggled off then on', async ({ page })
   await page.goto('/studio/compact-infill')
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in the inspector drawer, opened from the tool rail.
-  await page.getByRole('button', { name: 'Site notes' }).click()
+  // Layers live in a panel group; the toolbar's Layers button opens it.
+  await page.getByRole('button', { name: 'Layers', exact: true }).click()
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
   const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
@@ -117,19 +117,22 @@ test('the viewport HUD items never overlap and the page never scrolls sideways',
     await page.waitForTimeout(150)
     const label = `${viewport.width}x${viewport.height}`
 
-    const scaleBox = await page.getByTestId('scale-bar').boundingBox()
-    const presetsBox = await page.getByRole('group', { name: 'Camera presets' }).boundingBox()
-    if (!scaleBox || !presetsBox) throw new Error(`HUD boxes not measurable at ${label}`)
-    expect(overlaps(scaleBox, presetsBox), `scale bar and camera views overlap at ${label}`).toBe(false)
-
-    // The legend shows only where the viewport card is wide enough (≥ 1680 px); elsewhere it
-    // would collide with the scale bar or the camera views.
-    const legend = page.getByTestId('legend')
-    if (await legend.isVisible()) {
-      const legendBox = await legend.boundingBox()
-      if (!legendBox) throw new Error(`Legend not measurable at ${label}`)
-      expect(overlaps(legendBox, scaleBox), `legend overlaps the scale bar at ${label}`).toBe(false)
-      expect(overlaps(legendBox, presetsBox), `legend overlaps the camera views at ${label}`).toBe(false)
+    // One legend pill (with the scale bar inside), the toolbar and the camera views.
+    const items: Array<[string, Box]> = []
+    for (const [name, locator] of [
+      ['legend', page.getByTestId('legend')],
+      ['toolbar', page.getByRole('navigation', { name: 'Studio tools' })],
+      ['camera views', page.getByRole('group', { name: 'Camera presets' })],
+    ] as const) {
+      const box = await locator.boundingBox()
+      if (!box) throw new Error(`HUD item ${name} not measurable at ${label}`)
+      items.push([name, box])
+    }
+    await expect(page.getByTestId('legend').getByTestId('scale-bar')).toBeVisible()
+    for (const [index, [nameA, a]] of items.entries()) {
+      for (const [nameB, b] of items.slice(index + 1)) {
+        expect(overlaps(a, b), `${nameA} and ${nameB} overlap at ${label}`).toBe(false)
+      }
     }
 
     const scroll = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)

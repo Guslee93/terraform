@@ -1,10 +1,8 @@
 import { CONSTRAINT_DISCLAIMER, ENVELOPE_STATUS_LABEL, type EnvelopeResult, type HeightReference } from '../../features/analysis/constraints'
+import type { ClearanceIssue } from '../../features/massing/clearance'
 import type { SiteManifest } from '../../features/sites/manifest'
 import { cn } from '../../lib/cn'
-import { Card, CardHeader } from '../ui/Card'
-import { inputClass, labelClass } from '../ui/controls'
-import { CheckRow } from '../ui/Metric'
-import { checkValue, type CheckSummary } from './checks'
+import type { CheckSummary } from './checks'
 import type { MassListItem } from './MassList'
 import { formatMetres } from './format'
 
@@ -16,92 +14,118 @@ export type ConstraintsPanelProps = {
   masses: readonly MassListItem[]
   onSelectMass: (id: string) => void
   checks?: readonly CheckSummary[]
+  clearance?: ReadonlyMap<string, readonly ClearanceIssue[]>
 }
 
-/** §7.6 summary bar: one segment per check, ink for pass, amber for attention. */
-export function CheckSummaryBar({ checks, className }: { checks: readonly CheckSummary[]; className?: string }) {
-  if (checks.length === 0) return null
-  return (
-    <div aria-hidden="true" className={cn('flex h-1.5 gap-[3px]', className)}>
-      {checks.map((check) => <span key={check.id} className={cn('flex-1', check.failing > 0 ? 'bg-warning' : 'bg-ink')} />)}
-    </div>
-  )
+type Issue = { key: string; volumeId: string; text: string; value: string; detail?: string }
+
+/** One row per problem the app already found: envelope reasons, then terrain clearance. */
+export function listIssues(
+  envelope: EnvelopeResult | null,
+  limits: SiteManifest['constraints'] | null,
+  clearance: ReadonlyMap<string, readonly ClearanceIssue[]>,
+  nameOf: (id: string) => string,
+): Issue[] {
+  const issues: Issue[] = []
+  for (const volume of envelope?.perVolume ?? []) {
+    const name = nameOf(volume.volumeId)
+    for (const reason of volume.reasons) {
+      if (reason === 'too-tall') {
+        issues.push({
+          key: `${volume.volumeId}-tall`,
+          volumeId: volume.volumeId,
+          text: `${name} is ${formatMetres(volume.heightExcessM)} above the limit`,
+          value: limits ? `${formatMetres(limits.maxHeightMeters)} max` : '',
+          // ADR-0008: the reference is always stated next to a height result.
+          detail: `Above ${envelope?.heightReference ?? 'grade'}, ref ${formatMetres(volume.referenceElevationM).replace('-', '−')}`,
+        })
+      } else if (reason === 'outside-setback') {
+        issues.push({ key: `${volume.volumeId}-setback`, volumeId: volume.volumeId, text: `${name} is outside the setback`, value: limits ? formatMetres(limits.setbackMeters) : '' })
+      } else {
+        issues.push({ key: `${volume.volumeId}-boundary`, volumeId: volume.volumeId, text: `${name} is outside the study area`, value: 'Boundary' })
+      }
+    }
+  }
+  for (const [volumeId, list] of clearance) {
+    for (const issue of list) {
+      if (issue.kind !== 'floating' && issue.kind !== 'cut') continue
+      issues.push({ key: `${volumeId}-${issue.kind}`, volumeId, text: `${nameOf(volumeId)}: ${issue.message.toLowerCase()}`, value: issue.amount === undefined ? 'Terrain' : formatMetres(issue.amount) })
+    }
+  }
+  return issues
 }
 
-export function ConstraintsPanel({ envelope, limits, heightReference, onHeightReferenceChange, masses, onSelectMass, checks = [] }: ConstraintsPanelProps) {
+/** Panel section 1 (draft 4): the design check, led by how many checks need attention. */
+export function ConstraintsPanel({ envelope, limits, heightReference, onHeightReferenceChange, masses, onSelectMass, checks = [], clearance = new Map() }: ConstraintsPanelProps) {
   const attention = checks.filter((check) => check.failing > 0).length
+  const nameOf = (id: string) => masses.find((mass) => mass.id === id)?.name ?? 'Mass'
+  const issues = listIssues(envelope, limits, clearance, nameOf)
+  const passes = checks.filter((check) => check.failing === 0)
+
   return (
-    <Card aria-labelledby="constraints-heading" className="flex h-full flex-col overflow-y-auto px-7 pb-6 pt-6">
-      <CardHeader
-        id="constraints-heading"
-        code="02"
-        title="Constraints"
-        icon="shield"
-        meta={checks.length > 0 ? <span className={attention > 0 ? 'text-warning-ink' : 'text-ink'}>{attention} / {checks.length}</span> : 'Not evaluated'}
-      />
-      <section aria-label="Envelope constraints" className="mt-4 flex flex-1 flex-col gap-4 text-body-sm">
-        <div className="flex flex-wrap items-end gap-x-5 gap-y-2">
-          {checks.length > 0 && (
-            <p className="flex items-end gap-3">
-              <span className={cn('text-hero', attention > 0 ? 'text-warning-ink' : 'text-ink')}>{attention}/{checks.length}</span>
-              <span className="pb-2 text-body text-ink-secondary">{attention === 1 ? 'check needs attention' : 'checks need attention'}</span>
-            </p>
-          )}
-          <div className="pb-2">
-            <h3 aria-live="polite" className="text-title text-ink">{ENVELOPE_STATUS_LABEL[envelope?.status ?? 'not-evaluated']}</h3>
-            {/* Claim policy (D34): the disclaimer sits directly after every status. */}
-            <p className="mt-1 text-label text-ink-secondary">{envelope?.disclaimer ?? CONSTRAINT_DISCLAIMER}</p>
-          </div>
-        </div>
-        <CheckSummaryBar checks={checks} />
+    <section aria-label="Envelope constraints" className="px-6 pb-5 pt-5">
+      <p className="text-caption text-ink-secondary">Design check</p>
+      {checks.length > 0 ? (
+        <p className="mt-2 flex items-end gap-4">
+          <span className="text-figure-l text-ink">{attention}<sup className="ml-1 align-[0.9em] text-body text-ink-secondary">/{checks.length}</sup></span>
+          <span className="flex items-start gap-2 pb-1 text-body leading-snug">
+            <span aria-hidden="true" className={cn('mt-[7px] size-[7px] shrink-0 rounded-pill', attention > 0 ? 'bg-warning' : 'bg-positive')} />
+            {attention === 0 ? 'All checks pass' : attention === 1 ? 'check needs attention' : 'checks need attention'}
+          </span>
+        </p>
+      ) : (
+        <p className="mt-2 text-body text-ink-secondary">Draw a building to check it against the demo limits.</p>
+      )}
 
-        {checks.length > 0 && (
-          <ul aria-label="Limits" className="space-y-1">
-            {checks.map((check) => (
-              <li key={check.id}>
-                <CheckRow status={check.failing > 0 ? 'attention' : 'pass'} label={check.label} value={checkValue(check)} />
-                <span aria-hidden="true" className="block h-1 bg-muted-fill">
-                  <span
-                    className={cn('block h-full', check.failing > 0 ? 'bg-warning' : 'bg-positive')}
-                    style={{ width: `${((check.failing > 0 ? check.failing : check.evaluated) / check.evaluated) * 100}%` }}
-                  />
+      <div className="mt-4">
+        <h3 aria-live="polite" className="text-body-sm text-ink">{ENVELOPE_STATUS_LABEL[envelope?.status ?? 'not-evaluated']}</h3>
+        {/* Claim policy (D34): the disclaimer sits directly after every status. */}
+        <p className="text-caption text-ink-secondary">{envelope?.disclaimer ?? CONSTRAINT_DISCLAIMER}</p>
+      </div>
+
+      {(issues.length > 0 || passes.length > 0) && (
+        <ul aria-label="Checks" className="mt-3">
+          {issues.map((issue) => (
+            <li key={issue.key}>
+              <button
+                type="button"
+                title="Select this mass"
+                onClick={() => onSelectMass(issue.volumeId)}
+                className="grid w-full grid-cols-[10px_1fr_auto] items-center gap-3 border-t border-line py-2 text-left text-body-sm text-ink transition-colors duration-200 hover:bg-surface-hover"
+              >
+                <span aria-hidden="true" className="size-[7px] bg-warning" />
+                <span>
+                  {issue.text}
+                  {issue.detail && <span className="block text-caption text-ink-secondary">{issue.detail}</span>}
+                  <span className="sr-only"> — needs attention</span>
                 </span>
-              </li>
-            ))}
-          </ul>
-        )}
+                <span className="font-mono text-caption text-warning-ink">{issue.value}</span>
+              </button>
+            </li>
+          ))}
+          {passes.map((check) => (
+            <li key={check.id} className="grid grid-cols-[10px_1fr_auto] items-center gap-3 border-t border-line py-2 text-body-sm text-ink-secondary">
+              <span aria-hidden="true" className="size-[7px] border border-positive" />
+              <span>{check.label}<span className="sr-only"> — passes</span></span>
+              <span className="font-mono text-caption text-positive">Pass</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
-        {envelope?.perVolume.some((volume) => volume.status === 'exceeds') && (
-          <div>
-            <p className={labelClass}>Masses outside the envelope</p>
-            {envelope.perVolume.filter((volume) => volume.status === 'exceeds').map((volume) => (
-              <CheckRow
-                key={volume.volumeId}
-                status="attention"
-                title={envelope.disclaimer}
-                onClick={() => onSelectMass(volume.volumeId)}
-                label={<><span className="block font-medium">{masses.find((mass) => mass.id === volume.volumeId)?.name ?? 'Mass'}</span>
-                  <span className="block">{volume.reasons.map((reason) => reason === 'outside-setback' ? 'outside the setback'
-                    : reason === 'outside-boundary' ? 'outside the study area'
-                    : `${formatMetres(volume.heightExcessM)} above the limit (above ${envelope.heightReference}, ref ${formatMetres(volume.referenceElevationM).replace('-', '−')})`).join(' · ')}</span></>}
-              />
-            ))}
-          </div>
-        )}
-
-        <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
-          {limits && <p className="font-mono tabular-nums text-ink">Max height {formatMetres(limits.maxHeightMeters)} · Setback {formatMetres(limits.setbackMeters)}</p>}
-          <label className="block"><span className={labelClass}>Height measured from</span>
-            <select value={heightReference} aria-describedby="height-reference-hint" onChange={(event) => {
-              const value = event.target.value
-              if (value === 'grade' || value === 'datum') onHeightReferenceChange(value)
-            }} className={cn(inputClass, 'mt-1')}>
-              <option value="grade">Grade</option><option value="datum">Datum</option>
-            </select>
-          </label>
-        </div>
-        <p id="height-reference-hint" className="text-ink-secondary">Grade: lowest ground under the building. Datum: site origin.</p>
-      </section>
-    </Card>
+      <label className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3 whitespace-nowrap">
+        <span className="text-caption text-ink-secondary">Height measured from</span>
+        <select value={heightReference} aria-describedby="height-reference-hint" onChange={(event) => {
+          const value = event.target.value
+          if (value === 'grade' || value === 'datum') onHeightReferenceChange(value)
+        }} className="h-8 w-28 rounded-control border border-line bg-surface-paper px-2 text-body-sm text-ink focus:border-accent">
+          <option value="grade">Grade</option><option value="datum">Datum</option>
+        </select>
+      </label>
+      <p id="height-reference-hint" className="mt-1 text-caption text-ink-secondary">
+        Grade: lowest ground under the building. Datum: site origin.
+        {limits && <> Limits: {formatMetres(limits.maxHeightMeters)} height, {formatMetres(limits.setbackMeters)} setback.</>}
+      </p>
+    </section>
   )
 }

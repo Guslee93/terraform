@@ -36,7 +36,8 @@
   --color-focus: var(--focus);
 
   /* Radii live here (not tokens.css) so the theme names do not self-reference. */
-  --radius-card: 14px;
+  --radius-card: 10px;
+  --radius-chip: 4px;
   --radius-control: 8px;
   --radius-pill: 999px;
 
@@ -110,6 +111,11 @@
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+/* Small sentence-case captions: field labels, meta, units in prose (draft 4). */
+@utility text-caption {
+  font-size: 11px;
+  line-height: 1.35;
 }
 /* Mono 12 px values: check-row values, toast, HUD readouts (spec §5.10, §7.3). */
 @utility text-mono-sm {

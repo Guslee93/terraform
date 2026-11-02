@@ -1,12 +1,24 @@
 # Terraform — Design contract
 
 - **Source:** PRD §7, §11, §12.3
-- **Status:** Active for M0–M5 · Studio v2 revision 2026-11-02 (ADR-0009)
+- **Status:** Active for M0–M5 · Studio v2 revision 2026-11-02 (ADR-0009) · editor layout draft 4 (ADR-0010) supersedes the §5 layout
 - **Reviewer:** `design-ui-finish-gate-reviewer`
 - **Implementation:** `src/styles/tokens.css`, `src/styles/global.css`
 - **Detailed spec:** `docs/design/ui-redesign-spec.md` (section numbers below match it); approved prototype `terraform-live-sun.html` is the visual source of truth
 
 This document is the written contract the visual gate reviews against. It is intentionally stricter than "make it look nice". Change it by ADR, not by ad-hoc component styling.
+
+## 0. Draft 4 editor layout (ADR-0010) — current
+
+Reference image: `docs/design/ux-assessment/06-proposed-dashboard-v4.png`. Where this section and §2–§7 disagree, this section wins.
+
+- **Layout:** canvas + one right panel (392 px) on a single screen ≥ 1024 px; stacked below. No tabs, no drawer, no insight tiles.
+- **Panel order:** design check → scenario figures → buildings (selected mass = solid accent row, fields below) → groups: Sun · Layers and render quality · Site and sources · Assumptions · About these numbers → attribution.
+- **Canvas:** text toolbar (Select, **Draw building** solid ink, Undo, Redo, Layers); text views (3D, Plan, North, South, Street) with an underline; compact compass; one legend pill with the scale; sun band under the scene (clock, date presets, day barcode = `Local time` slider, azimuth/altitude or "Sun below horizon", Play).
+- **Surfaces:** ground `#E4E4E1`, panels `#F1F1EF`, hairlines `#D9D9D5`; `rounded-card` 10 px, `rounded-chip` 4 px; no shadows, no blur.
+- **Type:** Geist; small labels are 11 px sentence case (`text-caption`), not uppercase mono; mono for numbers, times and units; large light figures for the check count, figures and clock.
+- **Colour roles (small marks only):** blue = selection and "now"; amber = attention (squares, over-limit values, bar overrun, status dots); green = pass; sun orange = sun only. The scene keeps its hues at 60 % saturation (`soften`); the selected mass is solid blue.
+- **One height:** every height shown uses the envelope reference (grade/datum) and says so.
 
 ## 1. Principles
 

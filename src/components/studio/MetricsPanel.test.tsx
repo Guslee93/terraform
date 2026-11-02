@@ -15,13 +15,13 @@ describe('Metrics panel', () => {
     const selected = metrics.perVolume[0]
     if (!selected) throw new Error('Missing fixture volume')
     render(<><MetricsPanel metrics={metrics} /><SelectedFloors metrics={selected} /></>)
-    const panel = screen.getByRole('region', { name: /Site coverage/ })
+    const panel = screen.getByRole('region', { name: 'Scenario' })
     expect(within(panel).getByText('760')).toBeVisible()
-    expect(within(panel).getByRole('img', { name: /Site coverage 10\.0 percent/ })).toBeInTheDocument()
+    expect(within(panel).getByText(/10\.0 % of study area/)).toBeVisible()
     expect(within(screen.getByRole('region', { name: 'Selected mass metrics' })).getByText('760 m²')).toBeVisible()
     expect(within(screen.getByRole('list', { name: 'Floors' })).getAllByRole('listitem')).toHaveLength(5)
     expect(screen.getByText('Floor 5 · 12.8 m')).toBeVisible()
-    expect(screen.getByText(/^Height above site origin/)).toBeVisible()
+    expect(screen.getByText('Above site origin')).toBeVisible()
   })
 
   it.each([0, 20])('shows outside area only when the footprint crosses the boundary (centre %s)', (east) => {

@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 // D32 — M3 live-analysis e2e (docs/plans/M3-fable-plan.md §10, docs/handoffs/C8-C10-m3-ui.md).
 //
-// Covers the Sun tab presets (canvas + readout), the winter night chip, the constraint-envelope
+// Covers the Sun group time presets (canvas + readout), the winter night chip, the constraint-envelope
 // violation flow (Exceeds demo envelope · outside the setback · warning selects the mass) and the
 // DST gap disclosure. Only the canvas-compare test pins the render quality to High (via
 // localStorage) — Auto would drop to Low on software GL with no shadows to compare. The DOM-only
@@ -25,12 +25,17 @@ function centreClip(box: { x: number; y: number; width: number; height: number }
   return { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
 }
 
-/** The Sun tab readout sentence (FR-063). */
+/** Open the collapsed "Sun" group in the inspector panel (readout, date, time presets, notes). */
+async function openSunGroup(page: Page) {
+  await page.getByRole('complementary', { name: 'Inspector' }).locator('summary').filter({ hasText: /^Sun/ }).click()
+}
+
+/** The Sun group readout sentence (FR-063). */
 function sunReadout(page: Page) {
   return page.getByText(/^Elevation \d+\.\d° · azimuth \d+° \([A-Z]+\)$/)
 }
 
-test('D32: Sun tab time presets change the rendered canvas and the sun readout', async ({ page }) => {
+test('D32: Sun time presets change the rendered canvas and the sun readout', async ({ page }) => {
   // Pixels matter here: pin High so shadows + AO are actually rendered (Auto → Low on software GL).
   await page.addInitScript(() => {
     window.localStorage.setItem('terraform.renderQuality', 'high')
@@ -40,7 +45,7 @@ test('D32: Sun tab time presets change the rendered canvas and the sun readout',
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
 
-  await page.getByRole('tab', { name: 'Sun' }).click()
+  await openSunGroup(page)
   const readout = sunReadout(page)
   await expect(readout).toBeVisible()
 
@@ -72,14 +77,14 @@ test('D32: Sun tab time presets change the rendered canvas and the sun readout',
 
 test('D32: winter solstice evening shows the Sun below horizon chip and no elevation readout', async ({ page }) => {
   await openStudio(page)
-  await page.getByRole('tab', { name: 'Sun' }).click()
+  await openSunGroup(page)
   await page.getByRole('button', { name: 'Winter solstice' }).click()
   await page.getByRole('button', { name: 'Evening' }).click()
 
   // QA-11: the night chip on the canvas, and the readout says exactly "Sun below horizon" —
   // no elevation, no direction, no sun-hours wording.
   // (role=status names come from aria-label/labelledby, so the text is asserted via toHaveText.)
-  await expect(page.getByRole('status')).toHaveText('Sun below horizon')
+  await expect(page.getByRole('region', { name: 'Sun and shadows' }).getByRole('status')).toHaveText('Sun below horizon')
   await expect(sunReadout(page)).toHaveCount(0)
   await expect(page.getByText('Sun below horizon').first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'Winter solstice' })).toHaveAttribute('aria-pressed', 'true')
@@ -94,10 +99,10 @@ test('D32: a mass drawn across the study boundary exceeds the envelope and its w
   const cx = box.x + box.width / 2
   const cy = box.y + box.height / 2
 
-  await page.getByRole('button', { name: 'Top' }).click()
+  await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await page.waitForTimeout(500)
 
-  await page.getByRole('button', { name: 'Draw footprint' }).click()
+  await page.getByRole('button', { name: 'Draw building' }).click()
   // Top view has uniform metres per pixel, so 0.26 × viewport height east/west of the origin
   // lands near ±103 m: across the study boundary (±95 m; the setback sits at ±91 m) yet inside
   // the 13 × 13 terrain grid (≈ ±112 m), so every corner reliably clicks the ground.
@@ -105,27 +110,26 @@ test('D32: a mass drawn across the study boundary exceeds the envelope and its w
   for (const [dx, dy] of [[-step, -80], [step, -80], [step, 80], [-step, 80]]) {
     await page.mouse.click(cx + dx, cy + dy)
   }
-  await page.getByRole('button', { name: 'Draw footprint' }).evaluate((button) => button.blur())
+  await page.getByRole('button', { name: 'Draw building' }).evaluate((button) => button.blur())
   await page.keyboard.press('Enter')
   await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
 
-  await page.getByRole('tab', { name: 'Constraints' }).click()
   await expect(page.getByRole('heading', { name: 'Exceeds demo envelope' })).toBeVisible()
   await expect(page.getByText('Illustrative constraint — not planning advice')).toBeVisible()
 
-  const warning = page.getByRole('button', { name: /outside the setback/ })
+  // One button per problem: the setback and the study-area breach are listed separately.
+  const warning = page.getByRole('button', { name: /^Mass 1 is outside the setback/ })
   await expect(warning).toBeVisible()
-  await expect(warning).toContainText('outside the study area')
+  await expect(page.getByRole('button', { name: /^Mass 1 is outside the study area/ })).toBeVisible()
 
   await warning.click()
-  await page.getByRole('tab', { name: 'Model' }).click()
   await expect(page.getByText('1 selected')).toBeVisible()
   await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
 })
 
-test('D32: the DST gap for 2026-03-29 02:30 is disclosed on the Sun tab', async ({ page }) => {
+test('D32: the DST gap for 2026-03-29 02:30 is disclosed in the Sun group', async ({ page }) => {
   await openStudio(page)
-  await page.getByRole('tab', { name: 'Sun' }).click()
+  await openSunGroup(page)
   await page.getByLabel('Local date').fill('2026-03-29')
   const slider = page.getByRole('slider', { name: 'Local time' })
   // 02:30 local never occurred: Europe/Oslo jumps 02:00 → 03:00 that night.

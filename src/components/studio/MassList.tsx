@@ -1,5 +1,4 @@
 import { cn } from '../../lib/cn'
-import { Icon } from '../ui/Icon'
 
 export type MassListItem = {
   id: string
@@ -18,12 +17,15 @@ type MassListProps = {
   onSelect: (volumeId: string) => void
 }
 
-/** Every mass in the scenario, so hidden or hard-to-reach masses can still be selected (spec §7.4 rows). */
+/**
+ * Every mass in the scenario, so hidden or hard-to-reach masses can still be selected. The
+ * selected mass is the one solid accent block in the panel (draft 4).
+ */
 export function MassList({ items, selectedId, onSelect }: MassListProps) {
   if (items.length === 0) return null
 
   return (
-    <ul aria-label="Masses" className="divide-y divide-line border-y border-line">
+    <ul aria-label="Masses" className="space-y-1">
       {items.map((item) => {
         const selected = item.id === selectedId
         return (
@@ -33,25 +35,27 @@ export function MassList({ items, selectedId, onSelect }: MassListProps) {
               aria-current={selected ? true : undefined}
               onClick={() => onSelect(item.id)}
               className={cn(
-                'grid min-h-14 w-full grid-cols-[36px_1fr_auto] items-center gap-3 px-1 py-2 text-left transition-colors duration-200 hover:bg-surface-hover',
-                selected && 'bg-surface-hover',
+                'grid w-full grid-cols-[8px_1fr_auto] items-center gap-3 text-left transition-colors duration-200',
+                selected
+                  ? 'rounded-control bg-accent px-4 py-3 text-ink-on-inverse'
+                  : 'border-b border-line py-2.5 hover:bg-surface-hover',
               )}
             >
-              <span aria-hidden="true" className="grid size-9 place-items-center rounded-control border border-line text-ink-secondary">
-                <Icon name="cube" size={16} />
-              </span>
+              <span
+                aria-hidden="true"
+                className={cn('size-1.5 rounded-pill', item.warning ? (selected ? 'bg-sun-low' : 'bg-warning') : 'bg-positive')}
+              />
               <span className="min-w-0">
-                <span className={cn('flex items-center gap-2 truncate text-body font-medium', item.hidden ? 'text-ink-secondary' : 'text-ink')}>
-                  {selected && <span aria-hidden="true" className="size-[7px] shrink-0 bg-accent" />}
+                <span className={cn('block truncate', selected ? 'text-body' : 'text-body-sm', item.hidden && !selected && 'text-ink-secondary')}>
                   {item.name}
                 </span>
-                <span className="block text-body-sm tabular-nums text-ink-secondary">{item.detail}</span>
+                <span className={cn('block text-caption tabular-nums', selected ? 'text-ink-on-inverse/75' : 'text-ink-secondary')}>
+                  <span>{item.detail}</span>
+                  {item.warning && <> · <span className={selected ? '' : 'text-warning-ink'}>Needs attention</span></>}
+                  {item.hidden && <> · <span>Hidden</span></>}
+                </span>
               </span>
-              <span className="flex shrink-0 flex-col items-end gap-0.5">
-                {item.gfa && <span className="font-mono text-body-sm tabular-nums text-ink">{item.gfa}</span>}
-                {item.warning && <span className="text-label text-warning-ink">Needs attention</span>}
-                {item.hidden && <span className="text-label text-ink-secondary">Hidden</span>}
-              </span>
+              {item.gfa && <span className="font-mono text-caption tabular-nums">{item.gfa}</span>}
             </button>
           </li>
         )
