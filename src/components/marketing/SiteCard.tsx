@@ -4,32 +4,26 @@ import { Icon } from '../ui/Icon'
 
 type SiteCardProps = {
   site: SiteSummary
-  index: number
 }
 
-export function SiteCard({ site, index }: SiteCardProps) {
+export function SiteCard({ site }: SiteCardProps) {
   return (
     <Link
       to={`/studio/${site.id}`}
-      className="group overflow-hidden rounded-card border border-line bg-surface transition-[border-color,transform] duration-300 hover:border-line-strong motion-safe:hover:-translate-y-0.5"
+      className="flex min-w-0 flex-col overflow-hidden rounded-card bg-surface transition-colors duration-200 hover:bg-surface-hover"
       aria-label={`Open ${site.title} in the studio`}
     >
-      <div className="relative aspect-[16/10] overflow-hidden border-b border-line bg-viewport">
+      <div className="aspect-[16/10] overflow-hidden border-b border-line bg-viewport">
         <img
           src={site.thumbnail}
           alt=""
-          className="h-full w-full object-cover transition-transform duration-700 ease-[var(--ease-out)] motion-safe:group-hover:scale-[1.025]"
+          className="h-full w-full object-cover"
           loading="lazy"
         />
-        <span className="absolute left-4 top-4 rounded-full border border-ink/10 bg-app/85 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm">
-          0{index + 1}
-        </span>
-        <span className="absolute right-4 top-4 rounded-full border border-ink/10 bg-app/85 px-2.5 py-1 text-label text-ink-secondary backdrop-blur-sm">
-          {site.morphology}
-        </span>
       </div>
 
-      <div className="p-6">
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
+        <p className="mb-3 text-caption text-ink-secondary">{site.morphology}</p>
         <div className="flex items-start justify-between gap-5">
           <div>
             <h3 className="text-title text-ink">
@@ -39,7 +33,7 @@ export function SiteCard({ site, index }: SiteCardProps) {
           </div>
           <span
             aria-hidden="true"
-            className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full border border-line text-ink-secondary transition-colors duration-200 group-hover:border-ink group-hover:bg-ink group-hover:text-surface"
+            className="mt-0.5 shrink-0 text-ink"
           >
             <Icon name="arrow-up-right" size={16} />
           </span>
@@ -49,12 +43,10 @@ export function SiteCard({ site, index }: SiteCardProps) {
           {site.description}
         </p>
 
-        <div className="mt-6 flex items-center justify-between border-t border-line pt-4 text-label text-ink-secondary">
-          <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-positive" />
-            Curated demo
-          </span>
-          <span className="transition-colors group-hover:text-ink">Open studio</span>
+        <div className="mt-auto pt-6">
+          <p className="border-t border-line pt-4 text-body-sm text-ink underline underline-offset-4">
+            Open studio
+          </p>
         </div>
       </div>
     </Link>

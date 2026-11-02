@@ -34,6 +34,20 @@ describe('application routes', () => {
     )
   })
 
+  it('keeps landing actions, landmarks and study disclosures reachable', () => {
+    renderRoute('/')
+
+    const main = screen.getByRole('main')
+    expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', `#${main.id}`)
+    expect(within(main).getByRole('link', { name: 'Open Compact Infill' })).toHaveAttribute('href', '/studio/compact-infill')
+    expect(within(main).getByRole('link', { name: 'About the prototype' })).toHaveAttribute('href', '/about')
+    expect(within(main).getByRole('heading', { level: 2, name: 'Choose a site to begin.' }).closest('section')).toHaveAttribute('id', 'sites')
+    expect(within(main).getByText('Curated Oslo demo · simplified context')).toBeInTheDocument()
+    expect(within(main).getByText('Illustrative — not surveyed')).toBeInTheDocument()
+    expect(screen.getByRole('banner')).toBeInTheDocument()
+    expect(within(screen.getByRole('contentinfo')).getByText(/constraints are illustrative and not planning advice/)).toBeInTheDocument()
+  })
+
   it('renders the about page with explicit limitations', () => {
     renderRoute('/about')
 
