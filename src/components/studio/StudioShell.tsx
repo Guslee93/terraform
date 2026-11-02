@@ -33,6 +33,7 @@ import { ComparePanel } from './ComparePanel'
 import { ProjectBackup, RecoveryStrip } from './ProjectRecovery'
 import { ScenarioMenu } from './ScenarioMenu'
 import { ScenarioNotes } from './ScenarioNotes'
+import { StudioGuide, readGuideDismissed } from './StudioGuide'
 import { StudioTopBar } from './StudioTopBar'
 import { SunBand, SunDetails, shortDate, useSunPlayback } from './SunPanel'
 import { ToolRail, type ToolId } from './ToolRail'
@@ -57,6 +58,9 @@ export function StudioShell({
   onRetry,
   repository,
 }: StudioShellProps) {
+  const [guideOpen, setGuideOpen] = useState(() => !readGuideDismissed())
+  const studioRoot = useRef<HTMLDivElement>(null)
+  const closeGuide = useCallback(() => setGuideOpen(false), [])
   const project = useScenarioProject({ siteId: site.id, repository: repository ?? getScenarioRepository() })
   const { editor, dispatch } = project
   const [comparePair, setComparePair] = useState<readonly [string, string] | null>(null)
@@ -240,10 +244,13 @@ export function StudioShell({
     : null, [compareA, compareB, sitePackage, envelopeSite, cameraPreset, layers, sunTime])
   const closeCompare = () => { setComparePair(null); compareTrigger.current?.focus() }
   return (
-    <div className="flex min-h-dvh flex-col bg-app text-ink lg:h-dvh">
+    <div ref={studioRoot} className="flex min-h-dvh flex-col bg-app text-ink lg:h-dvh">
       <StudioTopBar
         site={site}
         scenario={scenario}
+        guideAction={wide && packageStatus === 'ready' && project.ready ? (
+          <button type="button" className="min-h-9 text-caption underline underline-offset-4" onClick={() => setGuideOpen(true)}>Guide</button>
+        ) : null}
         scenarioMenu={<ScenarioMenu project={project} site={envelopeSite} />}
         compareAction={<button ref={compareTrigger} type="button" className="min-h-9 text-caption disabled:text-ink-disabled" disabled={!project.ready || !idle || !envelopeSite || project.scenarios.length < 2} onClick={async () => {
           await project.actions.flush()
@@ -257,6 +264,14 @@ export function StudioShell({
         canFit={packageStatus === 'ready'}
         onFitSite={() => requestCamera('isometric')}
       />
+
+      {guideOpen && wide && packageStatus === 'ready' && project.ready && (
+        <StudioGuide onClose={closeGuide} onShowControl={(step) => {
+          const selectors = ['[data-guide="draw"]', '[aria-label="Local time"]', '[data-guide="scenarios"]']
+          const selector = selectors[step]
+          if (selector) studioRoot.current?.querySelector<HTMLElement>(selector)?.focus()
+        }} />
+      )}
 
       <main className="grid flex-1 gap-2 px-4 pb-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_392px]">
         <section aria-label="Studio viewport" className="tf-rise flex h-[min(720px,78dvh)] min-w-0 flex-col overflow-hidden rounded-card bg-viewport max-sm:h-auto lg:h-auto">

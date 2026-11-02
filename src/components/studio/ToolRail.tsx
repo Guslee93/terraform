@@ -31,6 +31,7 @@ export function ToolRail({ ready = true, activeTool, onSelect, onOpenLayers, can
       </button>
       <button
         type="button"
+        data-guide="draw"
         aria-pressed={activeTool === 'draw'}
         disabled={!ready}
         onClick={() => onSelect('draw')}

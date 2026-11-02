@@ -9,6 +9,11 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:5173',
     trace: 'on-first-retry',
+    // The first-visit studio guide takes focus; every spec but e2e/m5-guide.spec.ts starts past it.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: 'http://127.0.0.1:5173', localStorage: [{ name: 'terraform:studio-guide-dismissed:v1', value: 'true' }] }],
+    },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
