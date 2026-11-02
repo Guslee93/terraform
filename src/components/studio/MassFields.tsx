@@ -180,7 +180,7 @@ export function MassFields({
     onCommand(updateVolume(volume.id, patch))
   const metres = (text: string, apply: (value: number) => string | null) => {
     const value = parseMetres(text)
-    return value === null ? 'Enter a number in metres.' : apply(value)
+    return value === null ? 'This value is not a number. Enter a number in metres.' : apply(value)
   }
 
   const tiers = [...volume.tiers].sort((a, b) => a.baseElevation - b.baseElevation)
@@ -294,7 +294,7 @@ export function MassFields({
           disabled={geometryDisabled}
           onCommit={(text) => {
             const storeys = parseStoreys(text)
-            return storeys === null ? 'Enter a whole number of storeys.' : tierCommand({ storeys })
+            return storeys === null ? 'Storeys need a positive whole number. Enter a whole number of storeys.' : tierCommand({ storeys })
           }}
         />
         <Field

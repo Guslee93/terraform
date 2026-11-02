@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
@@ -53,7 +54,6 @@ export function StudioShell({
   site,
   sitePackage,
   packageStatus,
-  packageError,
   onRetry,
   repository,
 }: StudioShellProps) {
@@ -293,29 +293,31 @@ export function StudioShell({
                 />
                 <CameraPresets active={cameraPreset} onSelect={requestCamera} />
               </>
+            ) : packageStatus === 'loading' ? (
+              <div className="flex h-full flex-col gap-6 p-6 pt-20">
+                <p role="status" className="text-body-sm text-ink-secondary">Loading site package</p>
+                <div aria-hidden="true" className="flex flex-1 flex-col justify-between motion-safe:animate-pulse motion-reduce:animate-none">
+                  <div className="h-4 w-40 rounded-chip bg-muted-fill" />
+                  <div className="min-h-32 flex-1 my-6 rounded-card border border-line bg-app" />
+                  <div className="h-12 border-t border-line bg-surface" />
+                </div>
+              </div>
             ) : (
-              <div className="grid h-full place-items-center p-4">
+              <div className="grid h-full place-items-center p-4 pt-20">
                 <div className="w-full max-w-[23rem] text-center">
-                  <p className="text-caption text-ink-secondary">
-                    {site.title} · {packageStatus === 'error' ? 'Package error' : 'Loading'}
-                  </p>
+                  <p className="text-caption text-ink-secondary">{site.title} · Package error</p>
                   <h1 className="mt-2.5 text-balance text-title text-ink">
-                    {packageStatus === 'error'
-                      ? 'The site model could not be loaded.'
-                      : 'Preparing the curated site package.'}
+                    The site model could not be loaded.
                   </h1>
                   <p className="mx-auto mt-3 max-w-[36ch] text-body-sm leading-relaxed text-ink-secondary">
-                    {packageStatus === 'error'
-                      ? packageError ?? 'The package is unavailable.'
-                      : 'Loading terrain, context buildings and the study boundary from the local package.'}
+                    The site package is missing or could not be read. Try again, or choose another site.
                   </p>
-                  {packageStatus === 'error' ? (
-                    <button type="button" className={`${textButtonClass} mt-4`} onClick={onRetry}>
+                  <div className="mt-4 flex flex-wrap justify-center gap-4">
+                    <button type="button" className={textButtonClass} onClick={onRetry}>
                       Try again
                     </button>
-                  ) : (
-                    <span aria-hidden="true" className="mx-auto mt-5 block size-6 animate-pulse rounded-pill bg-muted-fill" />
-                  )}
+                    <Link to="/#sites" className={textButtonClass}>Back to sites</Link>
+                  </div>
                 </div>
               </div>
             )}
@@ -344,7 +346,23 @@ export function StudioShell({
           )}
         </section>
 
-        {compareA && compareB && envelopeSite ? <ComparePanel
+        {packageStatus === 'loading' ? (
+          <div aria-hidden="true" className="overflow-hidden rounded-card bg-surface p-6 lg:overflow-y-auto">
+            <div className="space-y-6 motion-safe:animate-pulse motion-reduce:animate-none">
+              <div className="h-4 w-28 rounded-chip bg-muted-fill" />
+              <div className="h-24 rounded-chip bg-muted-fill" />
+              <div className="grid grid-cols-2 gap-4 border-t border-line pt-6">
+                <div className="h-16 rounded-chip bg-muted-fill" />
+                <div className="h-16 rounded-chip bg-muted-fill" />
+              </div>
+              <div className="space-y-4 border-t border-line pt-6">
+                <div className="h-4 w-32 rounded-chip bg-muted-fill" />
+                <div className="h-10 rounded-chip bg-muted-fill" />
+                <div className="h-10 rounded-chip bg-muted-fill" />
+              </div>
+            </div>
+          </div>
+        ) : compareA && compareB && envelopeSite ? <ComparePanel
           scenarios={project.scenarios} a={compareA} b={compareB} site={envelopeSite}
           thumbnails={snapshot?.request !== snapshotRequest ? 'pending' : snapshot.images ?? 'failed'}
           cameraLabel={cameraPreset} disabled={!idle}
