@@ -381,3 +381,8 @@
 - Owner asked to proceed after the protected-API repair proposal. Added exportSavedData on the hook; newer-version repository export preserves rawProject plus unreadable scenario rows. Regression test verifies verbatim original data, unchanged storage, and separate export of current unsaved edits.
 - C12: scenario disclosure/list, metrics/status, keyboard navigation, rename errors, duplicate/create/delete/reset confirmations, and notes committed on blur. Native dialog shared with upcoming recovery UI.
 - Targeted verification: repository/hook 18 tests pass; menu/hook 10 tests pass; typecheck and lint pass. Full suite and screenshots follow C13/C14.
+
+### M4 C13 comparison (2026-11-02)
+
+- Added comparison panel with pair selectors, neutral B − A metrics, envelope disclaimer, notes, Edit A/B and matched snapshots in the existing WebGL context. Capture restores the live scene even on failure; no second context or blank placeholder images.
+- Targeted comparison/capture tests: 3 pass. Lint and typecheck pass. Fixed new test-only errors found by checks (RTL exact option and row accessible-name spacing).

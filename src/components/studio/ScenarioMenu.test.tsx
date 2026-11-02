@@ -45,7 +45,7 @@ describe('ScenarioMenu', () => {
   })
   it('shows duplicate-name errors and allows cancellation', async () => {
     const { user } = await setup()
-    await user.click(screen.getAllByRole('button', { name: 'Rename', exact: true })[0]!)
+    await user.click(screen.getAllByRole('button', { name: 'Rename' })[0]!)
     const input = screen.getByRole('textbox', { name: 'Scenario name' })
     await user.clear(input)
     await user.type(input, 'Concept B{Enter}')
@@ -56,7 +56,7 @@ describe('ScenarioMenu', () => {
   })
   it('hides delete for the last scenario', async () => {
     await setup(true)
-    expect(screen.queryByRole('button', { name: 'Delete', exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
   })
   it('requires confirmation before resetting the demo', async () => {
     const { user } = await setup()
@@ -66,7 +66,7 @@ describe('ScenarioMenu', () => {
     const dialog = screen.getByRole('dialog')
     expect(dialog).toHaveTextContent('Remove every scenario for this site')
     expect(screen.getByLabelText('Active scenario')).toHaveTextContent('Concept C')
-    await user.click(within(dialog).getByRole('button', { name: 'Reset demo', exact: true }))
+    await user.click(within(dialog).getByRole('button', { name: 'Reset demo' }))
     await waitFor(() => expect(screen.getByLabelText('Active scenario')).toHaveTextContent('Concept A'))
   })
 })

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
 import { localDayMinuteToInstant } from '../../features/analysis/time'
@@ -27,6 +27,8 @@ import { formatArea, formatMetres } from './format'
 import { massSummary } from '../../features/analysis/massSummary'
 import { Inspector, type PanelGroup } from './Inspector'
 import { MetricsPanel } from './MetricsPanel'
+import type { SnapshotResult, SnapshotRequest } from '../../scene/ScenarioSnapshots'
+import { ComparePanel } from './ComparePanel'
 import { ScenarioMenu } from './ScenarioMenu'
 import { ScenarioNotes } from './ScenarioNotes'
 import { StudioTopBar } from './StudioTopBar'
@@ -56,6 +58,9 @@ export function StudioShell({
 }: StudioShellProps) {
   const project = useScenarioProject({ siteId: site.id, repository: repository ?? getScenarioRepository() })
   const { editor, dispatch } = project
+  const [comparePair, setComparePair] = useState<readonly [string, string] | null>(null)
+  const [snapshot, setSnapshot] = useState<SnapshotResult | null>(null)
+  const compareTrigger = useRef<HTMLButtonElement>(null)
   const [heightReference, setHeightReference] = useState<HeightReference>('grade')
   const [sunTime, setSunTime] = useState<SunTime>({ date: '2026-06-21', minuteOfDay: 900 })
   const solar = useMemo(() => {
@@ -188,7 +193,7 @@ export function StudioShell({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.closest('input, select, textarea, [contenteditable="true"]')) return
+      if (target?.closest('input, select, textarea, dialog, [contenteditable="true"]')) return
 
       if (event.key === 'f' || event.key === 'F') {
         event.preventDefault()
@@ -220,12 +225,25 @@ export function StudioShell({
   const visibleHeights = analysisDocument.volumes.flatMap((volume) => summaries.get(volume.id)?.heightM ?? [])
   const limits = sitePackage?.manifest.constraints ?? null
 
+  const compareA = project.scenarios.find((item) => item.id === comparePair?.[0])
+  const compareB = project.scenarios.find((item) => item.id === comparePair?.[1])
+  const snapshotRequest = useMemo<SnapshotRequest | null>(() => compareA && compareB && sitePackage && envelopeSite
+    ? { a: compareA, b: compareB, preset: sitePackage.manifest.cameraPresets[cameraPreset], site: envelopeSite, layers, sunKey: `${sunTime.date}:${sunTime.minuteOfDay}` }
+    : null, [compareA, compareB, sitePackage, envelopeSite, cameraPreset, layers, sunTime])
+  const closeCompare = () => { setComparePair(null); compareTrigger.current?.focus() }
   return (
     <div className="flex min-h-dvh flex-col bg-app text-ink lg:h-dvh">
       <StudioTopBar
         site={site}
         scenario={scenario}
         scenarioMenu={<ScenarioMenu project={project} site={envelopeSite} />}
+        compareAction={<button ref={compareTrigger} type="button" className="min-h-9 text-caption disabled:text-ink-disabled" disabled={!project.ready || !idle || !envelopeSite || project.scenarios.length < 2} onClick={async () => {
+          await project.actions.flush()
+          const index = project.scenarios.findIndex((item) => item.id === project.activeId)
+          const a = project.scenarios[index]
+          const b = project.scenarios[(index + 1) % project.scenarios.length]
+          if (a && b) setComparePair([a.id, b.id])
+        }}>Compare</button>}
         saveStatus={project.saveStatus}
         storage={project.storage}
         canFit={packageStatus === 'ready'}
@@ -250,6 +268,8 @@ export function StudioShell({
               <>
                 <ViewportCanvas
                   sitePackage={sitePackage}
+                  snapshotRequest={snapshotRequest}
+                  onSnapshot={setSnapshot}
                   sun={solar.state}
                   constraints={constraints}
                   envelope={envelope}
@@ -316,7 +336,13 @@ export function StudioShell({
           )}
         </section>
 
-        <Inspector
+        {compareA && compareB && envelopeSite ? <ComparePanel
+          scenarios={project.scenarios} a={compareA} b={compareB} site={envelopeSite}
+          images={snapshot?.request === snapshotRequest ? snapshot.images : null}
+          cameraLabel={cameraPreset} disabled={!idle}
+          onPairChange={(a, b) => setComparePair([a, b])}
+          onEdit={(id) => { project.actions.switchTo(id); closeCompare() }} onClose={closeCompare}
+        /> : <Inspector
           notes={<ScenarioNotes key={`${shown.id}:${shown.notes}`} notes={shown.notes} disabled={!editable || !idle} onCommit={project.actions.setNotes} />}
           check={
             <ConstraintsPanel
@@ -357,7 +383,7 @@ export function StudioShell({
             dispatch({ type: 'select', selection: { volumeId: editor.history.selection.volumeId, tierId } })
           }
           onAddMass={() => selectTool('draw')}
-        />
+        />}
       </main>
     </div>
   )

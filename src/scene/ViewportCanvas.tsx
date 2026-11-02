@@ -10,6 +10,7 @@ import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geome
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import { EMPTY_SELECTION } from '../features/massing/types'
 import { cameraLocked, displayedDocument, type EditorEvent, type EditorState } from '../features/editor/interaction'
+import { ScenarioSnapshots, type SnapshotRequest, type SnapshotResult } from './ScenarioSnapshots'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
@@ -46,6 +47,8 @@ export type SceneLayers = {
 }
 
 type ViewportProps = {
+  snapshotRequest?: SnapshotRequest | null
+  onSnapshot?: (result: SnapshotResult) => void
   sitePackage: SitePackage
   sun: SunDirection
   constraints: EnvelopeConstraints | null
@@ -304,6 +307,8 @@ function AmbientOcclusion({ profile }: { profile: RenderProfile }) {
 }
 
 export function ViewportCanvas({
+  snapshotRequest,
+  onSnapshot,
   constraints,
   envelope,
   sitePackage,
@@ -383,9 +388,10 @@ export function ViewportCanvas({
             )}
             {layers.context && <ContextBuildings buildings={buildings.buildings} />}
             {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
-            {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
             {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
 
+            <group name="live-scenario">
+            {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
             <ConstraintLayer
               sitePackage={sitePackage}
               constraints={constraints}
@@ -404,6 +410,8 @@ export function ViewportCanvas({
               annotations={annotations}
             />
 
+            </group>
+            {snapshotRequest && onSnapshot && <ScenarioSnapshots request={snapshotRequest} sitePackage={sitePackage} onResult={onSnapshot} />}
             <CameraRig
               presetId={presetId}
               nonce={cameraNonce}
