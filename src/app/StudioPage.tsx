@@ -14,18 +14,18 @@ export function StudioPage() {
     return (
       <div className="flex min-h-dvh flex-col bg-app">
         <SiteHeader />
-        <main className="tf-measure flex flex-1 flex-col justify-center py-24">
-          <p className="text-label text-ink-secondary">
+        <main className="mx-auto w-full max-w-[1200px] px-4 sm:px-7 flex flex-1 flex-col justify-center py-24">
+          <p className="text-caption text-ink-secondary">
             Unknown site package
           </p>
-          <h1 className="mt-4 max-w-2xl text-figure-l text-ink">
+          <h1 className="mt-4 max-w-2xl text-figure-s sm:text-figure-l text-ink">
             That demonstration site is not part of this study.
           </h1>
           <p className="mt-5 max-w-md text-body leading-relaxed text-ink-secondary">
             Terraform ships two curated Oslo sites. Choose one of those to enter the studio.
           </p>
           <div className="mt-8">
-            <ButtonLink to="/">Back to the sites</ButtonLink>
+            <ButtonLink to="/" className="min-h-11">Back to the sites</ButtonLink>
           </div>
         </main>
         <SiteFooter />
