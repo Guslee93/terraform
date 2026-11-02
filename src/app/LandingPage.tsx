@@ -10,7 +10,7 @@ export function LandingPage() {
     <div className="min-h-dvh bg-app">
       <a
         href="#main"
-        className="sr-only z-50 rounded-control bg-ink px-4 py-2 text-sm text-surface focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+        className="sr-only z-50 rounded-control bg-ink px-4 py-2 text-body-sm text-surface focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
       >
         Skip to content
       </a>
@@ -18,91 +18,69 @@ export function LandingPage() {
       <SiteHeader />
 
       <main id="main">
-        <section className="tf-measure grid gap-12 pb-14 pt-10 lg:grid-cols-[1.18fr_0.82fr] lg:items-center lg:gap-12 lg:pb-16 lg:pt-14">
-          <div className="max-w-[36rem]">
-            <p className="flex items-center gap-3 text-label text-ink-secondary">
-              <span aria-hidden="true" className="h-px w-8 bg-accent/60" />
+        <section className="mx-auto grid w-full max-w-[1200px] gap-10 px-4 pb-14 pt-14 sm:px-7 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pb-20 lg:pt-20">
+          <div className="min-w-0">
+            <p className="text-caption text-ink-secondary">
               Oslo · Architectural site study
             </p>
 
-            <h1 className="mt-6 text-figure-l text-ink">
+            <h1 className="mt-4 text-balance text-figure-s text-ink sm:text-figure-l">
               Explore a site.
               <br />
-              <span className="italic text-accent">Shape</span> a concept.
+              Shape a concept.
               <br />
               Understand the impact.
             </h1>
 
-            <p className="mt-6 max-w-[46ch] text-body leading-[1.7] text-ink-secondary">
+            <p className="mt-6 max-w-[46ch] text-body leading-relaxed text-ink-secondary">
               A browser workspace for testing conceptual massing against terrain, daylight and
               clearly labelled demo constraints. No login, no black box.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink to="/studio/compact-infill">
+              <ButtonLink to="/studio/compact-infill" className="min-h-11">
                 Open Compact Infill
                 <Icon name="arrow-up-right" size={15} />
               </ButtonLink>
-              <ButtonLink to="/about" variant="secondary">
+              <ButtonLink to="/about" variant="ghost" className="min-h-11 underline underline-offset-4">
                 About the prototype
               </ButtonLink>
             </div>
 
-            <dl className="mt-8 grid max-w-md grid-cols-3 gap-4 border-t border-line pt-5">
-              <div>
-                <dt className="text-label text-ink-secondary">
-                  Sites
-                </dt>
-                <dd className="mt-1.5 text-body-sm text-ink">Two curated</dd>
-              </div>
-              <div>
-                <dt className="text-label text-ink-secondary">
-                  Access
-                </dt>
-                <dd className="mt-1.5 text-body-sm text-ink">No login</dd>
-              </div>
-              <div>
-                <dt className="text-label text-ink-secondary">
-                  Platform
-                </dt>
-                <dd className="mt-1.5 text-body-sm text-ink">Desktop web</dd>
-              </div>
-            </dl>
+            <p className="mt-8 border-t border-line pt-5 text-caption text-ink-secondary">
+              Curated Oslo demo · simplified context
+            </p>
           </div>
 
-          <figure className="relative isolate">
-            <div className="relative z-10 overflow-hidden rounded-card border border-line bg-surface">
-              <div className="flex items-center justify-between border-b border-line px-4 py-3">
-                <span className="text-label text-ink-secondary">
+          <figure className="min-w-0">
+            <div className="overflow-hidden rounded-card bg-surface">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <span className="text-caption text-ink-secondary">
                   Site study · Concept A
                 </span>
-                <span className="rounded-full border border-line px-2 py-0.5 text-label text-ink-secondary">
+                <span className="text-caption text-ink-secondary">
                   Isometric
                 </span>
               </div>
               <div className="aspect-[4/3] bg-viewport">
                 <SiteStudyGraphic />
               </div>
-              <figcaption className="flex items-center justify-between gap-4 border-t border-line px-4 py-3 text-label text-ink-secondary">
+              <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-caption text-ink-secondary">
                 <span>Terrain · Parcel · Massing</span>
                 <span>Illustrative — not surveyed</span>
               </figcaption>
             </div>
-            <div
-              aria-hidden="true"
-              className="absolute -bottom-3 -right-3 z-0 hidden h-28 w-28 rounded-card border border-line bg-accent-soft/60 lg:block"
-            />
           </figure>
         </section>
 
-        <section id="sites" className="border-t border-line bg-surface-paper">
-          <div className="tf-measure py-14 lg:py-20">
+        <section id="sites" className="border-t border-line">
+          <div className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-7 lg:py-20">
             <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-label text-ink-secondary">
-                  01 — Demonstration sites
+                <p className="text-caption text-ink-secondary">
+                  Demonstration sites
                 </p>
-                <h2 className="mt-3 max-w-xl text-balance text-figure-l text-ink">
+                <h2 className="mt-3 max-w-xl text-balance text-figure-s text-ink">
                   Choose a site to begin.
                 </h2>
               </div>
@@ -113,21 +91,21 @@ export function LandingPage() {
             </div>
 
             <div className="mt-10 grid gap-5 md:grid-cols-2">
-              {SITES.map((site, index) => (
-                <SiteCard key={site.id} site={site} index={index} />
+              {SITES.map((site) => (
+                <SiteCard key={site.id} site={site} />
               ))}
             </div>
           </div>
         </section>
 
         <section className="border-t border-line">
-          <div className="tf-measure py-14 lg:py-20">
+          <div className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-7 lg:py-20">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-label text-ink-secondary">
-                  02 — Method
+                <p className="text-caption text-ink-secondary">
+                  Method
                 </p>
-                <h2 className="mt-3 max-w-xl text-balance text-figure-l text-ink">
+                <h2 className="mt-3 max-w-xl text-balance text-figure-s text-ink">
                   One model. Three consequences.
                 </h2>
               </div>
@@ -140,31 +118,25 @@ export function LandingPage() {
             <div className="mt-10 grid border-y border-line md:grid-cols-3">
               {[
                 {
-                  index: '01',
                   title: 'Site',
                   body: 'Terrain, context buildings, parcel linework and demo constraints arrive as static, versioned packages with provenance.',
                 },
                 {
-                  index: '02',
                   title: 'Massing',
                   body: 'Draw footprints, stack storeys and step upper volumes. Areas, heights and envelope checks derive from the edited geometry.',
                 },
                 {
-                  index: '03',
                   title: 'Impact',
                   body: 'Move the sun, read shadows, test the illustrative envelope, then compare two concepts against the same camera and time.',
                 },
               ].map((step, index) => (
                 <article
-                  key={step.index}
+                  key={step.title}
                   className={`px-6 py-8 md:px-7 lg:py-10 ${
                     index > 0 ? 'border-t border-line md:border-l md:border-t-0' : ''
                   }`}
                 >
-                  <span className="text-body-sm font-medium text-accent">
-                    {step.index}
-                  </span>
-                  <h3 className="mt-4 text-title text-ink">
+                  <h3 className="text-title text-ink">
                     {step.title}
                   </h3>
                   <p className="mt-3 max-w-[30ch] text-body-sm leading-relaxed text-ink-secondary">
@@ -176,18 +148,14 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="tf-measure pb-16 lg:pb-24">
-          <div className="relative overflow-hidden rounded-card border border-line bg-accent-soft/70 px-7 py-10 md:px-12 md:py-14">
-            <div
-              aria-hidden="true"
-              className="tf-paper-grid absolute inset-0 opacity-40 [mask-image:linear-gradient(to_right,transparent,black)]"
-            />
-            <div className="relative flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+        <section className="border-t border-line">
+          <div className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-7 lg:py-20">
+            <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
               <div className="max-w-xl">
-                <p className="text-label text-accent">
+                <p className="text-caption text-ink-secondary">
                   Portfolio prototype
                 </p>
-                <h2 className="mt-3 text-balance text-figure-l text-ink">
+                <h2 className="mt-3 text-balance text-figure-s text-ink">
                   Designed to be examined, not just admired.
                 </h2>
                 <p className="mt-4 max-w-[52ch] text-body-sm leading-relaxed text-ink-secondary">
@@ -195,7 +163,7 @@ export function LandingPage() {
                   conceptual metrics, geometric sun direction and illustrative demo limits.
                 </p>
               </div>
-              <ButtonLink to="/studio/compact-infill" className="shrink-0">
+              <ButtonLink to="/studio/compact-infill" className="min-h-11 shrink-0">
                 Enter the studio
                 <Icon name="arrow-up-right" size={15} />
               </ButtonLink>

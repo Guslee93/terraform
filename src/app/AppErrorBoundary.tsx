@@ -23,19 +23,19 @@ export class AppErrorBoundary extends Component<Props, State> {
     if (!this.state.hasError) return this.props.children
 
     return (
-      <main className="grid min-h-dvh place-items-center bg-app px-6">
-        <div className="max-w-md rounded-card border border-line bg-surface p-7">
-          <p className="text-label text-danger">
+      <main className="grid min-h-dvh place-items-center bg-app px-4 py-16 sm:px-7">
+        <div className="w-full max-w-2xl border-t border-line pt-8">
+          <p className="text-caption text-ink-secondary">
             Interface error
           </p>
-          <h1 className="mt-3 text-title text-ink">
+          <h1 className="mt-4 text-figure-s sm:text-figure-l text-ink">
             The studio could not render.
           </h1>
-          <p className="mt-3 text-body-sm leading-relaxed text-ink-secondary">
+          <p className="mt-3 text-body leading-relaxed text-ink-secondary">
             Nothing was saved or changed. Reload the demo to return to the prepared site. If the
             problem persists, clear this site’s local storage and try again.
           </p>
-          <Button className="mt-6" onClick={this.reload}>
+          <Button className="mt-6 min-h-11" onClick={this.reload}>
             Reload the demo
           </Button>
         </div>
