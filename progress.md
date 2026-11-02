@@ -342,3 +342,28 @@
 - Motion (re-scoped round 3): one-time surface fade-in, figure tweens, masses rise once; reduced motion off. Warning toast removed (design check covers it).
 - Verification: lint ✅ · typecheck ✅ · 710 unit tests ✅ · build ✅ · e2e 18 passed, 1 opt-in skipped.
 - ADR-0009 and ADR-0010 accepted by the owner (2026-11-02). Open: keyboard e2e follow-up; then M4.
+
+### M4 Phase 0 (2026-11-02)
+
+- Plan: `docs/plans/M4-plan.md` (Claude: contracts/correctness; Codex: UI; DeepSeek: fixtures/e2e/evidence; subagents: K1, review).
+- S1 (Claude): scenario format 2 (`notes`, optional `camera`, `createdAt`/`updatedAt`), strict v2 decoder (`decodeScenarioDocument`), `src/features/scenarios/{migrate,project}.ts` (v0 → v1 → v2, typed `ScenarioLoadError`, `ProjectRecord`, `ProjectExport`, `createDefaultProject`), `CAMERA_PRESET_IDS`; ADR-0011 (proposed).
+- K1 (subagent): `e2e/keyboard.spec.ts`: tab order in visual order, visible focus, Enter toggles groups, slider keys. 4/4 pass; no product bugs.
+- D35 (DeepSeek): work order `docs/handoffs/D35-m4-fixtures.md`; worktree `../Terraform-d35` on `deepseek/d35` prepared; not started yet.
+- Verification: lint ✅ · typecheck ✅ · 719 unit tests ✅ · build ✅.
+
+### M4 Phase 1 (2026-11-02)
+
+- S2: `src/features/scenarios/{store,repository,defaultRepository}.ts` cover:
+  - Dexie and in-memory stores holding rows of validated JSON;
+  - load with repair, reporting skipped records as corrupt, newer-version or missing;
+  - writes ordered per id;
+  - typed quota and unavailable failures;
+  - reset;
+  - export, and import that is all-or-nothing.
+- S3: `autosave.ts` saves about 800 ms after a change, waits while a gesture is open, flushes, discards and reports a truthful status. `sessions.ts` keeps one undo history per scenario.
+- S4: `compare.ts` builds the FR-080 rows with B − A deltas, the envelope status and notes.
+- Studio integration (moved from Codex to Claude): `useScenarioProject` plus `StudioShell` wiring. The top bar now shows a truthful save status. `updateScenarioDetails` is a new command. `massSummary` moved to `features/analysis`. `__APP_VERSION__` is injected from package.json.
+- Browser check: drawing a mass goes "Unsaved changes" → "Saved"; after a reload the mass is still there.
+- Codex work order: `docs/handoffs/C12-C14-m4-ui.md`, written against the real hook API.
+- Verification: lint ✅ · typecheck ✅ · 749 unit tests ✅ · build ✅ · e2e 22 passed, 1 opt-in skipped.
+- Bundle: the studio chunk is 324 kB raw / 105 kB gzipped (+122 / +40 kB), from Dexie's first use; recorded in ADR-0011.

@@ -1,19 +1,14 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
 import { localDayMinuteToInstant } from '../../features/analysis/time'
 import type { SunTime } from './SunPanel'
-import { createHistory } from '../../features/editor/history'
 import type { MassingCommand } from '../../features/editor/history'
-import {
-  commandError,
-  createEditorState,
-  displayedDocument,
-  reduceEditor,
-} from '../../features/editor/interaction'
+import { commandError, displayedDocument } from '../../features/editor/interaction'
+import { getScenarioRepository } from '../../features/scenarios/defaultRepository'
+import type { ScenarioRepository } from '../../features/scenarios/repository'
 import { scenarioMetrics } from '../../features/massing/metrics'
 import { checkClearance, type ClearanceIssue } from '../../features/massing/clearance'
-import { createScenario } from '../../features/massing/factories'
 import { sampleTerrainHeight } from '../../features/sites/geometry'
 import { normalizeRing } from '../../lib/polygon'
 import type { CameraPresetId } from '../../features/sites/manifest'
@@ -29,12 +24,13 @@ import { CameraPresets } from './CameraPresets'
 import { summarizeChecks } from './checks'
 import { ConstraintsPanel } from './ConstraintsPanel'
 import { formatArea, formatMetres } from './format'
-import { massSummary } from './massSummary'
+import { massSummary } from '../../features/analysis/massSummary'
 import { Inspector, type PanelGroup } from './Inspector'
 import { MetricsPanel } from './MetricsPanel'
 import { StudioTopBar } from './StudioTopBar'
 import { SunBand, SunDetails, shortDate, useSunPlayback } from './SunPanel'
 import { ToolRail, type ToolId } from './ToolRail'
+import { useScenarioProject } from './useScenarioProject'
 
 type PackageStatus = 'loading' | 'ready' | 'error'
 
@@ -44,6 +40,8 @@ type StudioShellProps = {
   packageStatus: PackageStatus
   packageError: string | null
   onRetry: () => void
+  /** Injected in tests; the app uses the shared IndexedDB repository. */
+  repository?: ScenarioRepository
 }
 
 export function StudioShell({
@@ -52,10 +50,10 @@ export function StudioShell({
   packageStatus,
   packageError,
   onRetry,
+  repository,
 }: StudioShellProps) {
-  const [editor, dispatch] = useReducer(reduceEditor, site.id, (siteId) =>
-    createEditorState(createHistory(createScenario({ siteId }))),
-  )
+  const project = useScenarioProject({ siteId: site.id, repository: repository ?? getScenarioRepository() })
+  const { editor, dispatch } = project
   const [heightReference, setHeightReference] = useState<HeightReference>('grade')
   const [sunTime, setSunTime] = useState<SunTime>({ date: '2026-06-21', minuteOfDay: 900 })
   const solar = useMemo(() => {
@@ -68,7 +66,9 @@ export function StudioShell({
   const [panelFocus, setPanelFocus] = useState<{ group: PanelGroup; nonce: number }>({ group: 'layers', nonce: 0 })
   const [renderPreference, setRenderPreference] = useState(readRenderPreference)
   // Below 640 px the studio is a read-only preview (M0 visual gate).
-  const [editable, setEditable] = useState(() => window.matchMedia('(min-width: 640px)').matches)
+  const [wide, setWide] = useState(() => window.matchMedia('(min-width: 640px)').matches)
+  // Editing waits for the scenario project to load, so no edit can be lost to the load.
+  const editable = wide && project.ready
   const [layers, setLayers] = useState<SceneLayers>({
     terrain: true,
     context: true,
@@ -171,12 +171,12 @@ export function StudioShell({
   useEffect(() => {
     const query = window.matchMedia('(min-width: 640px)')
     const update = () => {
-      setEditable(query.matches)
+      setWide(query.matches)
       if (!query.matches) dispatch({ type: 'setTool', tool: 'select' })
     }
     query.addEventListener('change', update)
     return () => query.removeEventListener('change', update)
-  }, [])
+  },[dispatch])
 
   const selectTool = (tool: ToolId) => {
     if (tool === 'select' || tool === 'draw') dispatch({ type: 'setTool', tool })
@@ -203,7 +203,7 @@ export function StudioShell({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [requestCamera])
+  }, [dispatch, requestCamera])
 
   const checks = useMemo(() => summarizeChecks(envelope, clearance, sitePackage?.manifest.constraints ?? null), [envelope, clearance, sitePackage])
   const annotations = useMemo(() => new Map<string, MassAnnotation>(analysisDocument.volumes.flatMap((volume) => {
@@ -222,6 +222,8 @@ export function StudioShell({
       <StudioTopBar
         site={site}
         scenario={scenario}
+        saveStatus={project.saveStatus}
+        storage={project.storage}
         canFit={packageStatus === 'ready'}
         onFitSite={() => requestCamera('isometric')}
       />

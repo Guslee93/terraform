@@ -220,3 +220,11 @@ export function removeTier(volumeId: string, tierId: string): MassingCommand {
     selectionAfter: { volumeId, tierId: null },
   }
 }
+
+/** Scenario name and notes (FR-040, FR-041), undoable like any other edit. */
+export function updateScenarioDetails(patch: Partial<Pick<ScenarioDocument, 'name' | 'notes'>>): MassingCommand {
+  return {
+    label: patch.name !== undefined ? 'Rename scenario' : 'Edit notes',
+    apply: (document) => ({ ...document, ...patch }),
+  }
+}

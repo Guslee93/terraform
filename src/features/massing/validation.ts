@@ -5,6 +5,7 @@ import {
   MIN_FOOTPRINT_AREA,
   MIN_STOREYS,
   MIN_STOREY_HEIGHT,
+  MAX_NOTES_LENGTH,
   SCENARIO_SCHEMA_VERSION,
   type MassTier,
   type MassUse,
@@ -167,6 +168,15 @@ export function validateScenario(document: ScenarioDocument): ValidationIssue[] 
   nonEmpty(document.id, 'id', issues)
   nonEmpty(document.siteId, 'siteId', issues)
   nonEmpty(document.name, 'name', issues)
+  if (document.notes.length > MAX_NOTES_LENGTH) issues.push(issue('notes', `must be at most ${MAX_NOTES_LENGTH} characters`))
+  for (const key of ['createdAt', 'updatedAt'] as const) {
+    if (!Number.isFinite(Date.parse(document[key]))) issues.push(issue(key, 'must be an ISO 8601 date-time'))
+  }
+  if (document.camera) {
+    for (const key of ['position', 'target'] as const) {
+      if (!document.camera[key].every(Number.isFinite)) issues.push(issue(`camera.${key}`, 'must be finite metres'))
+    }
+  }
   const assumptionIssues = validateAssumptions(document.assumptions)
   issues.push(...assumptionIssues)
   // Only bound tiers by the scenario's storey range once that range is itself valid.

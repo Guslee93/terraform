@@ -1,7 +1,7 @@
-import { referenceElevation, type EnvelopeSite, type HeightReference } from '../../features/analysis/constraints'
-import { tierTop } from '../../features/massing/aggregate'
-import { floorLevels } from '../../features/massing/metrics'
-import type { MassVolume } from '../../features/massing/types'
+import { referenceElevation, type EnvelopeSite, type HeightReference } from './constraints'
+import { tierTop } from '../massing/aggregate'
+import { floorLevels } from '../massing/metrics'
+import type { MassVolume } from '../massing/types'
 
 /**
  * Height and floor count for one mass, as every surface shows them (ADR-0010 §4): the highest

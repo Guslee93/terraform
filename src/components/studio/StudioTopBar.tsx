@@ -1,15 +1,35 @@
 import { Link } from 'react-router-dom'
+import type { SaveStatus } from '../../features/scenarios/autosave'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
+import type { StorageMode } from './useScenarioProject'
+
+/** The save indicator's words: always the real state, never colour alone (FR-043, QA-14). */
+export function saveStatusLabel(storage: StorageMode, status: SaveStatus): string {
+  if (storage === 'memory') return "Not saved — this browser can't store data"
+  if (storage === 'read-only') return 'Read-only — saved by a newer version'
+  switch (status.state) {
+    case 'saved':
+      return 'Saved'
+    case 'saving':
+      return 'Saving…'
+    case 'unsaved':
+      return 'Unsaved changes'
+    case 'error':
+      return status.kind === 'quota' ? 'Not saved — storage is full' : 'Not saved — storage unavailable'
+  }
+}
 
 type StudioTopBarProps = {
   site: SiteSummary
   scenario: string
+  saveStatus: SaveStatus
+  storage: StorageMode
   canFit: boolean
   onFitSite: () => void
 }
 
 /** A plain 52 px row on the ground (draft 4): identity left, scenario and two text actions right. */
-export function StudioTopBar({ site, scenario, canFit, onFitSite }: StudioTopBarProps) {
+export function StudioTopBar({ site, scenario, saveStatus, storage, canFit, onFitSite }: StudioTopBarProps) {
   return (
     <header className="flex min-h-[52px] flex-wrap items-center gap-x-7 gap-y-1 px-5">
       <Link to="/" aria-label="Terraform home" className="inline-flex items-center gap-2.5 text-body font-medium text-ink">
@@ -21,10 +41,11 @@ export function StudioTopBar({ site, scenario, canFit, onFitSite }: StudioTopBar
         <span className="ml-2 text-caption text-ink-secondary">{site.subtitle}</span>
       </p>
       <div className="ml-auto flex items-center gap-7">
-        <p className="text-body-sm text-ink" title="Scenario switching arrives with scenarios (M4)">
+        <p className="text-body-sm text-ink">
           {scenario}
-          {/* Nothing persists scenarios until M4 (review blocker): say so, not "saved". */}
-          <span className="ml-1.5 text-caption text-ink-secondary">local session</span>
+          <span aria-live="polite" className={saveStatus.state === 'error' || storage !== 'persistent' ? 'ml-1.5 text-caption text-warning-ink' : 'ml-1.5 text-caption text-ink-secondary'}>
+            {saveStatusLabel(storage, saveStatus)}
+          </span>
         </p>
         {canFit && (
           <button type="button" onClick={onFitSite} title="Fit site (F)" className="min-h-6 text-caption text-ink transition-colors duration-200 hover:text-accent">

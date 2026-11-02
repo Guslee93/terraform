@@ -1,6 +1,8 @@
-import type { Vec2 } from '../../lib/coordinates'
+import type { Vec2, Vec3 } from '../../lib/coordinates'
+import { CAMERA_PRESET_IDS } from '../sites/manifest'
 import {
   SCENARIO_SCHEMA_VERSION,
+  type CameraBookmark,
   type Footprint,
   type MassTier,
   type MassUse,
@@ -10,7 +12,10 @@ import {
 } from './types'
 import { MassingValidationError, USES, validateScenario } from './validation'
 
-/** Pure JSON round-trip for M4 persistence (ADR-0004 §5). Migrations are M4's concern. */
+/**
+ * Pure JSON round-trip for the current scenario format (ADR-0004 §5, ADR-0011). Older formats go
+ * through `migrateScenario` in `features/scenarios`, which ends here.
+ */
 
 export function serializeScenario(document: ScenarioDocument): string {
   const issues = validateScenario(document)
@@ -25,6 +30,11 @@ export function parseScenarioDocument(json: string): ScenarioDocument {
   } catch {
     fail('$', 'is not valid JSON')
   }
+  return decodeScenarioDocument(raw)
+}
+
+/** Structural decode plus domain validation of an already-parsed current-version document. */
+export function decodeScenarioDocument(raw: unknown): ScenarioDocument {
   const document = decodeScenario(raw)
   const issues = validateScenario(document)
   if (issues.length > 0) throw new MassingValidationError(issues)
@@ -118,6 +128,26 @@ function decodeAssumptions(value: unknown, path: string): ScenarioAssumptions {
   }
 }
 
+function decodeVec3(value: unknown, path: string): Vec3 {
+  const triple = asArray(value, path)
+  const [east, north, up] = triple
+  if (triple.length !== 3 || typeof east !== 'number' || typeof north !== 'number' || typeof up !== 'number') {
+    fail(path, 'must be an [east, north, up] number triple')
+  }
+  return [east, north, up]
+}
+
+function decodeCamera(value: unknown, path: string): CameraBookmark {
+  const record = asRecord(value, path)
+  const presetId = CAMERA_PRESET_IDS.find((id) => id === record.presetId)
+  if (!presetId) fail(`${path}.presetId`, 'must be a known camera preset')
+  return {
+    presetId,
+    position: decodeVec3(record.position, `${path}.position`),
+    target: decodeVec3(record.target, `${path}.target`),
+  }
+}
+
 function decodeScenario(value: unknown): ScenarioDocument {
   const record = asRecord(value, '$')
   // A newer schema is rejected rather than guessed at, so no data is silently lost.
@@ -132,5 +162,9 @@ function decodeScenario(value: unknown): ScenarioDocument {
     name: asString(record.name, 'name'),
     assumptions: decodeAssumptions(record.assumptions, 'assumptions'),
     volumes: volumes.map((volume, index) => decodeVolume(volume, `volumes[${index}]`)),
+    notes: asString(record.notes, 'notes'),
+    ...(record.camera === undefined ? {} : { camera: decodeCamera(record.camera, 'camera') }),
+    createdAt: asString(record.createdAt, 'createdAt'),
+    updatedAt: asString(record.updatedAt, 'updatedAt'),
   }
 }

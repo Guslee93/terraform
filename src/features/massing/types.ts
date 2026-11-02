@@ -1,6 +1,9 @@
-import type { Vec2 } from '../../lib/coordinates'
+import type { Vec2, Vec3 } from '../../lib/coordinates'
+import type { CameraPresetId } from '../sites/manifest'
 
-export const SCENARIO_SCHEMA_VERSION = 1
+/** Persisted scenario format (ADR-0011). v0 = unversioned v1, v1 = M2/M3, v2 = M4. */
+export const SCENARIO_SCHEMA_VERSION = 2
+export const MAX_NOTES_LENGTH = 2000
 export const HISTORY_LIMIT = 100
 export const MIN_FOOTPRINT_AREA = 4
 export const MIN_STOREYS = 1
@@ -38,13 +41,26 @@ export type ScenarioAssumptions = {
   readonly maxStoreys: number
 }
 
+/** A saved view for a scenario, in local ENU metres (ADR-0002). */
+export type CameraBookmark = {
+  readonly presetId: CameraPresetId
+  readonly position: Vec3
+  readonly target: Vec3
+}
+
 export type ScenarioDocument = {
-  readonly schemaVersion: 1
+  readonly schemaVersion: 2
   readonly id: string
   readonly siteId: string
   readonly name: string
   readonly assumptions: ScenarioAssumptions
   readonly volumes: readonly MassVolume[]
+  /** Free text, at most MAX_NOTES_LENGTH characters (FR-041). */
+  readonly notes: string
+  readonly camera?: CameraBookmark
+  /** ISO 8601 instants. */
+  readonly createdAt: string
+  readonly updatedAt: string
 }
 
 export type MassSelection = {

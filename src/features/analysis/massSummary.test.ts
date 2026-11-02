@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRectangleFootprint, createTier, createVolume } from '../../features/massing/factories'
+import { createRectangleFootprint, createTier, createVolume } from '../massing/factories'
 import { massSummary } from './massSummary'
 
 const site = { studyArea: [[-50, -50], [50, -50], [50, 50], [-50, 50]] as [number, number][], heightAt: () => -1, constraints: null }

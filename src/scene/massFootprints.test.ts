@@ -4,7 +4,10 @@ import { visibleTierFootprints } from './massFootprints'
 
 function makeDoc(overrides?: Partial<ScenarioDocument>): ScenarioDocument {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    notes: '',
+    createdAt: '2026-11-02T00:00:00.000Z',
+    updatedAt: '2026-11-02T00:00:00.000Z',
     id: 'test',
     siteId: 'compact-infill',
     name: 'Test',
@@ -121,7 +124,10 @@ describe('visibleTierFootprints', () => {
 
   it('returns empty array when all volumes are hidden', () => {
     const doc: ScenarioDocument = {
-      schemaVersion: 1,
+      schemaVersion: 2,
+    notes: '',
+    createdAt: '2026-11-02T00:00:00.000Z',
+    updatedAt: '2026-11-02T00:00:00.000Z',
       id: 'test',
       siteId: 'compact-infill',
       name: 'Test',

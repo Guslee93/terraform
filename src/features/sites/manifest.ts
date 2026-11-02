@@ -1,7 +1,8 @@
 export type Vec2Tuple = readonly [east: number, north: number]
 export type Vec3Tuple = readonly [east: number, north: number, up: number]
 
-export type CameraPresetId = 'isometric' | 'top' | 'north' | 'south' | 'eyeLevel'
+export const CAMERA_PRESET_IDS = ['isometric', 'top', 'north', 'south', 'eyeLevel'] as const
+export type CameraPresetId = (typeof CAMERA_PRESET_IDS)[number]
 
 export type CameraPreset = {
   position: Vec3Tuple

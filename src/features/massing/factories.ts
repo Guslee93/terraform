@@ -103,6 +103,9 @@ type ScenarioInput = {
   name?: string
   volumes?: readonly MassVolume[]
   assumptions?: Partial<ScenarioAssumptions>
+  notes?: string
+  /** ISO instant for createdAt/updatedAt; injected in tests for determinism. */
+  now?: string
 }
 
 export function createScenario({
@@ -111,6 +114,8 @@ export function createScenario({
   name = 'Concept A',
   volumes = [],
   assumptions,
+  notes = '',
+  now = new Date().toISOString(),
 }: ScenarioInput): ScenarioDocument {
   return {
     schemaVersion: SCENARIO_SCHEMA_VERSION,
@@ -119,6 +124,9 @@ export function createScenario({
     name,
     assumptions: { ...DEFAULT_ASSUMPTIONS, ...assumptions },
     volumes,
+    notes,
+    createdAt: now,
+    updatedAt: now,
   }
 }
 

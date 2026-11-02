@@ -57,7 +57,20 @@ describe('scenario serialization', () => {
   })
 
   it('rejects an unknown schema version', () => {
-    expect(issuePaths(mutate((raw) => (raw.schemaVersion = 2)))).toEqual(['schemaVersion'])
+    expect(issuePaths(mutate((raw) => (raw.schemaVersion = 3)))).toEqual(['schemaVersion'])
+  })
+
+  it('round-trips the v2 fields, including an optional camera bookmark', () => {
+    const withCamera = { ...stepped, notes: 'Taller toward the park.', camera: { presetId: 'top' as const, position: [0, 0, 400] as const, target: [0, 0, 0] as const } }
+    expect(parseScenarioDocument(serializeScenario(withCamera))).toEqual(withCamera)
+  })
+
+  it('rejects bad v2 fields with a path', () => {
+    expect(issuePaths(mutate((raw) => (raw.notes = 'x'.repeat(2001))))).toEqual(['notes'])
+    expect(issuePaths(mutate((raw) => delete raw.notes))).toEqual(['notes'])
+    expect(issuePaths(mutate((raw) => (raw.updatedAt = 'yesterday')))).toEqual(['updatedAt'])
+    expect(issuePaths(mutate((raw) => (raw.camera = { presetId: 'aerial', position: [0, 0, 1], target: [0, 0, 0] })))).toEqual(['camera.presetId'])
+    expect(issuePaths(mutate((raw) => (raw.camera = { presetId: 'top', position: [0, 0], target: [0, 0, 0] })))).toEqual(['camera.position'])
   })
 
   it('rejects structurally broken documents with a path', () => {
