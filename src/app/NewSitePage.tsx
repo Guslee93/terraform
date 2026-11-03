@@ -12,6 +12,7 @@ import { saveImported, openImportedWithoutSaving, type ImportedSite } from '../f
 import { StoreError, toStoreError } from '../features/scenarios/store'
 import { kartverketProvider, terrariumProvider } from '../features/import/terrain'
 import { openFreeMapSource } from '../features/import/tiles'
+import { overpassTrees } from '../features/import/trees'
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron'
 const START = QUICK_PICKS[0] ?? { label: 'Custom area', latitude: 59.9239, longitude: 10.7579 }
@@ -104,7 +105,7 @@ export function NewSitePage() {
     try {
       const result = await importSite(
         framed.frame,
-        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()] },
+        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], trees: overpassTrees() },
         {
           signal: current.signal,
           onProgress: (step, state, detail) => setSteps((previous) => ({ ...previous, [step]: { state, detail } })),

@@ -7,7 +7,7 @@ import { bjorvika, fixtureTiles, grunerlokka } from './testFixtures'
 import { buildTerrainGrid, kartverketProvider, parseKartverketSamples, terrainPoints, type TerrainProvider, type TerrainSample } from './terrain'
 import { parseSiteManifest } from '../sites/manifest'
 import { parseBuildings, parseLandCover, parseRoads, parseStudyArea, parseTerrain, parseTrees } from '../sites/package'
-import { isSimpleRing } from '../../lib/polygon'
+import { isSimpleRing, pointInPolygon } from '../../lib/polygon'
 import type { ImportFrame } from './frame'
 import { QUICK_PICKS } from './cities'
 
@@ -37,7 +37,10 @@ it.each([{frame:grunerlokka,record:grunerlokkaTerrain,count:202},{frame:bjorvika
   const wrap=(body: object)=>({schemaVersion:1,siteId:frame.id,...body})
   expect(parseRoads(wrap({roads:pkg.roads})).roads.length).toBeGreaterThan(0)
   expect(parseLandCover(wrap({areas:pkg.landcover})).areas.length).toBeGreaterThan(0)
-  expect(parseTrees(wrap({trees:pkg.trees})).trees).toEqual([])
+  const trees=parseTrees(wrap({trees:pkg.trees})).trees
+  expect(trees.length).toBeGreaterThan(0)
+  expect(trees.some(t=>pkg.buildings.buildings.some(b=>pointInPolygon(t,b.footprint)))).toBe(false)
+  expect(result.warnings.find(w=>w.code==='trees-unavailable')?.message).toMatch(/^Trees are illustrative, not mapped positions \(no tree source configured\)/)
   expect(pkg.manifest.statistics).toMatchObject({buildingCount:pkg.buildings.buildings.length,terrainSamples:169,studyAreaM2:78400})
   expect(pkg.manifest.statistics.sourceChecksum).toMatch(/^[a-f0-9]{64}$/)
   expect(pkg.buildings.buildings.every(b=>isSimpleRing(b.footprint))).toBe(true)

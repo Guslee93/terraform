@@ -9,6 +9,7 @@ import { ringArea } from './geometry'
 import { abortable, checkAbort } from './request'
 import { buildTerrainGrid, GRID_SIZE, terrainPoints, TerrainPolicyError, timeZoneFor, type TerrainGrid, type TerrainProvider, type TerrainSample } from './terrain'
 import { decodeTile, tileCover, type TileFeature, type TileSource } from './tiles'
+import { illustrativeTrees, mappedTrees, placeTrees, type TreeSource } from './trees'
 
 export type ImportStep = 'tiles' | 'buildings' | 'context' | 'terrain' | 'assemble'
 export type ImportWarning = {
@@ -34,7 +35,7 @@ async function sourceChecksum(parts: Uint8Array[], samples: TerrainSample[], sig
 
 /** No writes or app integration. A package becomes visible only after all parsers
  * and cross-asset checks pass. Timings are elapsed seconds, matching the C3 report. */
-export async function importSite(input: ImportFrame, deps: { tiles: TileSource; terrain: TerrainProvider[] }, options: ImportOptions = {}): Promise<ImportResult> {
+export async function importSite(input: ImportFrame, deps: { tiles: TileSource; terrain: TerrainProvider[]; trees?: TreeSource }, options: ImportOptions = {}): Promise<ImportResult> {
   const {signal,onProgress} = options
   checkAbort(signal)
   const frame = validateFrame(input)
@@ -42,7 +43,6 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
   const warnings: ImportWarning[] = [
     {code:'heights-estimated',message:'OpenMapTiles render_height values are partly estimated; heights are not survey data.'},
     {code:'roofs-flat',message:'Roofs are modelled as flat extrusions; sloped and stepped roof shapes are not represented.'},
-    {code:'trees-unavailable',message:'No tree points in vector tiles; the trees list is intentionally empty.'},
   ]
   const progress = (step: ImportStep, state: 'start' | 'done' | 'skipped' | 'failed', detail?: string) => {
     checkAbort(signal)
@@ -86,7 +86,20 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     return buildings
   })
   checkAbort(signal)
-  const context = await step('context',deps.tiles.name,()=>({roads:extractRoads(features,frame),areas:extractLandCover(features,frame)}))
+  const context = await step('context',deps.tiles.name,async()=>{
+    let failure = deps.trees ? '' : 'no tree source configured'
+    let mapped: [number,number][] = []
+    if (deps.trees) {
+      try { mapped = placeTrees(mappedTrees(await abortable(()=>deps.trees!.fetchTrees(frameBounds(frame).lonLat,signal),signal),frame),drafts,frame) }
+      catch (error) { checkAbort(signal); failure = messageOf(error) }
+      if (!failure && !mapped.length) failure = 'OpenStreetMap has no mapped trees in this frame'
+    }
+    return {roads:extractRoads(features,frame),areas:extractLandCover(features,frame),
+      trees: mapped.length ? mapped : placeTrees(illustrativeTrees(features,frame),drafts,frame),treesMapped:mapped.length>0,treeFailure:failure}
+  })
+  if (!context.treesMapped) warnings.push({code:'trees-unavailable',message:context.trees.length
+    ? `Trees are illustrative, not mapped positions (${context.treeFailure}): ${context.trees.length} placed on a grid in mapped woods (9 m), gardens (14 m), parks (16 m) and cemeteries (18 m).`
+    : `No trees shown: ${context.treeFailure}, and the frame has no mapped woods, gardens, parks or cemeteries.`})
   checkAbort(signal)
   const sampled = await step('terrain','Terrain providers',async()=>{
     const points = terrainPoints(frame)
@@ -136,11 +149,12 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     const studyArea = parseStudyArea(wrap({label:'Study area — not a cadastral parcel',polygon:[[-studyHalf,-studyHalf],[studyHalf,-studyHalf],[studyHalf,studyHalf],[-studyHalf,studyHalf],[-studyHalf,-studyHalf]]}))
     const roads = parseRoads(wrap({roads:context.roads}))
     const landcover = parseLandCover(wrap({areas:context.areas}))
-    const trees = parseTrees(wrap({trees:[]}))
+    const trees = parseTrees(wrap({trees:context.trees}))
     const diagonal = Math.hypot(studyHalf*2,studyHalf*2), distance = diagonal*1.7, direction = Math.sqrt(1+1.15**2+1)
     const preset = (position: Vec3Tuple,target: Vec3Tuple = [0,0,8],fov = 32): CameraPreset => ({position,target,projection:'perspective',fov})
     const acquiredAt = new Date().toISOString()
     const sources: SiteSource[] = [{title:deps.tiles.name,attribution:deps.tiles.attribution,acquiredAt,...(deps.tiles.url ? {url:deps.tiles.url} : {}),...(deps.tiles.license ? {license:deps.tiles.license} : {})}]
+    if (context.treesMapped && deps.trees) sources.push({title:deps.trees.name,attribution:deps.trees.attribution,acquiredAt,...(deps.trees.url ? {url:deps.trees.url} : {}),...(deps.trees.license ? {license:deps.trees.license} : {})})
     if (provider) sources.push({title:provider.name,attribution:provider.attribution,acquiredAt,...(provider.url ? {url:provider.url} : {}),...(provider.license ? {license:provider.license} : {})})
     const checksum = await sourceChecksum(tileBuffers,sampled.samples,signal)
     checkAbort(signal)

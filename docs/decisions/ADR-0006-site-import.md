@@ -30,3 +30,9 @@ The owner wants Hektar-like site loading: find any place in a Nordic city, frame
 - `maplibre-gl` **5.24.0** (2026-04-23), BSD-3-Clause, pinned exact. Loaded only by the lazy `/new` route: `NewSitePage` chunk 1,097 kB raw / **297.5 kB gzip** JS plus 10.1 kB gzip CSS (includes the importer and `@turf/turf`). The landing and studio chunks do not contain it (checked with `grep -l maplibre dist/assets/*.js`).
 - `@mapbox/vector-tile` 3.0.0 and `pbf` 5.1.2 were already runtime dependencies.
 - Basemap style: OpenFreeMap `positron`, attribution control always visible.
+
+## Addendum — imported trees (2026-11-03)
+
+- Imports now request OSM `natural=tree` nodes and `natural=tree_row` ways (resampled every 8 m) from the Overpass API, as §3 allowed, with a 6 s timeout. Mapped trees credit Overpass in the package sources.
+- Overpass was unreachable again on 2026-11-03 (406/502/504 and timeouts from both terminal and browser). When it fails or returns nothing, the import places **illustrative** trees on a jittered grid inside mapped woods (9 m), gardens (14 m), parks/village greens/recreation grounds (16 m) and cemeteries (18 m), off building footprints, capped at 3,000. The `trees-unavailable` notice says the trees are illustrative and gives the failure reason; it is shown under Import notes. No new dependency; no change to the stored package schema.
+- Building granularity is unchanged: one mass per OSM building as delivered in OpenMapTiles z14; blocks mapped as one polygon in OSM stay one mass.
