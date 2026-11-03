@@ -1,14 +1,17 @@
+import { useEffect, useState, type ReactNode } from 'react'
+import { RouteFallback } from './RouteFallback'
+import { ConfirmDialog, type Confirmation } from '../components/ui/ConfirmDialog'
 import { useParams } from 'react-router-dom'
 import { SiteFooter, SiteHeader } from '../components/marketing/SiteChrome'
 import { StudioShell } from '../components/studio/StudioShell'
-import { ButtonLink } from '../components/ui/Button'
-import { getImported } from '../features/import/session'
+import { Button, ButtonLink } from '../components/ui/Button'
+import { deleteImported, getImported } from '../features/import/session'
 import { getSite } from '../features/sites/siteCatalog'
 import { useSitePackage } from '../features/sites/useSitePackage'
 
 const noop = () => {}
 
-function MissingSite({ eyebrow, heading, body, to, action }: { eyebrow: string; heading: string; body: string; to: string; action: string }) {
+function MissingSite({ eyebrow, heading, body, to, action, children }: { children?: ReactNode; eyebrow: string; heading: string; body: string; to: string; action: string }) {
   return (
     <div className="flex min-h-dvh flex-col bg-app">
       <SiteHeader />
@@ -23,6 +26,7 @@ function MissingSite({ eyebrow, heading, body, to, action }: { eyebrow: string; 
           {body}
         </p>
         <div className="mt-8">
+          {children}
           <ButtonLink to={to} className="min-h-11">{action}</ButtonLink>
         </div>
       </main>
@@ -64,31 +68,32 @@ export function StudioPage() {
   )
 }
 
-/** `/studio/import/:importId`: a site loaded on `/new`, held in memory until reload (P3). */
+/** Loads a validated imported package before mounting the studio. */
 export function ImportedStudioPage() {
   const { importId } = useParams()
-  const imported = getImported(importId)
-
-  if (!imported) {
-    return (
-      <MissingSite
-        eyebrow="Imported site"
-        heading="This imported site is no longer available"
-        body="Imported sites are kept only until the page reloads. Saving them arrives with My sites."
-        to="/new"
-        action="Import it again"
-      />
-    )
+  const [loaded, setLoaded] = useState<{ id: string | undefined; site: Awaited<ReturnType<typeof getImported>> } | null>(null)
+  const [error, setError] = useState<{ id: string | undefined; message: string } | null>(null)
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
+  useEffect(() => {
+    let active = true
+    getImported(importId).then((site) => { if (active) setLoaded({ id: importId, site }) })
+      .catch((problem: unknown) => { if (active) setError({ id: importId, message: problem instanceof Error ? problem.message : 'Could not load this site.' }) })
+    return () => { active = false }
+  }, [importId])
+  if (error && error.id === importId) return <MissingSite eyebrow="Imported site" heading="This saved site could not be loaded" body={error.message} to="/" action="Back to the sites" />
+  if (!loaded || loaded.id !== importId) return <RouteFallback />
+  const imported = loaded.site
+  if (!imported || 'status' in imported) {
+    return <MissingSite eyebrow="Imported site" heading="This imported site is no longer available"
+      body={imported ? 'This saved site could not be read.' : 'It may have been deleted from My sites.'}
+      to="/new" action="Import it again">
+      {imported && <Button variant="secondary" className="mr-4" onClick={() => setConfirmation({
+        title: 'Delete this saved site?', message: 'This removes the imported site and its saved scenarios from this browser.', action: 'Delete',
+        onConfirm: async () => { await deleteImported(imported.id); setLoaded({ id: importId, site: undefined }) },
+      })}>Delete it</Button>}
+      {confirmation && <ConfirmDialog confirmation={confirmation} onClose={() => setConfirmation(null)} />}
+    </MissingSite>
   }
-
-  return (
-    <StudioShell
-      key={imported.summary.id}
-      site={imported.summary}
-      sitePackage={imported.sitePackage}
-      packageStatus="ready"
-      packageError={null}
-      onRetry={noop}
-    />
-  )
+  return <StudioShell key={imported.summary.id} site={imported.summary} sitePackage={imported.sitePackage}
+    packageStatus="ready" packageError={null} onRetry={noop} />
 }

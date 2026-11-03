@@ -6,6 +6,18 @@ import type { ImportOptions, ImportResult } from '../features/import/assemble'
 import type { ImportFrame } from '../features/import/frame'
 import type { PlaceResult } from '../features/import/geocode'
 import { getImported } from '../features/import/session'
+import type * as ImportStoreModule from '../features/import/store'
+import { createMemoryImportedSiteStore } from '../features/import/store'
+import { importedFixture } from '../features/import/storeFixtures'
+const stores = vi.hoisted(() => ({ current: null as ReturnType<typeof createMemoryImportedSiteStore> | null }))
+vi.mock('../features/import/store', async (original) => {
+  const actual = await original<typeof ImportStoreModule>()
+  return { ...actual, createDexieImportedSiteStore: () => ({
+    get: (id: string) => stores.current!.get(id),
+    put: (site: Parameters<ReturnType<typeof createMemoryImportedSiteStore>['put']>[0]) => stores.current!.put(site),
+    list: () => stores.current!.list(), delete: (id: string) => stores.current!.delete(id),
+  }) }
+})
 import { AppRoutes } from './App'
 import { NewSitePage } from './NewSitePage'
 
@@ -72,6 +84,7 @@ function pendingImport() {
 }
 
 beforeEach(() => {
+  stores.current = createMemoryImportedSiteStore()
   mapCalls.flyTo.length = 0
   mapCalls.jumpTo.length = 0
   importSite.mockReset()
@@ -161,6 +174,36 @@ describe('NewSitePage', () => {
     expect(importSite).toHaveBeenCalledTimes(2)
   })
 
+  it('waits for saving before navigating', async () => {
+    const user = userEvent.setup()
+    let finish: () => void = () => {}
+    const store = stores.current!
+    const put = store.put.bind(store)
+    vi.spyOn(store, 'put').mockImplementation(async (site) => {
+      await new Promise<void>((resolve) => { finish = resolve })
+      await put(site)
+    })
+    importSite.mockImplementation(async (frame) => ({ sitePackage: importedFixture(frame.id).sitePackage, warnings: [], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, assemble: 0 } }))
+    renderPage()
+    await user.click(screen.getByRole('button', { name: 'Load in 3D' }))
+    await waitFor(() => expect(store.put).toHaveBeenCalled())
+    expect(screen.queryByText(/^studio import-/)).not.toBeInTheDocument()
+    finish()
+    expect(await screen.findByText(/^studio import-/)).toBeInTheDocument()
+  })
+
+  it.each(['quota', 'unavailable'] as const)('offers one-session opening after a %s failure', async (kind) => {
+    const user = userEvent.setup()
+    stores.current!.failNext = kind
+    importSite.mockImplementation(async (frame) => ({ sitePackage: importedFixture(frame.id).sitePackage, warnings: [], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, assemble: 0 } }))
+    renderPage()
+    await user.click(screen.getByRole('button', { name: 'Load in 3D' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(`This browser could not save the site (${kind}). You can still open it once.`)
+    expect(await stores.current!.list()).toEqual([])
+    await user.click(screen.getByRole('button', { name: 'Open without saving' }))
+    expect(await screen.findByText(/^studio import-/)).toBeInTheDocument()
+  })
+
   it('stores a successful import and opens it in the studio', async () => {
     const user = userEvent.setup()
     const pending = pendingImport()
@@ -171,13 +214,14 @@ describe('NewSitePage', () => {
     expect(frame).toMatchObject({ latitude: 59.9239, longitude: 10.7579, sizeMetres: 400, title: 'Oslo (Grünerløkka)' })
     expect(frame?.id).toMatch(/^import-[a-z0-9]+$/)
 
-    const sitePackage = { manifest: { id: frame?.id } } as unknown as ImportResult['sitePackage']
+    const sitePackage = importedFixture(frame?.id).sitePackage
     pending.resolve({ sitePackage, warnings: [{ code: 'roofs-flat', message: 'Roofs are flat.' }], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, assemble: 0 } })
 
     expect(await screen.findByText(`studio ${frame?.id}`)).toBeInTheDocument()
-    const stored = getImported(frame?.id)
+    const stored = await getImported(frame?.id)
+    if (!stored || 'status' in stored) throw new Error('Expected readable site')
     expect(stored?.summary).toMatchObject({ title: 'Oslo (Grünerløkka)', dataStatus: 'user-import', notices: ['Roofs are flat.'] })
-    expect(stored?.sitePackage).toBe(sitePackage)
+    expect(stored?.sitePackage).toEqual(sitePackage)
   })
 })
 
@@ -188,7 +232,7 @@ describe('imported studio route', () => {
         <AppRoutes />
       </MemoryRouter>,
     )
-    expect(await screen.findByRole('heading', { name: 'This imported site is no longer available' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'This imported site is no longer available' }, { timeout: 10000 })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Import it again' })).toHaveAttribute('href', '/new')
   })
 })

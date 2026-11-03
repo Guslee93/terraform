@@ -8,7 +8,8 @@ import { importSite, type ImportStep } from '../features/import/assemble'
 import { QUICK_PICKS } from '../features/import/cities'
 import { FRAME_SIZES, frameAt, framePixels, frameReadout, type FrameSize } from '../features/import/framing'
 import { searchPlaces, type PlaceResult } from '../features/import/geocode'
-import { saveImported } from '../features/import/session'
+import { saveImported, openImportedWithoutSaving, type ImportedSite } from '../features/import/session'
+import { StoreError, toStoreError } from '../features/scenarios/store'
 import { kartverketProvider, terrariumProvider } from '../features/import/terrain'
 import { openFreeMapSource } from '../features/import/tiles'
 
@@ -45,6 +46,7 @@ export function NewSitePage() {
   const [title, setTitle] = useState(START.label)
   const [phase, setPhase] = useState<Phase>('idle')
   const [steps, setSteps] = useState(WAITING)
+  const [unsaved, setUnsaved] = useState<ImportedSite | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -97,6 +99,7 @@ export function NewSitePage() {
     controller.current = current
     setPhase('loading')
     setError(null)
+    setUnsaved(null)
     setSteps(WAITING)
     try {
       const result = await importSite(
@@ -108,7 +111,8 @@ export function NewSitePage() {
         },
       )
       const { frame } = framed
-      saveImported({
+      if (current.signal.aborted) return
+      const imported: ImportedSite = {
         summary: {
           id: frame.id,
           title: frame.title,
@@ -122,8 +126,17 @@ export function NewSitePage() {
         sitePackage: result.sitePackage,
         warnings: result.warnings,
         importedAt: new Date().toISOString(),
-      })
-      navigate(`/studio/import/${frame.id}`)
+      }
+      try { await saveImported(imported) }
+      catch (problem) {
+        if (current.signal.aborted) return
+        const reason = problem instanceof StoreError ? problem : toStoreError(problem)
+        setUnsaved(imported)
+        setError(`This browser could not save the site (${reason.kind}). You can still open it once.`)
+        setPhase('error')
+        return
+      }
+      if (!current.signal.aborted) navigate(`/studio/import/${frame.id}`)
     } catch (caught) {
       if (current.signal.aborted) {
         if (controller.current === current) setPhase('cancelled')
@@ -231,9 +244,12 @@ export function NewSitePage() {
         {phase === 'cancelled' && <p role="status" className="text-body-sm text-ink-secondary">Import cancelled</p>}
         {phase === 'error' && error && (
           <div role="alert" className="rounded-control border border-danger/40 bg-surface px-3 py-3">
-            <p className="text-body-sm text-ink">The site could not be loaded.</p>
+            <p className="text-body-sm text-ink">{unsaved ? 'The site could not be saved.' : 'The site could not be loaded.'}</p>
             <p className="mt-1 break-words text-caption text-ink-secondary">{error}</p>
-            <Button variant="secondary" className="mt-3 min-h-10" onClick={() => void load()}>Try again</Button>
+            {unsaved ? <Button variant="secondary" className="mt-3 min-h-10" onClick={() => {
+              openImportedWithoutSaving(unsaved)
+              navigate(`/studio/import/${unsaved.summary.id}`)
+            }}>Open without saving</Button> : <Button variant="secondary" className="mt-3 min-h-10" onClick={() => void load()}>Try again</Button>}
           </div>
         )}
 

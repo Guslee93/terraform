@@ -1,3 +1,4 @@
+import { MySites } from '../components/marketing/MySites'
 import { Link } from 'react-router-dom'
 import { SITES } from '../features/sites/siteCatalog'
 import { SiteCard } from '../components/marketing/SiteCard'
@@ -114,6 +115,8 @@ export function LandingPage() {
             </Link>
           </div>
         </section>
+
+        <MySites />
 
         <section className="border-t border-line">
           <div className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-7 lg:py-20">
