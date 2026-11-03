@@ -24,3 +24,9 @@ The owner wants Hektar-like site loading: find any place in a Nordic city, frame
 - The demo stays reliable: curated sites remain default and offline-capable.
 - Large new surface (map UI, network failure states). Each phase has its own gate.
 - Authoritative Nordic data (FKB, Lantmäteriet buildings, Dataforsyningen) needs keys, agreements or a backend, so it is out of scope until P6.
+
+## Addendum — P3 dependency (2026-11-03)
+
+- `maplibre-gl` **5.24.0** (2026-04-23), BSD-3-Clause, pinned exact. Loaded only by the lazy `/new` route: `NewSitePage` chunk 1,097 kB raw / **297.5 kB gzip** JS plus 10.1 kB gzip CSS (includes the importer and `@turf/turf`). The landing and studio chunks do not contain it (checked with `grep -l maplibre dist/assets/*.js`).
+- `@mapbox/vector-tile` 3.0.0 and `pbf` 5.1.2 were already runtime dependencies.
+- Basemap style: OpenFreeMap `positron`, attribution control always visible.

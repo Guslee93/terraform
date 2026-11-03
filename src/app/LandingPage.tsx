@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { SITES } from '../features/sites/siteCatalog'
 import { SiteCard } from '../components/marketing/SiteCard'
 import { SiteStudyGraphic } from '../components/marketing/SiteStudyGraphic'
@@ -95,6 +96,22 @@ export function LandingPage() {
                 <SiteCard key={site.id} site={site} />
               ))}
             </div>
+
+            <Link
+              to="/new"
+              className="mt-5 flex flex-col gap-2 rounded-card border border-dashed border-line-strong bg-surface px-5 py-5 transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus sm:flex-row sm:items-center sm:justify-between"
+            >
+              <span>
+                <span className="flex items-center gap-2 text-body text-ink">
+                  Start from any address
+                  <Icon name="arrow-up-right" size={15} />
+                </span>
+                <span className="mt-1 block max-w-[60ch] text-body-sm text-ink-secondary">
+                  Pick a block anywhere in the Nordics and load open map data in 3D. Context is simplified and partly estimated.
+                </span>
+              </span>
+              <span className="text-caption text-ink-secondary">Live open data · needs a connection</span>
+            </Link>
           </div>
         </section>
 

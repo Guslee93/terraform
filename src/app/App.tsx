@@ -8,6 +8,13 @@ import { NotFoundPage } from './NotFoundPage'
 const StudioPage = lazy(() =>
   import('./StudioPage').then((module) => ({ default: module.StudioPage })),
 )
+const ImportedStudioPage = lazy(() =>
+  import('./StudioPage').then((module) => ({ default: module.ImportedStudioPage })),
+)
+// MapLibre lives only in this chunk; the landing and studio never load it (ADR-0006).
+const NewSitePage = lazy(() =>
+  import('./NewSitePage').then((module) => ({ default: module.NewSitePage })),
+)
 
 function RouteFallback() {
   return (
@@ -43,7 +50,9 @@ export function AppRoutes() {
     <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/studio/import/:importId" element={<ImportedStudioPage />} />
         <Route path="/studio/:siteId" element={<StudioPage />} />
+        <Route path="/new" element={<NewSitePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

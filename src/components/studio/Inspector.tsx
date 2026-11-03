@@ -257,7 +257,7 @@ export function Inspector({
               label="Data"
               value={
                 packageStatus === 'ready'
-                  ? 'Curated demo'
+                  ? site.dataStatus === 'user-import' ? 'Imported · open map data' : 'Curated demo'
                   : packageStatus === 'error'
                     ? 'Unavailable'
                     : 'Loading'
@@ -274,6 +274,11 @@ export function Inspector({
             <Row label="Frame" value="Local ENU · metres" />
             <Row label="Constraints" value="Illustrative only" />
           </dl>
+          {site.notices && site.notices.length > 0 && (
+            <ul aria-label="Import notes" className="mt-2 list-disc space-y-1 pl-4 text-caption text-ink-secondary">
+              {site.notices.map((notice) => <li key={notice}>{notice}</li>)}
+            </ul>
+          )}
           {backup}
           <p className="mt-2 text-caption text-ink-secondary">
             <Link to="/about#data" className="underline decoration-line underline-offset-2 hover:text-ink">
@@ -296,7 +301,9 @@ export function Inspector({
       </div>
 
       <p className="border-t border-line px-6 py-3 text-caption text-ink-secondary">
-        Buildings © OpenStreetMap contributors (ODbL) · Terrain © Kartverket (CC BY 4.0)
+        {site.dataStatus === 'user-import' && manifest
+          ? manifest.sources.map((source) => source.attribution).join(' · ')
+          : 'Buildings © OpenStreetMap contributors (ODbL) · Terrain © Kartverket (CC BY 4.0)'}
       </p>
     </aside>
   )
