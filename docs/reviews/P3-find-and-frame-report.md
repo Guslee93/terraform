@@ -19,8 +19,8 @@
 
 ## Known limitations
 
-1. **The map is blank under `npm run dev`.** The style never finishes loading in the Vite dev server (no tiles requested, no error). Production builds and `npm run preview` work. Likely the dev pre-bundle and the MapLibre worker; investigate in P5.
-2. Imports are lost on reload (by design until P4). Scenario autosave still writes IndexedDB records under the import id, and those become orphans after a reload. P4 must own their cleanup.
-3. The `roofs-flat` warning text in `assemble.ts` names the Opera House, which is wrong outside Bjørvika. Fix it in the library, not the UI.
+1. ~~The map is blank under `npm run dev`.~~ **Withdrawn (2026-11-03).** This was a test artefact: the browser-pane tab was in the background, so `requestAnimationFrame` never fired. With the tab in front, the dev server renders the map normally. No code change was needed.
+2. ~~Imports are lost on reload~~ **Fixed in P4** (`m6/p4-my-sites`). Deleting a site in My sites also clears its scenarios.
+3. ~~The `roofs-flat` warning named the Opera House~~ **Fixed**: the text is now site-neutral.
 4. No reverse geocoding or live building count (P5). The title is the chosen search result or quick pick, otherwise `Custom area`.
 5. The e2e suite with a mocked network is D24 (DeepSeek), `docs/handoffs/D24-P3-import-e2e.md`.
