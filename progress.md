@@ -427,3 +427,10 @@
 - See `docs/reviews/P4-codex-report.md` for acceptance status, review and remaining verification.
 
 - Commit attempt after passing checks: `git add ... && git commit -m "feat(import): persist imported sites and add My sites"` stopped at staging; cannot create `/Users/gustavekamanzi/Downloads/2026/Terraform/.git/worktrees/Terraform-p4/index.lock` (Operation not permitted). No commit created; changes remain in this worktree.
+
+## 2026-11-03 — Integration on main (Claude)
+- Merged locally into `main`: `m5/onboarding` (C18 guide), `deepseek/d39` (D39/D40 perf + a11y checks), `m6/p4-my-sites` (P3 find & frame + P4 My sites + fixes). Not pushed.
+- Disk filled (ENOSPC) during `npm ci`; owner freed space. Cleanup had also deleted 108 tracked files from the working tree; restored the ones tests need (`src/features/import/__fixtures__/tiles/*.pbf`, `data/raw/*.osm`). Still deleted, left for the owner: 95 `docs/screenshots/*`, 8 `docs/design/ux-assessment/*` (restore with `git restore docs`).
+- Integration fix `45a9c09`: two strict type errors in `e2e/m5-a11y.spec.ts` (from D39) broke `npm run build`'s `tsconfig.node.json` check.
+- Verification on merged main: lint ✅ · 853 unit tests ✅ · build ✅ · e2e 55 passed, 4 skipped (fixme: studio h1, studio touch targets A11Y-2, opt-in evidence), 1 timed out under parallel load (`m3-rendering` quality test; passes 2/2 alone in ~20 s against the 30 s limit).
+- Pending: DeepSeek D24 (import e2e) still uncommitted in `../Terraform-d24`, written against P3's sync session API — needs adapting to P4's async store when integrated. Production deploy awaits owner approval.

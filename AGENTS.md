@@ -1,6 +1,6 @@
 # Terraform — Agent Operating Guide
 
-**Status:** M3 complete · M4 scenarios next · M6 site import P1–P2 done
+**Status:** M3 complete · M4 implemented, gate pending · M5 polish in progress · M6 site import P1–P4 on local main
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
 **Product type:** architectural portfolio prototype, not a commercial SaaS
 
