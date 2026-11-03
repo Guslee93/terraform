@@ -345,6 +345,28 @@ export function parseLandCover(value: unknown): LandCoverData {
   }
 }
 
+/** Revalidate a materialised package read from browser storage. */
+export function parseSitePackage(raw: unknown): SitePackage {
+  const root = asRecord(raw, 'package')
+  const manifest = parseSiteManifest(root.manifest)
+  const terrain = parseTerrain(root.terrain)
+  const buildings = parseBuildings(root.buildings)
+  const studyArea = parseStudyArea(root.studyArea)
+  const envelope = { schemaVersion: 1, siteId: manifest.id }
+  const roads = parseRoads({ ...envelope, roads: root.roads }).roads
+  const trees = parseTrees({ ...envelope, trees: root.trees }).trees
+  const landcover = parseLandCover({ ...envelope, areas: root.landcover }).areas
+  for (const asset of [terrain, buildings, studyArea]) {
+    if (asset.siteId !== manifest.id) fail('siteId', 'site id does not match the package')
+  }
+  if (manifest.statistics.terrainSamples !== terrain.cols * terrain.rows ||
+      manifest.statistics.buildingCount !== buildings.buildings.length ||
+      Math.abs(manifest.statistics.studyAreaM2 - polygonArea(studyArea.polygon)) > 1) {
+    fail('manifest.statistics', 'does not match the package geometry')
+  }
+  return { manifest, terrain, buildings, studyArea, roads, trees, landcover }
+}
+
 function assetUrl(siteId: string, relative: string): string {
   if (relative.startsWith('/') || relative.includes('..') || relative.includes('://')) {
     fail('assetPaths', `unsafe asset path: ${relative}`)

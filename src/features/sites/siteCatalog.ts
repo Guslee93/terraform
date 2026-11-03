@@ -1,13 +1,16 @@
 export type SiteId = 'compact-infill' | 'sloped-edge'
 
 export type SiteSummary = {
-  id: SiteId
+  /** A curated `SiteId`, or an `import-…` id for a site loaded on `/new`. */
+  id: string
   title: string
   subtitle: string
   description: string
-  morphology: 'Urban infill' | 'Landscape edge'
+  morphology: 'Urban infill' | 'Landscape edge' | 'Imported area'
   thumbnail: string
-  dataStatus: 'curated-demo'
+  dataStatus: 'curated-demo' | 'user-import'
+  /** Import warnings shown under Site and sources (imported sites only). */
+  notices?: readonly string[]
 }
 
 /**

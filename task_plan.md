@@ -153,3 +153,11 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 3. Add the numeric inspector and transactional undo/redo; keep one drag = one history entry.
 4. Carry M1 follow-ups: terrain resolution if needed, aspect-aware mobile framing, compass near eye level.
 5. Preserve the generated site packages as immutable; massing never mutates context or terrain.
+
+## P4 My sites — 2026-11-03
+- [x] Read C7/P3 handoffs, storage/parser contracts and ADR-0006.
+- [x] Implement separate imports database, validated reads, async routes and My sites deletion.
+- [x] Complete regression tests and code review: lint, 847 tests, build pass.
+- [ ] Production-preview persistence check/screenshots blocked by sandbox socket EPERM.
+- [x] Write P4 report and session logs.
+- [ ] Commit blocked: sandbox denies parent checkout worktree index.lock. No push, merge or deployment.

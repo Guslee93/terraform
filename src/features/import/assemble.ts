@@ -41,7 +41,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
   const timings: ImportResult['timings'] = {tiles:0,buildings:0,context:0,terrain:0,assemble:0}
   const warnings: ImportWarning[] = [
     {code:'heights-estimated',message:'OpenMapTiles render_height values are partly estimated; heights are not survey data.'},
-    {code:'roofs-flat',message:'Roofs are modelled as flat extrusions; sloped roof shapes, including the Opera House, are not represented.'},
+    {code:'roofs-flat',message:'Roofs are modelled as flat extrusions; sloped and stepped roof shapes are not represented.'},
     {code:'trees-unavailable',message:'No tree points in vector tiles; the trees list is intentionally empty.'},
   ]
   const progress = (step: ImportStep, state: 'start' | 'done' | 'skipped' | 'failed', detail?: string) => {

@@ -100,7 +100,15 @@ export function simplifyRing(ring: Ring, tolerance = 0.3): Ring {
 /** Planar union in local metres, including fragments within a single tile. */
 export function mergeRings(rings: Ring[]): Ring[] {
   if (rings.length <= 1) return rings
-  const result = union(featureCollection(rings.map((ring) => polygon([closed(ring)]))))
+  let result
+  try {
+    result = union(featureCollection(rings.map((ring) => polygon([closed(ring)]))))
+  } catch {
+    // ponytail: polyclip can fail numerically on many-part features (OSM 89997840 in the
+    // Grünerløkka quick pick). The inputs are already repaired simple rings, so keep them
+    // unmerged rather than failing the whole import; seam fragments then stay separate parts.
+    return rings
+  }
   if (!result) throw new Error('Building union returned empty geometry')
   return outerRings(result.geometry).map(openRing)
 }
