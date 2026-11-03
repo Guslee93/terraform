@@ -254,7 +254,7 @@ export function NewSitePage() {
         )}
 
         <p className="mt-auto border-t border-line pt-4 text-caption text-ink-secondary">
-          OpenStreetMap context · heights partly estimated · not survey data. Imports stay in this tab until it reloads.
+          OpenStreetMap context · heights partly estimated · not survey data. Imported sites are saved in this browser only.
         </p>
       </aside>
     </div>

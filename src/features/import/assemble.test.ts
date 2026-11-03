@@ -9,6 +9,7 @@ import { parseSiteManifest } from '../sites/manifest'
 import { parseBuildings, parseLandCover, parseRoads, parseStudyArea, parseTerrain, parseTrees } from '../sites/package'
 import { isSimpleRing } from '../../lib/polygon'
 import type { ImportFrame } from './frame'
+import { QUICK_PICKS } from './cities'
 
 afterEach(()=>vi.unstubAllGlobals())
 function fixtureTerrain(record: typeof bjorvikaTerrain): TerrainProvider {
@@ -118,4 +119,13 @@ it('skips providers outside coverage and does not fetch them', async () => {
   const result=await importSite(grunerlokka,{tiles:emptyTiles,terrain:[{...provider('Outside',[]),covers:()=>false,sample}]})
   expect(sample).not.toHaveBeenCalled()
   expect(result.warnings.map(w=>w.code)).toContain('terrain-flat')
+})
+
+it('imports the default Oslo quick pick, whose many-part building 89997840 defeats the planar union', async () => {
+  const pick = QUICK_PICKS[0]!
+  const frame: ImportFrame = { latitude: pick.latitude, longitude: pick.longitude, sizeMetres: pick.frameMetres, id: 'import-oslo-pick', title: pick.label }
+  const flat = provider('Flat fixture', terrainPoints(frame).map(() => ({ height: 10, kind: 'land' as const })))
+  const result = await importSite(frame, { tiles: fixtureTiles, terrain: [flat] })
+  expect(result.sitePackage.buildings.buildings.length).toBeGreaterThan(0)
+  expect(result.sitePackage.buildings.buildings.some((building) => building.id.startsWith('89997840-'))).toBe(true)
 })

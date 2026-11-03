@@ -18,15 +18,19 @@ export function MySites({ store = getImportedSiteStore(), scenarios = getScenari
     store.list().then((rows) => { if (active) setEntries(rows) }).catch(() => { if (active) setError('Saved sites could not be loaded from this browser.') })
     return () => { active = false }
   }, [store])
+  // After a delete, once the dialog has closed: the browser's own dialog focus restoration
+  // targets the removed Delete button and lands on <body>, so move focus after it settles.
+  useEffect(() => {
+    if (confirmation || !deleted.current) return
+    deleted.current = false
+    const timer = window.setTimeout(() => {
+      const target = heading.current ?? document.querySelector<HTMLAnchorElement>('a[href="/new"]')
+      target?.focus()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [confirmation, entries])
   function close() {
     setConfirmation(null)
-    if (deleted.current) {
-      deleted.current = false
-      requestAnimationFrame(() => {
-        const target = heading.current ?? document.querySelector<HTMLAnchorElement>('a[href="/new"]')
-        target?.focus()
-      })
-    }
   }
   if (!entries.length) return error ? <p role="alert" className="mx-auto max-w-[1200px] px-4 py-6 text-body-sm">{error}</p> : null
   return <section aria-labelledby="my-sites-heading" className="border-t border-line">
