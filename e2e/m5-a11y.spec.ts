@@ -190,8 +190,9 @@ async function touchTargets(page: Page): Promise<Target[]> {
       .filter(isVisible)
       .flatMap((element) => {
         const label =
-          (element instanceof HTMLInputElement || element instanceof HTMLSelectElement) &&
-          element.closest('label')
+          element instanceof HTMLInputElement || element instanceof HTMLSelectElement
+            ? element.closest('label')
+            : null
         const box = label ? label.getBoundingClientRect() : element.getBoundingClientRect()
         if (box.width < 2 || box.height < 2) return [] // visually hidden (sr-only)
         const own = (element.textContent ?? '').replace(/\s+/g, ' ').trim()
@@ -562,7 +563,7 @@ const requiredRatio = (sample: TextSample): number =>
   sample.fontSize >= 24 || (sample.fontSize >= 18.66 && sample.bold) ? 3 : 4.5
 
 const TEXT_CONTRAST_PAGES = [
-  { label: 'landing', path: '/' },
+  { label: 'landing', path: '/', studio: false },
   { label: 'studio', path: '/studio/compact-infill', studio: true },
 ] as const
 
@@ -660,7 +661,7 @@ for (const route of FOCUS_PAGES) {
 // ---------------------------------------------------------------------------
 
 const TARGET_PAGES = [
-  { label: 'landing', path: '/' },
+  { label: 'landing', path: '/', studio: false },
   { label: 'studio', path: '/studio/compact-infill', studio: true },
 ] as const
 
