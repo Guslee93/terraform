@@ -23,6 +23,7 @@ import { createScenarioRepository } from '../../features/scenarios/repository'
 import { createMemoryStore } from '../../features/scenarios/store'
 import { createDefaultProject } from '../../features/scenarios/project'
 import { StudioShell } from './StudioShell'
+import { STUDIO_GUIDE_KEY } from './StudioGuide'
 
 // Exercise the real shell/viewport/HUD wiring without needing a GPU in jsdom.
 vi.mock('@react-three/fiber', async (importOriginal) => {
@@ -256,5 +257,89 @@ describe('studio rendering states', () => {
     expect(vi.mocked(Canvas).mock.lastCall?.[0].shadows).toBe(false)
     await user.selectOptions(screen.getByRole('combobox', { name: 'Render quality' }), 'high')
     expect(vi.mocked(Canvas).mock.lastCall?.[0].shadows).toBe('percentage')
+  })
+})
+
+
+describe('studio guide', () => {
+  it('opens on first visit, skips, remembers dismissal and reopens with focus restoration', async () => {
+    const user = userEvent.setup()
+    const { unmount } = renderStudio()
+    expect(await screen.findByRole('region', { name: 'Studio guide' })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: 'Skip' }))
+    expect(localStorage.getItem(STUDIO_GUIDE_KEY)).toBe('true')
+    expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()
+    unmount()
+    renderStudio()
+    const trigger = await screen.findByRole('button', { name: 'Guide' })
+    expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()
+    await user.click(trigger)
+    expect(screen.getByRole('region', { name: 'Studio guide' })).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
+  it('points to real controls, allows editing and finishes all three steps', async () => {
+    const user = userEvent.setup()
+    renderStudio()
+    await screen.findByRole('region', { name: 'Studio guide' })
+    await user.click(screen.getByRole('button', { name: 'Show control' }))
+    expect(screen.getByRole('button', { name: 'Draw building' })).toHaveFocus()
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('button', { name: 'Draw building' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByText('Studio guide · 2 of 3')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Show control' }))
+    const slider = screen.getByRole('slider', { name: 'Local time' })
+    expect(slider).toHaveFocus()
+    await user.keyboard('{ArrowRight}')
+    expect(slider).toHaveAttribute('aria-valuetext', expect.stringContaining('15:15'))
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(screen.getByText('Studio guide · 3 of 3')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Show control' }))
+    expect(screen.getByRole('button', { name: 'Concept A' })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: 'Finish' }))
+    expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()
+    expect(localStorage.getItem(STUDIO_GUIDE_KEY)).toBe('true')
+  })
+
+  it('lets Tab leave the guide and Escape skip while a studio control is focused', async () => {
+    const user = userEvent.setup()
+    renderStudio()
+    await screen.findByRole('region', { name: 'Studio guide' })
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Show control' })).toHaveFocus()
+    await user.tab()
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Skip' })).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Select' })).toHaveFocus()
+    await user.click(screen.getByRole('slider', { name: 'Local time' }))
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()
+    expect(localStorage.getItem(STUDIO_GUIDE_KEY)).toBe('true')
+  })
+
+  it.each(['getter', 'methods'])('works when storage %s throws', async (failure) => {
+    if (failure === 'getter') {
+      vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('Unavailable') })
+    } else {
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('Unavailable') })
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Unavailable') })
+    }
+    const user = userEvent.setup()
+    renderStudio()
+    await screen.findByRole('region', { name: 'Studio guide' })
+    await user.click(screen.getByRole('button', { name: 'Skip' }))
+    expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Guide' }))
+    expect(screen.getByRole('region', { name: 'Studio guide' })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await user.click(screen.getByRole('button', { name: 'Finish' }))
+    expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()
   })
 })

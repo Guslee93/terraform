@@ -67,7 +67,7 @@ export function ScenarioMenu({ project, site }: { project: ScenarioProject; site
         rows[next]?.focus()
       }
     }}>
-      <button ref={trigger} type="button" aria-expanded={open} aria-controls={id} disabled={!project.ready} onClick={() => open ? close() : setOpen(true)} className="inline-flex min-h-9 items-center gap-2 text-body-sm text-ink disabled:text-ink-disabled">
+      <button data-guide="scenarios" ref={trigger} type="button" aria-expanded={open} aria-controls={id} disabled={!project.ready} onClick={() => open ? close() : setOpen(true)} className="inline-flex min-h-9 items-center gap-2 text-body-sm text-ink disabled:text-ink-disabled">
         {project.editor.history.document.name}<Icon name="chevron-down" size={12} />
       </button>
       {open && <div id={id} role="group" aria-label="Scenarios" className="fixed inset-x-4 top-28 z-40 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full max-h-[70dvh] w-[min(360px,calc(100vw-32px))] overflow-y-auto rounded-card border border-line bg-surface p-3">

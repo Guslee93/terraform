@@ -25,6 +25,7 @@ type StudioTopBarProps = {
   scenario: string
   scenarioMenu?: ReactNode
   compareAction?: ReactNode
+  guideAction?: ReactNode
   saveStatus: SaveStatus
   storage: StorageMode
   canFit: boolean
@@ -32,7 +33,7 @@ type StudioTopBarProps = {
 }
 
 /** A plain 52 px row on the ground (draft 4): identity left, scenario and two text actions right. */
-export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, saveStatus, storage, canFit, onFitSite }: StudioTopBarProps) {
+export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, guideAction, saveStatus, storage, canFit, onFitSite }: StudioTopBarProps) {
   return (
     <header className="flex min-h-[52px] flex-wrap items-center gap-x-7 gap-y-1 px-5">
       <Link to="/" aria-label="Terraform home" className="inline-flex items-center gap-2.5 text-body font-medium text-ink">
@@ -51,6 +52,7 @@ export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, save
           </span>
         </div>
         {compareAction}
+        {guideAction}
         {canFit && (
           <button type="button" onClick={onFitSite} title="Fit site (F)" className="min-h-6 text-caption text-ink transition-colors duration-200 hover:text-accent">
             Fit site
