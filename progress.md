@@ -440,3 +440,8 @@
 - Added `src/features/analysis/{grid,noise,wind}.ts` (renderer-free) and `microclimate.test.ts` (12 hand-computed cases: 3.01 dB per doubling, +3.01 dB for two equal sources, −10 dB screening, exposure 1 / 0 / 0.857).
 - Verification: new tests ✅ · lint ✅ · typecheck ✅. Full `npm run test` and `build` not yet re-run.
 - Not wired into UI yet (step 4). Wind direction table not written yet.
+
+### Microclimate pivot step 4 (2026-11-04, Claude)
+- Added `climateView.ts` (cells → colours + legend shares), `scene/ClimateLayer.tsx` (one instanced ground overlay), `ClimatePanel.tsx` (Off/Wind/Noise, wind-from select, legend, claim label), wired into `StudioShell`, `Inspector` (new "Wind and noise" group) and `ViewportCanvas` (`climate` prop). Context buildings only; user-drawn masses are not yet obstacles.
+- Deviation from plan: no built-in "typical wind direction" table — that would be invented climate data. The user picks the direction (default West) and the panel says so.
+- Verification: lint ✅ · typecheck ✅ · 874 unit tests ✅ · browser on compact-infill: noise legend 32% / 68% in two bands, wind legend 63/13/16/8% for West wind, overlay visible in plan view. `npm run build` and e2e not re-run. A pre-existing dev-mode "unmount a root" console error appears on every fresh load.

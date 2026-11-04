@@ -17,6 +17,8 @@ import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
 import type { SunDirection } from '../features/analysis/sun'
 import type { EnvelopeConstraints, EnvelopeResult } from '../features/analysis/constraints'
 import { ConstraintLayer } from './ConstraintLayer'
+import { ClimateLayer } from './ClimateLayer'
+import type { ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
@@ -62,6 +64,8 @@ type ViewportProps = {
   warnedVolumes: ReadonlySet<string>
   annotations?: ReadonlyMap<string, MassAnnotation>
   renderPreference: RenderPreference
+  /** Wind or noise screening cells; null when the climate layer is off. */
+  climate?: ClimateOverlay | null
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
@@ -322,6 +326,7 @@ export function ViewportCanvas({
   warnedVolumes,
   annotations,
   renderPreference,
+  climate = null,
 }: ViewportProps) {
   const controlsRef = useRef<OrbitControlsHandle>(null)
   const [webgl] = useState(detectWebGL)
@@ -389,6 +394,7 @@ export function ViewportCanvas({
             {layers.context && <ContextBuildings buildings={buildings.buildings} />}
             {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
             {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
+            {climate && layers.terrain && <ClimateLayer overlay={climate} heightAt={heightAt} />}
 
             <group name="live-scenario">
             {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}

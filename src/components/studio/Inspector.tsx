@@ -15,7 +15,7 @@ import { MetricsNotes, SelectedFloors } from './MetricsPanel'
 import { MassFields } from './MassFields'
 import { MassList, type MassListItem } from './MassList'
 
-export type PanelGroup = 'sun' | 'layers' | 'site' | 'assumptions' | 'notes'
+export type PanelGroup = 'sun' | 'climate' | 'layers' | 'site' | 'assumptions' | 'notes'
 
 const LAYER_ROWS: ReadonlyArray<{
   id: keyof SceneLayers
@@ -43,6 +43,9 @@ type InspectorProps = {
   /** Body of the Sun group, or null before the package is ready. */
   sun: ReactNode
   sunMeta?: string
+  /** Body of the Wind and noise group; omitted until the package is ready. */
+  climate?: ReactNode
+  climateMeta?: string
   metrics: ScenarioMetrics | null
   site: SiteSummary
   manifest: SiteManifest | null
@@ -106,6 +109,8 @@ export function Inspector({
   figures,
   sun,
   sunMeta,
+  climate,
+  climateMeta,
   metrics,
   site,
   manifest,
@@ -204,6 +209,12 @@ export function Inspector({
         {sun && (
           <Group id="sun" title="Sun" meta={sunMeta} open={openGroups.has('sun')} onToggle={(open) => toggleGroup('sun', open)}>
             {sun}
+          </Group>
+        )}
+
+        {climate && (
+          <Group id="climate" title="Wind and noise" meta={climateMeta} open={openGroups.has('climate')} onToggle={(open) => toggleGroup('climate', open)}>
+            {climate}
           </Group>
         )}
 

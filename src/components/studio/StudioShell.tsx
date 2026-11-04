@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
+import { buildClimateView, type ClimateMode } from '../../features/analysis/climateView'
+import { ClimatePanel } from './ClimatePanel'
 import { localDayMinuteToInstant } from '../../features/analysis/time'
 import type { SunTime } from './SunPanel'
 import type { MassingCommand } from '../../features/editor/history'
@@ -96,6 +98,18 @@ export function StudioShell({
     setback: true,
     heightLimit: true,
   })
+  const [climateMode, setClimateMode] = useState<ClimateMode>('off')
+  const [windFrom, setWindFrom] = useState(270)
+  const climateView = useMemo(() => {
+    if (!sitePackage || climateMode === 'off') return null
+    return buildClimateView(
+      climateMode,
+      normalizeRing(sitePackage.studyArea.polygon),
+      sitePackage.buildings.buildings,
+      sitePackage.roads,
+      windFrom,
+    )
+  }, [sitePackage, climateMode, windFrom])
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
   const scenario = editor.history.document.name
@@ -305,6 +319,7 @@ export function StudioShell({
                   warnedVolumes={warnedVolumes}
                   annotations={annotations}
                   renderPreference={renderPreference}
+                  climate={climateView?.overlay ?? null}
                 />
                 <CameraPresets active={cameraPreset} onSelect={requestCamera} />
               </>
@@ -406,6 +421,10 @@ export function StudioShell({
           sunMeta={sitePackage
             ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
             : shortDate(sunTime.date)}
+          climate={sitePackage ? (
+            <ClimatePanel mode={climateMode} onModeChange={setClimateMode} windFrom={windFrom} onWindFromChange={setWindFrom} view={climateView} />
+          ) : null}
+          climateMeta={climateMode === 'off' ? 'Off' : climateMode === 'wind' ? 'Wind' : 'Noise'}
           metrics={metrics}
           site={site}
           manifest={sitePackage?.manifest ?? null}
