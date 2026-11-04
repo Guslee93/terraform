@@ -434,3 +434,9 @@
 - Integration fix `45a9c09`: two strict type errors in `e2e/m5-a11y.spec.ts` (from D39) broke `npm run build`'s `tsconfig.node.json` check.
 - Verification on merged main: lint ✅ · 853 unit tests ✅ · build ✅ · e2e 55 passed, 4 skipped (fixme: studio h1, studio touch targets A11Y-2, opt-in evidence), 1 timed out under parallel load (`m3-rendering` quality test; passes 2/2 alone in ~20 s against the 30 s limit).
 - Pending: DeepSeek D24 (import e2e) still uncommitted in `../Terraform-d24`, written against P3's sync session API — needs adapting to P4's async store when integrated. Production deploy awaits owner approval.
+
+## 2026-11-04 — Microclimate pivot steps 1–3 (Claude)
+- Plan: `docs/plans/microclimate-pivot.md`. ADR-0013 accepted: wind and road-noise *screening* layers; main path becomes address → study area → analysis; massing/scenarios demoted, not deleted.
+- Added `src/features/analysis/{grid,noise,wind}.ts` (renderer-free) and `microclimate.test.ts` (12 hand-computed cases: 3.01 dB per doubling, +3.01 dB for two equal sources, −10 dB screening, exposure 1 / 0 / 0.857).
+- Verification: new tests ✅ · lint ✅ · typecheck ✅. Full `npm run test` and `build` not yet re-run.
+- Not wired into UI yet (step 4). Wind direction table not written yet.
