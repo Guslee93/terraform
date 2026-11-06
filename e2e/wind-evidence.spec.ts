@@ -41,7 +41,8 @@ async function openWind(page: Page, site: string) {
     await inspector.locator('summary').filter({ hasText: /^Wind and noise/ }).click()
   }
   await inspector.getByRole('group', { name: 'Climate layer' }).getByRole('button', { name: 'Wind', exact: true }).click()
-  await expect(page.getByText('Indicative wind screening — 2D flow, not engineering')).toBeVisible({ timeout: 15_000 })
+  // The claim shows in the panel and on the viewport (C23 finding 3); check the viewport copy.
+  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText('Indicative wind screening — 2D flow, not engineering')).toBeVisible({ timeout: 15_000 })
 }
 
 /** The flow must have settled before a shot: "Set baseline" is only enabled then. */
@@ -144,4 +145,16 @@ test.describe('delta against a baseline', () => {
     // The mass fields disappear once nothing is selected — the mass is really gone.
     await expect(page.getByRole('textbox', { name: 'Storeys' })).toHaveCount(0)
   })
+})
+
+// W5 — the Forma-style 3D look: streamlines over roofs, roof colouring, m/s ramp.
+test('W5: 3D streamlines and roof wind on Compact Infill (Direction, m/s)', async ({ page }) => {
+  await openWind(page, 'compact-infill')
+  await page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Direction', exact: true }).click()
+  await page.getByRole('checkbox', { name: 'Streamlines' }).check()
+  await page.getByRole('button', { name: '3D', exact: true }).click()
+  // The upper height slices solve in the background (~10 s each); the height select unlocks then.
+  await expect(page.getByLabel(/Streamline height/i)).toBeEnabled({ timeout: 150_000 })
+  await page.waitForTimeout(2000)
+  await page.screenshot({ path: `${OUT_DIR}/wind-3d-streamlines.png` })
 })

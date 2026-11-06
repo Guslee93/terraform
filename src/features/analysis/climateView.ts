@@ -1,3 +1,4 @@
+import { profileFactor } from './windProfile'
 import type { Vec2 } from '../../lib/coordinates'
 import { sampleGrid, type FootprintBuilding } from './grid'
 import type { FlowResult } from './flowRunner'
@@ -23,7 +24,7 @@ export type WindSettings = {
   readonly streamlineHeight: number | null
   readonly streamlineOpacity: number
 }
-export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refSpeed: 6, downwash: true, centre: null, radius: 100, streamlineHeight: null, streamlineOpacity: 0.8 }
+export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refSpeed: 6, downwash: true, centre: null, radius: 100, streamlineHeight: null, streamlineOpacity: 0.65 }
 export type WindBaseline = { readonly flow: FlowResult; readonly circle: { readonly centre: Vec2; readonly radius: number }; readonly from: number; readonly downwash: boolean }
 export function captureBaseline(flow: FlowResult, circle: WindBaseline['circle'], from: number, downwash = false): WindBaseline {
   return { flow: { ...flow, frame: { ...flow.frame, centre: [...flow.frame.centre], flow: [...flow.frame.flow] }, velocity: flow.velocity.slice(), solid: flow.solid.slice(), ...(flow.slices ? { slices: flow.slices.map((slice) => ({ ...slice, velocity: slice.velocity.slice(), solid: slice.solid.slice() })) } : {}) }, circle: { centre: [...circle.centre], radius: circle.radius }, from, downwash }
@@ -68,10 +69,19 @@ export function windSpeedColour(speed: number): string {
   }).join('').toUpperCase()
 }
 
+/**
+ * Local speed in m/s. Field ratios are relative to the free stream at the 2 m pedestrian slice
+ * (upper slices are pre-scaled by the profile), while the slider sets the reference wind at 10 m.
+ * So m/s = ratio × refSpeed × profileFactor(2) (≈ 0.70 for the indicative urban profile).
+ */
+export const PEDESTRIAN_TO_REF = profileFactor(2) / profileFactor(10)
+export const localSpeedMs = (ratio: number, refSpeed10m: number) => ratio * refSpeed10m * PEDESTRIAN_TO_REF
+
 /** Shared by ground and roofs; delta requires a compatible sample at the same height. */
 export function windColour(ratio: number, wind: WindSettings, before?: number): string | null {
   if (wind.display === 'delta') return before === undefined ? null : deltaBand(ratio - before).colour
-  return wind.display === 'ratio' ? windSpeedColour(ratio * wind.refSpeed) : pick(ACTIVITY_BANDS, ratio * wind.refSpeed).colour
+  const ms = localSpeedMs(ratio, wind.refSpeed)
+  return wind.display === 'ratio' ? windSpeedColour(ms) : pick(ACTIVITY_BANDS, ms).colour
 }
 
 export const DELTA_BANDS: readonly Band[] = [
@@ -151,7 +161,7 @@ export function buildClimateView(
 ): ClimateView {
   if (mode === 'wind') {
     const bands = wind.display === 'delta' ? DELTA_BANDS : wind.display === 'activity' ? ACTIVITY_BANDS : SPEED_BANDS
-    const scale = wind.display === 'activity' ? wind.refSpeed : 1
+    const scale = wind.display === 'activity' ? localSpeedMs(1, wind.refSpeed) : 1
     const compatible = baseline && baselineMatches(baseline, { centre: wind.centre ?? baseline.circle.centre, radius: wind.radius }, wind.from, wind.downwash)
     const cells = flow && (wind.display !== 'delta' || compatible)
       ? sampleGrid(studyArea, WIND_CELL_M).flatMap((c) => {

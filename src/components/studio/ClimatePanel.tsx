@@ -1,3 +1,4 @@
+import { STREAMLINE_3D_NOTE } from '../../features/analysis/streamlines3d'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { demoFrame } from '../../features/analysis/windDemo'
 import { CIRCLE_RADIUS, DELTA_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
@@ -208,6 +209,7 @@ export function ClimatePanel({ slicesReady = false, demoPlaying = false, onToggl
               onChange={(event) => set({ streamlineOpacity: Number(event.currentTarget.value) })}
               className="w-full accent-ink disabled:opacity-50" />
             {!slicesReady && <p id="upper-heights-status" className="text-caption text-ink-secondary">Upper heights computing…</p>}
+            {slicesReady && wind.streamlineHeight === null && <p className="text-caption text-ink-secondary">{STREAMLINE_3D_NOTE}</p>}
           </div>
           <div className="mt-3 flex gap-2">
             <button type="button" className="min-h-8 rounded-chip border border-line px-2 text-body-sm disabled:opacity-50" disabled={!canSetBaseline} onClick={onSetBaseline}>Set baseline</button>

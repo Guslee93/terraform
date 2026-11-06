@@ -74,14 +74,14 @@ export function traceStreamlines3D(
   slices: readonly FlowSlice[],
   buildings: readonly FootprintBuilding[],
   radius: number,
-  { across = 26, heights = [2, 6, 12, 20, 28], stepM = 2, maxSteps = 320 } = {},
+  { across = 18, heights = [2, 8, 16, 26], stepM = 2, maxSteps = 320 } = {},
 ): Streamline3D[] {
   if (slices.length === 0 || radius <= 0) return []
   const grid = heightGrid(frame, buildings)
   const [dx, dy] = frame.flow
   const perp: Vec2 = [-dy, dx]
   const c = frame.centre
-  const limit = radius * 1.3
+  const limit = radius * 1.15 // a little past the circle, so the analysed area still reads
   const inside = (p: Vec2) => {
     const ox = p[0] - c[0]
     const oy = p[1] - c[1]
@@ -91,7 +91,7 @@ export function traceStreamlines3D(
   for (let k = 0; k < across * heights.length; k++) {
     const s = ((k % across) + 0.5) / across * 2 - 1
     const seedZ = heights[Math.floor(k / across)]! + (k % 3) * 0.7 // slight stagger so layers do not look ruled
-    let p: Vec2 = [c[0] - dx * radius * 1.2 + perp[0] * s * radius * 1.2, c[1] - dy * radius * 1.2 + perp[1] * s * radius * 1.2]
+    let p: Vec2 = [c[0] - dx * radius * 1.1 + perp[0] * s * radius * 1.05, c[1] - dy * radius * 1.1 + perp[1] * s * radius * 1.05]
     let z = seedZ
     const points: [number, number, number][] = []
     const speeds: number[] = []

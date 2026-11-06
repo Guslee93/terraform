@@ -59,7 +59,7 @@ export function WindStreamlines({ flow, circle, heightAt, heightM = null, opacit
       points={segments.points}
       vertexColors={segments.colours}
       segments
-      lineWidth={1.6}
+      lineWidth={1.2}
       transparent
       opacity={opacity}
       depthWrite={false}

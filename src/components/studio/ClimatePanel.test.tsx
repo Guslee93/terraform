@@ -39,7 +39,8 @@ describe('buildClimateView', () => {
     // Open ground: ratio ≈ 1, so 3 m/s → standing (2–4), 7 m/s → walking (6–8).
     const at = (refSpeed: number) => buildClimateView('wind', area, [], [], flow, { ...DEFAULT_WIND, display: 'activity', refSpeed })
     expect(at(3).legend.find((e) => e.share === 1)?.label).toMatch(/^Standing/)
-    expect(at(7).legend.find((e) => e.share === 1)?.label).toMatch(/^Walking/)
+    expect(at(7).legend.find((e) => e.share === 1)?.label).toMatch(/^Strolling/) // 7 m/s at 10 m ≈ 4.9 m/s at 2 m
+    expect(at(10).legend.find((e) => e.share === 1)?.label).toMatch(/^Walking/) // ≈ 7.0 m/s
     expect(at(7).disclaimer).toContain(ACTIVITY_NOTE)
   })
   it('clips the wind view to the analysis circle', () => {
