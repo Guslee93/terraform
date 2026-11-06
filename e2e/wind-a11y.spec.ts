@@ -1,11 +1,11 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 // Wind panel accessibility (docs/plans/wind-finish-plan.md D1/D2). No axe dependency: the same
 // DOM-level checks as e2e/m5-a11y.spec.ts — every control named, WCAG 2.2 target size ≥ 24 px —
 // plus the reduced-motion behaviour of Play demo.
 test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 
-async function openWind(page: import('@playwright/test').Page) {
+async function openWind(page: Page) {
   await page.goto('/studio/compact-infill')
   const inspector = page.getByRole('complementary', { name: 'Inspector' })
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
