@@ -224,3 +224,23 @@ describe('wind demo playback', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 })
+
+it('disables upper controls until slices exist and exposes Direction reference speed', () => {
+  const onWindChange = vi.fn()
+  const props = { mode: 'wind' as const, onModeChange: vi.fn(), wind: { ...DEFAULT_WIND, display: 'ratio' as const }, onWindChange, view: null }
+  const { rerender } = render(<ClimatePanel {...props} />)
+  expect(screen.getByLabelText('Streamline height')).toBeDisabled()
+  expect(screen.getByLabelText('Streamline opacity')).toBeDisabled()
+  expect(screen.getByText('Upper heights computing…')).toBeInTheDocument()
+  expect(screen.getByLabelText('Wind at 10 m height')).toBeEnabled()
+  rerender(<ClimatePanel {...props} slicesReady />)
+  expect(screen.queryByText('Upper heights computing…')).toBeNull()
+  expect(screen.getByLabelText('Streamline height')).toBeEnabled()
+  expect(screen.getByLabelText('Streamline opacity')).toBeEnabled()
+  fireEvent.change(screen.getByLabelText('Streamline height'), { target: { value: '20' } })
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineHeight: 20 })
+  fireEvent.change(screen.getByLabelText('Streamline opacity'), { target: { value: '0.5' } })
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineOpacity: 0.5 })
+  fireEvent.change(screen.getByLabelText('Streamline height'), { target: { value: '3d' } })
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineHeight: null })
+})

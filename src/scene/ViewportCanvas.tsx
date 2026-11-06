@@ -1,3 +1,7 @@
+import { WindHeatmap } from './WindHeatmap'
+import { RoofWind } from './RoofWind'
+import { WindRampBar } from './WindRampBar'
+import type { FootprintBuilding } from '../features/analysis/grid'
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
@@ -23,7 +27,7 @@ import { FLOW_DISCLAIMER } from '../features/analysis/lbm'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
 import type { FlowResult } from '../features/analysis/flowRunner'
-import type { ClimateOverlay } from '../features/analysis/climateView'
+import { DEFAULT_WIND, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
@@ -73,6 +77,9 @@ type ViewportProps = {
   climate?: ClimateOverlay | null
   /** Live 2D wind flow for the particle layer; null when wind is off. */
   windFlow?: FlowResult | null
+  windSettings?: WindSettings
+  windBuildings?: readonly FootprintBuilding[]
+  windBaseline?: WindBaseline | null
   windStreamlines?: boolean
   demoOrbitDeg?: number | null
   onStopDemo?: () => void
@@ -371,6 +378,9 @@ export function ViewportCanvas({
   climate = null,
   windFlow = null,
   windStreamlines = false,
+  windSettings = DEFAULT_WIND,
+  windBuildings = [],
+  windBaseline = null,
   demoOrbitDeg = null,
   onStopDemo,
   windCircle = null,
@@ -413,9 +423,10 @@ export function ViewportCanvas({
     >
       {windCircle && (
         // The wind claim stays visible with the wind layer even when the inspector group is closed (PRD R8).
-        <p className="pointer-events-none absolute bottom-14 right-3 z-20 rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">
-          {FLOW_DISCLAIMER}
-        </p>
+        <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
+          {windSettings.display === 'ratio' && <WindRampBar />}
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{FLOW_DISCLAIMER}</p>
+        </div>
       )}
       {webgl === 'none' ? (
         <SceneUnavailable reason="unsupported" />
@@ -457,9 +468,12 @@ export function ViewportCanvas({
             {layers.context && <ContextBuildings buildings={buildings.buildings} />}
             {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
             {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
-            {climate && layers.terrain && <ClimateLayer overlay={climate} heightAt={heightAt} />}
+            {climate && layers.terrain && (windCircle
+              ? <WindHeatmap overlay={climate} heightAt={heightAt} circle={windCircle} />
+              : <ClimateLayer overlay={climate} heightAt={heightAt} />)}
+            {windFlow?.slices && windCircle && layers.terrain && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
             {windFlow && windCircle && layers.terrain && ((windStreamlines || reducedMotion)
-              ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} />
+              ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlineHeight} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
               : <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} />)}
             {windCircle && layers.terrain && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}
 

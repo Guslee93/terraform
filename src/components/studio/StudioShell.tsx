@@ -136,7 +136,7 @@ export function StudioShell({
   const [placingCircle, setPlacingCircle] = useState(false)
   const windCentre = useMemo(() => wind.centre ?? (studyArea ? ringCentroid(studyArea) : null), [wind.centre, studyArea])
   const windArea = useMemo(() => (windCentre ? circlePolygon(windCentre, wind.radius) : null), [windCentre, wind.radius])
-  const { flow: windFlow, isCurrent: isCurrentFlow } = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash)
+  const { flow: windFlow, isCurrent: isCurrentFlow } = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash, climateMode === 'wind')
   // The live field shows even mid-edit (Forma-style live drag); only a current, settled field may become the baseline.
   const freshFlow = isCurrentFlow(windFlow) ? windFlow : null
   const baselineMismatch = !!baseline && !!windCentre && !baselineMatches(baseline, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)
@@ -384,6 +384,9 @@ export function StudioShell({
                   demoOrbitDeg={windDemo.orbitDeg}
                   onStopDemo={windDemo.stop}
                   windStreamlines={streamlines}
+                  windSettings={wind}
+                  windBuildings={analysisBuildings}
+                  windBaseline={baseline}
                   windFlow={climateMode === 'wind' ? windFlow : null}
                   windCircle={climateMode === 'wind' && windCentre ? { centre: windCentre, radius: wind.radius } : null}
                   onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
@@ -491,7 +494,7 @@ export function StudioShell({
             ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
             : shortDate(sunTime.date)}
           climate={sitePackage ? (
-            <ClimatePanel demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
+            <ClimatePanel slicesReady={!!freshFlow?.slices} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
               streamlines={streamlines} onStreamlinesChange={setStreamlines}
               baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled}
               onSetBaseline={() => { if (windFlow?.settled && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}

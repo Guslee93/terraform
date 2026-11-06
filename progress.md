@@ -486,3 +486,9 @@
 ### Wind C23 review + fixes (2026-11-06, Codex review, Claude fixes)
 - Codex C23 failed the gate with 6 findings (stale baseline capture, downwash missing from baseline match, claim hidden with panel closed, no keyboard circle placement, large-site downwash backlog, particles escaping the circle). All fixed minimally; resolution table in `docs/reviews/wind-code-review.md`.
 - Gate: lint ✅ · 941 tests ✅ · build ✅ · e2e 53/8 skipped, 2 load-only flakes pass alone, wind spec ✅.
+
+### Wind W5b + W5c — Forma-style 3D look (2026-11-06, Codex + Claude)
+- Codex C25 (W5b): slices on whenever Wind is on; worker posts only on change; Direction view is continuous m/s on a Forma-like ramp (white→blue→violet→magenta) with a bottom-centre ramp bar; smooth vertex-coloured wind heatmap (hard circle edge); roof colouring from the slice just above each roof; streamline height (3D / 2 / 10 / 20 / 35 m) and opacity controls, disabled until slices exist.
+- Claude W5c: `streamlines3d.ts` — lines seeded upwind at 2–28 m, horizontal flow interpolated between slices, rise over buildings they can clear within 15 m (rule, labelled), go round taller ones, relax back down; rendered as one thick drei `Line` (blue→violet by speed).
+- Browser (Compact Infill, W, Direction): streamlines arc over the blocks and curl into the courtyard, roofs coloured, ramp bar shown; height options enabled after ~60 s of background slice solving.
+- lint ✅ · 972 tests ✅ · build ✅ · e2e wind/smoke/layers ✅. Known: roofs taller than the 35 m slice stay uncoloured; slice solve ~10 s per height.

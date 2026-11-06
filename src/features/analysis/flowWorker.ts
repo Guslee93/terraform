@@ -1,6 +1,11 @@
 /// <reference lib="webworker" />
-import { createFlowRunner, type FlowRequest } from './flowRunner'
+import { createFlowRunner, type FlowResult, type FlowRequest } from './flowRunner'
 
+/** Ground ticks change the field; settled ticks only warrant posting a newly completed stack. */
+export function shouldPostFlow(previous: Pick<FlowResult, 'id' | 'settled' | 'slices'> | null, next: FlowResult): boolean {
+  return !previous || previous.id !== next.id || !previous.settled || (!previous.slices && !!next.slices)
+}
+let lastPosted: Pick<FlowResult, 'id' | 'settled' | 'slices'> | null = null
 const runner = createFlowRunner()
 let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -14,13 +19,16 @@ function loop() {
   }
   const result = runner.tick(60)
   if (!result) return
-  const transfers = [result.velocity.buffer, result.solid.buffer]
-  for (const slice of result.slices ?? []) transfers.push(slice.velocity.buffer, slice.solid.buffer)
-  self.postMessage(result, transfers)
+  if (shouldPostFlow(lastPosted, result)) {
+    lastPosted = { id: result.id, settled: result.settled, slices: result.slices }
+    const transfers = [result.velocity.buffer, result.solid.buffer]
+    for (const slice of result.slices ?? []) transfers.push(slice.velocity.buffer, slice.solid.buffer)
+    self.postMessage(result, transfers)
+  }
   if (runner.hasPendingWork()) timer = setTimeout(loop, 0)
 }
 
-self.onmessage = (event: MessageEvent<FlowRequest>) => {
+if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) self.onmessage = (event: MessageEvent<FlowRequest>) => {
   clearTimeout(timer)
   pending = event.data
   timer = setTimeout(loop, 0)

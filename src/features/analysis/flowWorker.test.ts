@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest'
+import { flowFrame } from './lbm'
 import type { FlowRequest, FlowResult } from './flowRunner'
 
 const runner = vi.hoisted(() => ({ request: vi.fn(), tick: vi.fn(), hasPendingWork: vi.fn() }))
@@ -15,6 +16,7 @@ it('continues after ground settlement, replaces queued requests, and transfers t
     onmessage: null, postMessage: vi.fn(),
   }
   vi.stubGlobal('self', scope)
+  vi.stubGlobal('WorkerGlobalScope', Object)
   const frame = { nx: 8, ny: 8, dx: 2, centre: [0, 0], flow: [1, 0] } as const
   const request = { id: 1, frame, buildings: [], reset: true, slices: true }
   const ground: FlowResult = { id: 1, frame, settled: true, velocity: new Float32Array(128), solid: new Uint8Array(64) }
@@ -33,4 +35,18 @@ it('continues after ground settlement, replaces queued requests, and transfers t
   expect(scope.postMessage).toHaveBeenLastCalledWith(final, [final.velocity.buffer, final.solid.buffer,
     ...final.slices!.flatMap((slice) => [slice.velocity.buffer, slice.solid.buffer])])
   expect(vi.getTimerCount()).toBe(0)
+})
+
+it('posts live ground changes and completion once, suppressing unchanged upper-slice ticks', async () => {
+  const { shouldPostFlow } = await import('./flowWorker')
+  const result: FlowResult = { id: 1, frame: flowFrame([[0, 0], [20, 0], [20, 20], [0, 20]], 270, 8, 8), settled: false, velocity: new Float32Array(128), solid: new Uint8Array(64) }
+  expect(shouldPostFlow(null, result)).toBe(true)
+  expect(shouldPostFlow(result, result)).toBe(true)
+  const settled = { ...result, settled: true }
+  expect(shouldPostFlow(result, settled)).toBe(true)
+  expect(shouldPostFlow(settled, settled)).toBe(false)
+  const complete = { ...settled, slices: [{ z: 2, velocity: result.velocity, solid: result.solid }] }
+  expect(shouldPostFlow(settled, complete)).toBe(true)
+  expect(shouldPostFlow(complete, complete)).toBe(false)
+  expect(shouldPostFlow(complete, { ...complete, id: 2 })).toBe(true)
 })

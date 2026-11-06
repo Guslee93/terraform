@@ -20,11 +20,13 @@ export type WindSettings = {
   /** Analysis circle: the flow is solved only around it, at finer resolution. Centre null = study-area centre. */
   readonly centre: Vec2 | null
   readonly radius: number
+  readonly streamlineHeight: number | null
+  readonly streamlineOpacity: number
 }
-export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refSpeed: 6, downwash: true, centre: null, radius: 100 }
+export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refSpeed: 6, downwash: true, centre: null, radius: 100, streamlineHeight: null, streamlineOpacity: 0.8 }
 export type WindBaseline = { readonly flow: FlowResult; readonly circle: { readonly centre: Vec2; readonly radius: number }; readonly from: number; readonly downwash: boolean }
 export function captureBaseline(flow: FlowResult, circle: WindBaseline['circle'], from: number, downwash = false): WindBaseline {
-  return { flow: { ...flow, frame: { ...flow.frame, centre: [...flow.frame.centre], flow: [...flow.frame.flow] }, velocity: flow.velocity.slice(), solid: flow.solid.slice() }, circle: { centre: [...circle.centre], radius: circle.radius }, from, downwash }
+  return { flow: { ...flow, frame: { ...flow.frame, centre: [...flow.frame.centre], flow: [...flow.frame.flow] }, velocity: flow.velocity.slice(), solid: flow.solid.slice(), ...(flow.slices ? { slices: flow.slices.map((slice) => ({ ...slice, velocity: slice.velocity.slice(), solid: slice.solid.slice() })) } : {}) }, circle: { centre: [...circle.centre], radius: circle.radius }, from, downwash }
 }
 /** A delta is only meaningful with the same circle, direction and model settings (downwash rule on/off). */
 export function baselineMatches(baseline: WindBaseline, circle: WindBaseline['circle'], from: number, downwash = baseline.downwash): boolean {
@@ -47,6 +49,30 @@ export const SPEED_BANDS: ReadonlyArray<Band & { band: SpeedBand }> = [
   { band: 'fast', below: Infinity, label: 'Much faster (> 1.3×)', colour: '#C2452F' },
 ]
 export const speedBand = (ratio: number) => pick(SPEED_BANDS, ratio)
+
+/** Continuous Direction ramp in m/s; interpolation is in display sRGB. */
+export const WIND_RAMP = [
+  { speed: 0, colour: '#F5F7FB' }, { speed: 2, colour: '#BFD3F2' },
+  { speed: 4, colour: '#5B8DEF' }, { speed: 6, colour: '#2F49D1' },
+  { speed: 8, colour: '#7B2FD1' }, { speed: 10, colour: '#C21FB3' },
+] as const
+export function windSpeedColour(speed: number): string {
+  const value = Math.max(0, Math.min(10, speed))
+  const index = Math.min(4, Math.floor(value / 2))
+  const a = WIND_RAMP[index]!, b = WIND_RAMP[index + 1]!
+  const t = (value - a.speed) / 2
+  return '#' + [1, 3, 5].map((offset) => {
+    const lo = parseInt(a.colour.slice(offset, offset + 2), 16)
+    const hi = parseInt(b.colour.slice(offset, offset + 2), 16)
+    return Math.round(lo + (hi - lo) * t).toString(16).padStart(2, '0')
+  }).join('').toUpperCase()
+}
+
+/** Shared by ground and roofs; delta requires a compatible sample at the same height. */
+export function windColour(ratio: number, wind: WindSettings, before?: number): string | null {
+  if (wind.display === 'delta') return before === undefined ? null : deltaBand(ratio - before).colour
+  return wind.display === 'ratio' ? windSpeedColour(ratio * wind.refSpeed) : pick(ACTIVITY_BANDS, ratio * wind.refSpeed).colour
+}
 
 export const DELTA_BANDS: readonly Band[] = [
   { band: 'much-calmer', below: -0.3, label: 'Calmer (≤ −0.3)', colour: '#1E3A8A' },
@@ -80,6 +106,8 @@ export const NOISE_COLOUR: Record<NoiseBand, string> = {
 
 export type ClimateOverlay = {
   readonly cellM: number
+  /** Optional complete lattice including the circle-edge halo, clipped by the renderer. */
+  readonly lattice?: readonly { readonly x: number; readonly y: number; readonly colour: string }[]
   readonly cells: readonly { readonly x: number; readonly y: number; readonly colour: string }[]
 }
 
@@ -133,12 +161,24 @@ export function buildClimateView(
             const before = sampleVelocity(baseline.flow.frame, baseline.flow.velocity, baseline.flow.solid, [c.x, c.y])
             return before ? [{ ...c, b: deltaBand(Math.hypot(...v) - Math.hypot(...before)) }] : []
           }
-          return [{ ...c, b: pick(bands, Math.hypot(...v) * scale) }]
+          return [{ ...c, b: { ...pick(bands, Math.hypot(...v) * scale), colour: windColour(Math.hypot(...v), wind)! } }]
         })
       : []
+    // A one-cell halo lets the mesh reach the exact circular shader clip boundary.
+    const xs = studyArea.map((p) => p[0]), ys = studyArea.map((p) => p[1])
+    const minX = Math.min(...xs) - WIND_CELL_M, maxX = Math.max(...xs) + WIND_CELL_M
+    const minY = Math.min(...ys) - WIND_CELL_M, maxY = Math.max(...ys) + WIND_CELL_M
+    const lattice = flow && (wind.display !== 'delta' || compatible)
+      ? sampleGrid([[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]], WIND_CELL_M).flatMap((c) => {
+          const v = sampleVelocity(flow.frame, flow.velocity, flow.solid, [c.x, c.y])
+          if (!v) return []
+          const before = baseline && wind.display === 'delta' ? sampleVelocity(baseline.flow.frame, baseline.flow.velocity, baseline.flow.solid, [c.x, c.y]) : null
+          const colour = windColour(Math.hypot(...v), wind, before ? Math.hypot(...before) : undefined)
+          return colour ? [{ ...c, colour }] : []
+        }) : []
     return {
-      overlay: { cellM: WIND_CELL_M, cells: cells.map((c) => ({ x: c.x, y: c.y, colour: c.b.colour })) },
-      legend: bands.map((b) => {
+      overlay: { cellM: WIND_CELL_M, lattice, cells: cells.map((c) => ({ x: c.x, y: c.y, colour: c.b.colour })) },
+      legend: wind.display === 'ratio' ? [] : bands.map((b) => {
         const count = cells.filter((c) => c.b.band === b.band).length
         return { label: b.label, colour: b.colour, count, share: cells.length ? count / cells.length : 0 }
       }),

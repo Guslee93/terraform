@@ -65,6 +65,7 @@ export function useWindDemo(wind: WindSettings, streamlines: boolean, onWindChan
 }
 
 type ClimatePanelProps = {
+  slicesReady?: boolean
   demoPlaying?: boolean
   onToggleDemo?: () => void
   mode: ClimateMode
@@ -88,7 +89,7 @@ const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
   { id: 'ratio', label: 'Direction' },
 ]
 
-export function ClimatePanel({ demoPlaying = false, onToggleDemo, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
+export function ClimatePanel({ slicesReady = false, demoPlaying = false, onToggleDemo, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
   const windFrom = wind.from
   const set = (patch: Partial<WindSettings>) => onWindChange({ ...wind, ...patch })
   return (
@@ -190,13 +191,31 @@ export function ClimatePanel({ demoPlaying = false, onToggleDemo, mode, onModeCh
             <input type="checkbox" checked={streamlines} onChange={(event) => onStreamlinesChange?.(event.currentTarget.checked)} />
             Streamlines
           </label>
+          <div className="mt-3 space-y-2">
+            <label htmlFor="streamline-height" className={labelClass}>Streamline height</label>
+            <select id="streamline-height" value={wind.streamlineHeight ?? '3d'} disabled={!slicesReady}
+              aria-describedby={!slicesReady ? 'upper-heights-status' : undefined}
+              onChange={(event) => set({ streamlineHeight: event.currentTarget.value === '3d' ? null : Number(event.currentTarget.value) })}
+              className="min-h-9 w-full rounded-chip border border-line bg-surface text-body-sm disabled:opacity-50">
+              <option value="3d">3D (follows buildings)</option>
+              {[2, 10, 20, 35].map((z) => <option key={z} value={z}>{z} m</option>)}
+            </select>
+            <label htmlFor="streamline-opacity" className={labelClass}>Streamline opacity</label>
+            <input id="streamline-opacity" type="range" min={0.2} max={1} step={0.05}
+              value={wind.streamlineOpacity} disabled={!slicesReady}
+              aria-valuetext={`${Math.round(wind.streamlineOpacity * 100)} percent`}
+              aria-describedby={!slicesReady ? 'upper-heights-status' : undefined}
+              onChange={(event) => set({ streamlineOpacity: Number(event.currentTarget.value) })}
+              className="w-full accent-ink disabled:opacity-50" />
+            {!slicesReady && <p id="upper-heights-status" className="text-caption text-ink-secondary">Upper heights computing…</p>}
+          </div>
           <div className="mt-3 flex gap-2">
             <button type="button" className="min-h-8 rounded-chip border border-line px-2 text-body-sm disabled:opacity-50" disabled={!canSetBaseline} onClick={onSetBaseline}>Set baseline</button>
             {baseline && <button type="button" className="min-h-8 rounded-chip border border-line px-2 text-body-sm" onClick={onClearBaseline}>Clear baseline</button>}
           </div>
           {baseline && baselineMismatch && <p role="status" className="mt-2 text-caption text-ink-secondary">Baseline was taken for {compassName(baseline.from)} {baseline.from}°, r = {baseline.circle.radius} m, downwash rule {baseline.downwash ? 'on' : 'off'}. Reset it to compare.</p>}
           {wind.display === 'delta' && !baselineMismatch && <p className="mt-2 text-caption">{DELTA_NOTE}</p>}
-          {wind.display === 'activity' && (
+          {wind.display !== 'delta' && (
             <div className="mt-3">
               <div className="flex items-center justify-between">
                 <label htmlFor="wind-speed" className={labelClass}>Wind at 10 m height</label>
