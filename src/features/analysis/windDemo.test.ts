@@ -15,4 +15,9 @@ describe('demoFrame', () => {
     for (const t of [0, 5, 11]) expect(demoFrame(t, true).orbitDeg).toBe(0)
     expect(demoFrame(12, true).done).toBe(true)
   })
+  it('never yields an invalid direction for a slightly negative start time (rAF before now)', () => {
+    expect(demoFrame(-0.004, true).from).toBe(270)
+    expect(demoFrame(-0.004).from).toBe(270)
+    expect(Number.isFinite(demoFrame(-1, true).orbitDeg)).toBe(true)
+  })
 })

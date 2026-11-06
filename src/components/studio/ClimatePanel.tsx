@@ -69,6 +69,8 @@ type ClimatePanelProps = {
   /** Heights (m) of the slices solved so far, ground first; the stack arrives progressively. */
   availableHeights?: readonly number[]
   slicesComplete?: boolean
+  /** All heights the stack will have; defaults to the standard four. */
+  sliceHeights?: readonly number[]
   demoPlaying?: boolean
   onToggleDemo?: () => void
   mode: ClimateMode
@@ -92,7 +94,7 @@ const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
   { id: 'ratio', label: 'Direction' },
 ]
 
-export function ClimatePanel({ availableHeights = [], slicesComplete = false, demoPlaying = false, onToggleDemo, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
+export function ClimatePanel({ availableHeights = [], slicesComplete = false, sliceHeights = [2, 10, 20, 35], demoPlaying = false, onToggleDemo, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
   const windFrom = wind.from
   const slicesReady = availableHeights.length >= 2
   const set = (patch: Partial<WindSettings>) => onWindChange({ ...wind, ...patch })
@@ -202,7 +204,7 @@ export function ClimatePanel({ availableHeights = [], slicesComplete = false, de
               onChange={(event) => set({ streamlineHeight: event.currentTarget.value === '3d' ? null : Number(event.currentTarget.value) })}
               className="min-h-9 w-full rounded-chip border border-line bg-surface text-body-sm disabled:opacity-50">
               <option value="3d">3D (follows buildings)</option>
-              {[2, 10, 20, 35].map((z) => <option key={z} value={z} disabled={!availableHeights.includes(z)}>{z} m{availableHeights.includes(z) ? '' : ' (computing)'}</option>)}
+              {sliceHeights.map((z) => <option key={z} value={z} disabled={!availableHeights.includes(z)}>{z} m{availableHeights.includes(z) ? '' : ' (computing)'}</option>)}
             </select>
             <label htmlFor="streamline-opacity" className={labelClass}>Streamline opacity</label>
             <input id="streamline-opacity" type="range" min={0.2} max={1} step={0.05}
@@ -213,7 +215,7 @@ export function ClimatePanel({ availableHeights = [], slicesComplete = false, de
               className="w-full accent-ink disabled:opacity-50" />
             {!slicesComplete && (
               <p id="upper-heights-status" className="text-caption text-ink-secondary">
-                Upper heights computing… {Math.max(0, availableHeights.length)}/4 ready
+                Upper heights computing… {availableHeights.length}/{sliceHeights.length} ready
               </p>
             )}
             {slicesReady && wind.streamlineHeight === null && <p className="text-caption text-ink-secondary">{STREAMLINE_3D_NOTE}</p>}

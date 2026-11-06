@@ -4,6 +4,7 @@ import { BufferAttribute, BufferGeometry, Color } from 'three'
 import { speedBand } from '../features/analysis/climateView'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import { sampleVelocity } from '../features/analysis/lbm'
+import { particleSegment } from '../features/analysis/particles'
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 
 // ponytail: fixed particle count; make it adapt to frame time if low-end GPUs stutter.
@@ -59,12 +60,10 @@ export function WindParticles({ flow, circle, heightAt }: {
       const y = (state.pos[2 * i + 1]! += v[1] * SPEED_MS * dt)
       const z = heightAt(x, y) + LIFT_M
       const head = enuToThreeXyz([x, y, z])
-      // Keep the whole segment inside the circle: a head that left respawns next frame; a tail
-      // that would poke out collapses onto the head.
-      const tx = x - v[0] * SPEED_MS * TAIL_S
-      const ty = y - v[1] * SPEED_MS * TAIL_S
-      const tail = outside(x, y) || outside(tx, ty) ? head : enuToThreeXyz([tx, ty, z])
-      if (outside(x, y)) state.age[i] = LIFE_S + 1
+      // Keep the whole segment inside the circle (particleSegment is unit-tested).
+      const seg = particleSegment([x, y], v, Math.hypot(v[0], v[1]) * SPEED_MS * TAIL_S, centre, radius)
+      const tail = seg.tail[0] === x && seg.tail[1] === y ? head : enuToThreeXyz([seg.tail[0], seg.tail[1], z])
+      if (seg.respawn) state.age[i] = LIFE_S + 1
       p.setXYZ(2 * i, tail[0], tail[1], tail[2])
       p.setXYZ(2 * i + 1, head[0], head[1], head[2])
       colour.set(speedBand(Math.hypot(v[0], v[1])).colour)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ALPHA, profileFactor, sliceObstacles, SLICE_HEIGHTS_M } from './windProfile'
+import { ALPHA, profileFactor, sliceHeightsFor, sliceObstacles, SLICE_HEIGHTS_M } from './windProfile'
 import { rasterize, type FlowFrame } from './lbm'
 
 const frame: FlowFrame = { nx: 16, ny: 16, dx: 2, centre: [0, 0], flow: [1, 0] }
@@ -17,5 +17,18 @@ describe('indicative urban height profile', () => {
     expect(rasterize(frame, sliceObstacles([block], 20))[8 * 16 + 8]).toBe(0)
     expect(sliceObstacles([block], 15)).toEqual([])
     expect(block.height).toBe(15)
+  })
+})
+
+describe('sliceHeightsFor (tall roofs)', () => {
+  const b = (height: number) => ({ height, footprint: [[0, 0], [10, 0], [10, 10], [0, 10]] as [number, number][] })
+  it('keeps the standard four heights when nothing is taller than 35 m', () => {
+    expect(sliceHeightsFor([])).toEqual([2, 10, 20, 35])
+    expect(sliceHeightsFor([b(12), b(35)])).toEqual([2, 10, 20, 35])
+  })
+  it('adds one top slice just above the tallest building, capped at 120 m', () => {
+    expect(sliceHeightsFor([b(12), b(60)])).toEqual([2, 10, 20, 35, 65])
+    expect(sliceHeightsFor([b(61)])).toEqual([2, 10, 20, 35, 70])
+    expect(sliceHeightsFor([b(300)])).toEqual([2, 10, 20, 35, 120])
   })
 })

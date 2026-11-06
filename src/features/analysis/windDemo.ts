@@ -12,6 +12,8 @@ const REDUCED = { directions: [270, 0, 90, 180], holdSeconds: 3 } as const
 const easeInOut = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2)
 
 export function demoFrame(t: number, reducedMotion = false): DemoFrame {
+  // rAF timestamps mark the frame start and can precede performance.now() at launch: t < 0.
+  t = Math.max(0, t)
   if (reducedMotion) {
     const i = Math.floor(t / REDUCED.holdSeconds)
     const done = i >= REDUCED.directions.length

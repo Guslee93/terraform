@@ -1,4 +1,4 @@
-import { profileFactor, sliceObstacles, SLICE_HEIGHTS_M } from './windProfile'
+import { profileFactor, sliceHeightsFor, sliceObstacles } from './windProfile'
 import type { FootprintBuilding } from './grid'
 import { downwashBoost } from './comfort'
 import { createLbm, rasterize, stepLbm, velocityField, speedRatio, upsampleVelocity, warmStartLbm, type FlowFrame, type Lbm } from './lbm'
@@ -51,6 +51,8 @@ export type FlowResult = {
   readonly settled: boolean
   readonly slices?: FlowSlice[]
   readonly slicesComplete?: boolean
+  /** Every slice height this stack will have (the standard four, plus a top slice for tall buildings). */
+  readonly sliceHeights?: readonly number[]
 }
 
 /** Sorted geometry fingerprint: hash for lookup, full signature checked to avoid collisions. */
@@ -74,6 +76,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
   let boost: Float32Array | null = null
   let buildings: readonly FootprintBuilding[] = []
   let wantsSlices = false
+  let heights: number[] = []
   let stack: FlowSlice[] = []
   let upper: Lbm | null = null
   let upperSteps = 0
@@ -98,7 +101,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
     const slices = wantsSlices && stack.length > 0
       ? stack.map((slice, i) => i === 0 ? { z: slice.z, velocity: velocity.slice(), solid: slice.solid.slice() } : copySlice(slice))
       : undefined
-    return { id, frame: frame!, solid: ground.solid.slice(), velocity, settled, slicesComplete: wantsSlices && stack.length === SLICE_HEIGHTS_M.length,
+    return { id, frame: frame!, solid: ground.solid.slice(), velocity, settled, slicesComplete: wantsSlices && stack.length === heights.length, sliceHeights: wantsSlices ? heights : undefined,
       ...(slices ? { slices } : {}) }
   }
 
@@ -113,6 +116,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
       stack = []
       pending = true
       wantsSlices = req.slices === true
+      heights = sliceHeightsFor(req.buildings)
       buildings = req.buildings
       frame = req.frame
       // Integer downsampling preserves both physical extents, including rectangular frames.
@@ -153,7 +157,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
     /** Runs one slice for up to budgetMs; yields between chunks for request cancellation. */
     tick(budgetMs: number): FlowResult | null {
       if (!pending || !frame) return null
-      if (stack.length === SLICE_HEIGHTS_M.length) {
+      if (stack.length === heights.length) {
         pending = false
         return result()
       }
@@ -169,7 +173,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
           else pending = false
         }
       } else if (wantsSlices) {
-        const z = SLICE_HEIGHTS_M[stack.length]!
+        const z = heights[stack.length]!
         if (!upper) {
           upper = createLbm(coarseFrame!.nx, coarseFrame!.ny, rasterize(coarseFrame!, sliceObstacles(buildings, z)))
           if (previousUpper) warmStartLbm(upper, previousUpper)
@@ -190,7 +194,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
           previousUpper = upper
           upper = null
           upperSteps = 0
-          if (stack.length === SLICE_HEIGHTS_M.length) {
+          if (stack.length === heights.length) {
             cache.delete(key)
             cache.set(key, { signature, stack })
             if (cache.size > 8) cache.delete(cache.keys().next().value!)

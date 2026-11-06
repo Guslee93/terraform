@@ -25,6 +25,8 @@ test('no WebGL leaves an accessible fallback and the inspector available', async
 })
 
 test('quality changes the rendered canvas both ways and persists after reload', async ({ page }, testInfo) => {
+  // Canvas screenshots under software GL exceed 30 s when the suite runs in parallel.
+  test.slow()
   // Balanced has shadows but no AO, making this comparison practical on software GL too.
   await page.goto('/studio/compact-infill')
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()

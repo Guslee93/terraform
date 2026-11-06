@@ -84,6 +84,8 @@ async function moveToRoofDragView(page: Page): Promise<{ x: number; y: number }>
 }
 
 test('Esc cancels a roof drag and restores the original storeys', async ({ page }) => {
+  // Pointer drags on the WebGL canvas exceed 30 s under parallel suite load.
+  test.slow()
   await createMass(page)
 
   const handle = await moveToRoofDragView(page)
