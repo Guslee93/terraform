@@ -22,6 +22,7 @@ export function useWindFlow(
   fromBearingDeg: number,
   enabled: boolean,
   downwash = false,
+  slices = false,
 ): WindFlowState {
   const [flow, setFlow] = useState<FlowResult | null>(null)
   const worker = useRef<Worker | null>(null)
@@ -55,14 +56,14 @@ export function useWindFlow(
     const id = ++revision.current
     const send = () => {
       lastSent.current = performance.now()
-      const request: FlowRequest = { id, frame, buildings, reset: lastFrame.current !== frame, downwash }
+      const request: FlowRequest = { id, frame, buildings, reset: lastFrame.current !== frame, downwash, slices }
       lastFrame.current = frame
       worker.current?.postMessage(request)
     }
     const wait = Math.max(0, 80 - (performance.now() - lastSent.current))
     const handle = setTimeout(send, wait)
     return () => clearTimeout(handle)
-  }, [frame, buildings, downwash])
+  }, [frame, buildings, downwash, slices])
 
   return { flow: frame ? flow : null, isCurrent: (f) => !!f && f.id === revision.current }
 }

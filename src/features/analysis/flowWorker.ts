@@ -14,8 +14,10 @@ function loop() {
   }
   const result = runner.tick(60)
   if (!result) return
-  self.postMessage(result, [result.velocity.buffer, result.solid.buffer])
-  if (!result.settled) timer = setTimeout(loop, 0)
+  const transfers = [result.velocity.buffer, result.solid.buffer]
+  for (const slice of result.slices ?? []) transfers.push(slice.velocity.buffer, slice.solid.buffer)
+  self.postMessage(result, transfers)
+  if (runner.hasPendingWork()) timer = setTimeout(loop, 0)
 }
 
 self.onmessage = (event: MessageEvent<FlowRequest>) => {
