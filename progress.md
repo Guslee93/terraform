@@ -452,3 +452,9 @@
 - Landing and About rewritten for the new pitch; primary CTA "Try it" → `/new`. MySites focus fallback now targets the card link (`#sites a[href="/new"]`).
 - Existing unit and e2e specs opt into the tools (StudioShell test beforeEach; Playwright storageState). New test covers the default.
 - Verification: lint ✅ · typecheck ✅ · 879 unit tests ✅ · build ✅ · e2e massing/layers/m4-scenarios 14 passed · browser check at 1440×900. Full e2e suite not re-run; a saved mass from an earlier session still draws and counts in analysis mode.
+
+### Wind W1 — live 2D flow in the studio (2026-11-06, Claude)
+- Wind mode now runs the D2Q9 solver in a Web Worker (`flowRunner.ts` pure + `flowWorker.ts`, `useWindFlow.ts`): 128² grid, warm start on building edits (50 ms debounce), restart on direction change, idles after 6000 steps. Old ray-cast `wind.ts` removed.
+- Ground overlay = speed-ratio bands (calm blue → red), `WindParticles.tsx` = 2500 advected comet segments (still arrows under reduced motion). Direction select replaced by a 15° range slider with arrow and `aria-valuetext`.
+- Solver fix found on real sites: zero-gradient outlet let density climb (1.0 → 1.28) and stalled the flow. Outlet now pins density to 1; obstacles kept 3 cells off inlet/outlet. Floating inlet density was tried and blew up (NaN) — reverted.
+- Verification: lint ✅ · 901 unit tests ✅ · build ✅ · browser on both curated sites (gap jet on Compact Infill, wake behind the cluster on Sloped Edge). e2e not re-run. Not done: speed slider (needs W2 comfort), adaptive particle count, GPU path.

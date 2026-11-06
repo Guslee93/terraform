@@ -54,7 +54,7 @@ describe('application routes', () => {
     renderRoute('/about')
 
     expect(screen.getByRole('heading', { name: /site readings you can trace/i })).toBeInTheDocument()
-    expect(screen.getByText(/not a wind simulation/i)).toBeInTheDocument()
+    expect(screen.getByText(/not an engineering wind study/i)).toBeInTheDocument()
   })
 
   it('shows a recoverable state for an unknown site package', async () => {

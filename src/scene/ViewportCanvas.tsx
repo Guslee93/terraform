@@ -18,6 +18,8 @@ import type { SunDirection } from '../features/analysis/sun'
 import type { EnvelopeConstraints, EnvelopeResult } from '../features/analysis/constraints'
 import { ConstraintLayer } from './ConstraintLayer'
 import { ClimateLayer } from './ClimateLayer'
+import { WindParticles } from './WindParticles'
+import type { FlowResult } from '../features/analysis/flowRunner'
 import type { ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
@@ -66,6 +68,8 @@ type ViewportProps = {
   renderPreference: RenderPreference
   /** Wind or noise screening cells; null when the climate layer is off. */
   climate?: ClimateOverlay | null
+  /** Live 2D wind flow for the particle layer; null when wind is off. */
+  windFlow?: FlowResult | null
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
@@ -327,6 +331,7 @@ export function ViewportCanvas({
   annotations,
   renderPreference,
   climate = null,
+  windFlow = null,
 }: ViewportProps) {
   const controlsRef = useRef<OrbitControlsHandle>(null)
   const [webgl] = useState(detectWebGL)
@@ -395,6 +400,7 @@ export function ViewportCanvas({
             {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
             {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
             {climate && layers.terrain && <ClimateLayer overlay={climate} heightAt={heightAt} />}
+            {windFlow && layers.terrain && <WindParticles flow={windFlow} heightAt={heightAt} />}
 
             <group name="live-scenario">
             {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}

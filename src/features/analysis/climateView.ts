@@ -1,16 +1,21 @@
 import type { Vec2 } from '../../lib/coordinates'
-import type { FootprintBuilding } from './grid'
+import { sampleGrid, type FootprintBuilding } from './grid'
+import type { FlowResult } from './flowRunner'
+import { FLOW_DISCLAIMER, sampleVelocity } from './lbm'
 import { computeNoise, NOISE_BAND_LABEL, NOISE_DISCLAIMER, type NoiseBand, type NoiseRoad } from './noise'
-import { computeWind, WIND_CLASS_LABEL, WIND_DISCLAIMER, type WindClass } from './wind'
 
 export type ClimateMode = 'off' | 'wind' | 'noise'
 
-export const WIND_COLOUR: Record<WindClass, string> = {
-  sheltered: '#4C7A9B',
-  moderate: '#8FB3A8',
-  exposed: '#E0B25C',
-  'very-exposed': '#C2552F',
-}
+/** Speed ratio (local ÷ undisturbed) bands; one ramp, calm blue → red, shared by heatmap and particles. */
+export type SpeedBand = 'calm' | 'reduced' | 'open' | 'faster' | 'fast'
+export const SPEED_BANDS: ReadonlyArray<{ band: SpeedBand; below: number; label: string; colour: string }> = [
+  { band: 'calm', below: 0.5, label: 'Calm (< 0.5×)', colour: '#3B6EA8' },
+  { band: 'reduced', below: 0.8, label: 'Reduced (0.5–0.8×)', colour: '#4FA3A5' },
+  { band: 'open', below: 1.1, label: 'Like open ground (0.8–1.1×)', colour: '#E6DC9C' },
+  { band: 'faster', below: 1.3, label: 'Faster (1.1–1.3×)', colour: '#E39A4C' },
+  { band: 'fast', below: Infinity, label: 'Much faster (> 1.3×)', colour: '#C2452F' },
+]
+export const speedBand = (ratio: number) => SPEED_BANDS.find((b) => ratio < b.below)!
 
 export const NOISE_COLOUR: Record<NoiseBand, string> = {
   quiet: '#9DB8A0',
@@ -51,7 +56,6 @@ function tally<K extends string>(
   }
 }
 
-const WIND_ORDER: readonly WindClass[] = ['sheltered', 'moderate', 'exposed', 'very-exposed']
 const NOISE_ORDER: readonly NoiseBand[] = ['quiet', 'moderate', 'loud', 'very-loud', 'extreme']
 
 export function buildClimateView(
@@ -59,17 +63,24 @@ export function buildClimateView(
   studyArea: readonly Vec2[],
   buildings: readonly FootprintBuilding[],
   roads: readonly NoiseRoad[],
-  windFromBearingDeg: number,
+  flow: FlowResult | null,
   cellM = 10,
 ): ClimateView {
   if (mode === 'wind') {
-    const cells = computeWind(studyArea, buildings, windFromBearingDeg, cellM)
-    const { legend, assessed } = tally(cells.map((c) => c.cls), WIND_ORDER, WIND_CLASS_LABEL, WIND_COLOUR)
+    const cells = flow
+      ? sampleGrid(studyArea, cellM).flatMap((c) => {
+          const v = sampleVelocity(flow.frame, flow.velocity, flow.solid, [c.x, c.y])
+          return v ? [{ ...c, b: speedBand(Math.hypot(v[0], v[1])) }] : []
+        })
+      : []
     return {
-      overlay: { cellM, cells: cells.flatMap((c) => (c.cls ? [{ x: c.x, y: c.y, colour: WIND_COLOUR[c.cls] }] : [])) },
-      legend,
-      disclaimer: WIND_DISCLAIMER,
-      assessed,
+      overlay: { cellM, cells: cells.map((c) => ({ x: c.x, y: c.y, colour: c.b.colour })) },
+      legend: SPEED_BANDS.map((b) => {
+        const count = cells.filter((c) => c.b.band === b.band).length
+        return { label: b.label, colour: b.colour, count, share: cells.length ? count / cells.length : 0 }
+      }),
+      disclaimer: FLOW_DISCLAIMER,
+      assessed: cells.length,
     }
   }
   const cells = computeNoise(studyArea, roads, buildings, cellM)

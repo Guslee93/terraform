@@ -1,18 +1,9 @@
 import type { ClimateMode, ClimateView } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
-import { inputClass, labelClass } from '../ui/controls'
+import { labelClass } from '../ui/controls'
 
-/** Compass points offered for the wind direction (the direction the wind blows FROM). */
-export const WIND_DIRECTIONS: ReadonlyArray<{ label: string; bearing: number }> = [
-  { label: 'North', bearing: 0 },
-  { label: 'North-east', bearing: 45 },
-  { label: 'East', bearing: 90 },
-  { label: 'South-east', bearing: 135 },
-  { label: 'South', bearing: 180 },
-  { label: 'South-west', bearing: 225 },
-  { label: 'West', bearing: 270 },
-  { label: 'North-west', bearing: 315 },
-]
+const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const
+export const compassName = (bearing: number) => COMPASS[Math.round((((bearing % 360) + 360) % 360) / 45) % 8]!
 
 const MODES: ReadonlyArray<{ id: ClimateMode; label: string }> = [
   { id: 'off', label: 'Off' },
@@ -50,18 +41,29 @@ export function ClimatePanel({ mode, onModeChange, windFrom, onWindFromChange, v
 
       {mode === 'wind' && (
         <div className="mt-3">
-          <label htmlFor="wind-from" className={labelClass}>Wind blows from</label>
-          <select
+          <div className="flex items-center justify-between">
+            <label htmlFor="wind-from" className={labelClass}>Wind blows from</label>
+            <span className="flex items-center gap-2 text-body-sm tabular-nums text-ink">
+              {/* Arrow points where the wind goes (downwind). */}
+              <svg aria-hidden="true" viewBox="-10 -10 20 20" className="size-5" style={{ transform: `rotate(${windFrom + 180}deg)` }}>
+                <circle r="9" fill="none" stroke="currentColor" strokeOpacity="0.3" />
+                <path d="M0 6 V-6 M-3.5 -2.5 L0 -6 L3.5 -2.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {compassName(windFrom)} · {windFrom}°
+            </span>
+          </div>
+          <input
             id="wind-from"
+            type="range"
+            min={0}
+            max={345}
+            step={15}
             value={windFrom}
+            aria-valuetext={`${compassName(windFrom)}, ${windFrom} degrees`}
             onChange={(event) => onWindFromChange(Number(event.currentTarget.value))}
-            className={cn(inputClass, 'mt-1 font-sans')}
-          >
-            {WIND_DIRECTIONS.map((direction) => (
-              <option key={direction.bearing} value={direction.bearing}>{direction.label}</option>
-            ))}
-          </select>
-          <p className="mt-1 text-caption text-ink-secondary">Your choice, not a measured climate value.</p>
+            className="mt-2 w-full accent-ink"
+          />
+          <p className="mt-1 text-caption text-ink-secondary">Your choice, not a measured climate value. The flow updates as you drag.</p>
         </div>
       )}
 
@@ -73,10 +75,10 @@ export function ClimatePanel({ mode, onModeChange, windFrom, onWindFromChange, v
         <div className="mt-3">
           {view.assessed === 0 ? (
             <p className="text-body-sm text-ink-secondary">
-              {mode === 'noise' ? 'No mapped roads in this study area, so there is nothing to estimate.' : 'No open ground in this study area.'}
+              {mode === 'noise' ? 'No mapped roads in this study area, so there is nothing to estimate.' : 'Computing the wind flow…'}
             </p>
           ) : (
-            <ul aria-label={mode === 'wind' ? 'Wind exposure legend' : 'Noise legend'}>
+            <ul aria-label={mode === 'wind' ? 'Wind speed legend' : 'Noise legend'}>
               {view.legend.map((entry) => (
                 <li key={entry.label} className="flex min-h-8 items-center justify-between gap-3 text-body-sm text-ink">
                   <span className="flex items-center gap-2">

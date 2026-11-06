@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { Vec2 } from '../../lib/coordinates'
 import { sampleGrid } from './grid'
 import { computeNoise, noiseAt, noiseBand, SCREEN_LOSS_DB } from './noise'
-import { computeWind, exposureAt, windClass } from './wind'
 
 const road = (highway: string, centreline: Vec2[]) => ({ highway, centreline })
 // Primary road along the x-axis: 70 dB at 10 m by table.
@@ -69,28 +68,5 @@ describe('noise (hand-computed)', () => {
     expect(cells.find((c) => c.x === 15 && c.y === 15)?.band).toBe('very-loud')
     expect(noiseBand(44.9)).toBe('quiet')
     expect(noiseBand(75)).toBe('extreme')
-  })
-})
-
-describe('wind (hand-computed)', () => {
-  // Wind from the west (270°) so the ray runs toward −x.
-  it('is fully exposed in the open', () => {
-    expect(exposureAt(0, 0, 270, [])).toBe(1)
-  })
-  it('is fully sheltered 15 m behind a 20 m block (atan(20/15) = 53° > 20°)', () => {
-    expect(exposureAt(22, 0, 270, [block(0, 10, -5, 5, 20)])).toBe(0)
-  })
-  it('is barely sheltered 200 m behind a 10 m block: 1 − atan(10/200)/20°', () => {
-    expect(exposureAt(207, 0, 270, [block(0, 10, -5, 5, 10)])).toBeCloseTo(0.857, 3)
-  })
-  it('is open when the block is crosswind, and classes follow thresholds', () => {
-    expect(exposureAt(22, 0, 0, [block(0, 10, -5, 5, 20)])).toBe(1)
-    expect(windClass(0.1)).toBe('sheltered')
-    expect(windClass(0.9)).toBe('very-exposed')
-  })
-  it('gives no value inside buildings', () => {
-    const area: Vec2[] = [[0, 0], [20, 0], [20, 20], [0, 20]]
-    const cells = computeWind(area, [block(0, 10, 0, 10, 10)], 270)
-    expect(cells.find((c) => c.x === 5 && c.y === 5)?.exposure).toBeNull()
   })
 })

@@ -4,6 +4,7 @@ import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from 
 import { sunState } from '../../features/analysis/sun'
 import { buildClimateView, type ClimateMode } from '../../features/analysis/climateView'
 import { ClimatePanel } from './ClimatePanel'
+import { useWindFlow } from '../../features/analysis/useWindFlow'
 import { siteFacts } from '../../features/analysis/siteFacts'
 import { SiteFactsPanel } from './SiteFactsPanel'
 import { readTestBuilding, writeTestBuilding } from './studioMode'
@@ -122,10 +123,12 @@ export function StudioShell({
     }))
     return [...sitePackage.buildings.buildings, ...masses]
   }, [analysisDocument, sitePackage])
+  const studyArea = useMemo(() => (sitePackage ? normalizeRing(sitePackage.studyArea.polygon) : null), [sitePackage])
+  const windFlow = useWindFlow(studyArea, analysisBuildings, windFrom, climateMode === 'wind')
   const climateView = useMemo(() => {
-    if (!sitePackage || climateMode === 'off') return null
-    return buildClimateView(climateMode, normalizeRing(sitePackage.studyArea.polygon), analysisBuildings, sitePackage.roads, windFrom)
-  }, [sitePackage, climateMode, windFrom, analysisBuildings])
+    if (!sitePackage || !studyArea || climateMode === 'off') return null
+    return buildClimateView(climateMode, studyArea, analysisBuildings, sitePackage.roads, windFlow)
+  }, [sitePackage, studyArea, climateMode, windFlow, analysisBuildings])
   const facts = useMemo(() => sitePackage ? siteFacts(normalizeRing(sitePackage.studyArea.polygon), analysisBuildings) : null, [sitePackage, analysisBuildings])
   const metrics = useMemo(() => sitePackage
     ? scenarioMetrics(analysisDocument, normalizeRing(sitePackage.studyArea.polygon))
@@ -346,6 +349,7 @@ export function StudioShell({
                   annotations={annotations}
                   renderPreference={renderPreference}
                   climate={climateView?.overlay ?? null}
+                  windFlow={climateMode === 'wind' ? windFlow : null}
                 />
                 <CameraPresets active={cameraPreset} onSelect={requestCamera} />
               </>

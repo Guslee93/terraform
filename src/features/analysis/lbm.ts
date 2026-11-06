@@ -18,7 +18,7 @@ const OPP = [0, 3, 4, 1, 2, 7, 8, 5, 6]
 export type Lbm = {
   readonly nx: number
   readonly ny: number
-  readonly solid: Uint8Array
+  solid: Uint8Array
   readonly u0: number
   readonly omega: number
   f: Float32Array
@@ -28,6 +28,20 @@ export type Lbm = {
 function feq(k: number, rho: number, ux: number, uy: number): number {
   const eu = EX[k]! * ux + EY[k]! * uy
   return W[k]! * rho * (1 + 3 * eu + 4.5 * eu * eu - 1.5 * (ux * ux + uy * uy))
+}
+
+/** Density and velocity of cell i in a distribution buffer. */
+function moments(f: Float32Array, n: number, i: number): [number, number, number] {
+  let rho = 0
+  let mx = 0
+  let my = 0
+  for (let k = 0; k < 9; k++) {
+    const v = f[k * n + i]!
+    rho += v
+    mx += v * EX[k]!
+    my += v * EY[k]!
+  }
+  return [rho, mx / rho, my / rho]
 }
 
 export function createLbm(nx: number, ny: number, solid: Uint8Array, u0 = 0.1, tau = 0.6): Lbm {
@@ -70,16 +84,21 @@ export function stepLbm(s: Lbm, steps = 1): void {
         }
       }
     }
-    // Open boundaries: zero-gradient sides and outlet, equilibrium inlet at x = 0.
+    // Open boundaries. Sides: zero-gradient. Inlet (x = 0): equilibrium at u0. Outlet: density pinned
+    // to 1 with the neighbour's velocity, which anchors pressure (a zero-gradient outlet let mass
+    // pile up and stall the flow in dense blocks).
     for (let k = 0; k < 9; k++) {
       const o = k * n
       for (let x = 0; x < nx; x++) {
         tmp[o + x] = tmp[o + nx + x]!
         tmp[o + (ny - 1) * nx + x] = tmp[o + (ny - 2) * nx + x]!
       }
-      for (let y = 0; y < ny; y++) {
-        tmp[o + y * nx + nx - 1] = tmp[o + y * nx + nx - 2]!
-        tmp[o + y * nx] = feq(k, 1, u0, 0)
+    }
+    for (let y = 0; y < ny; y++) {
+      const [, uxOut, uyOut] = moments(tmp, n, y * nx + nx - 2)
+      for (let k = 0; k < 9; k++) {
+        tmp[k * n + y * nx] = feq(k, 1, u0, 0)
+        tmp[k * n + y * nx + nx - 1] = feq(k, 1, uxOut, uyOut)
       }
     }
     s.f = tmp
@@ -139,16 +158,60 @@ export function gridToWorld(fr: FlowFrame, g: Vec2): Vec2 {
   return [fr.centre[0] + along * fr.flow[0] - across * fr.flow[1], fr.centre[1] + along * fr.flow[1] + across * fr.flow[0]]
 }
 
+/** Columns kept free of obstacles at the inlet and outlet so the boundary conditions stay stable. */
+const EDGE_CELLS = 3
+
 /** Obstacle mask: a cell is solid when its centre falls inside any footprint. Heights ignored here (§6.3 rules). */
 export function rasterize(fr: FlowFrame, buildings: readonly FootprintBuilding[]): Uint8Array {
   const solid = new Uint8Array(fr.nx * fr.ny)
-  for (let y = 0; y < fr.ny; y++) {
-    for (let x = 0; x < fr.nx; x++) {
-      const p = gridToWorld(fr, [x + 0.5, y + 0.5])
-      if (buildings.some((b) => pointInPolygon(p, b.footprint))) solid[y * fr.nx + x] = 1
+  for (const b of buildings) {
+    // Only test cells inside the footprint's grid-space bounding box.
+    const g = b.footprint.map((p) => worldToGrid(fr, p))
+    const x0 = Math.max(EDGE_CELLS, Math.floor(Math.min(...g.map((q) => q[0]))))
+    const x1 = Math.min(fr.nx - 1 - EDGE_CELLS, Math.ceil(Math.max(...g.map((q) => q[0]))))
+    const y0 = Math.max(0, Math.floor(Math.min(...g.map((q) => q[1]))))
+    const y1 = Math.min(fr.ny - 1, Math.ceil(Math.max(...g.map((q) => q[1]))))
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        if (!solid[y * fr.nx + x] && pointInPolygon(gridToWorld(fr, [x + 0.5, y + 0.5]), b.footprint)) solid[y * fr.nx + x] = 1
+      }
     }
   }
   return solid
+}
+
+/** Velocity / u0 per cell in grid axes, interleaved [ux, uy, ...]; zero inside solids. */
+export function velocityField(s: Lbm): Float32Array {
+  const n = s.nx * s.ny
+  const out = new Float32Array(2 * n)
+  for (let i = 0; i < n; i++) {
+    if (s.solid[i]) continue
+    let rho = 0
+    let mx = 0
+    let my = 0
+    for (let k = 0; k < 9; k++) {
+      const v = s.f[k * n + i]!
+      rho += v
+      mx += v * EX[k]!
+      my += v * EY[k]!
+    }
+    out[2 * i] = mx / rho / s.u0
+    out[2 * i + 1] = my / rho / s.u0
+  }
+  return out
+}
+
+/** World-frame (east, north) velocity ratio at a point; null outside the domain or inside a building. */
+export function sampleVelocity(fr: FlowFrame, velocity: Float32Array, solid: Uint8Array, p: Vec2): Vec2 | null {
+  const [gx, gy] = worldToGrid(fr, p)
+  const x = Math.floor(gx)
+  const y = Math.floor(gy)
+  if (x < 0 || y < 0 || x >= fr.nx || y >= fr.ny) return null
+  const i = y * fr.nx + x
+  if (solid[i]) return null
+  const a = velocity[2 * i]!
+  const c = velocity[2 * i + 1]!
+  return [a * fr.flow[0] - c * fr.flow[1], a * fr.flow[1] + c * fr.flow[0]]
 }
 
 /** Nearest-cell speed ratio at a world point; null outside the domain or inside a building. */
