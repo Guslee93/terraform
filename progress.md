@@ -475,3 +475,10 @@
 - Claude fix: Codex hid the field after every edit (blank heatmap mid-drag). Now the live field always shows; only a fresh settled field can become the baseline. Worker requests throttled (≤ every 80 ms) instead of debounced so a continuous drag re-solves live.
 - MiniMax X3: six canonical cases + stability in `wind-validation.test.ts`; `docs/research/wind-validation-note.md`. Case 2 (slab wake longer than block) not reproduced — documented 2D limit. Also `docs/research/forma-wind-notes.md` (X2).
 - Verification: lint ✅ · 928 tests ✅ · build ✅ · browser: streamlines on Compact Infill (vortex in court, gap jet), baseline → Delta 100 % "No change". Delta after a geometry edit covered by unit tests only.
+
+### Wind gate (2026-11-06, Claude)
+- e2e: 53 pass / 4 skip / 3 fail before fixes. Failures were from the analysis-first pivot, not wind: smoke expected the old landing headline; m5-guide needs the test-building opt-in (the guide belongs to "Test a building"). m3-rendering passes alone (load flake). All three pass after the fix.
+- Solver fix #2: zero-gradient side boundaries let a jet pour in sideways on small analysis-circle domains (Sloped Edge: 38 % of the circle > 1.3×, max 2.2×). Sides are now a uniform free stream; obstacles kept 3 cells off every edge → 1 % > 1.3×.
+- Validation: cases 4 and 5 used tight domains (wind-tunnel blockage). Re-run with app-like margins; the gap now reads 0.87× (no channelling), consistent with passage-flow literature. Assertion and note revised honestly, not tuned.
+- Browser: Sloped Edge comfort at 6 m/s plausible (strolling/walking open ground, standing in the lee). Baseline → 38 m tower drawn upwind → Delta shows windier shoulders and calm wake (18 % much calmer, 13 % much windier). Test tower deleted afterwards.
+- lint ✅ · 928 tests ✅ · build ✅. Screenshots for the case study not yet captured.

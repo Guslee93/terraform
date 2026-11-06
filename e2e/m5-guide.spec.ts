@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test'
 
-test.use({ storageState: { cookies: [], origins: [] } })
+// Fresh visit (guide not dismissed) but with the building tools on: the guide belongs to "Test a building".
+test.use({
+  storageState: {
+    cookies: [],
+    origins: [{ origin: 'http://127.0.0.1:5173', localStorage: [{ name: 'terraform:test-building:v1', value: 'true' }] }],
+  },
+})
 
 test('first visit shows the studio guide; Esc skips it and it stays gone after reload', async ({ page }) => {
   await page.goto('/studio/compact-infill')

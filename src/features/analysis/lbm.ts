@@ -84,14 +84,15 @@ export function stepLbm(s: Lbm, steps = 1): void {
         }
       }
     }
-    // Open boundaries. Sides: zero-gradient. Inlet (x = 0): equilibrium at u0. Outlet: density pinned
-    // to 1 with the neighbour's velocity, which anchors pressure (a zero-gradient outlet let mass
-    // pile up and stall the flow in dense blocks).
+    // Open boundaries. Sides: far-field free stream (equilibrium at u0); zero-gradient sides let jets
+    // pour in sideways on small domains. Inlet (x = 0): equilibrium at u0. Outlet: density pinned to 1
+    // with the neighbour's velocity, which anchors pressure (a zero-gradient outlet let mass pile up).
     for (let k = 0; k < 9; k++) {
       const o = k * n
+      const far = feq(k, 1, u0, 0)
       for (let x = 0; x < nx; x++) {
-        tmp[o + x] = tmp[o + nx + x]!
-        tmp[o + (ny - 1) * nx + x] = tmp[o + (ny - 2) * nx + x]!
+        tmp[o + x] = far
+        tmp[o + (ny - 1) * nx + x] = far
       }
     }
     for (let y = 0; y < ny; y++) {
@@ -158,7 +159,7 @@ export function gridToWorld(fr: FlowFrame, g: Vec2): Vec2 {
   return [fr.centre[0] + along * fr.flow[0] - across * fr.flow[1], fr.centre[1] + along * fr.flow[1] + across * fr.flow[0]]
 }
 
-/** Columns kept free of obstacles at the inlet and outlet so the boundary conditions stay stable. */
+/** Cells kept free of obstacles along every domain edge so the boundary conditions stay stable. */
 const EDGE_CELLS = 3
 
 /** Obstacle mask: a cell is solid when its centre falls inside any footprint. Heights ignored here (§6.3 rules). */
@@ -169,8 +170,8 @@ export function rasterize(fr: FlowFrame, buildings: readonly FootprintBuilding[]
     const g = b.footprint.map((p) => worldToGrid(fr, p))
     const x0 = Math.max(EDGE_CELLS, Math.floor(Math.min(...g.map((q) => q[0]))))
     const x1 = Math.min(fr.nx - 1 - EDGE_CELLS, Math.ceil(Math.max(...g.map((q) => q[0]))))
-    const y0 = Math.max(0, Math.floor(Math.min(...g.map((q) => q[1]))))
-    const y1 = Math.min(fr.ny - 1, Math.ceil(Math.max(...g.map((q) => q[1]))))
+    const y0 = Math.max(EDGE_CELLS, Math.floor(Math.min(...g.map((q) => q[1]))))
+    const y1 = Math.min(fr.ny - 1 - EDGE_CELLS, Math.ceil(Math.max(...g.map((q) => q[1]))))
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         if (!solid[y * fr.nx + x] && pointInPolygon(gridToWorld(fr, [x + 0.5, y + 0.5]), b.footprint)) solid[y * fr.nx + x] = 1
