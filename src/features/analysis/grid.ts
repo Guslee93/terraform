@@ -24,3 +24,11 @@ export type FootprintBuilding = { readonly height: number; readonly footprint: r
 export function insideAnyBuilding(x: number, y: number, buildings: readonly FootprintBuilding[]) {
   return buildings.some((b) => pointInPolygon([x, y], b.footprint))
 }
+
+/** Regular n-gon approximating a circle (counter-clockwise, local ENU metres). */
+export function circlePolygon(centre: Vec2, radius: number, n = 48): Vec2[] {
+  return Array.from({ length: n }, (_, i): Vec2 => {
+    const a = (2 * Math.PI * i) / n
+    return [centre[0] + radius * Math.cos(a), centre[1] + radius * Math.sin(a)]
+  })
+}

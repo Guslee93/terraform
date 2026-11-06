@@ -464,3 +464,8 @@
 - UI: Speed / Activity toggle, reference wind at 10 m (2–15 m/s), downwash checkbox (applied in the worker via `downwashBoost`). Activity bands are labelled "at this wind only — not an annual comfort rating".
 - Annual Lawson not shown: needs a measured wind rose per site; no invented climate data.
 - Verification: lint ✅ · unit tests ✅ · build ✅ · browser on Sloped Edge (activity bands at 6 m/s). Downwash verified by unit test (no tall building on curated sites).
+
+### Wind C20 — analysis circle (2026-11-06, Claude; Codex unavailable)
+- Forma-style analysis circle: flow solved only around it (160² grid over 1.4 × r → ≈ 1.8 m cells at r = 100 m, vs ≈ 3 m for the whole site). Heatmap (4 m cells) and particles clipped to the circle; ring + centre tick on the terrain; radius slider 60–250 m; "Move circle" then click the ground, Esc cancels.
+- Visibly sharper result on Compact Infill: jet through the western gap with swirls downstream.
+- Verification: lint ✅ · unit tests ✅ · build ✅ · browser: place/move circle on Compact Infill. Edge fade not done (instanced colours have no per-cell alpha).

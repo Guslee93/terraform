@@ -5,6 +5,7 @@ import { sunState } from '../../features/analysis/sun'
 import { buildClimateView, DEFAULT_WIND, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
 import { ClimatePanel } from './ClimatePanel'
 import { useWindFlow } from '../../features/analysis/useWindFlow'
+import { circlePolygon } from '../../features/analysis/grid'
 import { siteFacts } from '../../features/analysis/siteFacts'
 import { SiteFactsPanel } from './SiteFactsPanel'
 import { readTestBuilding, writeTestBuilding } from './studioMode'
@@ -124,11 +125,20 @@ export function StudioShell({
     return [...sitePackage.buildings.buildings, ...masses]
   }, [analysisDocument, sitePackage])
   const studyArea = useMemo(() => (sitePackage ? normalizeRing(sitePackage.studyArea.polygon) : null), [sitePackage])
-  const windFlow = useWindFlow(studyArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash)
+  const [placingCircle, setPlacingCircle] = useState(false)
+  const windCentre = useMemo(() => wind.centre ?? (studyArea ? ringCentroid(studyArea) : null), [wind.centre, studyArea])
+  const windArea = useMemo(() => (windCentre ? circlePolygon(windCentre, wind.radius) : null), [windCentre, wind.radius])
+  const windFlow = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash)
+  useEffect(() => {
+    if (!placingCircle) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setPlacingCircle(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [placingCircle])
   const climateView = useMemo(() => {
-    if (!sitePackage || !studyArea || climateMode === 'off') return null
-    return buildClimateView(climateMode, studyArea, analysisBuildings, sitePackage.roads, windFlow, wind)
-  }, [sitePackage, studyArea, climateMode, windFlow, analysisBuildings, wind])
+    if (!sitePackage || !studyArea || !windArea || climateMode === 'off') return null
+    return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, wind)
+  }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind])
   const facts = useMemo(() => sitePackage ? siteFacts(normalizeRing(sitePackage.studyArea.polygon), analysisBuildings) : null, [sitePackage, analysisBuildings])
   const metrics = useMemo(() => sitePackage
     ? scenarioMetrics(analysisDocument, normalizeRing(sitePackage.studyArea.polygon))
@@ -350,6 +360,8 @@ export function StudioShell({
                   renderPreference={renderPreference}
                   climate={climateView?.overlay ?? null}
                   windFlow={climateMode === 'wind' ? windFlow : null}
+                  windCircle={climateMode === 'wind' && windCentre ? { centre: windCentre, radius: wind.radius } : null}
+                  onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
                 />
                 <CameraPresets active={cameraPreset} onSelect={requestCamera} />
               </>
@@ -454,7 +466,7 @@ export function StudioShell({
             ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
             : shortDate(sunTime.date)}
           climate={sitePackage ? (
-            <ClimatePanel mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} view={climateView} />
+            <ClimatePanel mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView} />
           ) : null}
           climateMeta={climateMode === 'off' ? 'Off' : climateMode === 'wind' ? 'Wind' : 'Noise'}
           metrics={metrics}

@@ -4,7 +4,7 @@ import { BufferAttribute, BufferGeometry, Color } from 'three'
 import { speedBand } from '../features/analysis/climateView'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import { sampleVelocity } from '../features/analysis/lbm'
-import { enuToThreeXyz } from '../lib/coordinates'
+import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 
 // ponytail: fixed particle count; make it adapt to frame time if low-end GPUs stutter.
 const COUNT = 2500
@@ -17,7 +17,11 @@ const noRaycast = () => null
 const reducedMotion = () => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /** Short moving segments advected through the 2D flow. Under reduced motion they stay still as flow arrows. */
-export function WindParticles({ flow, heightAt }: { flow: FlowResult; heightAt: (east: number, north: number) => number }) {
+export function WindParticles({ flow, circle, heightAt }: {
+  flow: FlowResult
+  circle: { readonly centre: Vec2; readonly radius: number }
+  heightAt: (east: number, north: number) => number
+}) {
   const [still] = useState(reducedMotion)
   const state = useMemo(() => ({ pos: new Float32Array(COUNT * 2), age: new Float32Array(COUNT) }), [])
   const geometry = useMemo(() => {
@@ -29,12 +33,16 @@ export function WindParticles({ flow, heightAt }: { flow: FlowResult; heightAt: 
   useEffect(() => () => geometry.dispose(), [geometry])
 
   const { frame } = flow
-  const half = (frame.nx * frame.dx) / 2 / 1.3 // spawn over the study area, not the whole margin
+  const { centre, radius } = circle
+  // Uniform over the analysis circle; particles that leave it respawn inside.
   const spawn = (i: number) => {
-    state.pos[2 * i] = frame.centre[0] + (Math.random() * 2 - 1) * half
-    state.pos[2 * i + 1] = frame.centre[1] + (Math.random() * 2 - 1) * half
+    const a = Math.random() * 2 * Math.PI
+    const r = radius * Math.sqrt(Math.random())
+    state.pos[2 * i] = centre[0] + r * Math.cos(a)
+    state.pos[2 * i + 1] = centre[1] + r * Math.sin(a)
     state.age[i] = Math.random() * LIFE_S
   }
+  const outside = (x: number, y: number) => Math.hypot(x - centre[0], y - centre[1]) > radius
 
   const colour = useMemo(() => new Color(), [])
   const write = (dt: number) => {
@@ -43,7 +51,7 @@ export function WindParticles({ flow, heightAt }: { flow: FlowResult; heightAt: 
     for (let i = 0; i < COUNT; i++) {
       let v = sampleVelocity(frame, flow.velocity, flow.solid, [state.pos[2 * i]!, state.pos[2 * i + 1]!])
       state.age[i]! += dt
-      if (!v || state.age[i]! > LIFE_S || Math.hypot(v[0], v[1]) < 0.02) {
+      if (!v || state.age[i]! > LIFE_S || Math.hypot(v[0], v[1]) < 0.02 || outside(state.pos[2 * i]!, state.pos[2 * i + 1]!)) {
         spawn(i)
         v = sampleVelocity(frame, flow.velocity, flow.solid, [state.pos[2 * i]!, state.pos[2 * i + 1]!]) ?? [0, 0]
       }

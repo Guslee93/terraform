@@ -17,8 +17,14 @@ export type WindSettings = {
   readonly refSpeed: number
   /** Apply the rule-based downwash boost at tall-building bases. */
   readonly downwash: boolean
+  /** Analysis circle: the flow is solved only around it, at finer resolution. Centre null = study-area centre. */
+  readonly centre: Vec2 | null
+  readonly radius: number
 }
-export const DEFAULT_WIND: WindSettings = { from: 270, display: 'ratio', refSpeed: 6, downwash: true }
+export const DEFAULT_WIND: WindSettings = { from: 270, display: 'ratio', refSpeed: 6, downwash: true, centre: null, radius: 100 }
+export const CIRCLE_RADIUS = { min: 60, max: 250, step: 10 } as const
+/** Heatmap cell size inside the analysis circle (m). */
+export const WIND_CELL_M = 4
 
 type Band = { readonly band: string; readonly below: number; readonly label: string; readonly colour: string }
 const pick = (bands: readonly Band[], value: number) => bands.find((b) => value < b.below)!
@@ -100,13 +106,13 @@ export function buildClimateView(
     const bands = wind.display === 'activity' ? ACTIVITY_BANDS : SPEED_BANDS
     const scale = wind.display === 'activity' ? wind.refSpeed : 1
     const cells = flow
-      ? sampleGrid(studyArea, cellM).flatMap((c) => {
+      ? sampleGrid(studyArea, WIND_CELL_M).flatMap((c) => {
           const v = sampleVelocity(flow.frame, flow.velocity, flow.solid, [c.x, c.y])
           return v ? [{ ...c, b: pick(bands, Math.hypot(v[0], v[1]) * scale) }] : []
         })
       : []
     return {
-      overlay: { cellM, cells: cells.map((c) => ({ x: c.x, y: c.y, colour: c.b.colour })) },
+      overlay: { cellM: WIND_CELL_M, cells: cells.map((c) => ({ x: c.x, y: c.y, colour: c.b.colour })) },
       legend: bands.map((b) => {
         const count = cells.filter((c) => c.b.band === b.band).length
         return { label: b.label, colour: b.colour, count, share: cells.length ? count / cells.length : 0 }

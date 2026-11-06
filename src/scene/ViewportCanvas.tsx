@@ -19,6 +19,7 @@ import type { EnvelopeConstraints, EnvelopeResult } from '../features/analysis/c
 import { ConstraintLayer } from './ConstraintLayer'
 import { ClimateLayer } from './ClimateLayer'
 import { WindParticles } from './WindParticles'
+import { AnalysisCircle } from './AnalysisCircle'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import type { ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
@@ -70,6 +71,10 @@ type ViewportProps = {
   climate?: ClimateOverlay | null
   /** Live 2D wind flow for the particle layer; null when wind is off. */
   windFlow?: FlowResult | null
+  /** Wind analysis circle (ring + particle bounds); null when wind is off. */
+  windCircle?: { readonly centre: Vec2; readonly radius: number } | null
+  /** When set, the next ground click picks a point (e.g. placing the wind circle) instead of editing. */
+  onPickPoint?: (point: Vec2) => void
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
@@ -332,6 +337,8 @@ export function ViewportCanvas({
   renderPreference,
   climate = null,
   windFlow = null,
+  windCircle = null,
+  onPickPoint,
 }: ViewportProps) {
   const controlsRef = useRef<OrbitControlsHandle>(null)
   const [webgl] = useState(detectWebGL)
@@ -349,6 +356,7 @@ export function ViewportCanvas({
   )
 
   const onGroundClick = (point: Vec2, elevation: number) => {
+    if (onPickPoint) return onPickPoint(point)
     if (!editable) return
     if (drawing) dispatch({ type: 'pointerDown', point, elevation })
     else dispatch({ type: 'select', selection: EMPTY_SELECTION })
@@ -400,7 +408,8 @@ export function ViewportCanvas({
             {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
             {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
             {climate && layers.terrain && <ClimateLayer overlay={climate} heightAt={heightAt} />}
-            {windFlow && layers.terrain && <WindParticles flow={windFlow} heightAt={heightAt} />}
+            {windFlow && windCircle && layers.terrain && <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} />}
+            {windCircle && layers.terrain && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}
 
             <group name="live-scenario">
             {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}

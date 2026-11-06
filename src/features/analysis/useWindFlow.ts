@@ -4,9 +4,13 @@ import type { FlowRequest, FlowResult } from './flowRunner'
 import type { FootprintBuilding } from './grid'
 import { flowFrame } from './lbm'
 
+/** Grid for the analysis circle: 160² over 1.4 × the radius ≈ 1.75 m cells at r = 100 m. */
+const GRID = 160
+const MARGIN = 1.4
+
 /** Live 2D flow from the worker; null while off, before the first field, or where Workers are unavailable. */
 export function useWindFlow(
-  studyArea: readonly Vec2[] | null,
+  area: readonly Vec2[] | null,
   buildings: readonly FootprintBuilding[],
   fromBearingDeg: number,
   enabled: boolean,
@@ -17,8 +21,8 @@ export function useWindFlow(
   const lastFrame = useRef<unknown>(null)
   const nextId = useRef(0)
   const frame = useMemo(
-    () => (enabled && studyArea && studyArea.length >= 3 ? flowFrame(studyArea, fromBearingDeg, 128, 128, 1.3) : null),
-    [enabled, studyArea, fromBearingDeg],
+    () => (enabled && area && area.length >= 3 ? flowFrame(area, fromBearingDeg, GRID, GRID, MARGIN) : null),
+    [enabled, area, fromBearingDeg],
   )
 
   useEffect(() => {

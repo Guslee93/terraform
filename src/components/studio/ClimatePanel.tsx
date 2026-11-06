@@ -1,4 +1,4 @@
-import type { ClimateMode, ClimateView, WindDisplay, WindSettings } from '../../features/analysis/climateView'
+import { CIRCLE_RADIUS, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { labelClass } from '../ui/controls'
 
@@ -17,6 +17,8 @@ type ClimatePanelProps = {
   wind: WindSettings
   onWindChange: (next: WindSettings) => void
   view: ClimateView | null
+  placingCircle?: boolean
+  onPlaceCircle?: (placing: boolean) => void
 }
 
 const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
@@ -24,7 +26,7 @@ const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
   { id: 'activity', label: 'Activity' },
 ]
 
-export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view }: ClimatePanelProps) {
+export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle }: ClimatePanelProps) {
   const windFrom = wind.from
   const set = (patch: Partial<WindSettings>) => onWindChange({ ...wind, ...patch })
   return (
@@ -71,6 +73,38 @@ export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view }: C
             className="mt-2 w-full accent-ink"
           />
           <p className="mt-1 text-caption text-ink-secondary">Your choice, not a measured climate value. The flow updates as you drag.</p>
+
+          <div className="mt-3">
+            <div className="flex items-center justify-between">
+              <label htmlFor="wind-radius" className={labelClass}>Analysis circle</label>
+              <span className="text-body-sm tabular-nums text-ink">r = {wind.radius} m</span>
+            </div>
+            <input
+              id="wind-radius"
+              type="range"
+              min={CIRCLE_RADIUS.min}
+              max={CIRCLE_RADIUS.max}
+              step={CIRCLE_RADIUS.step}
+              value={wind.radius}
+              aria-valuetext={`radius ${wind.radius} metres`}
+              onChange={(event) => set({ radius: Number(event.currentTarget.value) })}
+              className="mt-2 w-full accent-ink"
+            />
+            {onPlaceCircle && (
+              <button
+                type="button"
+                aria-pressed={placingCircle}
+                onClick={() => onPlaceCircle(!placingCircle)}
+                className={cn(
+                  'mt-2 min-h-8 w-full rounded-chip border border-line text-body-sm',
+                  placingCircle ? 'bg-ink text-ink-on-inverse' : 'bg-surface text-ink',
+                )}
+              >
+                {placingCircle ? 'Click the ground to place · Esc to cancel' : 'Move circle'}
+              </button>
+            )}
+            <p className="mt-1 text-caption text-ink-secondary">The flow is solved only around this circle, at about {Math.round((wind.radius * 2 * 1.4) / 160 * 10) / 10} m resolution.</p>
+          </div>
 
           <div role="group" aria-label="Wind map shows" className="mt-3 flex gap-1">
             {DISPLAYS.map((option) => (
