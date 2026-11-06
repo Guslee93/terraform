@@ -10,7 +10,7 @@ Edit only: `ClimatePanel.tsx` (+ test), `StudioShell.tsx`, `ViewportCanvas.tsx`,
 ## Items
 1. **Timeline (domain).** `windDemo.ts`, pure: `demoFrame(tSeconds)` returns `{ from: number; orbitDeg: number; streamlines: boolean; done: boolean }` for a 20 s script:
    - 0–3 s: particles only, wind from 270°.
-   - 3–15 s: the direction sweeps 270° → 360°+90° in 15° steps, one step every 1.5 s, so each step settles visibly.
+   - 3–15 s: the direction sweeps 270° → 360°+90° in 15° steps, one step per second (amended: 1.5 s steps did not fit the 12 s window).
    - 15–20 s: streamlines on.
    - Orbit: 0 → 40° across the whole run, eased in and out.
    - `done` at 20 s.

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
 import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
-import { ClimatePanel } from './ClimatePanel'
+import { ClimatePanel, useWindDemo } from './ClimatePanel'
 import { useWindFlow } from '../../features/analysis/useWindFlow'
 import { circlePolygon } from '../../features/analysis/grid'
 import { siteFacts } from '../../features/analysis/siteFacts'
@@ -109,6 +109,11 @@ export function StudioShell({
   const [climateMode, setClimateMode] = useState<ClimateMode>('noise')
   const [wind, setWind] = useState<WindSettings>(DEFAULT_WIND)
   const [streamlines, setStreamlines] = useState(false)
+  const windDemo = useWindDemo(wind, streamlines, setWind, setStreamlines)
+  const stopWindDemo = windDemo.stop
+  useEffect(() => {
+    if (climateMode !== 'wind') stopWindDemo()
+  }, [climateMode, stopWindDemo])
   const [baseline, setBaseline] = useState<WindBaseline | null>(null)
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
@@ -227,9 +232,10 @@ export function StudioShell({
   }
 
   const requestCamera = useCallback((preset: CameraPresetId) => {
+    stopWindDemo()
     setCameraPreset(preset)
     setCameraNonce((value) => value + 1)
-  }, [])
+  }, [stopWindDemo])
 
   const toggleTestBuilding = () => {
     const next = !testBuilding
@@ -303,7 +309,9 @@ export function StudioShell({
     : null, [compareA, compareB, sitePackage, envelopeSite, cameraPreset, layers, sunTime])
   const closeCompare = () => { setComparePair(null); compareTrigger.current?.focus() }
   return (
-    <div ref={studioRoot} className="flex min-h-dvh flex-col bg-app text-ink lg:h-dvh">
+    <div ref={studioRoot} data-demo={windDemo.playing ? 'playing' : undefined} className="flex min-h-dvh flex-col bg-app text-ink lg:h-dvh">
+      <style>{`[data-demo="playing"] aside[aria-label="Inspector"] { scrollbar-width: none; }
+        [data-demo="playing"] aside[aria-label="Inspector"]::-webkit-scrollbar { display: none; }`}</style>
       <StudioTopBar
         site={site}
         scenario={scenario}
@@ -371,6 +379,8 @@ export function StudioShell({
                   annotations={annotations}
                   renderPreference={renderPreference}
                   climate={climateView?.overlay ?? null}
+                  demoOrbitDeg={windDemo.orbitDeg}
+                  onStopDemo={windDemo.stop}
                   windStreamlines={streamlines}
                   windFlow={climateMode === 'wind' ? windFlow : null}
                   windCircle={climateMode === 'wind' && windCentre ? { centre: windCentre, radius: wind.radius } : null}
@@ -479,7 +489,7 @@ export function StudioShell({
             ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
             : shortDate(sunTime.date)}
           climate={sitePackage ? (
-            <ClimatePanel mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
+            <ClimatePanel demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
               streamlines={streamlines} onStreamlinesChange={setStreamlines}
               baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled}
               onSetBaseline={() => { if (freshFlow?.settled && windCentre) setBaseline(captureBaseline(freshFlow, { centre: windCentre, radius: wind.radius }, wind.from)) }}

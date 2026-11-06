@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { demoFrame } from '../../features/analysis/windDemo'
 import { CIRCLE_RADIUS, DELTA_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { labelClass } from '../ui/controls'
@@ -11,7 +13,60 @@ const MODES: ReadonlyArray<{ id: ClimateMode; label: string }> = [
   { id: 'noise', label: 'Noise' },
 ]
 
+/** Own the temporary settings so every exit follows the same restore path. */
+export function useWindDemo(wind: WindSettings, streamlines: boolean, onWindChange: (next: WindSettings) => void, onStreamlinesChange: (next: boolean) => void) {
+  const [orbitDeg, setOrbitDeg] = useState<number | null>(null)
+  const saved = useRef<{ wind: WindSettings; streamlines: boolean } | null>(null)
+  const request = useRef(0)
+  const stop = useCallback(() => {
+    cancelAnimationFrame(request.current)
+    const previous = saved.current
+    saved.current = null
+    if (previous) {
+      onWindChange(previous.wind)
+      onStreamlinesChange(previous.streamlines)
+      setOrbitDeg(null)
+    }
+  }, [onWindChange, onStreamlinesChange])
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!saved.current) return
+      // Prevent Enter/Space on the focused demo button from starting it again.
+      event.preventDefault()
+      stop()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => {
+      window.removeEventListener('keydown', onKey, true)
+      stop()
+    }
+  }, [stop])
+  const toggle = () => {
+    if (saved.current) return stop()
+    saved.current = { wind, streamlines }
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const started = performance.now()
+    let lastFrom = -1
+    let lastStreamlines: boolean | undefined
+    const tick = (now: number) => {
+      const frame = demoFrame((now - started) / 1000, reduced)
+      if (frame.done) return stop()
+      const from = frame.from % 360
+      if (from !== lastFrom) onWindChange({ ...wind, from })
+      if (frame.streamlines !== lastStreamlines) onStreamlinesChange(frame.streamlines)
+      lastFrom = from
+      lastStreamlines = frame.streamlines
+      setOrbitDeg(frame.orbitDeg)
+      request.current = requestAnimationFrame(tick)
+    }
+    tick(started)
+  }
+  return { playing: orbitDeg !== null, orbitDeg, toggle, stop }
+}
+
 type ClimatePanelProps = {
+  demoPlaying?: boolean
+  onToggleDemo?: () => void
   mode: ClimateMode
   onModeChange: (mode: ClimateMode) => void
   wind: WindSettings
@@ -33,7 +88,7 @@ const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
   { id: 'ratio', label: 'Direction' },
 ]
 
-export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
+export function ClimatePanel({ demoPlaying = false, onToggleDemo, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
   const windFrom = wind.from
   const set = (patch: Partial<WindSettings>) => onWindChange({ ...wind, ...patch })
   return (
@@ -57,6 +112,7 @@ export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view, pla
 
       {mode === 'wind' && (
         <div className="mt-3">
+          {onToggleDemo && <button type="button" aria-pressed={demoPlaying} onClick={onToggleDemo} className={cn('mb-3 min-h-8 rounded-chip border border-line px-2 text-body-sm', demoPlaying ? 'bg-ink text-ink-on-inverse' : 'bg-surface text-ink')}>{demoPlaying ? 'Stop demo' : 'Play demo'}</button>}
           <div className="flex items-center justify-between">
             <label htmlFor="wind-from" className={labelClass}>Wind blows from</label>
             <span className="flex items-center gap-2 text-body-sm tabular-nums text-ink">

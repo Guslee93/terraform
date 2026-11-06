@@ -1,8 +1,8 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, NeutralToneMapping } from 'three'
+import { DoubleSide, EdgesGeometry, NeutralToneMapping, Vector3 } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import { contourSegments } from '../features/sites/contours'
@@ -73,6 +73,8 @@ type ViewportProps = {
   /** Live 2D wind flow for the particle layer; null when wind is off. */
   windFlow?: FlowResult | null
   windStreamlines?: boolean
+  demoOrbitDeg?: number | null
+  onStopDemo?: () => void
   /** Wind analysis circle (ring + particle bounds); null when wind is off. */
   windCircle?: { readonly centre: Vec2; readonly radius: number } | null
   /** When set, the next ground click picks a point (e.g. placing the wind circle) instead of editing. */
@@ -321,6 +323,34 @@ function AmbientOcclusion({ profile }: { profile: RenderProfile }) {
   )
 }
 
+function WindDemoCamera({ orbitDeg, controlsRef }: { orbitDeg: number | null; controlsRef: RefObject<OrbitControlsHandle | null> }) {
+  const { camera } = useThree()
+  const saved = useRef<{ position: Vector3; target: Vector3 } | null>(null)
+  const playing = orbitDeg !== null
+  useLayoutEffect(() => {
+    const controls = controlsRef.current
+    if (!playing || !controls) return
+    const previous = { position: camera.position.clone(), target: controls.target.clone() }
+    saved.current = previous
+    return () => {
+      camera.position.copy(previous.position)
+      controls.target.copy(previous.target)
+      controls.update()
+      saved.current = null
+    }
+  }, [playing, camera, controlsRef])
+  useFrame(() => {
+    const controls = controlsRef.current
+    const previous = saved.current
+    if (orbitDeg === null || !previous || !controls) return
+    camera.position.copy(previous.position).sub(previous.target)
+      .applyAxisAngle(new Vector3(0, 1, 0), orbitDeg * Math.PI / 180).add(previous.target)
+    controls.target.copy(previous.target)
+    controls.update()
+  })
+  return null
+}
+
 export function ViewportCanvas({
   snapshotRequest,
   onSnapshot,
@@ -340,6 +370,8 @@ export function ViewportCanvas({
   climate = null,
   windFlow = null,
   windStreamlines = false,
+  demoOrbitDeg = null,
+  onStopDemo,
   windCircle = null,
   onPickPoint,
 }: ViewportProps) {
@@ -384,6 +416,7 @@ export function ViewportCanvas({
         <SceneErrorBoundary>
           <Canvas
             key={manifest.id}
+            onPointerDownCapture={onStopDemo}
             // PCF + shadow-radius: three r186 removed PCFSoftShadowMap.
             shadows={RENDER_PROFILES[profile].shadows ? 'percentage' : false}
             onCreated={({ gl }) => setRendererName(webglRendererName(gl))}
@@ -451,6 +484,7 @@ export function ViewportCanvas({
               presets={manifest.cameraPresets}
               controlsRef={controlsRef}
             />
+            <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />
             {/* Wait for renderer detection so Auto never starts AO on software GL. */}
             {rendererName !== null && <AmbientOcclusion profile={profile} />}
@@ -459,7 +493,7 @@ export function ViewportCanvas({
               ref={controlsRef}
               makeDefault
               enabled={!cameraLocked(editor)}
-              enableDamping
+              enableDamping={demoOrbitDeg === null}
               dampingFactor={0.075}
               minDistance={20}
               maxDistance={1100}

@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { useState } from 'react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Vec2 } from '../../lib/coordinates'
 import { baselineMatches, captureBaseline, deltaBand, DELTA_NOTE, buildClimateView } from '../../features/analysis/climateView'
 import { FLOW_DISCLAIMER } from '../../features/analysis/lbm'
@@ -8,7 +9,7 @@ import { createFlowRunner } from '../../features/analysis/flowRunner'
 import { flowFrame } from '../../features/analysis/lbm'
 import { circlePolygon } from '../../features/analysis/grid'
 import { polygonArea } from '../../lib/polygon'
-import { ClimatePanel } from './ClimatePanel'
+import { ClimatePanel, useWindDemo } from './ClimatePanel'
 
 const area: Vec2[] = [[0, 0], [40, 0], [40, 40], [0, 40]]
 const road = { highway: 'primary', centreline: [[-100, 0], [100, 0]] as Vec2[] }
@@ -138,5 +139,88 @@ describe('baseline delta', () => {
     expect(onStreamlines).toHaveBeenCalledWith(true)
     rerender(<ClimatePanel {...props} baseline={baseline} wind={{ ...DEFAULT_WIND, display: 'delta' }} />)
     expect(screen.getByText(DELTA_NOTE)).toBeInTheDocument()
+  })
+})
+
+
+describe('wind demo playback', () => {
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
+
+  function setup(reduced = false) {
+    vi.useFakeTimers()
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: reduced })))
+    const restored = vi.fn()
+    const original = { ...DEFAULT_WIND, from: 135 }
+    function Demo() {
+      const [wind, setWind] = useState(original)
+      const [streamlines, setStreamlines] = useState(true)
+      const demo = useWindDemo(wind, streamlines, setWind, setStreamlines)
+      return <>
+        <ClimatePanel mode="wind" onModeChange={() => {}} wind={wind} onWindChange={setWind} view={null}
+          streamlines={streamlines} demoPlaying={demo.playing} onToggleDemo={demo.toggle} />
+        <button onPointerDown={demo.stop}>Canvas stand-in</button>
+        <output aria-label="Demo orbit">{demo.orbitDeg ?? 'stopped'}</output>
+        <button onClick={() => restored(wind, streamlines)}>Read settings</button>
+      </>
+    }
+    const result = render(<Demo />)
+    const button = screen.getByRole('button', { name: 'Play demo' })
+    const expectRestored = () => {
+      expect(button).toHaveAttribute('aria-pressed', 'false')
+      fireEvent.click(screen.getByRole('button', { name: 'Read settings' }))
+      expect(restored).toHaveBeenLastCalledWith(original, true)
+      expect(vi.getTimerCount()).toBe(0)
+    }
+    return { ...result, button, expectRestored }
+  }
+
+  it('toggles and restores the original wind and streamlines on a second click', () => {
+    const { button, expectRestored } = setup()
+    fireEvent.click(button)
+    expect(button).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('Wind blows from')).toHaveValue('270')
+    expect(screen.getByRole('checkbox', { name: 'Streamlines' })).not.toBeChecked()
+    act(() => vi.advanceTimersByTime(5000))
+    fireEvent.click(button)
+    expectRestored()
+  })
+
+  it.each(['Escape', 'a', 'Enter', ' '])('stops and restores on key %s', (key) => {
+    const { button, expectRestored } = setup()
+    fireEvent.click(button)
+    fireEvent.keyDown(button, { key })
+    expectRestored()
+  })
+
+  it('stops and restores on canvas pointer-down', () => {
+    const { button, expectRestored } = setup()
+    fireEvent.click(button)
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Canvas stand-in' }))
+    expectRestored()
+  })
+
+  it('enables streamlines at 15 seconds and restores at completion', () => {
+    const { button, expectRestored } = setup()
+    fireEvent.click(button)
+    act(() => vi.advanceTimersByTime(15020))
+    expect(screen.getByRole('checkbox', { name: 'Streamlines' })).toBeChecked()
+    act(() => vi.advanceTimersByTime(5000))
+    expectRestored()
+  })
+
+  it('keeps the orbit still under reduced motion', () => {
+    const { button } = setup(true)
+    fireEvent.click(button)
+    for (let i = 0; i < 4; i++) {
+      expect(screen.getByLabelText('Demo orbit')).toHaveTextContent('0')
+      act(() => vi.advanceTimersByTime(3000))
+    }
+  })
+
+  it('cancels its scheduled frame when unmounted', () => {
+    const { button, unmount } = setup()
+    fireEvent.click(button)
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
   })
 })
