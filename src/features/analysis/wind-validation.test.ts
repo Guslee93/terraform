@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { Vec2 } from '../../lib/coordinates'
 import type { FootprintBuilding } from './grid'
-import { createLbm, flowFrame, gridToWorld, rasterize, sampleRatio, speedRatio, stepLbm, type FlowFrame } from './lbm'
+import { createFlowRunner, type FlowSlice } from './flowRunner'
+import { circlePolygon } from './grid'
+import { profileFactor } from './windProfile'
+import { createLbm, flowFrame, gridToWorld, rasterize, sampleRatio, sampleVelocity, speedRatio, stepLbm, type FlowFrame } from './lbm'
 
 /**
  * Validation suite for the 2D wind solver — the six canonical cases of the wind simulator PRD §6
@@ -231,5 +234,51 @@ describe('wind validation — solver stability', () => {
     const late = meanDensity()
 
     expect(Math.abs(late - early)).toBeLessThan(0.01)
+  })
+})
+
+// W5d — layered (height-slice) cases. Directional only; the slices are 2D solves with the
+// indicative power-law profile, not a 3D simulation.
+describe('wind validation — height slices (W5)', { timeout: 60_000 }, () => {
+  const sliceFrame = flowFrame(circlePolygon([0, 0], 60), FROM_WEST, 64, 64, 1.4)
+  const stack = (buildings: FootprintBuilding[]) => {
+    const runner = createFlowRunner(() => 0)
+    runner.request({ id: 1, frame: sliceFrame, buildings, reset: true, slices: true })
+    for (let i = 0; i < 5000; i++) {
+      const r = runner.tick(0)
+      if (r?.slicesComplete && r.slices) return r.slices
+    }
+    throw new Error('slice stack did not complete')
+  }
+  const at = (slices: FlowSlice[], z: number, p: Vec2) => {
+    const s = slices.find((slice) => slice.z === z)!
+    const v = sampleVelocity(sliceFrame, s.velocity, s.solid, p)
+    return v ? Math.hypot(v[0], v[1]) : null
+  }
+
+  it('S1: wind passes over a low (8 m) block — the 10 m slice is much faster than the ground wake', () => {
+    const slices = stack([{ height: 8, footprint: rect(-10, 10, -10, 10) }])
+    const ground = at(slices, 2, [18, 0])!
+    const above = at(slices, 10, [18, 0])!
+    expect(ground).toBeLessThan(0.6)
+    expect(above).toBeGreaterThan(ground * 1.5)
+  })
+
+  it('S2: a 40 m tower blocks every slice up to 35 m and leaves a wake in each', () => {
+    const slices = stack([{ height: 40, footprint: rect(-10, 10, -10, 10) }])
+    for (const z of [2, 10, 20, 35]) {
+      expect(at(slices, z, [0, 0])).toBeNull()
+      const free = at(slices, z, [-45, 30])!
+      expect(at(slices, z, [18, 0])!).toBeLessThan(free * 0.6)
+    }
+  })
+
+  it('S3: undisturbed wind follows the indicative profile with height (±10 %)', () => {
+    const slices = stack([])
+    const ground = at(slices, 2, [-30, 20])!
+    for (const z of [10, 20, 35]) {
+      const expected = ground * profileFactor(z) / profileFactor(2)
+      expect(Math.abs(at(slices, z, [-30, 20])! - expected) / expected).toBeLessThan(0.1)
+    }
   })
 })

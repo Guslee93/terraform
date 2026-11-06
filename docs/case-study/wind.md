@@ -80,6 +80,18 @@ re-tuned to bring the jet back, and the note says so.
 **Boundary conditions are not plumbing. They are the model.** And a domain you drew for
 convenience is a domain that can lie to you.
 
+## 4b. Going "3D" without pretending to
+
+Forma's wind view reads as 3D because the flow is evaluated above *every* surface — ground and roofs — and the streamlines rise over buildings. Terraform copies that honestly:
+
+- The flow is solved in **height slices** (2, 10, 20, 35 m). At each height only taller buildings block the wind, so air passes over low blocks. The upper slices run on a coarser grid and start from the slice below; the whole stack is ready in about 8 s.
+- **Roofs** take their colour from the slice just above them.
+- **Streamlines** rise over buildings they can clear and go round taller ones. That vertical motion is a rule, and the panel says so in plain words.
+
+The visual review of this step found the most embarrassing bug of the project: the speed slider says *wind at 10 m*, but every m/s value treated it as the speed at 2 m, so every comfort reading was about 1.4× too windy. Roofs glowed magenta; that colour, not a test, gave it away. The conversion now uses the same wind profile as the slices, and the screenshots were retaken.
+
+![3D streamlines and roof wind](../screenshots/wind-3d-streamlines.png)
+
 ## 5. Honesty
 
 Six canonical cases and a stability check run as unit fixtures on every change; the results are

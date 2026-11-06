@@ -42,3 +42,13 @@ was found on small analysis-circle domains. Cases 4 and 5 were re-run with domai
 the app; case 4's expectation now follows the passage-flow literature instead of assuming channelling.
 Numbers for cases 1, 2, 3, 6 and S in the table were measured before this boundary change. The
 directional assertions still pass on the current solver; the exact values have not been re-recorded.
+
+## Height slices (W5, 2026-11-06)
+
+| # | Case | Expectation | Result | Verdict |
+|---|---|---|---|---|
+| S1 | 8 m block, wind from W | Wind passes over a low block | 10 m slice behind the block > 1.5 × the ground wake (ground < 0.6) | pass |
+| S2 | 40 m tower | Taller than every slice: blocks all, wake in each | Solid at 2/10/20/35 m; wake < 0.6 × free stream at each | pass |
+| S3 | Empty domain | Free stream follows the indicative profile | Each slice within 10 % of profileFactor(z)/profileFactor(2) × ground | pass |
+
+The slices are 2D solves; rising over roofs in the 3D streamlines is a labelled rule, not a result.

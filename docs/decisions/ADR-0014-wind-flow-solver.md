@@ -23,3 +23,10 @@
 - **Boundaries.** Outlet density pinned to 1 (zero-gradient let mass pile up in dense blocks); sides held at the free stream (zero-gradient let a sideways jet into small domains); obstacles kept 3 cells off every edge. A floating inlet density was tried and diverged.
 - **Worker updates** are throttled (≤ every 80 ms), not debounced, so a continuous drag re-solves live; only a fresh, settled field can become a delta baseline.
 - **Comfort** uses Lawson (Norconsult) thresholds at one chosen reference speed, labelled as momentary. Annual Lawson stays off until a measured per-site wind rose exists.
+
+## Addendum 2 (2026-11-06) — layered "3D look" (W5)
+
+- **Height slices.** After the 2 m field settles, the worker solves slices at 10, 20 and 35 m where only taller buildings are obstacles, scaled by the indicative urban power law (α = 0.22). Upper slices run on an 80² lattice, bilinear-upsampled to the fine frame, warm-started from the slice below; every solve stops on convergence (mean |Δspeed| < 2e-4 per 250 steps) with `MAX_STEPS` as a cap. Results post progressively; complete stacks are cached (8 entries). Browser: full stack ≈ 8 s on Compact Infill (was ≈ 60 s).
+- **Rendering.** Roofs take their colour from the slice just above them; streamlines can be flat at a slice height or pseudo-3D: horizontal flow interpolated between slices, rising over buildings they can clear within 15 m and going round taller ones. The vertical motion is a **rule**, labelled in the panel.
+- **Units.** Field ratios are relative to the 2 m free stream; the slider is the reference at 10 m. m/s = ratio × ref × profileFactor(2) (≈ 0.70). Before this fix every m/s value was ≈ 1.42× too high.
+- **Still not:** 3D CFD, terrain-driven flow, or roofs above 35 m (uncoloured).
