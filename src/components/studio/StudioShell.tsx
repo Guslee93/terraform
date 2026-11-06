@@ -135,6 +135,8 @@ export function StudioShell({
   const studyArea = useMemo(() => (sitePackage ? normalizeRing(sitePackage.studyArea.polygon) : null), [sitePackage])
   const [placingCircle, setPlacingCircle] = useState(false)
   const windCentre = useMemo(() => wind.centre ?? (studyArea ? ringCentroid(studyArea) : null), [wind.centre, studyArea])
+  // Stable object: scene layers memoise on it (roofs, heatmap), so a fresh literal would rebuild them on every render.
+  const windCircle = useMemo(() => (windCentre ? { centre: windCentre, radius: wind.radius } : null), [windCentre, wind.radius])
   const windArea = useMemo(() => (windCentre ? circlePolygon(windCentre, wind.radius) : null), [windCentre, wind.radius])
   const { flow: windFlow, isCurrent: isCurrentFlow } = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash, climateMode === 'wind')
   // The live field shows even mid-edit (Forma-style live drag); only a current, settled field may become the baseline.
@@ -388,7 +390,7 @@ export function StudioShell({
                   windBuildings={analysisBuildings}
                   windBaseline={baseline}
                   windFlow={climateMode === 'wind' ? windFlow : null}
-                  windCircle={climateMode === 'wind' && windCentre ? { centre: windCentre, radius: wind.radius } : null}
+                  windCircle={climateMode === 'wind' ? windCircle : null}
                   onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
                 />
                 <CameraPresets active={cameraPreset} onSelect={requestCamera} />

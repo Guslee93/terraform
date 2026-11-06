@@ -34,7 +34,8 @@ export function WindStreamlines({ flow, circle, heightAt, heightM = null, opacit
     }
     if (heightM === null && flow.slices && flow.slices.length >= 2) {
       for (const line of traceStreamlines3D(flow.frame, flow.slices, buildings, radius)) {
-        for (let i = 1; i < line.points.length; i++) for (const j of [i - 1, i]) {
+        // Draw every other traced point (4 m segments): half the line segments, still smooth.
+        for (let i = 2; i < line.points.length; i += 2) for (const j of [i - 2, i]) {
           const [x, y, z] = line.points[j]!
           push(x, y, z, line.speeds[j]!)
         }
