@@ -469,3 +469,9 @@
 - Forma-style analysis circle: flow solved only around it (160² grid over 1.4 × r → ≈ 1.8 m cells at r = 100 m, vs ≈ 3 m for the whole site). Heatmap (4 m cells) and particles clipped to the circle; ring + centre tick on the terrain; radius slider 60–250 m; "Move circle" then click the ground, Esc cancels.
 - Visibly sharper result on Compact Infill: jet through the western gap with swirls downstream.
 - Verification: lint ✅ · unit tests ✅ · build ✅ · browser: place/move circle on Compact Infill. Edge fade not done (instanced colours have no per-cell alpha).
+
+### Wind C21 + X3 — streamlines, baseline delta, validation (2026-11-06, Codex + MiniMax + Claude)
+- Codex C21: `streamlines.ts` (deterministic RK2 tracing, importance-ranked) + `WindStreamlines.tsx`; Comfort/Direction tabs (Comfort default); Set/Clear baseline + Delta view with mismatch message. Codex could not run a dev server (sandbox EPERM).
+- Claude fix: Codex hid the field after every edit (blank heatmap mid-drag). Now the live field always shows; only a fresh settled field can become the baseline. Worker requests throttled (≤ every 80 ms) instead of debounced so a continuous drag re-solves live.
+- MiniMax X3: six canonical cases + stability in `wind-validation.test.ts`; `docs/research/wind-validation-note.md`. Case 2 (slab wake longer than block) not reproduced — documented 2D limit. Also `docs/research/forma-wind-notes.md` (X2).
+- Verification: lint ✅ · 928 tests ✅ · build ✅ · browser: streamlines on Compact Infill (vortex in court, gap jet), baseline → Delta 100 % "No change". Delta after a geometry edit covered by unit tests only.

@@ -40,14 +40,18 @@ export function useWindFlow(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frame !== null])
 
+  // Throttle edits (a drag emits many) so a continuous drag still re-solves every ~80 ms.
+  const lastSent = useRef(0)
   useEffect(() => {
     if (!frame) return
-    // Debounce geometry edits (a drag emits many) before rasterising in the worker.
-    const handle = setTimeout(() => {
+    const send = () => {
+      lastSent.current = performance.now()
       const request: FlowRequest = { id: ++nextId.current, frame, buildings, reset: lastFrame.current !== frame, downwash }
       lastFrame.current = frame
       worker.current?.postMessage(request)
-    }, 50)
+    }
+    const wait = Math.max(0, 80 - (performance.now() - lastSent.current))
+    const handle = setTimeout(send, wait)
     return () => clearTimeout(handle)
   }, [frame, buildings, downwash])
 

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
-import { buildClimateView, DEFAULT_WIND, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
+import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
 import { ClimatePanel } from './ClimatePanel'
 import { useWindFlow } from '../../features/analysis/useWindFlow'
 import { circlePolygon } from '../../features/analysis/grid'
@@ -108,6 +108,8 @@ export function StudioShell({
   })
   const [climateMode, setClimateMode] = useState<ClimateMode>('noise')
   const [wind, setWind] = useState<WindSettings>(DEFAULT_WIND)
+  const [streamlines, setStreamlines] = useState(false)
+  const [baseline, setBaseline] = useState<WindBaseline | null>(null)
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
   const scenario = editor.history.document.name
@@ -128,7 +130,17 @@ export function StudioShell({
   const [placingCircle, setPlacingCircle] = useState(false)
   const windCentre = useMemo(() => wind.centre ?? (studyArea ? ringCentroid(studyArea) : null), [wind.centre, studyArea])
   const windArea = useMemo(() => (windCentre ? circlePolygon(windCentre, wind.radius) : null), [windCentre, wind.radius])
-  const windFlow = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash)
+  const liveWindFlow = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash)
+  const latestFlowId = useRef(0)
+  const [minimumFlowId, setMinimumFlowId] = useState(1)
+  useEffect(() => {
+    setMinimumFlowId(latestFlowId.current + 1)
+  }, [windArea, analysisBuildings, wind.from, wind.downwash, climateMode])
+  useEffect(() => { latestFlowId.current = liveWindFlow?.id ?? 0 }, [liveWindFlow])
+  // Show the live field even mid-edit (Forma-style live drag); only a fresh, settled field may become the baseline.
+  const windFlow = liveWindFlow
+  const freshFlow = liveWindFlow && liveWindFlow.id >= minimumFlowId ? liveWindFlow : null
+  const baselineMismatch = !!baseline && !!windCentre && !baselineMatches(baseline, { centre: windCentre, radius: wind.radius }, wind.from)
   useEffect(() => {
     if (!placingCircle) return
     const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setPlacingCircle(false) }
@@ -137,8 +149,8 @@ export function StudioShell({
   }, [placingCircle])
   const climateView = useMemo(() => {
     if (!sitePackage || !studyArea || !windArea || climateMode === 'off') return null
-    return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, wind)
-  }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind])
+    return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline)
+  }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind, windCentre, baseline])
   const facts = useMemo(() => sitePackage ? siteFacts(normalizeRing(sitePackage.studyArea.polygon), analysisBuildings) : null, [sitePackage, analysisBuildings])
   const metrics = useMemo(() => sitePackage
     ? scenarioMetrics(analysisDocument, normalizeRing(sitePackage.studyArea.polygon))
@@ -359,6 +371,7 @@ export function StudioShell({
                   annotations={annotations}
                   renderPreference={renderPreference}
                   climate={climateView?.overlay ?? null}
+                  windStreamlines={streamlines}
                   windFlow={climateMode === 'wind' ? windFlow : null}
                   windCircle={climateMode === 'wind' && windCentre ? { centre: windCentre, radius: wind.radius } : null}
                   onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
@@ -466,7 +479,11 @@ export function StudioShell({
             ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
             : shortDate(sunTime.date)}
           climate={sitePackage ? (
-            <ClimatePanel mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView} />
+            <ClimatePanel mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
+              streamlines={streamlines} onStreamlinesChange={setStreamlines}
+              baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled}
+              onSetBaseline={() => { if (freshFlow?.settled && windCentre) setBaseline(captureBaseline(freshFlow, { centre: windCentre, radius: wind.radius }, wind.from)) }}
+              onClearBaseline={() => { setBaseline(null); setWind((w) => ({ ...w, display: w.display === 'delta' ? 'activity' : w.display })) }} />
           ) : null}
           climateMeta={climateMode === 'off' ? 'Off' : climateMode === 'wind' ? 'Wind' : 'Noise'}
           metrics={metrics}

@@ -8,7 +8,7 @@ import { computeNoise, NOISE_BAND_LABEL, NOISE_DISCLAIMER, type NoiseBand, type 
 export type ClimateMode = 'off' | 'wind' | 'noise'
 
 /** What the wind overlay shows: speed relative to open ground, or the activity the local speed suits. */
-export type WindDisplay = 'ratio' | 'activity'
+export type WindDisplay = 'ratio' | 'activity' | 'delta'
 export type WindSettings = {
   /** Compass bearing the wind blows FROM. */
   readonly from: number
@@ -21,7 +21,14 @@ export type WindSettings = {
   readonly centre: Vec2 | null
   readonly radius: number
 }
-export const DEFAULT_WIND: WindSettings = { from: 270, display: 'ratio', refSpeed: 6, downwash: true, centre: null, radius: 100 }
+export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refSpeed: 6, downwash: true, centre: null, radius: 100 }
+export type WindBaseline = { readonly flow: FlowResult; readonly circle: { readonly centre: Vec2; readonly radius: number }; readonly from: number }
+export function captureBaseline(flow: FlowResult, circle: WindBaseline['circle'], from: number): WindBaseline {
+  return { flow: { ...flow, frame: { ...flow.frame, centre: [...flow.frame.centre], flow: [...flow.frame.flow] }, velocity: flow.velocity.slice(), solid: flow.solid.slice() }, circle: { centre: [...circle.centre], radius: circle.radius }, from }
+}
+export function baselineMatches(baseline: WindBaseline, circle: WindBaseline['circle'], from: number): boolean {
+  return baseline.from === from && baseline.circle.radius === circle.radius && baseline.circle.centre.every((v, i) => v === circle.centre[i])
+}
 export const CIRCLE_RADIUS = { min: 60, max: 250, step: 10 } as const
 /** Heatmap cell size inside the analysis circle (m). */
 export const WIND_CELL_M = 4
@@ -39,6 +46,16 @@ export const SPEED_BANDS: ReadonlyArray<Band & { band: SpeedBand }> = [
   { band: 'fast', below: Infinity, label: 'Much faster (> 1.3×)', colour: '#C2452F' },
 ]
 export const speedBand = (ratio: number) => pick(SPEED_BANDS, ratio)
+
+export const DELTA_BANDS: readonly Band[] = [
+  { band: 'much-calmer', below: -0.3, label: 'Calmer (≤ −0.3)', colour: '#1E3A8A' },
+  { band: 'calmer', below: -0.1, label: 'Calmer (−0.3 to −0.1)', colour: '#93C5FD' },
+  { band: 'same', below: 0.1, label: 'No change (±0.1)', colour: '#E5E7EB' },
+  { band: 'windier', below: 0.3, label: 'Windier (+0.1 to +0.3)', colour: '#FCA5A5' },
+  { band: 'much-windier', below: Infinity, label: 'Windier (≥ +0.3)', colour: '#B91C1C' },
+]
+export const deltaBand = (delta: number) => DELTA_BANDS[delta <= -0.3 ? 0 : delta < -0.1 ? 1 : delta <= 0.1 ? 2 : delta < 0.3 ? 3 : 4]!
+export const DELTA_NOTE = 'Calmer / No change / Windier vs baseline'
 
 /** Momentary activity bands from the Lawson thresholds and the first safety threshold (m/s, pedestrian level). */
 const [SIT, STAND, STROLL, WALK] = LAWSON_NORCONSULT.thresholds
@@ -101,14 +118,21 @@ export function buildClimateView(
   flow: FlowResult | null,
   wind: WindSettings = DEFAULT_WIND,
   cellM = 10,
+  baseline: WindBaseline | null = null,
 ): ClimateView {
   if (mode === 'wind') {
-    const bands = wind.display === 'activity' ? ACTIVITY_BANDS : SPEED_BANDS
+    const bands = wind.display === 'delta' ? DELTA_BANDS : wind.display === 'activity' ? ACTIVITY_BANDS : SPEED_BANDS
     const scale = wind.display === 'activity' ? wind.refSpeed : 1
-    const cells = flow
+    const compatible = baseline && baselineMatches(baseline, { centre: wind.centre ?? baseline.circle.centre, radius: wind.radius }, wind.from)
+    const cells = flow && (wind.display !== 'delta' || compatible)
       ? sampleGrid(studyArea, WIND_CELL_M).flatMap((c) => {
           const v = sampleVelocity(flow.frame, flow.velocity, flow.solid, [c.x, c.y])
-          return v ? [{ ...c, b: pick(bands, Math.hypot(v[0], v[1]) * scale) }] : []
+          if (!v) return []
+          if (wind.display === 'delta' && baseline) {
+            const before = sampleVelocity(baseline.flow.frame, baseline.flow.velocity, baseline.flow.solid, [c.x, c.y])
+            return before ? [{ ...c, b: deltaBand(Math.hypot(...v) - Math.hypot(...before)) }] : []
+          }
+          return [{ ...c, b: pick(bands, Math.hypot(...v) * scale) }]
         })
       : []
     return {

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
@@ -18,6 +18,7 @@ import type { SunDirection } from '../features/analysis/sun'
 import type { EnvelopeConstraints, EnvelopeResult } from '../features/analysis/constraints'
 import { ConstraintLayer } from './ConstraintLayer'
 import { ClimateLayer } from './ClimateLayer'
+import { WindStreamlines } from './WindStreamlines'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
 import type { FlowResult } from '../features/analysis/flowRunner'
@@ -71,6 +72,7 @@ type ViewportProps = {
   climate?: ClimateOverlay | null
   /** Live 2D wind flow for the particle layer; null when wind is off. */
   windFlow?: FlowResult | null
+  windStreamlines?: boolean
   /** Wind analysis circle (ring + particle bounds); null when wind is off. */
   windCircle?: { readonly centre: Vec2; readonly radius: number } | null
   /** When set, the next ground click picks a point (e.g. placing the wind circle) instead of editing. */
@@ -337,9 +339,17 @@ export function ViewportCanvas({
   renderPreference,
   climate = null,
   windFlow = null,
+  windStreamlines = false,
   windCircle = null,
   onPickPoint,
 }: ViewportProps) {
+  const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setReducedMotion(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
   const controlsRef = useRef<OrbitControlsHandle>(null)
   const [webgl] = useState(detectWebGL)
   const [rendererName, setRendererName] = useState<string | null>(null)
@@ -348,7 +358,7 @@ export function ViewportCanvas({
   const initialPreset = manifest.cameraPresets.isometric
   const initialPosition = enuToThreeXyz(initialPreset.position)
   const initialTarget = enuToThreeXyz(initialPreset.target)
-  const heightAt = (east: number, north: number) => sampleTerrainHeight(terrain, east, north)
+  const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
   const drawing = editable && editor.tool === 'draw'
   const treeExclude = useMemo(
     () => visibleTierFootprints(displayedDocument(editor)),
@@ -408,7 +418,9 @@ export function ViewportCanvas({
             {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
             {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
             {climate && layers.terrain && <ClimateLayer overlay={climate} heightAt={heightAt} />}
-            {windFlow && windCircle && layers.terrain && <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} />}
+            {windFlow && windCircle && layers.terrain && ((windStreamlines || reducedMotion)
+              ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} />
+              : <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} />)}
             {windCircle && layers.terrain && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}
 
             <group name="live-scenario">

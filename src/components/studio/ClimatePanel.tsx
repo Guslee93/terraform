@@ -1,4 +1,4 @@
-import { CIRCLE_RADIUS, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
+import { CIRCLE_RADIUS, DELTA_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { labelClass } from '../ui/controls'
 
@@ -17,16 +17,23 @@ type ClimatePanelProps = {
   wind: WindSettings
   onWindChange: (next: WindSettings) => void
   view: ClimateView | null
+  streamlines?: boolean
+  onStreamlinesChange?: (enabled: boolean) => void
+  baseline?: WindBaseline | null
+  baselineMismatch?: boolean
+  canSetBaseline?: boolean
+  onSetBaseline?: () => void
+  onClearBaseline?: () => void
   placingCircle?: boolean
   onPlaceCircle?: (placing: boolean) => void
 }
 
 const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
-  { id: 'ratio', label: 'Speed' },
-  { id: 'activity', label: 'Activity' },
+  { id: 'activity', label: 'Comfort' },
+  { id: 'ratio', label: 'Direction' },
 ]
 
-export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle }: ClimatePanelProps) {
+export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
   const windFrom = wind.from
   const set = (patch: Partial<WindSettings>) => onWindChange({ ...wind, ...patch })
   return (
@@ -107,7 +114,7 @@ export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view, pla
           </div>
 
           <div role="group" aria-label="Wind map shows" className="mt-3 flex gap-1">
-            {DISPLAYS.map((option) => (
+            {[...DISPLAYS, ...(baseline ? [{ id: 'delta' as const, label: 'Delta' }] : [])].map((option) => (
               <button
                 key={option.id}
                 type="button"
@@ -123,6 +130,16 @@ export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view, pla
             ))}
           </div>
 
+          <label className="mt-3 flex items-center gap-2 text-body-sm">
+            <input type="checkbox" checked={streamlines} onChange={(event) => onStreamlinesChange?.(event.currentTarget.checked)} />
+            Streamlines
+          </label>
+          <div className="mt-3 flex gap-2">
+            <button type="button" className="min-h-8 rounded-chip border border-line px-2 text-body-sm disabled:opacity-50" disabled={!canSetBaseline} onClick={onSetBaseline}>Set baseline</button>
+            {baseline && <button type="button" className="min-h-8 rounded-chip border border-line px-2 text-body-sm" onClick={onClearBaseline}>Clear baseline</button>}
+          </div>
+          {baseline && baselineMismatch && <p role="status" className="mt-2 text-caption text-ink-secondary">Baseline was taken for {compassName(baseline.from)} {baseline.from}°, r = {baseline.circle.radius} m. Reset it to compare.</p>}
+          {wind.display === 'delta' && !baselineMismatch && <p className="mt-2 text-caption">{DELTA_NOTE}</p>}
           {wind.display === 'activity' && (
             <div className="mt-3">
               <div className="flex items-center justify-between">
@@ -161,10 +178,10 @@ export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view, pla
         <div className="mt-3">
           {view.assessed === 0 ? (
             <p className="text-body-sm text-ink-secondary">
-              {mode === 'noise' ? 'No mapped roads in this study area, so there is nothing to estimate.' : 'Computing the wind flow…'}
+              {mode === 'wind' && baselineMismatch && wind.display === 'delta' ? 'Delta unavailable for this circle or direction.' : mode === 'noise' ? 'No mapped roads in this study area, so there is nothing to estimate.' : 'Computing the wind flow…'}
             </p>
           ) : (
-            <ul aria-label={mode === 'wind' ? (wind.display === 'activity' ? 'Wind activity legend' : 'Wind speed legend') : 'Noise legend'}>
+            <ul aria-label={mode === 'wind' ? (wind.display === 'delta' ? DELTA_NOTE : wind.display === 'activity' ? 'Wind comfort legend' : 'Wind direction legend') : 'Noise legend'}>
               {view.legend.map((entry) => (
                 <li key={entry.label} className="flex min-h-8 items-center justify-between gap-3 text-body-sm text-ink">
                   <span className="flex items-center gap-2">

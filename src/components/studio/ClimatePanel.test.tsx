@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Vec2 } from '../../lib/coordinates'
-import { buildClimateView } from '../../features/analysis/climateView'
+import { baselineMatches, captureBaseline, deltaBand, DELTA_NOTE, buildClimateView } from '../../features/analysis/climateView'
 import { FLOW_DISCLAIMER } from '../../features/analysis/lbm'
 import { ACTIVITY_NOTE, DEFAULT_WIND } from '../../features/analysis/climateView'
 import { createFlowRunner } from '../../features/analysis/flowRunner'
@@ -74,11 +74,14 @@ describe('ClimatePanel', () => {
     expect(onFrom).toHaveBeenCalledWith({ ...DEFAULT_WIND, from: 225 })
     fireEvent.click(screen.getByRole('checkbox', { name: /Downwash rule/ }))
     expect(onFrom).toHaveBeenLastCalledWith({ ...DEFAULT_WIND, downwash: false })
-    expect(screen.queryByLabelText('Wind at 10 m height')).toBeNull()
+    expect(screen.getByLabelText('Wind at 10 m height')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'Direction' }))
+    expect(onFrom).toHaveBeenLastCalledWith({ ...DEFAULT_WIND, display: 'ratio' })
     fireEvent.change(screen.getByLabelText('Analysis circle'), { target: { value: '150' } })
     expect(onFrom).toHaveBeenLastCalledWith({ ...DEFAULT_WIND, radius: 150 })
     expect(screen.getByText(/Computing the wind flow/)).toBeInTheDocument()
-    expect(screen.getByText(FLOW_DISCLAIMER)).toBeInTheDocument()
+    expect(screen.getByText(`${ACTIVITY_NOTE} ${FLOW_DISCLAIMER}`)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Noise' }))
     expect(onMode).toHaveBeenCalledWith('noise')
   })
@@ -86,5 +89,54 @@ describe('ClimatePanel', () => {
     const view = buildClimateView('noise', area, [], [], null)
     render(<ClimatePanel mode="noise" onModeChange={() => {}} wind={DEFAULT_WIND} onWindChange={() => {}} view={view} />)
     expect(screen.getByText(/nothing to estimate/)).toBeInTheDocument()
+  })
+})
+
+
+describe('baseline delta', () => {
+  const frame = flowFrame(area, 270, 32, 32)
+  const velocity = new Float32Array(32 * 32 * 2)
+  for (let i = 0; i < velocity.length; i += 2) velocity[i] = 1
+  const flow = { id: 1, frame, velocity, solid: new Uint8Array(32 * 32), settled: true }
+  const circle = { centre: [20, 20] as Vec2, radius: 100 }
+  const baseline = captureBaseline(flow, circle, 270)
+  it('copies the baseline buffers and frame', () => {
+    expect(baseline.flow.velocity).not.toBe(flow.velocity)
+    expect(baseline.flow.solid).not.toBe(flow.solid)
+    expect(baseline.flow.frame).not.toBe(flow.frame)
+    expect(baseline.flow.velocity).toEqual(flow.velocity)
+  })
+  it.each([[-0.5, 'much-calmer'], [-0.3, 'much-calmer'], [-0.2, 'calmer'], [-0.1, 'same'], [0, 'same'], [0.1, 'same'], [0.2, 'windier'], [0.3, 'much-windier']])('bands delta %s', (value, band) => {
+    expect(deltaBand(Number(value)).band).toBe(band)
+  })
+  it('subtracts baseline ratios at the same local point', () => {
+    const nextVelocity = velocity.map((v) => v * 1.5)
+    const wind = { ...DEFAULT_WIND, display: 'delta' as const, centre: circle.centre }
+    const view = buildClimateView('wind', area, [], [], { ...flow, velocity: nextVelocity }, wind, 10, baseline)
+    expect(view.assessed).toBeGreaterThan(0)
+    expect(view.legend.find((e) => e.share === 1)?.label).toContain('≥ +0.3')
+    expect(buildClimateView('wind', area, [], [], flow, { ...wind, from: 90 }, 10, baseline).assessed).toBe(0)
+    expect(baselineMatches(baseline, { ...circle, centre: [21, 20] }, 270)).toBe(false)
+    expect(baselineMatches(baseline, { ...circle, radius: 90 }, 270)).toBe(false)
+  })
+  it('shows Delta only with a baseline and explains mismatches', () => {
+    const onSet = vi.fn()
+    const onClear = vi.fn()
+    const onStreamlines = vi.fn()
+    const props = { mode: 'wind' as const, onModeChange: vi.fn(), wind: DEFAULT_WIND, onWindChange: vi.fn(), view: null }
+    const { rerender } = render(<ClimatePanel {...props} onSetBaseline={onSet} />)
+    expect(screen.queryByRole('button', { name: 'Delta' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Set baseline' })).toBeDisabled()
+    rerender(<ClimatePanel {...props} baseline={baseline} baselineMismatch canSetBaseline onSetBaseline={onSet} onClearBaseline={onClear} onStreamlinesChange={onStreamlines} />)
+    expect(screen.getByRole('button', { name: 'Delta' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Baseline was taken for W 270°, r = 100 m. Reset it to compare.')
+    fireEvent.click(screen.getByRole('button', { name: 'Set baseline' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Clear baseline' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Streamlines' }))
+    expect(onSet).toHaveBeenCalledOnce()
+    expect(onClear).toHaveBeenCalledOnce()
+    expect(onStreamlines).toHaveBeenCalledWith(true)
+    rerender(<ClimatePanel {...props} baseline={baseline} wind={{ ...DEFAULT_WIND, display: 'delta' }} />)
+    expect(screen.getByText(DELTA_NOTE)).toBeInTheDocument()
   })
 })
