@@ -53,7 +53,7 @@ export function AboutPage() {
             <ul className="mt-4 space-y-3 text-body-sm text-ink-secondary">
               <li className="flex gap-2">
                 <Icon name="cube" size={15} className="mt-px shrink-0 text-ink-secondary" />
-                2D wind flow and road noise (screening)
+                Live 2D wind flow in an analysis circle, and road noise (screening)
               </li>
               <li className="flex gap-2">
                 <Icon name="sun" size={15} className="mt-px shrink-0 text-ink-secondary" />

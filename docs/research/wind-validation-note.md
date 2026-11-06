@@ -40,3 +40,5 @@ model (gap slot ratio ≈ 0.12).
 The side boundaries were changed from zero-gradient to a uniform free stream after a sideways jet
 was found on small analysis-circle domains. Cases 4 and 5 were re-run with domain margins matching
 the app; case 4's expectation now follows the passage-flow literature instead of assuming channelling.
+Numbers for cases 1, 2, 3, 6 and S in the table were measured before this boundary change. The
+directional assertions still pass on the current solver; the exact values have not been re-recorded.

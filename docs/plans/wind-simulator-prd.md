@@ -58,12 +58,12 @@ All world ↔ grid maths goes through `flowFrame`/`worldToGrid`/`gridToWorld` (l
 | Phase | Scope | Owner | Done when |
 |---|---|---|---|
 | **W0** | ADR-0014, solver, frame, rasterizer, tests | Claude (done) | `lbm.test.ts` green |
-| **W1** | Worker, heatmap overlay, particles, wind dial in ClimatePanel; replaces the old wind exposure mode | Codex — `docs/handoffs/C19-wind-flow-ui.md` | R1, R2, R7, R8 |
+| **W1** | Done (Claude; Codex unavailable then): worker, heatmap, particles, direction slider | — | R1, R2, R7, R8 |
 | **W2a** | `comfort.ts`: Lawson classifier, safety, downwash rule, annual combine + fixtures | MiniMax — `docs/handoffs/X1-minimax-wind-comfort.md` | R4, R5 |
 | **W2b** | Done: reference-speed slider, momentary activity bands (Lawson thresholds), downwash toggle. **Annual Lawson blocked** until a real per-site wind rose exists (MET Norway Frost/NORA3, baked offline); we do not invent climate data | Claude | R4 partly, R5 |
-| **W3** | Insights cards (corner, wake, gap, downwash), click to fly | Codex | cards match fixtures |
-| **W4** | Delta vs saved scenario; use tags | later, owner decides | — |
-| **Gate** | lint/test/build, e2e, screenshots, review note | Claude | AGENTS.md §7 |
+| **W3** | Not built. Replaced by Forma-led priorities: analysis circle (C20), streamlines + Comfort/Direction + baseline delta (C21), Play demo (C22). Insight cards remain optional | — | — |
+| **W4** | Baseline delta done (C21). Side-by-side scenario compare and use tags: later, owner decides | — | — |
+| **Gate** | lint/test/build ✅, e2e `wind.spec.ts` ✅, screenshots (X5, MiniMax), code review (C23, Codex), case study `docs/case-study/wind.md` | Claude | AGENTS.md §7 |
 
 W1 and W2a touch different files and run in parallel.
 
