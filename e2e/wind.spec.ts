@@ -36,7 +36,9 @@ test('X4: the wind layer shows its disclaimer and legend, and the baseline/delta
 
   // Wind on: the screening disclaimer and a legend appear once the flow is solved.
   await page.getByRole('group', { name: 'Climate layer' }).getByRole('button', { name: 'Wind', exact: true }).click()
-  await expect(page.getByText(DISCLAIMER)).toBeVisible({ timeout: 15_000 })
+  // The claim shows in the panel and, persistently, on the viewport (C23 review finding 3).
+  await expect(page.getByText(DISCLAIMER)).toHaveCount(2, { timeout: 15_000 })
+  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(DISCLAIMER)).toBeVisible()
   await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: 15_000 })
 
   // Comfort is the default map; Direction shows the speed ratio against open ground.

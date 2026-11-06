@@ -59,7 +59,12 @@ export function WindParticles({ flow, circle, heightAt }: {
       const y = (state.pos[2 * i + 1]! += v[1] * SPEED_MS * dt)
       const z = heightAt(x, y) + LIFT_M
       const head = enuToThreeXyz([x, y, z])
-      const tail = enuToThreeXyz([x - v[0] * SPEED_MS * TAIL_S, y - v[1] * SPEED_MS * TAIL_S, z])
+      // Keep the whole segment inside the circle: a head that left respawns next frame; a tail
+      // that would poke out collapses onto the head.
+      const tx = x - v[0] * SPEED_MS * TAIL_S
+      const ty = y - v[1] * SPEED_MS * TAIL_S
+      const tail = outside(x, y) || outside(tx, ty) ? head : enuToThreeXyz([tx, ty, z])
+      if (outside(x, y)) state.age[i] = LIFE_S + 1
       p.setXYZ(2 * i, tail[0], tail[1], tail[2])
       p.setXYZ(2 * i + 1, head[0], head[1], head[2])
       colour.set(speedBand(Math.hypot(v[0], v[1])).colour)

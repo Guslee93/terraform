@@ -1,6 +1,6 @@
 # Terraform — Agent Operating Guide
 
-**Status:** M3 complete · M4 implemented, gate pending · M5 polish in progress · M6 site import P1–P4 on local main · Wind simulator (ADR-0014) built, final gate in progress
+**Status:** M3 complete · M4 implemented, gate pending · M5 polish in progress · M6 site import P1–P4 on local main · Wind simulator (ADR-0014) v1 gate passed · W5 3D-look next
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
 **Product type:** architectural portfolio prototype, not a commercial SaaS
 

@@ -482,3 +482,7 @@
 - Validation: cases 4 and 5 used tight domains (wind-tunnel blockage). Re-run with app-like margins; the gap now reads 0.87× (no channelling), consistent with passage-flow literature. Assertion and note revised honestly, not tuned.
 - Browser: Sloped Edge comfort at 6 m/s plausible (strolling/walking open ground, standing in the lee). Baseline → 38 m tower drawn upwind → Delta shows windier shoulders and calm wake (18 % much calmer, 13 % much windier). Test tower deleted afterwards.
 - lint ✅ · 928 tests ✅ · build ✅. Screenshots for the case study not yet captured.
+
+### Wind C23 review + fixes (2026-11-06, Codex review, Claude fixes)
+- Codex C23 failed the gate with 6 findings (stale baseline capture, downwash missing from baseline match, claim hidden with panel closed, no keyboard circle placement, large-site downwash backlog, particles escaping the circle). All fixed minimally; resolution table in `docs/reviews/wind-code-review.md`.
+- Gate: lint ✅ · 941 tests ✅ · build ✅ · e2e 53/8 skipped, 2 load-only flakes pass alone, wind spec ✅.

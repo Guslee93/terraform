@@ -22,12 +22,13 @@ export type WindSettings = {
   readonly radius: number
 }
 export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refSpeed: 6, downwash: true, centre: null, radius: 100 }
-export type WindBaseline = { readonly flow: FlowResult; readonly circle: { readonly centre: Vec2; readonly radius: number }; readonly from: number }
-export function captureBaseline(flow: FlowResult, circle: WindBaseline['circle'], from: number): WindBaseline {
-  return { flow: { ...flow, frame: { ...flow.frame, centre: [...flow.frame.centre], flow: [...flow.frame.flow] }, velocity: flow.velocity.slice(), solid: flow.solid.slice() }, circle: { centre: [...circle.centre], radius: circle.radius }, from }
+export type WindBaseline = { readonly flow: FlowResult; readonly circle: { readonly centre: Vec2; readonly radius: number }; readonly from: number; readonly downwash: boolean }
+export function captureBaseline(flow: FlowResult, circle: WindBaseline['circle'], from: number, downwash = false): WindBaseline {
+  return { flow: { ...flow, frame: { ...flow.frame, centre: [...flow.frame.centre], flow: [...flow.frame.flow] }, velocity: flow.velocity.slice(), solid: flow.solid.slice() }, circle: { centre: [...circle.centre], radius: circle.radius }, from, downwash }
 }
-export function baselineMatches(baseline: WindBaseline, circle: WindBaseline['circle'], from: number): boolean {
-  return baseline.from === from && baseline.circle.radius === circle.radius && baseline.circle.centre.every((v, i) => v === circle.centre[i])
+/** A delta is only meaningful with the same circle, direction and model settings (downwash rule on/off). */
+export function baselineMatches(baseline: WindBaseline, circle: WindBaseline['circle'], from: number, downwash = baseline.downwash): boolean {
+  return baseline.from === from && baseline.downwash === downwash && baseline.circle.radius === circle.radius && baseline.circle.centre.every((v, i) => v === circle.centre[i])
 }
 export const CIRCLE_RADIUS = { min: 60, max: 250, step: 10 } as const
 /** Heatmap cell size inside the analysis circle (m). */
@@ -123,7 +124,7 @@ export function buildClimateView(
   if (mode === 'wind') {
     const bands = wind.display === 'delta' ? DELTA_BANDS : wind.display === 'activity' ? ACTIVITY_BANDS : SPEED_BANDS
     const scale = wind.display === 'activity' ? wind.refSpeed : 1
-    const compatible = baseline && baselineMatches(baseline, { centre: wind.centre ?? baseline.circle.centre, radius: wind.radius }, wind.from)
+    const compatible = baseline && baselineMatches(baseline, { centre: wind.centre ?? baseline.circle.centre, radius: wind.radius }, wind.from, wind.downwash)
     const cells = flow && (wind.display !== 'delta' || compatible)
       ? sampleGrid(studyArea, WIND_CELL_M).flatMap((c) => {
           const v = sampleVelocity(flow.frame, flow.velocity, flow.solid, [c.x, c.y])

@@ -100,7 +100,7 @@ describe('baseline delta', () => {
   for (let i = 0; i < velocity.length; i += 2) velocity[i] = 1
   const flow = { id: 1, frame, velocity, solid: new Uint8Array(32 * 32), settled: true }
   const circle = { centre: [20, 20] as Vec2, radius: 100 }
-  const baseline = captureBaseline(flow, circle, 270)
+  const baseline = captureBaseline(flow, circle, 270, DEFAULT_WIND.downwash)
   it('copies the baseline buffers and frame', () => {
     expect(baseline.flow.velocity).not.toBe(flow.velocity)
     expect(baseline.flow.solid).not.toBe(flow.solid)
@@ -130,7 +130,7 @@ describe('baseline delta', () => {
     expect(screen.getByRole('button', { name: 'Set baseline' })).toBeDisabled()
     rerender(<ClimatePanel {...props} baseline={baseline} baselineMismatch canSetBaseline onSetBaseline={onSet} onClearBaseline={onClear} onStreamlinesChange={onStreamlines} />)
     expect(screen.getByRole('button', { name: 'Delta' })).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('Baseline was taken for W 270°, r = 100 m. Reset it to compare.')
+    expect(screen.getByRole('status')).toHaveTextContent('Baseline was taken for W 270°, r = 100 m, downwash rule on. Reset it to compare.')
     fireEvent.click(screen.getByRole('button', { name: 'Set baseline' }))
     fireEvent.click(screen.getByRole('button', { name: 'Clear baseline' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Streamlines' }))

@@ -6,6 +6,7 @@ import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, type 
 import { ClimatePanel, useWindDemo } from './ClimatePanel'
 import { useWindFlow } from '../../features/analysis/useWindFlow'
 import { circlePolygon } from '../../features/analysis/grid'
+import type { Vec2 } from '../../lib/coordinates'
 import { siteFacts } from '../../features/analysis/siteFacts'
 import { SiteFactsPanel } from './SiteFactsPanel'
 import { readTestBuilding, writeTestBuilding } from './studioMode'
@@ -135,23 +136,24 @@ export function StudioShell({
   const [placingCircle, setPlacingCircle] = useState(false)
   const windCentre = useMemo(() => wind.centre ?? (studyArea ? ringCentroid(studyArea) : null), [wind.centre, studyArea])
   const windArea = useMemo(() => (windCentre ? circlePolygon(windCentre, wind.radius) : null), [windCentre, wind.radius])
-  const liveWindFlow = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash)
-  const latestFlowId = useRef(0)
-  const [minimumFlowId, setMinimumFlowId] = useState(1)
-  useEffect(() => {
-    setMinimumFlowId(latestFlowId.current + 1)
-  }, [windArea, analysisBuildings, wind.from, wind.downwash, climateMode])
-  useEffect(() => { latestFlowId.current = liveWindFlow?.id ?? 0 }, [liveWindFlow])
-  // Show the live field even mid-edit (Forma-style live drag); only a fresh, settled field may become the baseline.
-  const windFlow = liveWindFlow
-  const freshFlow = liveWindFlow && liveWindFlow.id >= minimumFlowId ? liveWindFlow : null
-  const baselineMismatch = !!baseline && !!windCentre && !baselineMatches(baseline, { centre: windCentre, radius: wind.radius }, wind.from)
+  const { flow: windFlow, isCurrent: isCurrentFlow } = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash)
+  // The live field shows even mid-edit (Forma-style live drag); only a current, settled field may become the baseline.
+  const freshFlow = isCurrentFlow(windFlow) ? windFlow : null
+  const baselineMismatch = !!baseline && !!windCentre && !baselineMatches(baseline, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)
   useEffect(() => {
     if (!placingCircle) return
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setPlacingCircle(false) }
+    // Keyboard placement: arrows nudge the centre 10 m (east/north), Enter places, Esc cancels.
+    const NUDGE: Record<string, Vec2> = { ArrowLeft: [-10, 0], ArrowRight: [10, 0], ArrowUp: [0, 10], ArrowDown: [0, -10] }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.key === 'Enter') { event.preventDefault(); setPlacingCircle(false); return }
+      const step = NUDGE[event.key]
+      if (!step || !windCentre) return
+      event.preventDefault()
+      setWind((w) => ({ ...w, centre: [(w.centre ?? windCentre)[0] + step[0], (w.centre ?? windCentre)[1] + step[1]] }))
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [placingCircle])
+  }, [placingCircle, windCentre])
   const climateView = useMemo(() => {
     if (!sitePackage || !studyArea || !windArea || climateMode === 'off') return null
     return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline)
@@ -492,7 +494,7 @@ export function StudioShell({
             <ClimatePanel demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
               streamlines={streamlines} onStreamlinesChange={setStreamlines}
               baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled}
-              onSetBaseline={() => { if (freshFlow?.settled && windCentre) setBaseline(captureBaseline(freshFlow, { centre: windCentre, radius: wind.radius }, wind.from)) }}
+              onSetBaseline={() => { if (windFlow?.settled && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}
               onClearBaseline={() => { setBaseline(null); setWind((w) => ({ ...w, display: w.display === 'delta' ? 'activity' : w.display })) }} />
           ) : null}
           climateMeta={climateMode === 'off' ? 'Off' : climateMode === 'wind' ? 'Wind' : 'Noise'}

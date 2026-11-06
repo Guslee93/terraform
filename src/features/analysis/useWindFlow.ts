@@ -8,18 +8,26 @@ import { flowFrame } from './lbm'
 const GRID = 160
 const MARGIN = 1.4
 
-/** Live 2D flow from the worker; null while off, before the first field, or where Workers are unavailable. */
+export type WindFlowState = {
+  /** Latest field from the worker (may be a preview of older inputs while a newer request is pending). */
+  readonly flow: FlowResult | null
+  /** True only when `f` was solved for the current inputs (no newer edit pending). */
+  readonly isCurrent: (f: FlowResult | null) => boolean
+}
+
+/** Live 2D flow from the worker; flow is null while off, before the first field, or where Workers are unavailable. */
 export function useWindFlow(
   area: readonly Vec2[] | null,
   buildings: readonly FootprintBuilding[],
   fromBearingDeg: number,
   enabled: boolean,
   downwash = false,
-): FlowResult | null {
+): WindFlowState {
   const [flow, setFlow] = useState<FlowResult | null>(null)
   const worker = useRef<Worker | null>(null)
   const lastFrame = useRef<unknown>(null)
-  const nextId = useRef(0)
+  // Bumped on every input change, before throttling, so an older result can never pass as current.
+  const revision = useRef(0)
   const frame = useMemo(
     () => (enabled && area && area.length >= 3 ? flowFrame(area, fromBearingDeg, GRID, GRID, MARGIN) : null),
     [enabled, area, fromBearingDeg],
@@ -44,9 +52,10 @@ export function useWindFlow(
   const lastSent = useRef(0)
   useEffect(() => {
     if (!frame) return
+    const id = ++revision.current
     const send = () => {
       lastSent.current = performance.now()
-      const request: FlowRequest = { id: ++nextId.current, frame, buildings, reset: lastFrame.current !== frame, downwash }
+      const request: FlowRequest = { id, frame, buildings, reset: lastFrame.current !== frame, downwash }
       lastFrame.current = frame
       worker.current?.postMessage(request)
     }
@@ -55,5 +64,5 @@ export function useWindFlow(
     return () => clearTimeout(handle)
   }, [frame, buildings, downwash])
 
-  return frame ? flow : null
+  return { flow: frame ? flow : null, isCurrent: (f) => !!f && f.id === revision.current }
 }

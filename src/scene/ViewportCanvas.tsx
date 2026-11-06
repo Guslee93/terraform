@@ -19,6 +19,7 @@ import type { EnvelopeConstraints, EnvelopeResult } from '../features/analysis/c
 import { ConstraintLayer } from './ConstraintLayer'
 import { ClimateLayer } from './ClimateLayer'
 import { WindStreamlines } from './WindStreamlines'
+import { FLOW_DISCLAIMER } from '../features/analysis/lbm'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
 import type { FlowResult } from '../features/analysis/flowRunner'
@@ -410,6 +411,12 @@ export function ViewportCanvas({
       role="region"
       aria-label={`3D site viewport for ${manifest.title}. Drag to orbit, middle-drag to pan, scroll to zoom.`}
     >
+      {windCircle && (
+        // The wind claim stays visible with the wind layer even when the inspector group is closed (PRD R8).
+        <p className="pointer-events-none absolute bottom-14 right-3 z-20 rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">
+          {FLOW_DISCLAIMER}
+        </p>
+      )}
       {webgl === 'none' ? (
         <SceneUnavailable reason="unsupported" />
       ) : (

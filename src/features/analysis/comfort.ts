@@ -113,8 +113,29 @@ export function downwashQualifies(building: FootprintBuilding, buildings: readon
  */
 export function downwashBoost(buildings: readonly FootprintBuilding[], frame: FlowFrame): Float32Array {
   const field = new Float32Array(frame.nx * frame.ny).fill(1)
-  for (const building of buildings) {
-    if (!downwashQualifies(building, buildings)) continue
+  // Centroids once; only buildings whose ring can reach the frame are candidates, and only
+  // neighbours within the 100 m radius of a candidate count (large imported sites stay cheap).
+  const centres = buildings.map((b) => ringCentroid(b.footprint))
+  const reach = (Math.hypot(frame.nx, frame.ny) * frame.dx) / 2 + DOWNWASH_MAX_RING_WIDTH_M + DOWNWASH_NEIGHBOUR_RADIUS_M
+  const near = buildings.map((_, i) => Math.hypot(centres[i]![0] - frame.centre[0], centres[i]![1] - frame.centre[1]) <= reach)
+  const nearIdx = near.flatMap((ok, i) => (ok ? [i] : []))
+  const qualifies = (i: number) => {
+    const building = buildings[i]!
+    if (building.height >= DOWNWASH_ABSOLUTE_HEIGHT_M) return true
+    let sum = 0
+    let count = 0
+    for (const j of nearIdx) {
+      if (Math.hypot(centres[j]![0] - centres[i]![0], centres[j]![1] - centres[i]![1]) <= DOWNWASH_NEIGHBOUR_RADIUS_M) {
+        sum += buildings[j]!.height
+        count += 1
+      }
+    }
+    return count > 0 && building.height >= DOWNWASH_HEIGHT_FACTOR * (sum / count)
+  }
+  for (const i of nearIdx) {
+    const building = buildings[i]!
+    if (Math.hypot(centres[i]![0] - frame.centre[0], centres[i]![1] - frame.centre[1]) > reach - DOWNWASH_NEIGHBOUR_RADIUS_M) continue
+    if (!qualifies(i)) continue
     const ring = Math.min(DOWNWASH_RING_WIDTH_FACTOR * building.height, DOWNWASH_MAX_RING_WIDTH_M)
     if (!(ring > 0) || building.footprint.length < 3) continue
     const bounds = footprintBounds(building.footprint)

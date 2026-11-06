@@ -163,7 +163,7 @@ export function ClimatePanel({ demoPlaying = false, onToggleDemo, mode, onModeCh
                   placingCircle ? 'bg-ink text-ink-on-inverse' : 'bg-surface text-ink',
                 )}
               >
-                {placingCircle ? 'Click the ground to place · Esc to cancel' : 'Move circle'}
+                {placingCircle ? 'Click the ground or use arrow keys · Enter to place · Esc to cancel' : 'Move circle'}
               </button>
             )}
             <p className="mt-1 text-caption text-ink-secondary">The flow is solved only around this circle, at about {Math.round((wind.radius * 2 * 1.4) / 160 * 10) / 10} m resolution.</p>
@@ -194,7 +194,7 @@ export function ClimatePanel({ demoPlaying = false, onToggleDemo, mode, onModeCh
             <button type="button" className="min-h-8 rounded-chip border border-line px-2 text-body-sm disabled:opacity-50" disabled={!canSetBaseline} onClick={onSetBaseline}>Set baseline</button>
             {baseline && <button type="button" className="min-h-8 rounded-chip border border-line px-2 text-body-sm" onClick={onClearBaseline}>Clear baseline</button>}
           </div>
-          {baseline && baselineMismatch && <p role="status" className="mt-2 text-caption text-ink-secondary">Baseline was taken for {compassName(baseline.from)} {baseline.from}°, r = {baseline.circle.radius} m. Reset it to compare.</p>}
+          {baseline && baselineMismatch && <p role="status" className="mt-2 text-caption text-ink-secondary">Baseline was taken for {compassName(baseline.from)} {baseline.from}°, r = {baseline.circle.radius} m, downwash rule {baseline.downwash ? 'on' : 'off'}. Reset it to compare.</p>}
           {wind.display === 'delta' && !baselineMismatch && <p className="mt-2 text-caption">{DELTA_NOTE}</p>}
           {wind.display === 'activity' && (
             <div className="mt-3">
