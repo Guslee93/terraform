@@ -16,7 +16,7 @@ describe('application routes', () => {
     renderRoute('/')
 
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/explore a site/i)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/know a site/i)
     expect(screen.getByRole('heading', { name: 'Compact Infill' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Sloped Edge' })).toBeInTheDocument()
   })
@@ -39,10 +39,12 @@ describe('application routes', () => {
 
     const main = screen.getByRole('main')
     expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', `#${main.id}`)
+    expect(within(main).getAllByRole('link', { name: /^Try it/ }).every((link) => link.getAttribute('href') === '/new')).toBe(true)
+    expect(within(main).getAllByRole('link', { name: /^Try it/ })[0]).toHaveAttribute('href', '/new')
     expect(within(main).getByRole('link', { name: 'Open Compact Infill' })).toHaveAttribute('href', '/studio/compact-infill')
     expect(within(main).getByRole('link', { name: 'About the prototype' })).toHaveAttribute('href', '/about')
     expect(within(main).getByRole('heading', { level: 2, name: 'Choose a site to begin.' }).closest('section')).toHaveAttribute('id', 'sites')
-    expect(within(main).getByText('Curated Oslo demo · simplified context')).toBeInTheDocument()
+    expect(within(main).getByText('Open map data · simplified context · screening estimates')).toBeInTheDocument()
     expect(within(main).getByText('Illustrative — not surveyed')).toBeInTheDocument()
     expect(screen.getByRole('banner')).toBeInTheDocument()
     expect(within(screen.getByRole('contentinfo')).getByText(/constraints are illustrative and not planning advice/)).toBeInTheDocument()
@@ -51,8 +53,8 @@ describe('application routes', () => {
   it('renders the about page with explicit limitations', () => {
     renderRoute('/about')
 
-    expect(screen.getByRole('heading', { name: /a credible architectural tool/i })).toBeInTheDocument()
-    expect(screen.getByText(/not a bim authoring environment/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /site readings you can trace/i })).toBeInTheDocument()
+    expect(screen.getByText(/not a wind simulation/i)).toBeInTheDocument()
   })
 
   it('shows a recoverable state for an unknown site package', async () => {

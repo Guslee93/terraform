@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Terraform Studio — Dark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --glass: rgba(11, 13, 17, 0.76);
+    --glass-strong: rgba(10, 12, 16, 0.86);
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.14);
+    --ink: #F2F3F5;
+    --ink-2: rgba(236, 239, 245, 0.62);
+    --ink-3: rgba(236, 239, 245, 0.38);
+    --accent: #3651FF;
+    --accent-soft: rgba(54, 81, 255, 0.18);
+    --warn: #F2A93B;
+    --ok: #8FE3B8;
+    --r: 18px;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1440px; height: 900px; overflow: hidden; background: #e9e9e7; }
+  body { font-family: 'Inter Tight', system-ui, sans-serif; color: var(--ink); font-size: 13px; letter-spacing: -0.005em; -webkit-font-smoothing: antialiased; }
+  .scene { position: fixed; inset: 0; width: 1440px; height: 900px; object-fit: cover; }
+  .vignette { position: fixed; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(10,12,16,0.30) 0%, rgba(10,12,16,0) 16%),
+      linear-gradient(0deg, rgba(10,12,16,0.32) 0%, rgba(10,12,16,0) 22%),
+      linear-gradient(270deg, rgba(10,12,16,0.22) 0%, rgba(10,12,16,0) 34%); }
+
+  .glass { position: absolute; background: var(--glass); border: 1px solid var(--line);
+    backdrop-filter: blur(22px) saturate(140%); -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border-radius: var(--r);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 48px -18px rgba(0,0,0,0.45); }
+  .label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+  .mono { font-family: var(--mono); }
+  .row { display: flex; align-items: center; }
+  .sep { width: 1px; height: 18px; background: var(--line-strong); }
+
+  /* top bar */
+  .brand { top: 20px; left: 20px; height: 48px; padding: 0 18px 0 16px; gap: 14px; display: flex; align-items: center; }
+  .logo { width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); border-radius: 1px; }
+  .brand b { font-weight: 600; font-size: 14px; }
+  .brand .site { color: var(--ink); font-weight: 500; }
+  .brand .sub { color: var(--ink-3); }
+
+  .dock { top: 20px; left: 498px; height: 48px; padding: 5px; gap: 4px; display: flex; align-items: center; border-radius: 14px; }
+  .tool { height: 38px; padding: 0 14px; border-radius: 10px; display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-weight: 500; }
+  .tool svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .tool.on { background: var(--ink); color: #0d0f12; }
+  .tool.dim { color: var(--ink-3); }
+  .kbd { font-family: var(--mono); font-size: 10px; color: var(--ink-3); border: 1px solid var(--line-strong); border-radius: 5px; padding: 1px 5px; }
+  .tool.on .kbd { color: rgba(13,15,18,.5); border-color: rgba(13,15,18,.2); }
+
+  .acts { top: 20px; right: 20px; width: 360px; height: 48px; padding: 0 8px 0 16px; display: flex; align-items: center; gap: 12px; }
+  .concept { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+  .concept .chev { color: var(--ink-3); }
+  .saved { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-family: var(--mono); font-size: 11px; }
+  .saved i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .btn { height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-strong); display: flex; align-items: center; gap: 6px; color: var(--ink); font-weight: 500; background: rgba(255,255,255,0.03); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .icon-btn { width: 34px; padding: 0; justify-content: center; }
+
+  /* left camera rail */
+  .rail { top: 88px; left: 20px; width: 56px; padding: 6px; display: flex; flex-direction: column; gap: 4px; border-radius: 14px; }
+  .cam { height: 44px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--ink-2); font-size: 10px; font-family: var(--mono); letter-spacing: .04em; }
+  .cam svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .cam.on { background: rgba(255,255,255,0.10); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .rail hr { border: 0; height: 1px; background: var(--line); margin: 4px 6px; }
+
+  .compass { top: 88px; right: 400px; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; }
+  .compass .n { position: absolute; top: 6px; font-family: var(--mono); font-size: 10px; color: var(--ink); }
+
+  /* mass callout */
+  .pin { position: absolute; left: 432px; top: 470px; width: 1px; height: 120px; background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,0)); }
+  .pin::after { content: ''; position: absolute; left: -4px; bottom: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; }
+  .callout { left: 432px; top: 384px; width: 196px; padding: 12px 14px; border-radius: 14px; background: var(--glass-strong); }
+  .callout .t { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .callout .t b { font-weight: 600; }
+  .chip { font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 999px; letter-spacing: .04em; }
+  .chip.warn { color: var(--warn); background: rgba(242,169,59,.12); box-shadow: inset 0 0 0 1px rgba(242,169,59,.28); }
+  .callout .kv { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .callout .kv div span { display: block; }
+  .callout .kv .v { font-family: var(--mono); font-size: 15px; font-weight: 400; }
+  .callout .kv .v small { font-size: 10px; color: var(--ink-3); margin-left: 2px; }
+
+  /* legend + scale */
+  .legend { left: 96px; bottom: 176px; height: 36px; padding: 0 14px; display: flex; align-items: center; gap: 16px; border-radius: 12px; color: var(--ink-2); font-size: 11px; }
+  .legend .sw { display: inline-block; width: 16px; height: 0; border-top: 1.5px dashed; vertical-align: middle; margin-right: 6px; }
+  .scale { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; color: var(--ink-2); }
+  .scale i { display: block; width: 64px; height: 6px; border: 1px solid var(--ink-2); border-top: 0; }
+
+  /* sun dock */
+  .sun { left: 20px; right: 400px; bottom: 20px; height: 140px; padding: 18px 20px; display: grid; grid-template-columns: 172px 1fr 132px; gap: 24px; }
+  .time { display: flex; flex-direction: column; justify-content: space-between; }
+  .time .big { font-family: var(--mono); font-weight: 300; font-size: 44px; line-height: 1; letter-spacing: -0.03em; }
+  .months { display: flex; gap: 4px; }
+  .months span { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; padding: 4px 7px; border-radius: 6px; color: var(--ink-3); }
+  .months span.on { color: var(--ink); background: rgba(255,255,255,.1); }
+  .chart { position: relative; }
+  .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .sunread { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; }
+  .sunread .pair { text-align: right; }
+  .sunread .v { font-family: var(--mono); font-size: 18px; font-weight: 300; }
+  .play { width: 40px; height: 40px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; }
+
+  /* inspector */
+  .insp { top: 84px; right: 20px; width: 360px; bottom: 20px; display: flex; flex-direction: column; overflow: hidden; }
+  .tabs { display: flex; gap: 4px; padding: 6px; margin: 12px 12px 0; border-radius: 12px; background: rgba(255,255,255,0.04); }
+  .tabs span { flex: 1; text-align: center; height: 30px; line-height: 30px; border-radius: 8px; color: var(--ink-2); font-weight: 500; }
+  .tabs span.on { background: rgba(255,255,255,0.10); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .sec { padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .sec:last-child { border-bottom: 0; }
+  .sec-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .check-big { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 4px; }
+  .check-big .n { font-family: var(--mono); font-weight: 300; font-size: 56px; line-height: .9; letter-spacing: -0.04em; }
+  .check-big .n sup { font-size: 16px; color: var(--ink-3); vertical-align: top; margin-left: 2px; }
+  .check-big .d { padding-bottom: 6px; }
+  .check-big .d b { display: block; font-weight: 500; font-size: 14px; }
+  .check-big .d span { color: var(--ink-3); font-size: 11px; }
+  .checks { margin-top: 12px; }
+  .ck { display: flex; align-items: center; justify-content: space-between; height: 32px; border-top: 1px solid var(--line); }
+  .ck .l { display: flex; align-items: center; gap: 10px; color: var(--ink); }
+  .ck .dot { width: 7px; height: 7px; border-radius: 2px; }
+  .ck .dot.w { background: var(--warn); }
+  .ck .dot.p { border: 1.5px solid var(--ok); }
+  .ck .r { font-family: var(--mono); font-size: 11px; }
+  .ck .r.w { color: var(--warn); } .ck .r.p { color: var(--ok); }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tile { border-radius: 12px; padding: 12px; background: rgba(255,255,255,0.035); border: 1px solid var(--line); }
+  .tile .v { font-family: var(--mono); font-size: 24px; font-weight: 300; letter-spacing: -0.03em; margin: 8px 0 6px; }
+  .tile .v small { font-size: 11px; color: var(--ink-3); margin-left: 3px; letter-spacing: 0; }
+  .tile .f { font-size: 11px; color: var(--ink-3); }
+  .pills { display: flex; gap: 2px; margin-top: 8px; }
+  .pills i { flex: 1; height: 14px; border-radius: 3px; background: rgba(255,255,255,0.08); }
+  .pills i.a { background: var(--ink); }
+  .pills i.lim { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .mass { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: var(--accent-soft); box-shadow: inset 0 0 0 1px rgba(54,81,255,.55); }
+  .mass .sw { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; }
+  .mass .m { flex: 1; }
+  .mass .m b { font-weight: 500; display: block; }
+  .mass .m span { color: var(--ink-2); font-size: 11px; }
+  .mass .a { font-family: var(--mono); font-size: 12px; }
+  .foot { margin-top: auto; padding: 12px 20px 14px; border-top: 1px solid var(--line); font-size: 10.5px; line-height: 1.5; color: var(--ink-3); }
+  .foot b { color: var(--ink-2); font-weight: 500; }
+</style>
+</head>
+<body>
+<img class="scene" src="scene.png" alt="">
+<div class="vignette"></div>
+
+<!-- brand -->
+<div class="glass brand">
+  <span class="logo"></span><b>Terraform</b>
+  <span class="sep"></span>
+  <span class="site">Compact Infill</span>
+  <span class="sub">Dense Oslo block · strong shadow study</span>
+</div>
+
+<!-- tool dock -->
+<div class="glass dock">
+  <div class="tool"><svg viewBox="0 0 16 16"><path d="M3 2l9 5-4 1.2L6.6 13z"/></svg>Select <span class="kbd">V</span></div>
+  <div class="tool on"><svg viewBox="0 0 16 16"><path d="M2.5 13.5V6l5.5-3.5L13.5 6v7.5z"/><path d="M8 2.5v11"/></svg>Draw building <span class="kbd">B</span></div>
+  <span class="sep" style="margin:0 4px"></span>
+  <div class="tool"><svg viewBox="0 0 16 16"><path d="M5 4L2 7l3 3"/><path d="M2.5 7H10a3.5 3.5 0 010 7H8"/></svg></div>
+  <div class="tool dim"><svg viewBox="0 0 16 16"><path d="M11 4l3 3-3 3"/><path d="M13.5 7H6a3.5 3.5 0 000 7h2"/></svg></div>
+  <span class="sep" style="margin:0 4px"></span>
+  <div class="tool"><svg viewBox="0 0 16 16"><path d="M8 2l6 3-6 3-6-3z"/><path d="M2 8l6 3 6-3"/><path d="M2 11l6 3 6-3"/></svg>Layers</div>
+</div>
+
+<!-- actions -->
+<div class="glass acts">
+  <div class="concept">Concept A <span class="chev">⌄</span></div>
+  <div class="saved"><i></i>Saved</div>
+  <div style="flex:1"></div>
+  <div class="btn"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="5" height="10" rx="1"/><rect x="9" y="3" width="5" height="10" rx="1"/></svg>Compare</div>
+  <div class="btn icon-btn"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M6.4 6.2a1.7 1.7 0 113 1.1c-.6.5-1.4.8-1.4 1.7"/><path d="M8 11.4v.1"/></svg></div>
+</div>
+
+<!-- camera rail -->
+<div class="glass rail">
+  <div class="cam on"><svg viewBox="0 0 16 16"><path d="M8 1.5l5.5 3.2v6.6L8 14.5l-5.5-3.2V4.7z"/><path d="M8 8v6.5M8 8l5.5-3.3M8 8L2.5 4.7"/></svg>3D</div>
+  <div class="cam"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="1"/><path d="M2.5 8h11M8 2.5v11"/></svg>PLAN</div>
+  <hr>
+  <div class="cam"><svg viewBox="0 0 16 16"><path d="M8 2v12M4 6l4-4 4 4"/></svg>N</div>
+  <div class="cam"><svg viewBox="0 0 16 16"><path d="M8 14V2M4 10l4 4 4-4"/></svg>S</div>
+  <div class="cam"><svg viewBox="0 0 16 16"><path d="M1.5 11h13"/><path d="M3 11V6h3v5M8 11V3h4v8"/></svg>STR</div>
+  <hr>
+  <div class="cam"><svg viewBox="0 0 16 16"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4"/></svg>FIT</div>
+</div>
+
+<!-- compass -->
+<div class="glass compass">
+  <span class="n">N</span>
+  <svg width="64" height="64" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="22" fill="none" stroke="rgba(255,255,255,.12)"/>
+    <g transform="rotate(-28 32 32)">
+      <path d="M32 14l5 18h-10z" fill="#F2F3F5"/>
+      <path d="M32 50l5-18h-10z" fill="rgba(255,255,255,.25)"/>
+    </g>
+    <g stroke="rgba(255,255,255,.35)"><path d="M32 6v4M32 54v4M6 32h4M54 32h4"/></g>
+  </svg>
+</div>
+
+<!-- mass callout -->
+<div class="pin"></div>
+<div class="glass callout">
+  <div class="t"><b>Mass 1</b><span class="chip warn">2 CHECKS</span></div>
+  <div class="kv">
+    <div><span class="label">Floors</span><span class="v">3</span></div>
+    <div><span class="label">Height</span><span class="v">9.6<small>m</small></span></div>
+    <div><span class="label">GFA</span><span class="v">1396<small>m²</small></span></div>
+  </div>
+</div>
+
+<!-- legend -->
+<div class="glass legend">
+  <div class="scale"><i></i>50 m</div>
+  <span class="sep"></span>
+  <span><span class="sw" style="color:#7d9bd4"></span>Study boundary</span>
+  <span><span class="sw" style="color:var(--warn)"></span>Setback 4.0 m</span>
+  <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#cfe0c4;margin-right:6px;vertical-align:-1px"></span>Green space</span>
+</div>
+
+<!-- sun dock -->
+<div class="glass sun">
+  <div class="time">
+    <div class="row" style="gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:var(--warn);box-shadow:0 0 10px var(--warn)"></span><span class="label" style="color:var(--ink-2)">Sun · 21 Jun · Oslo</span></div>
+    <div class="big">15:00</div>
+    <div class="months"><span>MAR</span><span class="on">JUN</span><span>SEP</span><span>DEC</span></div>
+  </div>
+  <div class="chart"><svg id="dots"></svg></div>
+  <div class="sunread">
+    <div class="row" style="gap:20px">
+      <div class="pair"><div class="label">Azimuth</div><div class="v">217°</div></div>
+      <div class="pair"><div class="label">Altitude</div><div class="v">49°</div></div>
+    </div>
+    <div class="play"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M4 2.5v9l7.5-4.5z" fill="#0d0f12"/></svg></div>
+  </div>
+</div>
+
+<!-- inspector -->
+<aside class="glass insp">
+  <div class="tabs"><span class="on">Design</span><span>Scenario</span><span>Site</span></div>
+
+  <div class="sec">
+    <div class="sec-h"><span class="label">Design check</span><span class="label">Height from · Grade ⌄</span></div>
+    <div class="check-big">
+      <div class="n">2<sup>/4</sup></div>
+      <div class="d"><b>Checks need attention</b><span>Exceeds demo envelope</span></div>
+    </div>
+    <div class="checks">
+      <div class="ck"><span class="l"><i class="dot w"></i>Mass 1 is outside the study area</span><span class="r w">BOUNDARY</span></div>
+      <div class="ck"><span class="l"><i class="dot w"></i>Mass 1 is inside the setback</span><span class="r w">4.0 M</span></div>
+      <div class="ck"><span class="l"><i class="dot p"></i>Height ≤ 18.0 m above grade</span><span class="r p">PASS</span></div>
+      <div class="ck"><span class="l"><i class="dot p"></i>Sits on the terrain</span><span class="r p">PASS</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span class="label">Scenario · Concept A</span><span class="label">1 building</span></div>
+    <div class="tiles">
+      <div class="tile"><span class="label">Floor area</span><div class="v">1 396<small>m²</small></div><div class="f">GFA ratio 0.03</div></div>
+      <div class="tile"><span class="label">Tallest</span><div class="v">9.6<small>m</small></div>
+        <div class="pills" id="hpills"></div><div class="f" style="margin-top:6px">Limit 18 m above grade</div></div>
+      <div class="tile"><span class="label">Footprint</span><div class="v">465<small>m²</small></div><div class="f" style="color:var(--warn)">39 m² outside study area</div></div>
+      <div class="tile"><span class="label">Volume</span><div class="v">4 466<small>m³</small></div><div class="f">3 floors × 3.2 m</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h"><span class="label">Buildings</span><span class="label" style="color:var(--ink-2)">+ Draw another</span></div>
+    <div class="mass">
+      <div class="sw"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5"><path d="M2.5 13.5V6l5.5-3.5L13.5 6v7.5z"/></svg></div>
+      <div class="m"><b>Mass 1</b><span>3 floors · 9.6 m · needs attention</span></div>
+      <div class="a">1 396 m²</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>Curated Oslo demo · simplified context</b> — illustrative constraints, not planning advice. Local ENU metres.<br>
+    Buildings © OpenStreetMap contributors (ODbL) · Terrain © Kartverket (CC BY 4.0)
+  </div>
+</aside>
+
+<script>
+  // height pills: 9.6 of 18 m limit
+  const hp = document.getElementById('hpills')
+  for (let i = 0; i < 18; i++) hp.insertAdjacentHTML('beforeend', `<i class="${i < 10 ? 'a' : i === 17 ? 'lim' : ''}"></i>`)
+
+  // geometric sun altitude, Oslo 59.9°N, 21 Jun (decl 23.44°), 10-min columns over 24 h
+  const svg = document.getElementById('dots')
+  const W = svg.clientWidth, H = svg.clientHeight
+  const lat = 59.91 * Math.PI / 180, dec = 23.44 * Math.PI / 180
+  const cols = 72, step = W / cols, rows = 9, gap = (H - 22) / rows
+  let out = ''
+  for (let c = 0; c < cols; c++) {
+    const hour = (c + 0.5) * 24 / cols
+    const ha = (hour - 13.3) * 15 * Math.PI / 180 // solar noon ≈ 13:20 CEST in Oslo
+    const alt = Math.asin(Math.sin(lat) * Math.sin(dec) + Math.cos(lat) * Math.cos(dec) * Math.cos(ha)) * 180 / Math.PI
+    const n = alt > 0 ? Math.max(1, Math.round(alt / 53.5 * rows)) : 0
+    const x = c * step + step / 2
+    const past = hour <= 15
+    for (let r = 0; r < rows; r++) {
+      const y = H - 22 - r * gap - gap / 2
+      const on = r < n
+      const fill = on ? (past ? '#F2F3F5' : 'rgba(242,243,245,.42)') : 'rgba(255,255,255,.07)'
+      out += `<circle cx="${x}" cy="${y}" r="1.9" fill="${fill}"/>`
+    }
+  }
+  const nowX = 15 / 24 * W
+  out += `<line x1="${nowX}" x2="${nowX}" y1="-4" y2="${H - 18}" stroke="#3651FF" stroke-width="1.5"/>`
+  out += `<circle cx="${nowX}" cy="-4" r="4" fill="#3651FF" stroke="#fff" stroke-width="1.5"/>`
+  for (const [t, label] of [[0, '00'], [3.88, '03:53 ↑'], [12, '12'], [22.72, '↓ 22:43']])
+    out += `<text x="${t / 24 * W}" y="${H}" fill="rgba(236,239,245,.38)" font-family="JetBrains Mono" font-size="10" text-anchor="${t === 0 ? 'start' : t === 24 ? 'end' : 'middle'}">${label}</text>`
+  svg.innerHTML = out
+</script>
+</body>
+</html>

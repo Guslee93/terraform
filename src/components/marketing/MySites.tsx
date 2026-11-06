@@ -24,7 +24,7 @@ export function MySites({ store = getImportedSiteStore(), scenarios = getScenari
     if (confirmation || !deleted.current) return
     deleted.current = false
     const timer = window.setTimeout(() => {
-      const target = heading.current ?? document.querySelector<HTMLAnchorElement>('a[href="/new"]')
+      const target = heading.current ?? document.querySelector<HTMLAnchorElement>('#sites a[href="/new"]')
       target?.focus()
     }, 0)
     return () => window.clearTimeout(timer)

@@ -445,3 +445,10 @@
 - Added `climateView.ts` (cells → colours + legend shares), `scene/ClimateLayer.tsx` (one instanced ground overlay), `ClimatePanel.tsx` (Off/Wind/Noise, wind-from select, legend, claim label), wired into `StudioShell`, `Inspector` (new "Wind and noise" group) and `ViewportCanvas` (`climate` prop). Context buildings only; user-drawn masses are not yet obstacles.
 - Deviation from plan: no built-in "typical wind direction" table — that would be invented climate data. The user picks the direction (default West) and the panel says so.
 - Verification: lint ✅ · typecheck ✅ · 874 unit tests ✅ · browser on compact-infill: noise legend 32% / 68% in two bands, wind legend 63/13/16/8% for West wind, overlay visible in plan view. `npm run build` and e2e not re-run. A pre-existing dev-mode "unmount a root" console error appears on every fresh load.
+
+### Microclimate pivot step 5 (2026-11-04, Claude)
+- Studio now opens analysis-only: study-area facts (area, buildings, built footprint clipped to the boundary, coverage, tallest, mean height — `siteFacts.ts`, hand-computed tests), Wind and noise (open, Noise by default), Sun, Layers, Site. "Test a building" (top bar, remembered in `terraform:test-building:v1`) brings back the tools, design check, scenarios, Compare and the guide.
+- Drawn masses are now obstacles for wind/noise and count in the area facts, so Test a building changes the readings.
+- Landing and About rewritten for the new pitch; primary CTA "Try it" → `/new`. MySites focus fallback now targets the card link (`#sites a[href="/new"]`).
+- Existing unit and e2e specs opt into the tools (StudioShell test beforeEach; Playwright storageState). New test covers the default.
+- Verification: lint ✅ · typecheck ✅ · 879 unit tests ✅ · build ✅ · e2e massing/layers/m4-scenarios 14 passed · browser check at 1440×900. Full e2e suite not re-run; a saved mass from an earlier session still draws and counts in analysis mode.

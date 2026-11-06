@@ -4,6 +4,10 @@ import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from 
 import { sunState } from '../../features/analysis/sun'
 import { buildClimateView, type ClimateMode } from '../../features/analysis/climateView'
 import { ClimatePanel } from './ClimatePanel'
+import { siteFacts } from '../../features/analysis/siteFacts'
+import { SiteFactsPanel } from './SiteFactsPanel'
+import { readTestBuilding, writeTestBuilding } from './studioMode'
+import { tierTop } from '../../features/massing/aggregate'
 import { localDayMinuteToInstant } from '../../features/analysis/time'
 import type { SunTime } from './SunPanel'
 import type { MassingCommand } from '../../features/editor/history'
@@ -13,7 +17,7 @@ import type { ScenarioRepository } from '../../features/scenarios/repository'
 import { scenarioMetrics } from '../../features/massing/metrics'
 import { checkClearance, type ClearanceIssue } from '../../features/massing/clearance'
 import { sampleTerrainHeight } from '../../features/sites/geometry'
-import { normalizeRing } from '../../lib/polygon'
+import { normalizeRing, ringCentroid } from '../../lib/polygon'
 import type { CameraPresetId } from '../../features/sites/manifest'
 import type { SitePackage } from '../../features/sites/package'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
@@ -88,7 +92,9 @@ export function StudioShell({
   // Below 640 px the studio is a read-only preview (M0 visual gate).
   const [wide, setWide] = useState(() => window.matchMedia('(min-width: 640px)').matches)
   // Editing waits for the scenario project to load, so no edit can be lost to the load.
-  const editable = wide && project.ready
+  const [testBuilding, setTestBuilding] = useState(readTestBuilding)
+  const analysisOnly = !testBuilding
+  const editable = wide && project.ready && testBuilding
   const [layers, setLayers] = useState<SceneLayers>({
     terrain: true,
     context: true,
@@ -98,18 +104,8 @@ export function StudioShell({
     setback: true,
     heightLimit: true,
   })
-  const [climateMode, setClimateMode] = useState<ClimateMode>('off')
+  const [climateMode, setClimateMode] = useState<ClimateMode>('noise')
   const [windFrom, setWindFrom] = useState(270)
-  const climateView = useMemo(() => {
-    if (!sitePackage || climateMode === 'off') return null
-    return buildClimateView(
-      climateMode,
-      normalizeRing(sitePackage.studyArea.polygon),
-      sitePackage.buildings.buildings,
-      sitePackage.roads,
-      windFrom,
-    )
-  }, [sitePackage, climateMode, windFrom])
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
   const scenario = editor.history.document.name
@@ -117,6 +113,20 @@ export function StudioShell({
   const shown = displayedDocument(editor)
   // displayedDocument includes hidden masses; analysis explicitly uses only visible previews.
   const analysisDocument = useMemo(() => ({ ...shown, volumes: shown.volumes.filter((volume) => volume.visible) }), [shown])
+  // Context buildings plus every visible mass: a building you draw changes wind, noise and areas.
+  const analysisBuildings = useMemo(() => {
+    if (!sitePackage) return []
+    const masses = analysisDocument.volumes.flatMap((volume) => volume.tiers.map((tier) => {
+      const [east, north] = ringCentroid(tier.footprint.vertices)
+      return { height: Math.max(0, tierTop(tier) - sampleTerrainHeight(sitePackage.terrain, east, north)), footprint: tier.footprint.vertices }
+    }))
+    return [...sitePackage.buildings.buildings, ...masses]
+  }, [analysisDocument, sitePackage])
+  const climateView = useMemo(() => {
+    if (!sitePackage || climateMode === 'off') return null
+    return buildClimateView(climateMode, normalizeRing(sitePackage.studyArea.polygon), analysisBuildings, sitePackage.roads, windFrom)
+  }, [sitePackage, climateMode, windFrom, analysisBuildings])
+  const facts = useMemo(() => sitePackage ? siteFacts(normalizeRing(sitePackage.studyArea.polygon), analysisBuildings) : null, [sitePackage, analysisBuildings])
   const metrics = useMemo(() => sitePackage
     ? scenarioMetrics(analysisDocument, normalizeRing(sitePackage.studyArea.polygon))
     : null, [analysisDocument, sitePackage])
@@ -195,6 +205,16 @@ export function StudioShell({
     setCameraPreset(preset)
     setCameraNonce((value) => value + 1)
   }, [])
+
+  const toggleTestBuilding = () => {
+    const next = !testBuilding
+    setTestBuilding(next)
+    writeTestBuilding(next)
+    if (!next) {
+      dispatch({ type: 'setTool', tool: 'select' })
+      setComparePair(null)
+    }
+  }
 
   const toggleLayer = (layer: keyof SceneLayers) => {
     setLayers((current) => ({ ...current, [layer]: !current[layer] }))
@@ -277,9 +297,15 @@ export function StudioShell({
         storage={project.storage}
         canFit={packageStatus === 'ready'}
         onFitSite={() => requestCamera('isometric')}
+        analysisOnly={analysisOnly}
+        modeAction={packageStatus === 'ready' && wide ? (
+          <button type="button" aria-pressed={testBuilding} onClick={toggleTestBuilding} className="min-h-9 rounded-chip border border-line px-3 text-caption text-ink aria-pressed:bg-ink aria-pressed:text-ink-on-inverse">
+            Test a building
+          </button>
+        ) : null}
       />
 
-      {guideOpen && wide && packageStatus === 'ready' && project.ready && (
+      {testBuilding && guideOpen && wide && packageStatus === 'ready' && project.ready && (
         <StudioGuide onClose={closeGuide} onShowControl={(step) => {
           const selectors = ['[data-guide="draw"]', '[aria-label="Local time"]', '[data-guide="scenarios"]']
           const selector = selectors[step]
@@ -291,7 +317,7 @@ export function StudioShell({
         <section aria-label="Studio viewport" className="tf-rise flex h-[min(720px,78dvh)] min-w-0 flex-col overflow-hidden rounded-card bg-viewport max-sm:h-auto lg:h-auto">
           <div className="relative min-h-0 flex-1 max-sm:h-[360px] max-sm:flex-none">
             {/* First in tab order: the toolbar sits top-left, before the views (review). */}
-            <ToolRail
+            {testBuilding && <ToolRail
               ready={packageStatus === 'ready'}
               activeTool={editor.tool}
               onSelect={selectTool}
@@ -300,7 +326,7 @@ export function StudioShell({
               onUndo={() => dispatch({ type: 'undo' })}
               onRedo={() => dispatch({ type: 'redo' })}
               onOpenLayers={() => setPanelFocus((current) => ({ group: 'layers', nonce: current.nonce + 1 }))}
-            />
+            />}
             {packageStatus === 'ready' && sitePackage && solar ? (
               <>
                 <ViewportCanvas
@@ -392,7 +418,7 @@ export function StudioShell({
               </div>
             </div>
           </div>
-        ) : compareA && compareB && envelopeSite ? <ComparePanel
+        ) : testBuilding && compareA && compareB && envelopeSite ? <ComparePanel
           scenarios={project.scenarios} a={compareA} b={compareB} site={envelopeSite}
           thumbnails={snapshot?.request !== snapshotRequest ? 'pending' : snapshot.images ?? 'failed'}
           cameraLabel={cameraPreset} disabled={!idle}
@@ -400,7 +426,9 @@ export function StudioShell({
           onEdit={(id) => { project.actions.switchTo(id); closeCompare() }} onClose={closeCompare}
         /> : <Inspector
           recovery={<RecoveryStrip project={project} siteId={site.id} />}
-          backup={<ProjectBackup project={project} siteId={site.id} />}
+          backup={analysisOnly ? undefined : <ProjectBackup project={project} siteId={site.id} />}
+          analysisOnly={analysisOnly}
+          facts={<SiteFactsPanel facts={facts} />}
           notes={<ScenarioNotes key={`${shown.id}:${shown.notes}`} notes={shown.notes} disabled={!editable || !idle} onCommit={project.actions.setNotes} />}
           check={
             <ConstraintsPanel

@@ -46,6 +46,9 @@ type InspectorProps = {
   /** Body of the Wind and noise group; omitted until the package is ready. */
   climate?: ReactNode
   climateMeta?: string
+  /** Analysis-only studio: study-area facts replace the design check, figures and massing. */
+  analysisOnly?: boolean
+  facts?: ReactNode
   metrics: ScenarioMetrics | null
   site: SiteSummary
   manifest: SiteManifest | null
@@ -111,6 +114,8 @@ export function Inspector({
   sunMeta,
   climate,
   climateMeta,
+  analysisOnly = false,
+  facts,
   metrics,
   site,
   manifest,
@@ -131,7 +136,7 @@ export function Inspector({
   onAddMass,
 }: InspectorProps) {
   const selectedMetrics = metrics?.perVolume.find((entry) => entry.volumeId === selected?.volume.id)
-  const [openGroups, setOpenGroups] = useState<ReadonlySet<PanelGroup>>(new Set())
+  const [openGroups, setOpenGroups] = useState<ReadonlySet<PanelGroup>>(() => new Set<PanelGroup>(analysisOnly ? ['climate'] : []))
   const toggleGroup = (group: PanelGroup, open: boolean) => setOpenGroups((current) => {
     if (current.has(group) === open) return current
     const next = new Set(current)
@@ -154,11 +159,9 @@ export function Inspector({
 
   return (
     <aside aria-label="Inspector" className="tf-rise flex min-h-0 flex-col overflow-y-auto rounded-card bg-surface [animation-delay:80ms]">
-      {recovery}
-      {check}
-      {figures}
+      {analysisOnly ? facts : <>{recovery}{check}{figures}</>}
 
-      <section aria-labelledby="buildings-heading" className="px-6 pb-4 pt-4">
+      {!analysisOnly && <section aria-labelledby="buildings-heading" className="px-6 pb-4 pt-4">
         <div className="flex items-center justify-between">
           <h2 id="buildings-heading" className="text-caption text-ink-secondary">Buildings</h2>
           <span className="flex items-center gap-4">
@@ -202,9 +205,9 @@ export function Inspector({
             </p>
           </div>
         )}
-      </section>
+      </section>}
 
-      {notes}
+      {!analysisOnly && notes}
       <div className="mt-auto px-6">
         {sun && (
           <Group id="sun" title="Sun" meta={sunMeta} open={openGroups.has('sun')} onToggle={(open) => toggleGroup('sun', open)}>
@@ -298,17 +301,19 @@ export function Inspector({
           </p>
         </Group>
 
-        <Group id="assumptions" title="Assumptions" meta="Default storey 3.2 m" open={openGroups.has('assumptions')} onToggle={(open) => toggleGroup('assumptions', open)}>
-          <dl>
-            <Row label="Default storey height" value="3.2 m" />
-            <Row label="Height mode" value="Storey-driven" />
-            <Row label="Units" value="Metres · 2 dp" />
-          </dl>
-        </Group>
+        {!analysisOnly && <>
+          <Group id="assumptions" title="Assumptions" meta="Default storey 3.2 m" open={openGroups.has('assumptions')} onToggle={(open) => toggleGroup('assumptions', open)}>
+            <dl>
+              <Row label="Default storey height" value="3.2 m" />
+              <Row label="Height mode" value="Storey-driven" />
+              <Row label="Units" value="Metres · 2 dp" />
+            </dl>
+          </Group>
 
-        <Group id="notes" title="About these numbers" meta="Method" open={openGroups.has('notes')} onToggle={(open) => toggleGroup('notes', open)}>
-          <MetricsNotes metrics={metrics} />
-        </Group>
+          <Group id="notes" title="About these numbers" meta="Method" open={openGroups.has('notes')} onToggle={(open) => toggleGroup('notes', open)}>
+            <MetricsNotes metrics={metrics} />
+          </Group>
+        </>}
       </div>
 
       <p className="border-t border-line px-6 py-3 text-caption text-ink-secondary">

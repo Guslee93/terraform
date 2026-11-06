@@ -23,26 +23,27 @@ export function LandingPage() {
         <section className="mx-auto grid w-full max-w-[1200px] gap-10 px-4 pb-14 pt-14 sm:px-7 lg:grid-cols-2 lg:items-center lg:gap-12 lg:pb-20 lg:pt-20">
           <div className="min-w-0">
             <p className="text-caption text-ink-secondary">
-              Oslo · Architectural site study
+              Microclimate site study
             </p>
 
             <h1 className="mt-4 text-balance text-figure-s text-ink sm:text-figure-l">
-              Explore a site.
+              Know a site
               <br />
-              Shape a concept.
-              <br />
-              Understand the impact.
+              before you design on it.
             </h1>
 
             <p className="mt-6 max-w-[46ch] text-body leading-relaxed text-ink-secondary">
-              A browser workspace for testing conceptual massing against terrain, daylight and
-              clearly labelled demo constraints. No login, no black box.
+              Enter an address, choose the area, and read its sun, wind and noise alongside the
+              area figures. Screening-level estimates from open map data. No login, no black box.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink to="/studio/compact-infill" className="min-h-11">
-                Open Compact Infill
+              <ButtonLink to="/new" className="min-h-11">
+                Try it
                 <Icon name="arrow-up-right" size={15} />
+              </ButtonLink>
+              <ButtonLink to="/studio/compact-infill" variant="secondary" className="min-h-11">
+                Open Compact Infill
               </ButtonLink>
               <ButtonLink to="/about" variant="ghost" className="min-h-11 underline underline-offset-4">
                 About the prototype
@@ -50,7 +51,7 @@ export function LandingPage() {
             </div>
 
             <p className="mt-8 border-t border-line pt-5 text-caption text-ink-secondary">
-              Curated Oslo demo · simplified context
+              Open map data · simplified context · screening estimates
             </p>
           </div>
 
@@ -58,7 +59,7 @@ export function LandingPage() {
             <div className="overflow-hidden rounded-card bg-surface">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
                 <span className="text-caption text-ink-secondary">
-                  Site study · Concept A
+                  Site study
                 </span>
                 <span className="text-caption text-ink-secondary">
                   Isometric
@@ -68,7 +69,7 @@ export function LandingPage() {
                 <SiteStudyGraphic />
               </div>
               <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-3 text-caption text-ink-secondary">
-                <span>Terrain · Parcel · Massing</span>
+                <span>Terrain · Study area · Wind · Noise</span>
                 <span>Illustrative — not surveyed</span>
               </figcaption>
             </div>
@@ -87,8 +88,8 @@ export function LandingPage() {
                 </h2>
               </div>
               <p className="max-w-sm text-body-sm leading-relaxed text-ink-secondary">
-                Both packages are prepared offline and shipped with the app. Each includes terrain,
-                simplified context, a parcel boundary and explicitly hypothetical constraints.
+                Two sample sites are prepared offline and shipped with the app. Each includes terrain,
+                simplified context buildings and roads, and a study boundary.
               </p>
             </div>
 
@@ -108,7 +109,7 @@ export function LandingPage() {
                   <Icon name="arrow-up-right" size={15} />
                 </span>
                 <span className="mt-1 block max-w-[60ch] text-body-sm text-ink-secondary">
-                  Pick a block anywhere in the Nordics and load open map data in 3D. Context is simplified and partly estimated.
+                  Type an address anywhere in the Nordics, choose the area, and load open map data in 3D. Context is simplified and partly estimated.
                 </span>
               </span>
               <span className="text-caption text-ink-secondary">Live open data · needs a connection</span>
@@ -126,12 +127,12 @@ export function LandingPage() {
                   Method
                 </p>
                 <h2 className="mt-3 max-w-xl text-balance text-figure-s text-ink">
-                  One model. Three consequences.
+                  One site. Four readings.
                 </h2>
               </div>
               <p className="max-w-sm text-body-sm leading-relaxed text-ink-secondary">
-                Geometry, metrics and feedback share a single source of truth. If a number changes,
-                the model changed.
+                Every reading comes from the same site geometry. If a number changes, the geometry
+                changed.
               </p>
             </div>
 
@@ -139,15 +140,15 @@ export function LandingPage() {
               {[
                 {
                   title: 'Site',
-                  body: 'Terrain, context buildings, parcel linework and demo constraints arrive as static, versioned packages with provenance.',
+                  body: 'Terrain, buildings, roads and trees come from open map data, with the sources recorded.',
                 },
                 {
-                  title: 'Massing',
-                  body: 'Draw footprints, stack storeys and step upper volumes. Areas, heights and envelope checks derive from the edited geometry.',
+                  title: 'Wind and noise',
+                  body: 'Screening layers on the ground: shelter from nearby buildings for a wind direction you choose, and road noise by distance and road class.',
                 },
                 {
-                  title: 'Impact',
-                  body: 'Move the sun, read shadows, test the illustrative envelope, then compare two concepts against the same camera and time.',
+                  title: 'Sun and areas',
+                  body: 'Move the sun and read the shadows. Study area, built footprint and coverage come from the geometry. Optionally test a building of your own.',
                 },
               ].map((step, index) => (
                 <article
@@ -173,18 +174,18 @@ export function LandingPage() {
             <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
               <div className="max-w-xl">
                 <p className="text-caption text-ink-secondary">
-                  Portfolio prototype
+                  Honest by design
                 </p>
                 <h2 className="mt-3 text-balance text-figure-s text-ink">
-                  Designed to be examined, not just admired.
+                  Screening, not simulation.
                 </h2>
                 <p className="mt-4 max-w-[52ch] text-body-sm leading-relaxed text-ink-secondary">
-                  The studio is deliberately explicit about what it simulates: geometric massing,
-                  conceptual metrics, geometric sun direction and illustrative demo limits.
+                  Wind and noise are comparative estimates, not CFD or an acoustic survey. Sun is
+                  geometric. The studio labels each layer with what it can and cannot claim.
                 </p>
               </div>
-              <ButtonLink to="/studio/compact-infill" className="min-h-11 shrink-0">
-                Enter the studio
+              <ButtonLink to="/new" className="min-h-11 shrink-0">
+                Try it
                 <Icon name="arrow-up-right" size={15} />
               </ButtonLink>
             </div>

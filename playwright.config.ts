@@ -12,7 +12,11 @@ export default defineConfig({
     // The first-visit studio guide takes focus; every spec but e2e/m5-guide.spec.ts starts past it.
     storageState: {
       cookies: [],
-      origins: [{ origin: 'http://127.0.0.1:5173', localStorage: [{ name: 'terraform:studio-guide-dismissed:v1', value: 'true' }] }],
+      origins: [{ origin: 'http://127.0.0.1:5173', localStorage: [
+        { name: 'terraform:studio-guide-dismissed:v1', value: 'true' },
+        // Existing specs drive the massing tools; the default studio is analysis-only.
+        { name: 'terraform:test-building:v1', value: 'true' },
+      ] }],
     },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

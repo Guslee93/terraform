@@ -6,14 +6,14 @@ const sections = [
   {
     title: 'What this is',
     body: [
-      'Terraform is an early-stage architectural site-planning workspace and a portfolio case study. A visitor chooses a curated Oslo demonstration site, shapes conceptual building massing, tests sunlight and shadow, reads live area and envelope metrics, and compares two concepts.',
+      'Terraform is a microclimate and site-analysis prototype. A visitor enters an address or opens a sample site, chooses the study area, and reads sun and shadow, wind exposure, road noise and area figures. An optional mode lets them test a building of their own against the same readings.',
       'The intent is to show how architectural judgement, computational geometry and interface design can meet in one coherent tool — not to present a commercial planning product.',
     ],
   },
   {
     title: 'What this is not',
     body: [
-      'This is not a BIM authoring environment, a CAD replacement, a regulatory compliance tool or a commercial SaaS. It does not certify daylight factor, planning permission, structural performance or legal setbacks.',
+      'This is not a wind simulation, a noise survey, a BIM environment, a regulatory compliance tool or a commercial SaaS. Wind and noise are screening estimates for comparing places within one site. They do not certify comfort, daylight, planning permission or legal setbacks.',
       'All site constraints are explicitly illustrative. No parcel boundary or regulation should be treated as official unless a source is recorded in the site package and attributed in the interface.',
     ],
   },
@@ -21,7 +21,7 @@ const sections = [
     title: 'How the model stays honest',
     body: [
       'Authored geometry lives in a local East/North/Up metre frame. One coordinate pipeline serves raycasts, snapping, measurement and export. Domain calculations are kept independent of React and Three.js so they can be tested without mounting a canvas.',
-      'Area, volume, height and coverage are derived from the same geometry the visitor edits. Solar direction is calculated from the site’s coordinates and timestamp. Where the tool cannot make a claim, the interface says so.',
+      'Area, coverage and height come from building footprints clipped to the study boundary. Solar direction is calculated from the site’s coordinates and timestamp. Wind uses the buildings upwind of each point for a direction the visitor chooses. Noise uses road class and distance, with a fixed reduction behind buildings. Where the tool cannot make a claim, the interface says so.',
     ],
   },
 ]
@@ -37,12 +37,11 @@ export function AboutPage() {
             About the prototype
           </p>
           <h1 className="mt-4 text-balance text-figure-s sm:text-figure-l text-ink">
-            A credible architectural tool, presented as a study.
+            Site readings you can trace back to the geometry.
           </h1>
           <p className="mt-6 max-w-[58ch] text-body leading-relaxed text-ink-secondary">
-            Terraform explores a narrow, difficult question: can a browser-based workspace make
-            conceptual massing feel spatial, accountable and genuinely useful — without pretending to
-            be software it is not?
+            Terraform asks a narrow question: how much can a browser say about a place from open
+            map data alone, while being exact about what it cannot say?
           </p>
         </div>
 
@@ -54,7 +53,7 @@ export function AboutPage() {
             <ul className="mt-4 space-y-3 text-body-sm text-ink-secondary">
               <li className="flex gap-2">
                 <Icon name="cube" size={15} className="mt-px shrink-0 text-ink-secondary" />
-                Conceptual massing
+                Wind exposure and road noise (screening)
               </li>
               <li className="flex gap-2">
                 <Icon name="sun" size={15} className="mt-px shrink-0 text-ink-secondary" />
@@ -62,11 +61,11 @@ export function AboutPage() {
               </li>
               <li className="flex gap-2">
                 <Icon name="ruler" size={15} className="mt-px shrink-0 text-ink-secondary" />
-                Derived areas and envelope checks
+                Study-area figures and coverage
               </li>
               <li className="flex gap-2">
                 <Icon name="layers" size={15} className="mt-px shrink-0 text-ink-secondary" />
-                Curated static site packages
+                Open map data, sample sites
               </li>
             </ul>
             <div className="mt-8 border-t border-line py-4">

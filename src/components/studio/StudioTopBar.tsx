@@ -30,10 +30,14 @@ type StudioTopBarProps = {
   storage: StorageMode
   canFit: boolean
   onFitSite: () => void
+  /** The Test a building switch. */
+  modeAction?: ReactNode
+  /** Analysis-only studio: no scenario name, save status or Compare. */
+  analysisOnly?: boolean
 }
 
 /** A plain 52 px row on the ground (draft 4): identity left, scenario and two text actions right. */
-export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, guideAction, saveStatus, storage, canFit, onFitSite }: StudioTopBarProps) {
+export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, guideAction, saveStatus, storage, canFit, onFitSite, modeAction, analysisOnly = false }: StudioTopBarProps) {
   return (
     <header className="flex min-h-[52px] flex-wrap items-center gap-x-7 gap-y-1 px-5">
       <Link to="/" aria-label="Terraform home" className="inline-flex items-center gap-2.5 text-body font-medium text-ink">
@@ -45,14 +49,17 @@ export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, guid
         <span className="ml-2 text-caption text-ink-secondary">{site.subtitle}</span>
       </p>
       <div className="ml-auto flex max-w-full flex-wrap items-center gap-x-5 gap-y-1">
-        <div className="flex flex-wrap items-center text-body-sm text-ink">
-          {scenarioMenu ?? scenario}
-          <span aria-live="polite" className={saveStatus.state === 'error' || storage !== 'persistent' ? 'ml-1.5 text-caption text-warning-ink' : 'ml-1.5 text-caption text-ink-secondary'}>
-            {saveStatusLabel(storage, saveStatus)}
-          </span>
-        </div>
-        {compareAction}
-        {guideAction}
+        {modeAction}
+        {!analysisOnly && <>
+          <div className="flex flex-wrap items-center text-body-sm text-ink">
+            {scenarioMenu ?? scenario}
+            <span aria-live="polite" className={saveStatus.state === 'error' || storage !== 'persistent' ? 'ml-1.5 text-caption text-warning-ink' : 'ml-1.5 text-caption text-ink-secondary'}>
+              {saveStatusLabel(storage, saveStatus)}
+            </span>
+          </div>
+          {compareAction}
+          {guideAction}
+        </>}
         {canFit && (
           <button type="button" onClick={onFitSite} title="Fit site (F)" className="min-h-6 text-caption text-ink transition-colors duration-200 hover:text-accent">
             Fit site

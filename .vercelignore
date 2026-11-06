@@ -1,0 +1,6 @@
+References images UX UI
+docs/*
+!docs/qa
+tmp
+test-results
+dist

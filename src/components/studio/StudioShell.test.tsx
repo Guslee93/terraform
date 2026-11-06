@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { Children, isValidElement, type ComponentProps, type ReactNode } from 'react'
 import { moveGesture } from '../../features/editor/interaction'
 import { MassLayer } from '../../scene/MassLayer'
+import { TEST_BUILDING_KEY } from './studioMode'
 import { ConstraintLayer } from '../../scene/ConstraintLayer'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -56,12 +57,38 @@ beforeEach(() => {
   vi.spyOn(webgl, 'detectWebGL').mockReturnValue('webgl2')
   vi.mocked(Canvas).mockClear()
   localStorage.clear()
+  // These specs exercise the massing tools; the default studio is analysis-only (see below).
+  localStorage.setItem(TEST_BUILDING_KEY, 'true')
 })
 
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   localStorage.clear()
+})
+
+describe('analysis-first studio', () => {
+  const renderStudio = () => render(
+    <MemoryRouter>
+      <StudioShell site={SITES.find((entry) => entry.id === 'compact-infill')!} sitePackage={sitePackage} packageStatus="ready" packageError={null} onRetry={() => {}} />
+    </MemoryRouter>,
+  )
+
+  it('opens on study-area facts and wind/noise with no massing tools, until Test a building is on', async () => {
+    localStorage.clear()
+    const user = userEvent.setup()
+    renderStudio()
+    expect(screen.getByRole('heading', { name: 'Study area' })).toBeVisible()
+    expect(screen.getByRole('group', { name: 'Climate layer' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Draw building' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Scenario' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Compare' })).not.toBeInTheDocument()
+    const toggle = screen.getByRole('button', { name: 'Test a building' })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(toggle)
+    expect(screen.getByRole('button', { name: 'Draw building' })).toBeVisible()
+    expect(localStorage.getItem(TEST_BUILDING_KEY)).toBe('true')
+  })
 })
 
 describe('studio rendering states', () => {
@@ -332,6 +359,8 @@ describe('studio guide', () => {
     }
     const user = userEvent.setup()
     renderStudio()
+    // Storage can't hold the switch, so turn Test a building on for this visit; the guide belongs to it.
+    await user.click(screen.getByRole('button', { name: 'Test a building' }))
     await screen.findByRole('region', { name: 'Studio guide' })
     await user.click(screen.getByRole('button', { name: 'Skip' }))
     expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()
