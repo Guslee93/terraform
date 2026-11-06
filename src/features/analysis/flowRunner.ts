@@ -1,4 +1,5 @@
 import type { FootprintBuilding } from './grid'
+import { downwashBoost } from './comfort'
 import { createLbm, rasterize, stepLbm, velocityField, type FlowFrame, type Lbm } from './lbm'
 
 /** Steps after which the flow counts as settled and the solver idles (≈ 7 s at 128²). */
@@ -11,6 +12,8 @@ export type FlowRequest = {
   readonly buildings: readonly FootprintBuilding[]
   /** True when the frame changed (new direction or site): restart from uniform flow. */
   readonly reset: boolean
+  /** Multiply the field by the rule-based downwash boost (comfort.ts) at tall-building bases. */
+  readonly downwash?: boolean
 }
 
 export type FlowResult = {
@@ -27,6 +30,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
   let frame: FlowFrame | null = null
   let id = 0
   let steps = 0
+  let boost: Float32Array | null = null
   return {
     request(req: FlowRequest): void {
       const solid = rasterize(req.frame, req.buildings)
@@ -35,6 +39,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
       else lbm = createLbm(req.frame.nx, req.frame.ny, solid)
       frame = req.frame
       id = req.id
+      boost = req.downwash ? downwashBoost(req.buildings, req.frame) : null
       steps = req.reset ? 0 : Math.min(steps, MAX_STEPS / 2)
     },
     /** Runs for up to `budgetMs`; returns the current field, or null when idle. */
@@ -45,7 +50,12 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
         stepLbm(lbm, STEPS_PER_CHUNK)
         steps += STEPS_PER_CHUNK
       } while (steps < MAX_STEPS && now() - start < budgetMs)
-      return { id, frame, solid: lbm.solid.slice(), velocity: velocityField(lbm), settled: steps >= MAX_STEPS }
+      const velocity = velocityField(lbm)
+      if (boost) for (let i = 0; i < boost.length; i++) {
+        velocity[2 * i] = velocity[2 * i]! * boost[i]!
+        velocity[2 * i + 1] = velocity[2 * i + 1]! * boost[i]!
+      }
+      return { id, frame, solid: lbm.solid.slice(), velocity, settled: steps >= MAX_STEPS }
     },
   }
 }

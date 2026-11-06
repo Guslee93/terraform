@@ -10,6 +10,7 @@ export function useWindFlow(
   buildings: readonly FootprintBuilding[],
   fromBearingDeg: number,
   enabled: boolean,
+  downwash = false,
 ): FlowResult | null {
   const [flow, setFlow] = useState<FlowResult | null>(null)
   const worker = useRef<Worker | null>(null)
@@ -39,12 +40,12 @@ export function useWindFlow(
     if (!frame) return
     // Debounce geometry edits (a drag emits many) before rasterising in the worker.
     const handle = setTimeout(() => {
-      const request: FlowRequest = { id: ++nextId.current, frame, buildings, reset: lastFrame.current !== frame }
+      const request: FlowRequest = { id: ++nextId.current, frame, buildings, reset: lastFrame.current !== frame, downwash }
       lastFrame.current = frame
       worker.current?.postMessage(request)
     }, 50)
     return () => clearTimeout(handle)
-  }, [frame, buildings])
+  }, [frame, buildings, downwash])
 
   return frame ? flow : null
 }

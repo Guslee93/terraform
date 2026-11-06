@@ -60,7 +60,7 @@ All world ↔ grid maths goes through `flowFrame`/`worldToGrid`/`gridToWorld` (l
 | **W0** | ADR-0014, solver, frame, rasterizer, tests | Claude (done) | `lbm.test.ts` green |
 | **W1** | Worker, heatmap overlay, particles, wind dial in ClimatePanel; replaces the old wind exposure mode | Codex — `docs/handoffs/C19-wind-flow-ui.md` | R1, R2, R7, R8 |
 | **W2a** | `comfort.ts`: Lawson classifier, safety, downwash rule, annual combine + fixtures | MiniMax — `docs/handoffs/X1-minimax-wind-comfort.md` | R4, R5 |
-| **W2b** | Comfort/Safety layers in UI, typical wind rose, Annual toggle | Codex (after W1 + W2a merge) | R4 in UI |
+| **W2b** | Done: reference-speed slider, momentary activity bands (Lawson thresholds), downwash toggle. **Annual Lawson blocked** until a real per-site wind rose exists (MET Norway Frost/NORA3, baked offline); we do not invent climate data | Claude | R4 partly, R5 |
 | **W3** | Insights cards (corner, wake, gap, downwash), click to fly | Codex | cards match fixtures |
 | **W4** | Delta vs saved scenario; use tags | later, owner decides | — |
 | **Gate** | lint/test/build, e2e, screenshots, review note | Claude | AGENTS.md §7 |

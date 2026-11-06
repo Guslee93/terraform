@@ -458,3 +458,9 @@
 - Ground overlay = speed-ratio bands (calm blue → red), `WindParticles.tsx` = 2500 advected comet segments (still arrows under reduced motion). Direction select replaced by a 15° range slider with arrow and `aria-valuetext`.
 - Solver fix found on real sites: zero-gradient outlet let density climb (1.0 → 1.28) and stalled the flow. Outlet now pins density to 1; obstacles kept 3 cells off inlet/outlet. Floating inlet density was tried and blew up (NaN) — reverted.
 - Verification: lint ✅ · 901 unit tests ✅ · build ✅ · browser on both curated sites (gap jet on Compact Infill, wake behind the cluster on Sloped Edge). e2e not re-run. Not done: speed slider (needs W2 comfort), adaptive particle count, GPU path.
+
+### Wind W2 — comfort domain + activity view (2026-11-06, Claude + MiniMax)
+- MiniMax X1 delivered `comfort.ts` (Lawson Norconsult thresholds, safety, downwash rule, Weibull exceedance, classifier) + tests; reviewed and accepted unchanged.
+- UI: Speed / Activity toggle, reference wind at 10 m (2–15 m/s), downwash checkbox (applied in the worker via `downwashBoost`). Activity bands are labelled "at this wind only — not an annual comfort rating".
+- Annual Lawson not shown: needs a measured wind rose per site; no invented climate data.
+- Verification: lint ✅ · unit tests ✅ · build ✅ · browser on Sloped Edge (activity bands at 6 m/s). Downwash verified by unit test (no tall building on curated sites).

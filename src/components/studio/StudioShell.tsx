@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
-import { buildClimateView, type ClimateMode } from '../../features/analysis/climateView'
+import { buildClimateView, DEFAULT_WIND, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
 import { ClimatePanel } from './ClimatePanel'
 import { useWindFlow } from '../../features/analysis/useWindFlow'
 import { siteFacts } from '../../features/analysis/siteFacts'
@@ -106,7 +106,7 @@ export function StudioShell({
     heightLimit: true,
   })
   const [climateMode, setClimateMode] = useState<ClimateMode>('noise')
-  const [windFrom, setWindFrom] = useState(270)
+  const [wind, setWind] = useState<WindSettings>(DEFAULT_WIND)
   const [cameraPreset, setCameraPreset] = useState<CameraPresetId>('isometric')
   const [cameraNonce, setCameraNonce] = useState(0)
   const scenario = editor.history.document.name
@@ -124,11 +124,11 @@ export function StudioShell({
     return [...sitePackage.buildings.buildings, ...masses]
   }, [analysisDocument, sitePackage])
   const studyArea = useMemo(() => (sitePackage ? normalizeRing(sitePackage.studyArea.polygon) : null), [sitePackage])
-  const windFlow = useWindFlow(studyArea, analysisBuildings, windFrom, climateMode === 'wind')
+  const windFlow = useWindFlow(studyArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash)
   const climateView = useMemo(() => {
     if (!sitePackage || !studyArea || climateMode === 'off') return null
-    return buildClimateView(climateMode, studyArea, analysisBuildings, sitePackage.roads, windFlow)
-  }, [sitePackage, studyArea, climateMode, windFlow, analysisBuildings])
+    return buildClimateView(climateMode, studyArea, analysisBuildings, sitePackage.roads, windFlow, wind)
+  }, [sitePackage, studyArea, climateMode, windFlow, analysisBuildings, wind])
   const facts = useMemo(() => sitePackage ? siteFacts(normalizeRing(sitePackage.studyArea.polygon), analysisBuildings) : null, [sitePackage, analysisBuildings])
   const metrics = useMemo(() => sitePackage
     ? scenarioMetrics(analysisDocument, normalizeRing(sitePackage.studyArea.polygon))
@@ -454,7 +454,7 @@ export function StudioShell({
             ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
             : shortDate(sunTime.date)}
           climate={sitePackage ? (
-            <ClimatePanel mode={climateMode} onModeChange={setClimateMode} windFrom={windFrom} onWindFromChange={setWindFrom} view={climateView} />
+            <ClimatePanel mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} view={climateView} />
           ) : null}
           climateMeta={climateMode === 'off' ? 'Off' : climateMode === 'wind' ? 'Wind' : 'Noise'}
           metrics={metrics}

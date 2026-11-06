@@ -1,4 +1,4 @@
-import type { ClimateMode, ClimateView } from '../../features/analysis/climateView'
+import type { ClimateMode, ClimateView, WindDisplay, WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { labelClass } from '../ui/controls'
 
@@ -14,12 +14,19 @@ const MODES: ReadonlyArray<{ id: ClimateMode; label: string }> = [
 type ClimatePanelProps = {
   mode: ClimateMode
   onModeChange: (mode: ClimateMode) => void
-  windFrom: number
-  onWindFromChange: (bearing: number) => void
+  wind: WindSettings
+  onWindChange: (next: WindSettings) => void
   view: ClimateView | null
 }
 
-export function ClimatePanel({ mode, onModeChange, windFrom, onWindFromChange, view }: ClimatePanelProps) {
+const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
+  { id: 'ratio', label: 'Speed' },
+  { id: 'activity', label: 'Activity' },
+]
+
+export function ClimatePanel({ mode, onModeChange, wind, onWindChange, view }: ClimatePanelProps) {
+  const windFrom = wind.from
+  const set = (patch: Partial<WindSettings>) => onWindChange({ ...wind, ...patch })
   return (
     <div>
       <div role="group" aria-label="Climate layer" className="flex gap-1">
@@ -60,10 +67,55 @@ export function ClimatePanel({ mode, onModeChange, windFrom, onWindFromChange, v
             step={15}
             value={windFrom}
             aria-valuetext={`${compassName(windFrom)}, ${windFrom} degrees`}
-            onChange={(event) => onWindFromChange(Number(event.currentTarget.value))}
+            onChange={(event) => set({ from: Number(event.currentTarget.value) })}
             className="mt-2 w-full accent-ink"
           />
           <p className="mt-1 text-caption text-ink-secondary">Your choice, not a measured climate value. The flow updates as you drag.</p>
+
+          <div role="group" aria-label="Wind map shows" className="mt-3 flex gap-1">
+            {DISPLAYS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={wind.display === option.id}
+                onClick={() => set({ display: option.id })}
+                className={cn(
+                  'min-h-8 flex-1 rounded-chip border border-line text-body-sm',
+                  wind.display === option.id ? 'bg-ink text-ink-on-inverse' : 'bg-surface text-ink',
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {wind.display === 'activity' && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between">
+                <label htmlFor="wind-speed" className={labelClass}>Wind at 10 m height</label>
+                <span className="text-body-sm tabular-nums text-ink">{wind.refSpeed} m/s</span>
+              </div>
+              <input
+                id="wind-speed"
+                type="range"
+                min={2}
+                max={15}
+                step={1}
+                value={wind.refSpeed}
+                aria-valuetext={`${wind.refSpeed} metres per second`}
+                onChange={(event) => set({ refSpeed: Number(event.currentTarget.value) })}
+                className="mt-2 w-full accent-ink"
+              />
+            </div>
+          )}
+
+          <label className="mt-3 flex items-start gap-2 text-body-sm text-ink">
+            <input type="checkbox" checked={wind.downwash} onChange={(event) => set({ downwash: event.currentTarget.checked })} className="mt-1 accent-ink" />
+            <span>
+              Downwash rule for tall buildings
+              <span className="block text-caption text-ink-secondary">A rule, not simulated: faster wind at the base of buildings 30 m or taller, or twice the height of their neighbours.</span>
+            </span>
+          </label>
         </div>
       )}
 
@@ -78,7 +130,7 @@ export function ClimatePanel({ mode, onModeChange, windFrom, onWindFromChange, v
               {mode === 'noise' ? 'No mapped roads in this study area, so there is nothing to estimate.' : 'Computing the wind flow…'}
             </p>
           ) : (
-            <ul aria-label={mode === 'wind' ? 'Wind speed legend' : 'Noise legend'}>
+            <ul aria-label={mode === 'wind' ? (wind.display === 'activity' ? 'Wind activity legend' : 'Wind speed legend') : 'Noise legend'}>
               {view.legend.map((entry) => (
                 <li key={entry.label} className="flex min-h-8 items-center justify-between gap-3 text-body-sm text-ink">
                   <span className="flex items-center gap-2">
