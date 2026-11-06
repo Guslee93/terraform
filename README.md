@@ -48,6 +48,24 @@ Raw OSM XML and elevation responses are cached in `data/raw/` for reproducible o
 
 Never replace these packages with invented parcel or regulation data.
 
+## Wind screening
+
+A live 2D wind flow around the site, Forma-inspired and labelled as **indicative screening, not engineering**.
+
+- **Solver:** D2Q9 lattice-Boltzmann in a Web Worker, solved inside a movable analysis circle (60–250 m, about 1.8 m cells at r = 100 m). It re-solves live while you drag a building.
+- **Views:** Comfort (Lawson activity bands at the chosen wind; momentary, not annual), Direction (continuous m/s ramp), and Delta against a saved baseline. Particles, streamlines and a scripted **Play demo** for screen recording.
+- **3D look:** height slices at 2/10/20/35 m (plus one above any building taller than 35 m), roof colouring, and streamlines that rise over roofs. The rise is a labelled visual rule; the flow is layered 2D. The full stack is ready in about 8 s.
+- **Units:** the slider is the wind at 10 m; pedestrian speeds use the indicative urban profile (× ≈ 0.70 at 2 m).
+- **Limits:** no terrain effect on the flow, no measured climate data, downwash is a rule, and low-rise clusters overstate the ground-level speed-up beside them (see `docs/research/wind-validation-note.md`).
+- **Docs:** `docs/plans/wind-simulator-prd.md`, `docs/decisions/ADR-0014-wind-flow-solver.md`, `docs/case-study/wind.md`, `docs/reviews/wind-*.md`.
+- **Opt-in checks:**
+  ```bash
+  SHOT_EVIDENCE=1 npx playwright test e2e/wind-evidence.spec.ts   # evidence screenshots
+  WIND_PERF=1 npx playwright test e2e/wind-perf.spec.ts --workers=1  # frame-rate probe
+  WIND_SWEEP=1 npx vitest run src/features/analysis/wind-sweep.test.ts --silent=false  # direction sweep
+  WIND_BENCHMARK=1 npx vitest run src/features/analysis/flowRunner.test.ts -t benchmark --silent=false
+  ```
+
 ## Stack
 
 TypeScript 6, React 19, Vite 8, Three.js 0.186, React Three Fiber 9, Drei 10, Zustand 5, Tailwind CSS 4, Dexie 4, SunCalc 2, Turf 7. Fonts are self-hosted (Inter Variable, Newsreader Variable).

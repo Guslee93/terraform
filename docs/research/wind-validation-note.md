@@ -52,3 +52,14 @@ directional assertions still pass on the current solver; the exact values have n
 | S3 | Empty domain | Free stream follows the indicative profile | Each slice within 10 % of profileFactor(z)/profileFactor(2) × ground | pass |
 
 The slices are 2D solves; rising over roofs in the 3D streamlines is a labelled rule, not a result.
+
+## Direction sweep (2026-11-06)
+
+Analysis circle r = 100 m, 160², margin 1.4, ground slice; share of the circle above 1.3× the free stream:
+
+| Site | 0° | 45° | 90° | 135° | 180° | 225° | 270° | 315° |
+|---|---|---|---|---|---|---|---|---|
+| Compact Infill | 0.0 % | 1.7 % | 3.6 % | 1.0 % | 5.2 % | 0.4 % | 3.1 % | 3.5 % |
+| Sloped Edge | 21.8 % | 17.0 % | 18.2 % | 22.5 % | 12.1 % | 0.0 % | 1.2 % | 27.6 % |
+
+**Known 2D limit, not fixed:** on Sloped Edge the scattered low houses form one porous block in a 2D slice. At ground level the wind cannot go over them, so it accelerates round the cluster (1.3–1.7×). Neither a wider domain (margin 2.0) nor time-averaging changed this (checked), so it is the model, not the boundaries. In reality much of that air passes over the roofs. The height slices show this from 10 m up, but the pedestrian map overstates the speed-up beside low-rise clusters. The remedies are a canopy-drag term for low buildings or the true 3D run (W6). Both are owner decisions.

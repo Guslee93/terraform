@@ -108,6 +108,7 @@ runs. And two things they do not show:
 - **A wide slab does not throw a long wake here.** In 2D, wake persistence follows a body's
   thickness along the wind, not its span — the spanwise physics is simply not in the model. The
   case is reported as *not reproduced*, not quietly re-tuned until it passed.
+- **Low-rise clusters look windier beside them than they are.** In a 2D slice the wind can't go over low roofs, so on the sloped site, from six of eight directions, it speeds up round the cluster of houses (12–28 % of the circle above 1.3×). A wider domain and time-averaging didn't change it, so it's the model. The height slices show the air going over; the ground map overstates the speed-up. The sweep table is in the validation note.
 - **Downwash is a rule, not a result.** A 2D slice cannot solve downwash, so the boost at the base
   of a tall building is an explicit, labelled geometric rule in `comfort.ts`, with its own tests.
 
