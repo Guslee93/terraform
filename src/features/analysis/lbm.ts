@@ -224,3 +224,37 @@ export function sampleRatio(fr: FlowFrame, ratio: Float32Array, solid: Uint8Arra
   const i = y * fr.nx + x
   return solid[i] ? null : ratio[i]!
 }
+
+/** Copy distributions only where both masks are fluid; new fluid retains equilibrium. */
+export function warmStartLbm(target: Lbm, previous: Lbm): void {
+  const n = target.nx * target.ny
+  for (let i = 0; i < n; i++) {
+    if (target.solid[i] || previous.solid[i]) continue
+    for (let k = 0; k < 9; k++) {
+      target.f[k * n + i] = previous.f[k * n + i]!
+      target.tmp[k * n + i] = previous.f[k * n + i]!
+    }
+  }
+}
+
+/** Cell-centred bilinear interpolation across the same physical domain, clamped at edges. */
+export function upsampleVelocity(coarse: FlowFrame, velocity: Float32Array, fine: FlowFrame, solid: Uint8Array): Float32Array {
+  const out = new Float32Array(2 * fine.nx * fine.ny)
+  for (let y = 0; y < fine.ny; y++) for (let x = 0; x < fine.nx; x++) {
+    const i = y * fine.nx + x
+    if (solid[i]) continue
+    const gx = Math.max(0, Math.min(coarse.nx - 1, (x + 0.5) * fine.dx / coarse.dx - 0.5))
+    const gy = Math.max(0, Math.min(coarse.ny - 1, (y + 0.5) * fine.dx / coarse.dx - 0.5))
+    const x0 = Math.floor(gx), y0 = Math.floor(gy)
+    const x1 = Math.min(x0 + 1, coarse.nx - 1), y1 = Math.min(y0 + 1, coarse.ny - 1)
+    const tx = gx - x0, ty = gy - y0
+    for (let c = 0; c < 2; c++) {
+      const a = velocity[2 * (y0 * coarse.nx + x0) + c]!
+      const b = velocity[2 * (y0 * coarse.nx + x1) + c]!
+      const d = velocity[2 * (y1 * coarse.nx + x0) + c]!
+      const e = velocity[2 * (y1 * coarse.nx + x1) + c]!
+      out[2 * i + c] = (a * (1 - tx) + b * tx) * (1 - ty) + (d * (1 - tx) + e * tx) * ty
+    }
+  }
+  return out
+}

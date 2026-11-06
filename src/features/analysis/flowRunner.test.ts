@@ -3,7 +3,8 @@ import type { Vec2 } from '../../lib/coordinates'
 import { createFlowRunner, MAX_STEPS, type FlowRequest, type FlowResult } from './flowRunner'
 import * as lbm from './lbm'
 import type { FlowFrame } from './lbm'
-import { profileFactor } from './windProfile'
+import type { FootprintBuilding } from './grid'
+import { profileFactor, sliceObstacles, SLICE_HEIGHTS_M } from './windProfile'
 import { MessageChannel } from 'node:worker_threads'
 
 function transfer(value: unknown, options: { transfer: ArrayBufferLike[] }) {
@@ -62,12 +63,13 @@ describe('height slice stack', () => {
     runner.request(request)
     const ground = runner.tick(Infinity)!
     expect(ground.settled).toBe(true)
-    expect(ground.slices).toBeUndefined()
+    expect(ground.slices?.map((s) => s.z)).toEqual([2])
+    expect(ground.slicesComplete).toBe(false)
     expect(runner.hasPendingWork()).toBe(true)
     expect(create).toHaveBeenCalledTimes(1)
     const result = finish(runner)
     expect(create).toHaveBeenCalledTimes(4)
-    expect(step.mock.calls.reduce((sum, call) => sum + call[1]!, 0)).toBe(MAX_STEPS * 4)
+    expect(step.mock.calls.reduce((sum, call) => sum + call[1]!, 0)).toBeLessThan(MAX_STEPS * 4)
     expect(result.slices?.map((s) => s.z)).toEqual([2, 10, 20, 35])
     expect(result.frame).toEqual(frame)
     const [pedestrian, ten, twenty] = result.slices!
@@ -77,7 +79,7 @@ describe('height slice stack', () => {
     const wake = sampleVelocity(frame, result.velocity, result.solid, [16, 0])!
     const above = sampleVelocity(frame, twenty!.velocity, twenty!.solid, [16, 0])!
     expect(Math.hypot(...above)).toBeGreaterThan(Math.hypot(...wake))
-    expect(Math.hypot(...above)).toBeCloseTo(profileFactor(20) / profileFactor(2), 4)
+    expect(Math.hypot(...above)).toBeCloseTo(profileFactor(20) / profileFactor(2), 2)
     expect(runner.tick(0)).toBeNull()
   })
 
@@ -158,4 +160,96 @@ describe('height slice stack', () => {
     runner.request({ ...request, buildings: [{ ...block, height: 1 }] })
     expect(runner.tick(0)!.solid.some(Boolean)).toBe(false)
   })
+})
+
+// Opt-in Node benchmark: WIND_BENCHMARK=1 npx vitest run src/features/analysis/flowRunner.test.ts -t benchmark --environment node
+it.skipIf(!process.env.WIND_BENCHMARK)('benchmark Compact Infill 160², r=100 m, west wind', async () => {
+  const { readFileSync } = await import('node:fs')
+  const { buildings } = JSON.parse(readFileSync('public/sites/compact-infill/buildings.json', 'utf8')) as { buildings: FootprintBuilding[] }
+  const runner = createFlowRunner()
+  const frame: FlowFrame = { nx: 160, ny: 160, dx: 1.75, centre: [0, 0], flow: [1, 0] }
+  const start = performance.now()
+  runner.request({ id: 1, frame, buildings, reset: true, slices: true })
+  const times: number[] = []
+  while (runner.hasPendingWork()) {
+    const before = performance.now()
+    if (process.env.WIND_BENCHMARK === 'baseline') {
+      const z = SLICE_HEIGHTS_M[times.length]!
+      const solver = lbm.createLbm(160, 160, lbm.rasterize(frame, sliceObstacles(buildings, z)))
+      lbm.stepLbm(solver, MAX_STEPS)
+      lbm.velocityField(solver)
+    } else runner.tick(Infinity)
+    times.push(performance.now() - before)
+    if (times.length === 4) break
+  }
+  process.stdout.write(JSON.stringify({ slicesMs: times, totalMs: performance.now() - start }) + "\n")
+}, 120_000)
+
+it('converges an empty domain in 250 steps, well before the hard cap', () => {
+  const step = vi.spyOn(lbm, 'stepLbm')
+  const runner = createFlowRunner()
+  runner.request({ id: 1, frame: flowFrame(area, 270, 32, 32), buildings: [], reset: true })
+  expect(runner.tick(Infinity)!.settled).toBe(true)
+  expect(step.mock.calls.reduce((n, call) => n + call[1]!, 0)).toBe(250)
+  expect(runner.hasPendingWork()).toBe(false)
+})
+
+it('returns progressive fine-grid slices in z order with a faster 10 m field above a low block', () => {
+  const frame: FlowFrame = { nx: 160, ny: 160, dx: 1.75, centre: [0, 0], flow: [1, 0] }
+  const create = vi.spyOn(lbm, 'createLbm')
+  const runner = createFlowRunner()
+  runner.request({ id: 1, frame, buildings: [{ height: 8, footprint: square(-10, 10, -10, 10) }], reset: true, slices: true })
+  let result: FlowResult | null = null
+  for (let i = 0; i < 4; i++) {
+    result = runner.tick(Infinity)!
+    expect(result.slices?.map((s) => s.z)).toEqual([2, 10, 20, 35].slice(0, i + 1))
+    expect(result.slicesComplete).toBe(i === 3)
+    for (const slice of result.slices!) {
+      expect(slice.velocity.length).toBe(160 * 160 * 2)
+      expect(slice.solid.length).toBe(160 * 160)
+      for (let j = 0; j < slice.solid.length; j++) if (slice.solid[j]) {
+        expect(slice.velocity[2 * j]).toBe(0)
+        expect(slice.velocity[2 * j + 1]).toBe(0)
+      }
+    }
+  }
+  expect(create.mock.calls.map(([nx, ny]) => [nx, ny])).toEqual([[160, 160], [80, 80], [80, 80], [80, 80]])
+  const ground = result!.slices![0]!, ten = result!.slices![1]!
+  expect(Math.hypot(...sampleVelocity(frame, ten.velocity, ten.solid, [25, 0])!))
+    .toBeGreaterThan(Math.hypot(...sampleVelocity(frame, ground.velocity, ground.solid, [25, 0])!))
+}, 20_000)
+
+it('upsamples uniform fields and preserves coarse centres and fine solids', () => {
+  const coarse: FlowFrame = { nx: 3, ny: 2, dx: 3, centre: [0, 0], flow: [1, 0] }
+  const fine = { ...coarse, nx: 9, ny: 6, dx: 1 }
+  const solid = new Uint8Array(54)
+  const uniform = Float32Array.from({ length: 12 }, (_, i) => i % 2 ? -0.5 : 2)
+  const out = lbm.upsampleVelocity(coarse, uniform, fine, solid)
+  expect([...out]).toEqual(Array.from({ length: 108 }, (_, i) => i % 2 ? -0.5 : 2))
+  const varying = Float32Array.from({ length: 12 }, (_, i) => i)
+  solid[0] = 1
+  const interpolated = lbm.upsampleVelocity(coarse, varying, fine, solid)
+  expect(interpolated[0]).toBe(0)
+  expect(interpolated[1]).toBe(0)
+  for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) for (let c = 0; c < 2; c++) {
+    expect(interpolated[2 * ((3 * y + 1) * 9 + 3 * x + 1) + c]).toBe(varying[2 * (y * 3 + x) + c])
+  }
+  expect(interpolated[2 * (9 + 2)]).toBeCloseTo(2 / 3)
+})
+
+it('warm starts common fluid distributions and retains equilibrium in newly exposed cells', () => {
+  const oldMask = new Uint8Array(64)
+  oldMask[27] = 1
+  const previous = lbm.createLbm(8, 8, oldMask)
+  lbm.stepLbm(previous, 30)
+  const nextMask = new Uint8Array(64)
+  nextMask[28] = 1
+  const next = lbm.createLbm(8, 8, nextMask)
+  const equilibrium = next.f.slice()
+  lbm.warmStartLbm(next, previous)
+  for (let k = 0; k < 9; k++) for (let i = 0; i < 64; i++) {
+    const expected = oldMask[i] || nextMask[i] ? equilibrium[k * 64 + i] : previous.f[k * 64 + i]
+    expect(next.f[k * 64 + i]).toBe(expected)
+    expect(next.tmp[k * 64 + i]).toBe(expected)
+  }
 })

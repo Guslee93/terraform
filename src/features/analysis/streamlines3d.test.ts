@@ -15,7 +15,7 @@ function stack(buildings: { height: number; footprint: Vec2[] }[]): FlowSlice[] 
   runner.request({ id: 1, frame, buildings, reset: true, slices: true })
   for (let i = 0; i < 5000; i++) {
     const r = runner.tick(0)
-    if (r?.slices) return r.slices
+    if (r?.slicesComplete && r.slices) return r.slices
   }
   throw new Error('slices did not complete')
 }

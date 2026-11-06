@@ -492,3 +492,9 @@
 - Claude W5c: `streamlines3d.ts` — lines seeded upwind at 2–28 m, horizontal flow interpolated between slices, rise over buildings they can clear within 15 m (rule, labelled), go round taller ones, relax back down; rendered as one thick drei `Line` (blue→violet by speed).
 - Browser (Compact Infill, W, Direction): streamlines arc over the blocks and curl into the courtyard, roofs coloured, ramp bar shown; height options enabled after ~60 s of background slice solving.
 - lint ✅ · 972 tests ✅ · build ✅ · e2e wind/smoke/layers ✅. Known: roofs taller than the 35 m slice stay uncoloured; slice solve ~10 s per height.
+
+### Wind C26 — faster height slices (2026-11-06, Codex + Claude)
+- Codex: upper slices on an 80² coarse lattice, bilinear-upsampled to the fine frame; early stop on convergence (Δspeed < 2e-4 every 250 steps, MAX_STEPS cap); warm start from the slice below; progressive posting with `slicesComplete`. Codex hit its usage limit before the build/benchmark; Claude finished: `slicesComplete` optional (older fixtures), 3D streamline tests wait for the full stack, benchmark run.
+- Claude UI: per-height availability in the streamline-height select, "Upper heights computing… n/4 ready", 3D lines from 2 slices on.
+- Timing: Node 39 s → 9.3 s (2 m 7.0 s, 10 m 1.6 s, 20 m 0.6 s, 35 m 0.1 s). Browser: full stack 8.2 s (was ~60 s).
+- lint ✅ · 976 tests ✅ · build ✅ · wind e2e ✅ · validation suite unchanged ✅.
