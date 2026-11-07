@@ -29,6 +29,12 @@ export function useWindDemo(wind: WindSettings, streamlines: boolean, onWindChan
       setOrbitDeg(null)
     }
   }, [onWindChange, onStreamlinesChange])
+  /** A panel edit during the demo stops it, restores the saved settings and keeps that edit. */
+  const stopWith = useCallback((patch: Partial<WindSettings>) => {
+    const previous = saved.current
+    stop()
+    if (previous) onWindChange({ ...previous.wind, ...patch })
+  }, [stop, onWindChange])
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (!saved.current) return
@@ -62,7 +68,7 @@ export function useWindDemo(wind: WindSettings, streamlines: boolean, onWindChan
     }
     tick(started)
   }
-  return { playing: orbitDeg !== null, orbitDeg, toggle, stop }
+  return { playing: orbitDeg !== null, orbitDeg, toggle, stop, stopWith }
 }
 
 type ClimatePanelProps = {
@@ -73,6 +79,8 @@ type ClimatePanelProps = {
   sliceHeights?: readonly number[]
   demoPlaying?: boolean
   onToggleDemo?: () => void
+  /** Edit made while the demo plays: stop it, restore, then apply this change. */
+  onDemoEdit?: (patch: Partial<WindSettings>) => void
   mode: ClimateMode
   onModeChange: (mode: ClimateMode) => void
   wind: WindSettings
@@ -94,10 +102,11 @@ const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
   { id: 'ratio', label: 'Direction' },
 ]
 
-export function ClimatePanel({ availableHeights = [], slicesComplete = false, sliceHeights = [2, 10, 20, 35], demoPlaying = false, onToggleDemo, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
+export function ClimatePanel({ availableHeights = [], slicesComplete = false, sliceHeights = [2, 10, 20, 35], demoPlaying = false, onToggleDemo, onDemoEdit, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
   const windFrom = wind.from
   const slicesReady = availableHeights.length >= 2
-  const set = (patch: Partial<WindSettings>) => onWindChange({ ...wind, ...patch })
+  // While the demo plays, an edit stops it (restoring the user's settings) and keeps the edit.
+  const set = (patch: Partial<WindSettings>) => (demoPlaying && onDemoEdit ? onDemoEdit(patch) : onWindChange({ ...wind, ...patch }))
   return (
     <div>
       <div role="group" aria-label="Climate layer" className="flex gap-1">
@@ -194,7 +203,7 @@ export function ClimatePanel({ availableHeights = [], slicesComplete = false, sl
           </div>
 
           <label className="mt-3 flex items-center gap-2 text-body-sm">
-            <input type="checkbox" checked={streamlines} onChange={(event) => onStreamlinesChange?.(event.currentTarget.checked)} />
+            <input type="checkbox" checked={streamlines} onChange={(event) => { const on = event.currentTarget.checked; if (demoPlaying) onDemoEdit?.({}); onStreamlinesChange?.(on) }} />
             Streamlines
           </label>
           <div className="mt-3 space-y-2">
@@ -250,7 +259,7 @@ export function ClimatePanel({ availableHeights = [], slicesComplete = false, sl
             <input type="checkbox" checked={wind.downwash} onChange={(event) => set({ downwash: event.currentTarget.checked })} className="mt-1 accent-ink" />
             <span>
               Downwash rule for tall buildings
-              <span className="block text-caption text-ink-secondary">A rule, not simulated: faster wind at the base of buildings 30 m or taller, or twice the height of their neighbours.</span>
+              <span className="block text-caption text-ink-secondary">A rule, not simulated: faster wind at the base of buildings 30 m or taller, or twice the height of their neighbours. Applies at ground level only.</span>
             </span>
           </label>
         </div>
@@ -279,6 +288,7 @@ export function ClimatePanel({ availableHeights = [], slicesComplete = false, sl
               ))}
             </ul>
           )}
+          {mode === 'wind' && wind.display !== 'delta' && <p className="mt-2 text-caption text-ink-secondary">Shares are for open ground inside the circle; roofs are coloured but not counted.</p>}
           <p className="mt-2 text-caption text-ink-secondary">{view.disclaimer}</p>
         </div>
       )}

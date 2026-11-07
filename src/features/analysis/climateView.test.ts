@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_WIND, localSpeedMs, WIND_RAMP, windSpeedColour, windColour } from './climateView'
+import { ACTIVITY_BANDS, DEFAULT_WIND, DIRECTION_BANDS, localSpeedMs, particleColour, WIND_RAMP, windSpeedColour, windColour } from './climateView'
 
 describe('Direction speed ramp', () => {
   it.each(WIND_RAMP)('matches $speed m/s', ({ speed, colour }) => expect(windSpeedColour(speed)).toBe(colour))
@@ -16,5 +16,25 @@ describe('Direction speed ramp', () => {
   it('defaults to following buildings at 65% opacity', () => {
     expect(DEFAULT_WIND.streamlineHeight).toBeNull()
     expect(DEFAULT_WIND.streamlineOpacity).toBe(0.65)
+  })
+})
+
+// Audit 2026-11-07 regressions (docs/reviews/wind-status-audit-2026-11-07.md).
+describe('audit fixes', () => {
+  it('#1 particles use the map colour scale; a neutral blue in Delta', () => {
+    const direction = { ...DEFAULT_WIND, display: 'ratio' as const }
+    expect(particleColour(1.2, direction)).toBe(windColour(1.2, direction))
+    expect(particleColour(1.2, DEFAULT_WIND)).toBe(windColour(1.2, DEFAULT_WIND))
+    expect(particleColour(1.2, { ...DEFAULT_WIND, display: 'delta' })).toBe('#1E3A8A')
+  })
+  it('#2 Direction has an m/s legend coloured from the ramp', () => {
+    expect(DIRECTION_BANDS.map((b) => b.label)).toEqual(['0–2 m/s', '2–4 m/s', '4–6 m/s', '6–8 m/s', '8–10 m/s', '10 m/s and above'])
+    expect(DIRECTION_BANDS[2]!.colour).toBe(windSpeedColour(5))
+  })
+  it('#5 Comfort splits at the Lawson 10 m/s threshold', () => {
+    const at = (ms: number) => ACTIVITY_BANDS.find((b) => ms < b.below)!.label
+    expect(at(9)).toMatch(/^Uncomfortable \(8–10/)
+    expect(at(12)).toMatch(/^Very uncomfortable \(10–15/)
+    expect(at(16)).toMatch(/^Unsafe/)
   })
 })

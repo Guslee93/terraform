@@ -249,3 +249,29 @@ it('disables upper controls until slices exist and exposes Direction reference s
   fireEvent.change(screen.getByLabelText('Streamline height'), { target: { value: '3d' } })
   expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineHeight: null })
 })
+
+it('#8 an edit during Play demo stops it, restores the saved settings and keeps the edit', () => {
+  const onDemoEdit = vi.fn()
+  const onWindChange = vi.fn()
+  render(<ClimatePanel mode="wind" onModeChange={() => {}} wind={{ ...DEFAULT_WIND, from: 15 }} onWindChange={onWindChange} view={null} demoPlaying onDemoEdit={onDemoEdit} />)
+  fireEvent.change(screen.getByLabelText('Analysis circle'), { target: { value: '150' } })
+  expect(onDemoEdit).toHaveBeenCalledWith({ radius: 150 })
+  expect(onWindChange).not.toHaveBeenCalled()
+})
+
+it('#8 useWindDemo.stopWith restores the pre-demo settings plus the patch', () => {
+  // Stable setters, as in StudioShell: an inline callback would change `stop` every render.
+  function Demo() {
+    const [wind, setWind] = useState({ ...DEFAULT_WIND, from: 135 })
+    const [streamlines, setStreamlines] = useState(false)
+    const demo = useWindDemo(wind, streamlines, setWind, setStreamlines)
+    return <><button onClick={demo.toggle}>go</button><button onClick={() => demo.stopWith({ radius: 200 })}>edit</button><output aria-label="from">{wind.from}</output><output aria-label="radius">{wind.radius}</output></>
+  }
+  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })))
+  render(<Demo />)
+  fireEvent.click(screen.getByRole('button', { name: 'go' }))
+  fireEvent.click(screen.getByRole('button', { name: 'edit' }))
+  expect(screen.getByLabelText('from')).toHaveTextContent('135')
+  expect(screen.getByLabelText('radius')).toHaveTextContent('200')
+  vi.unstubAllGlobals()
+})

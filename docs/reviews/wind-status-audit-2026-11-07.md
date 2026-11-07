@@ -36,3 +36,20 @@ The wind feature works end to end and is stable. No crashes were found in this p
 ## Recommended order
 
 1, 2 and 3 first (about 1–2 h together; all small, local changes plus tests). Then 4–7 (copy and visual polish, under 1 h). Items 9–11 need your decisions.
+
+## Resolution (2026-11-07)
+
+All 8 fixable findings are resolved; 9–12 are unchanged (known limits / not wind).
+
+| # | Fix | Evidence |
+|---|---|---|
+| 1 | `particleColour()`: particles use the map's scale (Lawson in Comfort, m/s ramp in Direction); neutral dark blue in Delta | Unit test; browser: no red particles in the jet |
+| 2 | Direction legend in m/s bins (0–2 … 10+) with ramp-matched colours and shares; the ramp bar is `role="img"` with a description | Unit test; browser: "0–2 m/s 81 % …" |
+| 3 | "Set baseline" also waits for the whole height stack (`slicesComplete`) | Browser: disabled at 4 s, enabled once complete |
+| 4 | Caption: "Shares are for open ground inside the circle; roofs are coloured but not counted." | Browser |
+| 5 | Comfort split at the Lawson 10 m/s threshold: Uncomfortable 8–10, Very uncomfortable 10–15, Unsafe > 15 | Unit test |
+| 6 | Downwash caption ends "Applies at ground level only." | Browser |
+| 7 | Ring drawn on top as a dashed dark line over a white halo | Browser screenshot |
+| 8 | An edit during Play demo stops it, restores the saved settings and keeps the edit (`stopWith`) | Two unit tests |
+
+Gate: lint ✅ · 991 unit tests ✅ · build ✅ · e2e wind/wind-a11y/smoke/layers 11/11 ✅.

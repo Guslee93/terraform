@@ -94,16 +94,30 @@ export const DELTA_BANDS: readonly Band[] = [
 export const deltaBand = (delta: number) => DELTA_BANDS[delta <= -0.3 ? 0 : delta < -0.1 ? 1 : delta <= 0.1 ? 2 : delta < 0.3 ? 3 : 4]!
 export const DELTA_NOTE = 'Calmer / No change / Windier vs baseline'
 
-/** Momentary activity bands from the Lawson thresholds and the first safety threshold (m/s, pedestrian level). */
-const [SIT, STAND, STROLL, WALK] = LAWSON_NORCONSULT.thresholds
+/** Momentary activity bands: the five Lawson thresholds (A–E) and the first safety threshold (m/s, pedestrian level). */
+const [SIT, STAND, STROLL, WALK, UNCOMFORTABLE] = LAWSON_NORCONSULT.thresholds
 export const ACTIVITY_BANDS: readonly Band[] = [
   { band: 'sit', below: SIT, label: `Sitting (< ${SIT} m/s)`, colour: '#3B6EA8' },
   { band: 'stand', below: STAND, label: `Standing (${SIT}–${STAND} m/s)`, colour: '#4FA3A5' },
   { band: 'stroll', below: STROLL, label: `Strolling (${STAND}–${STROLL} m/s)`, colour: '#E6DC9C' },
   { band: 'walk', below: WALK, label: `Walking (${STROLL}–${WALK} m/s)`, colour: '#E39A4C' },
-  { band: 'uncomfortable', below: SAFETY.thresholds[0], label: `Uncomfortable (${WALK}–${SAFETY.thresholds[0]} m/s)`, colour: '#C2452F' },
+  { band: 'uncomfortable', below: UNCOMFORTABLE, label: `Uncomfortable (${WALK}–${UNCOMFORTABLE} m/s)`, colour: '#C2452F' },
+  { band: 'very-uncomfortable', below: SAFETY.thresholds[0], label: `Very uncomfortable (${UNCOMFORTABLE}–${SAFETY.thresholds[0]} m/s)`, colour: '#962838' },
   { band: 'unsafe', below: Infinity, label: `Unsafe (> ${SAFETY.thresholds[0]} m/s)`, colour: '#6E1A2A' },
 ]
+/** Direction legend: m/s bins coloured from the continuous ramp at each bin's midpoint. */
+export const DIRECTION_BANDS: readonly Band[] = [0, 2, 4, 6, 8, 10].map((lo) => ({
+  band: `ms-${lo}`,
+  below: lo === 10 ? Infinity : lo + 2,
+  label: lo === 10 ? '10 m/s and above' : `${lo}–${lo + 2} m/s`,
+  colour: windSpeedColour(lo + 1),
+}))
+
+/** Particle colour: the same scale as the map; a neutral dark blue in Delta (no per-particle baseline). */
+export function particleColour(ratio: number, wind: WindSettings): string {
+  return wind.display === 'delta' ? '#1E3A8A' : windColour(ratio, wind)!
+}
+
 export const ACTIVITY_NOTE = 'Activity at this wind only (Lawson thresholds) — not an annual comfort rating.'
 
 export const NOISE_COLOUR: Record<NoiseBand, string> = {
@@ -160,8 +174,8 @@ export function buildClimateView(
   baseline: WindBaseline | null = null,
 ): ClimateView {
   if (mode === 'wind') {
-    const bands = wind.display === 'delta' ? DELTA_BANDS : wind.display === 'activity' ? ACTIVITY_BANDS : SPEED_BANDS
-    const scale = wind.display === 'activity' ? localSpeedMs(1, wind.refSpeed) : 1
+    const bands = wind.display === 'delta' ? DELTA_BANDS : wind.display === 'activity' ? ACTIVITY_BANDS : DIRECTION_BANDS
+    const scale = wind.display === 'delta' ? 1 : localSpeedMs(1, wind.refSpeed)
     const compatible = baseline && baselineMatches(baseline, { centre: wind.centre ?? baseline.circle.centre, radius: wind.radius }, wind.from, wind.downwash)
     const cells = flow && (wind.display !== 'delta' || compatible)
       ? sampleGrid(studyArea, WIND_CELL_M).flatMap((c) => {
@@ -188,7 +202,7 @@ export function buildClimateView(
         }) : []
     return {
       overlay: { cellM: WIND_CELL_M, lattice, cells: cells.map((c) => ({ x: c.x, y: c.y, colour: c.b.colour })) },
-      legend: wind.display === 'ratio' ? [] : bands.map((b) => {
+      legend: bands.map((b) => {
         const count = cells.filter((c) => c.b.band === b.band).length
         return { label: b.label, colour: b.colour, count, share: cells.length ? count / cells.length : 0 }
       }),

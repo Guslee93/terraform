@@ -474,7 +474,7 @@ export function ViewportCanvas({
             {windFlow?.slices && windCircle && layers.terrain && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
             {windFlow && windCircle && layers.terrain && ((windStreamlines || reducedMotion)
               ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlineHeight} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
-              : <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} />)}
+              : <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} />)}
             {windCircle && layers.terrain && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}
 
             <group name="live-scenario">

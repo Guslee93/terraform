@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useState } from 'react'
 import { BufferAttribute, BufferGeometry, Color } from 'three'
-import { speedBand } from '../features/analysis/climateView'
+import { particleColour, type WindSettings } from '../features/analysis/climateView'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import { sampleVelocity } from '../features/analysis/lbm'
 import { particleSegment } from '../features/analysis/particles'
@@ -18,8 +18,10 @@ const noRaycast = () => null
 const reducedMotion = () => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /** Short moving segments advected through the 2D flow. Under reduced motion they stay still as flow arrows. */
-export function WindParticles({ flow, circle, heightAt }: {
+export function WindParticles({ flow, circle, heightAt, wind }: {
   flow: FlowResult
+  /** Display settings: particles use the same colour scale as the map. */
+  wind: WindSettings
   circle: { readonly centre: Vec2; readonly radius: number }
   heightAt: (east: number, north: number) => number
 }) {
@@ -66,7 +68,7 @@ export function WindParticles({ flow, circle, heightAt }: {
       if (seg.respawn) state.age[i] = LIFE_S + 1
       p.setXYZ(2 * i, tail[0], tail[1], tail[2])
       p.setXYZ(2 * i + 1, head[0], head[1], head[2])
-      colour.set(speedBand(Math.hypot(v[0], v[1])).colour)
+      colour.set(particleColour(Math.hypot(v[0], v[1]), wind))
       c.setXYZ(2 * i, colour.r * 0.35, colour.g * 0.35, colour.b * 0.35)
       c.setXYZ(2 * i + 1, colour.r, colour.g, colour.b)
     }
