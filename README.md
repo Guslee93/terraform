@@ -55,6 +55,7 @@ A live 2D wind flow around the site, Forma-inspired and labelled as **indicative
 - **Solver:** D2Q9 lattice-Boltzmann in a Web Worker, solved inside a movable analysis circle (60–250 m, about 1.8 m cells at r = 100 m). It re-solves live while you drag a building.
 - **Views:** Comfort (Lawson activity bands at the chosen wind; momentary, not annual), Direction (continuous m/s ramp), and Delta against a saved baseline. Particles, streamlines and a scripted **Play demo** for screen recording.
 - **3D look:** height slices at 2/10/20/35 m (plus one above any building taller than 35 m), roof colouring, and streamlines that rise over roofs. The rise is a labelled visual rule; the flow is layered 2D. The full stack is ready in about 8 s.
+- **All directions:** *Analyse 8 directions* builds a worst-case map (with worst-direction arrows) and an exposure rose; directions are weighted equally, not by climate (ADR-0015).
 - **Units:** the slider is the wind at 10 m; pedestrian speeds use the indicative urban profile (× ≈ 0.70 at 2 m).
 - **Limits:** no terrain effect on the flow, no measured climate data, downwash is a rule, and low-rise clusters overstate the ground-level speed-up beside them (see `docs/research/wind-validation-note.md`).
 - **Docs:** `docs/plans/wind-simulator-prd.md`, `docs/decisions/ADR-0014-wind-flow-solver.md`, `docs/case-study/wind.md`, `docs/reviews/wind-*.md`.

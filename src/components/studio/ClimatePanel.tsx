@@ -1,12 +1,13 @@
 import { STREAMLINE_3D_NOTE } from '../../features/analysis/streamlines3d'
+import { DirectionRose, ShareBar, type RoseSector } from './DirectionRose'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { demoFrame } from '../../features/analysis/windDemo'
-import { CIRCLE_RADIUS, DELTA_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
+import { CIRCLE_RADIUS, DELTA_NOTE, localSpeedMs, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { labelClass } from '../ui/controls'
 
-const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const
-export const compassName = (bearing: number) => COMPASS[Math.round((((bearing % 360) + 360) % 360) / 45) % 8]!
+export { compassName } from './compass'
+import { compassName } from './compass'
 
 const MODES: ReadonlyArray<{ id: ClimateMode; label: string }> = [
   { id: 'off', label: 'Off' },
@@ -81,6 +82,10 @@ type ClimatePanelProps = {
   onToggleDemo?: () => void
   /** Edit made while the demo plays: stop it, restore, then apply this change. */
   onDemoEdit?: (patch: Partial<WindSettings>) => void
+  /** All-directions sweep (ADR-0015): opt-in because it solves 8 directions. */
+  sweepOn?: boolean
+  onSweepChange?: (on: boolean) => void
+  sweep?: { readonly sectors: readonly RoseSector[]; readonly worstFrom: number | null; readonly total: number } | null
   mode: ClimateMode
   onModeChange: (mode: ClimateMode) => void
   wind: WindSettings
@@ -102,7 +107,7 @@ const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
   { id: 'ratio', label: 'Direction' },
 ]
 
-export function ClimatePanel({ availableHeights = [], slicesComplete = false, sliceHeights = [2, 10, 20, 35], demoPlaying = false, onToggleDemo, onDemoEdit, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
+export function ClimatePanel({ availableHeights = [], slicesComplete = false, sliceHeights = [2, 10, 20, 35], demoPlaying = false, onToggleDemo, onDemoEdit, sweepOn = false, onSweepChange, sweep = null, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
   const windFrom = wind.from
   const slicesReady = availableHeights.length >= 2
   // While the demo plays, an edit stops it (restoring the user's settings) and keeps the edit.
@@ -185,8 +190,29 @@ export function ClimatePanel({ availableHeights = [], slicesComplete = false, sl
             <p className="mt-1 text-caption text-ink-secondary">The flow is solved only around this circle, at about {Math.round((wind.radius * 2 * 1.4) / 160 * 10) / 10} m resolution.</p>
           </div>
 
+          <section aria-label="All wind directions" className="mt-3 rounded-chip border border-line p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className={labelClass}>All directions</span>
+              {onSweepChange && (
+                <button type="button" aria-pressed={sweepOn} onClick={() => { onSweepChange(!sweepOn); if (sweepOn && wind.display === 'worst') set({ display: 'activity' }) }}
+                  className={cn('min-h-8 rounded-chip border border-line px-2 text-body-sm', sweepOn ? 'bg-ink text-ink-on-inverse' : 'bg-surface text-ink')}>
+                  {sweepOn ? 'Stop' : 'Analyse 8 directions'}
+                </button>
+              )}
+            </div>
+            {!sweepOn && <p className="mt-1 text-caption text-ink-secondary">Solve every 45° to find where and from which direction the area is worst.</p>}
+            {sweepOn && sweep && (
+              <div className="mt-2">
+                <DirectionRose sectors={sweep.sectors} worstFrom={sweep.worstFrom} currentFrom={wind.from} thresholdMs={ROSE_THRESHOLD_MS} msPerRatio={localSpeedMs(1, wind.refSpeed)} total={sweep.total}
+                  onSelect={(from) => set({ from, display: wind.display === 'worst' ? 'activity' : wind.display })} />
+                <p className="mt-1 text-caption text-ink-secondary">{WORST_NOTE} Wedge length: mean wind on open ground for each direction, at {wind.refSpeed} m/s (10 m). Worst = largest share at or above {ROSE_THRESHOLD_MS} m/s (too windy to stand), then highest mean. Select a wedge to view that direction.</p>
+              </div>
+            )}
+            {sweepOn && !sweep && <p className="mt-1 text-caption text-ink-secondary">Solving directions…</p>}
+          </section>
+
           <div role="group" aria-label="Wind map shows" className="mt-3 flex gap-1">
-            {[...DISPLAYS, ...(baseline ? [{ id: 'delta' as const, label: 'Delta' }] : [])].map((option) => (
+            {[...DISPLAYS, ...(sweep && sweep.sectors.length > 0 ? [{ id: 'worst' as const, label: 'Worst case' }] : []), ...(baseline ? [{ id: 'delta' as const, label: 'Delta' }] : [])].map((option) => (
               <button
                 key={option.id}
                 type="button"
@@ -276,7 +302,9 @@ export function ClimatePanel({ availableHeights = [], slicesComplete = false, sl
               {mode === 'wind' && baselineMismatch && wind.display === 'delta' ? 'Delta unavailable for this circle or direction.' : mode === 'noise' ? 'No mapped roads in this study area, so there is nothing to estimate.' : 'Computing the wind flow…'}
             </p>
           ) : (
-            <ul aria-label={mode === 'wind' ? (wind.display === 'delta' ? DELTA_NOTE : wind.display === 'activity' ? 'Wind comfort legend' : 'Wind direction legend') : 'Noise legend'}>
+            <>
+            <ShareBar entries={view.legend} label={mode === 'wind' ? 'Share of open ground by band' : 'Share of the study area by band'} />
+            <ul className="mt-2" aria-label={mode === 'wind' ? (wind.display === 'delta' ? DELTA_NOTE : wind.display === 'activity' ? 'Wind comfort legend' : wind.display === 'worst' ? 'Worst-case comfort legend' : 'Wind direction legend') : 'Noise legend'}>
               {view.legend.map((entry) => (
                 <li key={entry.label} className="flex min-h-8 items-center justify-between gap-3 text-body-sm text-ink">
                   <span className="flex items-center gap-2">
@@ -287,6 +315,7 @@ export function ClimatePanel({ availableHeights = [], slicesComplete = false, sl
                 </li>
               ))}
             </ul>
+            </>
           )}
           {mode === 'wind' && wind.display !== 'delta' && <p className="mt-2 text-caption text-ink-secondary">Shares are for open ground inside the circle; roofs are coloured but not counted.</p>}
           <p className="mt-2 text-caption text-ink-secondary">{view.disclaimer}</p>

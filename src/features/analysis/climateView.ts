@@ -9,7 +9,7 @@ import { computeNoise, NOISE_BAND_LABEL, NOISE_DISCLAIMER, type NoiseBand, type 
 export type ClimateMode = 'off' | 'wind' | 'noise'
 
 /** What the wind overlay shows: speed relative to open ground, or the activity the local speed suits. */
-export type WindDisplay = 'ratio' | 'activity' | 'delta'
+export type WindDisplay = 'ratio' | 'activity' | 'delta' | 'worst'
 export type WindSettings = {
   /** Compass bearing the wind blows FROM. */
   readonly from: number
@@ -163,6 +163,12 @@ function tally<K extends string>(
 
 const NOISE_ORDER: readonly NoiseBand[] = ['quiet', 'moderate', 'loud', 'very-loud', 'extreme']
 
+/** Worst case over the all-directions sweep (ADR-0015): per open-ground cell, the highest ratio. */
+export type WorstCase = { readonly cells: Float32Array; readonly maxRatio: Float32Array }
+export const WORST_NOTE = 'Worst case over 8 wind directions, each weighted equally — not measured climate frequency.'
+/** Threshold for the rose's "share above": too windy to stand comfortably (Lawson B/C boundary, 4 m/s). */
+export const ROSE_THRESHOLD_MS = LAWSON_NORCONSULT.thresholds[1]
+
 export function buildClimateView(
   mode: Exclude<ClimateMode, 'off'>,
   studyArea: readonly Vec2[],
@@ -172,7 +178,26 @@ export function buildClimateView(
   wind: WindSettings = DEFAULT_WIND,
   cellM = 10,
   baseline: WindBaseline | null = null,
+  worst: WorstCase | null = null,
 ): ClimateView {
+  if (mode === 'wind' && wind.display === 'worst') {
+    const points: { x: number; y: number; colour: string; band: string }[] = []
+    if (worst) for (let i = 0; i < worst.maxRatio.length; i++) {
+      const r = worst.maxRatio[i]!
+      if (!Number.isFinite(r)) continue
+      const b = pick(ACTIVITY_BANDS, localSpeedMs(r, wind.refSpeed))
+      points.push({ x: worst.cells[2 * i]!, y: worst.cells[2 * i + 1]!, colour: b.colour, band: b.band })
+    }
+    return {
+      overlay: { cellM: WIND_CELL_M, lattice: points, cells: points },
+      legend: ACTIVITY_BANDS.map((b) => {
+        const count = points.filter((p) => p.band === b.band).length
+        return { label: b.label, colour: b.colour, count, share: points.length ? count / points.length : 0 }
+      }),
+      disclaimer: `${WORST_NOTE} ${ACTIVITY_NOTE} ${FLOW_DISCLAIMER}`,
+      assessed: points.length,
+    }
+  }
   if (mode === 'wind') {
     const bands = wind.display === 'delta' ? DELTA_BANDS : wind.display === 'activity' ? ACTIVITY_BANDS : DIRECTION_BANDS
     const scale = wind.display === 'delta' ? 1 : localSpeedMs(1, wind.refSpeed)

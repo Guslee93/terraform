@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
-import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
+import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, localSpeedMs, ROSE_THRESHOLD_MS, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
 import { ClimatePanel, useWindDemo } from './ClimatePanel'
 import { useWindFlow } from '../../features/analysis/useWindFlow'
+import { useWindSweep } from '../../features/analysis/useWindSweep'
+import { summariseSweep, SWEEP_DIRECTIONS } from '../../features/analysis/directionSweep'
 import { circlePolygon } from '../../features/analysis/grid'
 import type { Vec2 } from '../../lib/coordinates'
 import { siteFacts } from '../../features/analysis/siteFacts'
@@ -141,6 +143,12 @@ export function StudioShell({
   const { flow: windFlow, isCurrent: isCurrentFlow } = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash, climateMode === 'wind')
   // The live field shows even mid-edit (Forma-style live drag); only a current, settled field may become the baseline.
   const freshFlow = isCurrentFlow(windFlow) ? windFlow : null
+  // All-directions sweep (ADR-0015): opt-in, solved in its own worker.
+  const [sweepOn, setSweepOn] = useState(false)
+  const sweep = useWindSweep(windCircle, analysisBuildings, climateMode === 'wind' && sweepOn, wind.downwash)
+  const sweepSummary = useMemo(() => (sweep ? summariseSweep(sweep, ROSE_THRESHOLD_MS / localSpeedMs(1, wind.refSpeed)) : null), [sweep, wind.refSpeed])
+  const worstCase = useMemo(() => (sweep && sweepSummary ? { cells: sweep.cells, maxRatio: sweepSummary.maxRatio } : null), [sweep, sweepSummary])
+  const worstFrom = useMemo(() => (sweep && sweepSummary ? Array.from(sweepSummary.worstIndex, (i) => sweep.directions[i] ?? Number.NaN) : []), [sweep, sweepSummary])
   const baselineMismatch = !!baseline && !!windCentre && !baselineMatches(baseline, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)
   useEffect(() => {
     if (!placingCircle) return
@@ -158,8 +166,8 @@ export function StudioShell({
   }, [placingCircle, windCentre])
   const climateView = useMemo(() => {
     if (!sitePackage || !studyArea || !windArea || climateMode === 'off') return null
-    return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline)
-  }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind, windCentre, baseline])
+    return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline, worstCase)
+  }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind, windCentre, baseline, worstCase])
   const facts = useMemo(() => sitePackage ? siteFacts(normalizeRing(sitePackage.studyArea.polygon), analysisBuildings) : null, [sitePackage, analysisBuildings])
   const metrics = useMemo(() => sitePackage
     ? scenarioMetrics(analysisDocument, normalizeRing(sitePackage.studyArea.polygon))
@@ -390,6 +398,7 @@ export function StudioShell({
                   windBuildings={analysisBuildings}
                   windBaseline={baseline}
                   windFlow={climateMode === 'wind' ? windFlow : null}
+                  windWorst={climateMode === 'wind' && wind.display === 'worst' && sweep ? { cells: sweep.cells, worstFrom } : null}
                   windCircle={climateMode === 'wind' ? windCircle : null}
                   onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
                 />
@@ -496,7 +505,7 @@ export function StudioShell({
             ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
             : shortDate(sunTime.date)}
           climate={sitePackage ? (
-            <ClimatePanel availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
+            <ClimatePanel availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
               streamlines={streamlines} onStreamlinesChange={setStreamlines}
               baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
               onSetBaseline={() => { if (windFlow?.settled && windFlow.slicesComplete && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}

@@ -103,6 +103,8 @@ test('Esc cancels a roof drag and restores the original storeys', async ({ page 
 })
 
 test('a committed roof drag is one undo entry', async ({ page }) => {
+  // Same as the Esc-drag test: drawing + dragging on the software-GL canvas can exceed 30 s.
+  test.slow()
   await createMass(page)
 
   const handle = await moveToRoofDragView(page)

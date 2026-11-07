@@ -158,3 +158,17 @@ test('W5: 3D streamlines and roof wind on Compact Infill (Direction, m/s)', asyn
   await page.waitForTimeout(2000)
   await page.screenshot({ path: `${OUT_DIR}/wind-3d-streamlines.png` })
 })
+
+// ADR-0015 — worst case over 8 directions with the exposure rose.
+test('Sweep: worst-case map and direction rose on Compact Infill', async ({ page }) => {
+  await openWind(page, 'compact-infill')
+  const section = page.getByRole('region', { name: 'All wind directions' })
+  await section.getByRole('button', { name: 'Analyse 8 directions' }).click()
+  await expect(section.getByText(/directions solved/)).toHaveCount(0, { timeout: 120_000 })
+  await expect(section.getByText(/Worst direction:/)).toBeVisible()
+  await page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Worst case' }).click()
+  await page.getByRole('button', { name: '3D', exact: true }).click()
+  await page.waitForTimeout(2000)
+  await section.scrollIntoViewIfNeeded()
+  await page.screenshot({ path: `${OUT_DIR}/wind-worst-case.png` })
+})

@@ -10,7 +10,7 @@ export const CONVERGENCE_INTERVAL = 250
 export const CONVERGENCE_THRESHOLD = 2e-4
 const STEPS_PER_CHUNK = 10
 
-function convergenceCheck(solver: Lbm) {
+export function convergenceCheck(solver: Lbm) {
   let previous = speedRatio(solver)
   return () => {
     const next = speedRatio(solver)
@@ -56,7 +56,7 @@ export type FlowResult = {
 }
 
 /** Sorted geometry fingerprint: hash for lookup, full signature checked to avoid collisions. */
-function buildingKey(buildings: readonly FootprintBuilding[]) {
+export function buildingKey(buildings: readonly FootprintBuilding[]) {
   const signature = JSON.stringify(buildings.map((b) => JSON.stringify([b.height, b.footprint])).sort())
   let hash = 2166136261
   for (let i = 0; i < signature.length; i++) hash = Math.imul(hash ^ signature.charCodeAt(i), 16777619)

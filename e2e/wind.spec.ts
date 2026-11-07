@@ -76,3 +76,24 @@ test('X4: the wind layer shows its disclaimer and legend, and the baseline/delta
   await page.getByRole('button', { name: 'Clear baseline', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Delta', exact: true })).toHaveCount(0)
 })
+
+test('ADR-0015: the all-directions sweep fills the rose, opens Worst case, and a wedge sets the dial', async ({ page }) => {
+  test.slow() // eight solves (~15–30 s under load)
+  await openStudio(page)
+  await openClimateGroup(page)
+  const inspector = page.getByRole('complementary', { name: 'Inspector' })
+  await inspector.getByRole('group', { name: 'Climate layer' }).getByRole('button', { name: 'Wind', exact: true }).click()
+  const section = page.getByRole('region', { name: 'All wind directions' })
+  await section.getByRole('button', { name: 'Analyse 8 directions' }).click()
+  await expect(section.getByText(/Worst direction:/)).toBeVisible({ timeout: 60_000 })
+  await expect(section.getByText(/directions solved/)).toHaveCount(0, { timeout: 60_000 })
+  await expect(section.getByRole('button', { name: /^Wind from/ })).toHaveCount(8)
+  await expect(section.getByText(/weighted equally — not measured climate frequency/)).toBeVisible()
+
+  await page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Worst case' }).click()
+  await expect(page.getByRole('list', { name: 'Worst-case comfort legend' })).toBeVisible()
+
+  await section.getByRole('button', { name: /^Wind from E \(90°\)/ }).click()
+  await expect(page.getByLabel('Wind blows from')).toHaveValue('90')
+  await expect(page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
+})

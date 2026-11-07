@@ -503,3 +503,9 @@
 - Plan `docs/plans/wind-finish-plan.md`; report `docs/reviews/wind-session-report-2026-11-06.md`.
 - Fixed: reduced-motion Play demo crash (negative first rAF time); e2e load flakes (`test.slow()`); tall-roof top slice; C23 test gaps; memoised analysis circle; halved 3D streamline segments.
 - Measured: perf floor (software GL) off 13.8 / particles 14.0 / 3D 9.0 fps; 2 000-building stack 4.7 s, view 2.6 ms; direction sweep table (Sloped Edge low-rise 2D limit recorded).
+
+### Wind sweep — worst case + exposure rose (2026-11-07, Codex + Claude; owner away)
+- Owner asked for Forma's right-hand panel (direction + comfort, "where it's worst"). The new image didn't arrive; built from the earlier Forma screenshot. ADR-0015.
+- Codex C27: 8-direction sweep worker/hook/summary (12.6 s Node). Claude: DirectionRose (keyboard wedges, worst outlined, click sets the dial), ShareBar (comfort shares), Worst case display + WorstArrows; particles/roofs hidden in Worst case.
+- Tuning: 6 m/s threshold gave ≤ 1 % on the sheltered site → wedge = mean speed, worst = share ≥ 4 m/s then mean.
+- Verified in the browser (rose S 180°, mean 1.4 m/s, 6 % ≥ 4 m/s; Enter on a wedge sets the dial); new e2e + evidence `wind-worst-case.png`.

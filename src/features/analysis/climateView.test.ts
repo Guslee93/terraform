@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ACTIVITY_BANDS, DEFAULT_WIND, DIRECTION_BANDS, localSpeedMs, particleColour, WIND_RAMP, windSpeedColour, windColour } from './climateView'
+import { ACTIVITY_BANDS, buildClimateView, DEFAULT_WIND, WORST_NOTE, DIRECTION_BANDS, localSpeedMs, particleColour, WIND_RAMP, windSpeedColour, windColour } from './climateView'
 
 describe('Direction speed ramp', () => {
   it.each(WIND_RAMP)('matches $speed m/s', ({ speed, colour }) => expect(windSpeedColour(speed)).toBe(colour))
@@ -36,5 +36,17 @@ describe('audit fixes', () => {
     expect(at(9)).toMatch(/^Uncomfortable \(8–10/)
     expect(at(12)).toMatch(/^Very uncomfortable \(10–15/)
     expect(at(16)).toMatch(/^Unsafe/)
+  })
+})
+
+describe('worst-case view (ADR-0015)', () => {
+  it('colours each cell by the Lawson band of its worst speed and labels the equal weighting', () => {
+    // ref 6 m/s at 10 m → 1 ratio ≈ 4.2 m/s at 2 m: 0.3 → sitting, 1.2 → strolling, NaN skipped.
+    const worst = { cells: new Float32Array([0, 0, 4, 0, 8, 0]), maxRatio: new Float32Array([0.3, 1.2, Number.NaN]) }
+    const view = buildClimateView('wind', [], [], [], null, { ...DEFAULT_WIND, display: 'worst' }, 10, null, worst)
+    expect(view.assessed).toBe(2)
+    expect(view.legend.find((e) => e.label.startsWith('Sitting'))?.share).toBe(0.5)
+    expect(view.legend.find((e) => e.label.startsWith('Strolling'))?.share).toBe(0.5)
+    expect(view.disclaimer).toContain(WORST_NOTE)
   })
 })

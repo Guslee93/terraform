@@ -26,6 +26,7 @@ import { WindStreamlines } from './WindStreamlines'
 import { FLOW_DISCLAIMER } from '../features/analysis/lbm'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
+import { WorstArrows } from './WorstArrows'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import { DEFAULT_WIND, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
@@ -81,6 +82,8 @@ type ViewportProps = {
   windBuildings?: readonly FootprintBuilding[]
   windBaseline?: WindBaseline | null
   windStreamlines?: boolean
+  /** Worst-case view (ADR-0015): arrows instead of the single-direction flow layers. */
+  windWorst?: { readonly cells: Float32Array; readonly worstFrom: readonly number[] } | null
   demoOrbitDeg?: number | null
   onStopDemo?: () => void
   /** Wind analysis circle (ring + particle bounds); null when wind is off. */
@@ -378,6 +381,7 @@ export function ViewportCanvas({
   climate = null,
   windFlow = null,
   windStreamlines = false,
+  windWorst = null,
   windSettings = DEFAULT_WIND,
   windBuildings = [],
   windBaseline = null,
@@ -471,8 +475,9 @@ export function ViewportCanvas({
             {climate && layers.terrain && (windCircle
               ? <WindHeatmap overlay={climate} heightAt={heightAt} circle={windCircle} />
               : <ClimateLayer overlay={climate} heightAt={heightAt} />)}
-            {windFlow?.slices && windCircle && layers.terrain && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
-            {windFlow && windCircle && layers.terrain && ((windStreamlines || reducedMotion)
+            {windWorst && layers.terrain && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
+            {!windWorst && windFlow?.slices && windCircle && layers.terrain && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
+            {!windWorst && windFlow && windCircle && layers.terrain && ((windStreamlines || reducedMotion)
               ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlineHeight} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
               : <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} />)}
             {windCircle && layers.terrain && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}

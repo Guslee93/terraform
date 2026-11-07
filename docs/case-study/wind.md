@@ -92,6 +92,17 @@ The visual review of this step found the most embarrassing bug of the project: t
 
 ![3D streamlines and roof wind](../screenshots/wind-3d-streamlines.png)
 
+## 4c. Where is it worst?
+
+Forma's panel answers *from which direction, and where* a site is worst. Without measured climate data, Terraform answers it honestly: **Analyse 8 directions** solves the flow every 45° in a background worker (about 13 s) and shows:
+
+- a **worst-case map**: each spot coloured by its windiest direction, with arrows showing where that worst wind comes from;
+- an **exposure rose**: wedge length = mean wind on open ground per direction. The worst direction is outlined, and clicking a wedge turns the dial to it.
+
+Every direction counts the same, and the panel says so. Once a real wind rose exists, the same eight fields feed the annual comfort maths that is already written and tested.
+
+![Worst case over 8 directions](../screenshots/wind-worst-case.png)
+
 ## 5. Honesty
 
 Six canonical cases and a stability check run as unit fixtures on every change; the results are
