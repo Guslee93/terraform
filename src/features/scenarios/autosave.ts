@@ -69,7 +69,10 @@ export function createAutosave({
   }
 
   async function writeAll() {
-    if (pending.size === 0) return
+    if (pending.size === 0) {
+      if (current.state === 'error') set({ state: 'saved' })
+      return
+    }
     set({ state: 'saving' })
     let failure: StoreErrorKind | null = null
     for (const id of [...pending.keys()]) {
@@ -106,7 +109,7 @@ export function createAutosave({
     discard(scenarioId) {
       pending.delete(scenarioId)
       dropped.add(scenarioId)
-      if (pending.size === 0 && current.state === 'unsaved') set({ state: 'saved' })
+      if (pending.size === 0 && (current.state === 'unsaved' || current.state === 'error')) set({ state: 'saved' })
     },
     status: () => current,
     subscribe(listener) {

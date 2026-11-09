@@ -110,12 +110,14 @@ function TierMesh({
   invalid,
   warning,
   onPointerDown,
+  swallowClicks = true,
 }: {
   tier: MassTier
   selected: boolean
   invalid: boolean
   warning: boolean
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void
+  swallowClicks?: boolean
 }) {
   // Keyed on values, so a preview that keeps a tier's shape does not rebuild it.
   const { footprint, baseElevation, storeys, storeyHeight } = tier
@@ -151,7 +153,8 @@ function TierMesh({
       castShadow
       receiveShadow
       onPointerDown={onPointerDown}
-      onClick={(event) => event.stopPropagation()}
+      // Only the select tool owns mass clicks; the draw tool must reach the ground behind.
+      onClick={swallowClicks ? (event) => event.stopPropagation() : undefined}
     >
       {/* Faces pushed back so storey bands and edges lying on them do not z-fight. */}
       <meshStandardMaterial
@@ -271,6 +274,8 @@ export function MassLayer({
   const startMove = (volume: MassVolume, tier: MassTier) => (event: ThreeEvent<PointerEvent>) => {
     if (!editable || editor.tool !== 'select' || event.button !== 0) return
     event.stopPropagation()
+    // A typed inspector value commits on blur: commit it now, while the editor is still idle.
+    if (globalThis.document.activeElement instanceof HTMLElement) globalThis.document.activeElement.blur()
     dispatch({ type: 'select', selection: { volumeId: volume.id, tierId: tier.id } })
     if (volume.locked) return
     const ground = new Plane(new Vector3(0, 1, 0), -tier.baseElevation)
@@ -289,16 +294,24 @@ export function MassLayer({
     if (!selectedTier || event.button !== 0) return
     event.stopPropagation()
     event.preventDefault() // no text selection while dragging the handle
+    // A typed inspector value commits on blur: commit it now, while the editor is still idle.
+    if (globalThis.document.activeElement instanceof HTMLElement) globalThis.document.activeElement.blur()
     const [x, y, z] = roofHandlePosition(selectedTier.tier)
+    const handle = new Vector3(x, y, z)
     const facing = camera.getWorldDirection(new Vector3()).setY(0)
-    const normal = facing.lengthSq() > 1e-6 ? facing.normalize() : new Vector3(0, 0, 1)
-    const plane = new Plane().setFromNormalAndCoplanarPoint(normal, new Vector3(x, y, z))
     dispatch({
       type: 'pointerDown',
       point: [0, y],
       gesture: roofGesture(selectedTier.volume.id, selectedTier.tier.id),
     })
-    startDrag(plane, (hit) => [0, hit.y])
+    // A vertical plane is seen edge-on from a steep (Top) view, so heights would jump wildly.
+    // There, drag on the roof's horizontal plane and read screen-up travel as metres of height.
+    if (facing.lengthSq() < 0.05) {
+      const up = new Vector3(0, 1, 0).applyQuaternion(camera.quaternion).setY(0).normalize()
+      startDrag(new Plane(new Vector3(0, 1, 0), -y), (hit) => [0, y + hit.clone().sub(handle).dot(up)])
+    } else {
+      startDrag(new Plane().setFromNormalAndCoplanarPoint(facing.normalize(), handle), (hit) => [0, hit.y])
+    }
   }
 
   const dragLabel =
@@ -320,6 +333,7 @@ export function MassLayer({
               invalid={invalidPreview && selection.volumeId === volume.id}
               warning={warnedVolumes.has(volume.id)}
               onPointerDown={editable ? startMove(volume, tier) : undefined}
+              swallowClicks={editor.tool === 'select'}
             />
           )),
         )}

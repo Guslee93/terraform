@@ -48,5 +48,8 @@ describe('worst-case view (ADR-0015)', () => {
     expect(view.legend.find((e) => e.label.startsWith('Sitting'))?.share).toBe(0.5)
     expect(view.legend.find((e) => e.label.startsWith('Strolling'))?.share).toBe(0.5)
     expect(view.disclaimer).toContain(WORST_NOTE)
+    expect(view.disclaimer).not.toContain('Partial')
+    const partial = buildClimateView('wind', [[0, 0], [8, 0], [8, 8]], [], [], null, { ...DEFAULT_WIND, display: 'worst' }, 10, null, { ...worst, solved: 3 })
+    expect(partial.disclaimer).toContain('3 of 8 directions solved')
   })
 })

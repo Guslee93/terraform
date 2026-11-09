@@ -7,3 +7,6 @@ it.each(['user-import','curated-demo','licensed-real-world-simplified'])('accept
 it('rejects an unrecognized dataStatus', () => {
   expect(()=>parseSiteManifest({...manifest,dataStatus:'surveyed'})).toThrow(/unknown data status/)
 })
+it('rejects a time zone Intl does not know', () => {
+  expect(()=>parseSiteManifest({...manifest,location:{...manifest.location,timeZone:'Europe/Oslp'}})).toThrow(/Unknown time zone/)
+})

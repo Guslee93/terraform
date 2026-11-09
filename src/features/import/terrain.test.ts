@@ -99,6 +99,6 @@ it('exposes global Terrarium coverage and honours already-aborted calls without 
   expect(provider.covers(90,18)).toBe(false)
   await expect(provider.sample([[18,59]],AbortSignal.abort())).rejects.toMatchObject({name:'AbortError'})
 })
-it.each([[59.9225,10.7595,'Europe/Oslo'],[60.3977,5.3229,'Europe/Oslo'],[63.428,10.4029,'Europe/Oslo'],[59.316,18.071,'Europe/Stockholm'],[57.6984,11.9558,'Europe/Stockholm'],[55.5934,13.0129,'Europe/Stockholm'],[55.6959,12.545,'Europe/Copenhagen'],[56.1587,10.2099,'Europe/Copenhagen'],[60.184,24.9525,'Europe/Helsinki'],[54,4,'UTC']] as const)('assigns bbox zone at %s,%s', (lat,lon,zone)=>{
+it.each([[59.9225,10.7595,'Europe/Oslo'],[60.3977,5.3229,'Europe/Oslo'],[63.428,10.4029,'Europe/Oslo'],[59.316,18.071,'Europe/Stockholm'],[57.6984,11.9558,'Europe/Stockholm'],[55.5934,13.0129,'Europe/Stockholm'],[55.6959,12.545,'Europe/Copenhagen'],[56.1587,10.2099,'Europe/Copenhagen'],[60.184,24.9525,'Europe/Helsinki'],[65.012,25.471,'Europe/Helsinki'],[60.097,19.935,'Europe/Helsinki'],[69.907,27.028,'Europe/Helsinki'],[63.826,20.263,'Europe/Stockholm'],[65.584,22.154,'Europe/Stockholm'],[67.856,20.225,'Europe/Stockholm'],[69.969,23.272,'Europe/Oslo'],[69.727,30.045,'Europe/Oslo'],[54,4,'UTC']] as const)('assigns bbox zone at %s,%s', (lat,lon,zone)=>{
   expect(timeZoneFor(lat,lon)).toBe(zone)
 })

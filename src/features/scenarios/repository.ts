@@ -84,6 +84,8 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
 
     const valid = new Map<string, ScenarioDocument>()
     const skipped: SkippedRecord[] = []
+    let newestVersion = 0
+    let otherSkipped = false
     for (const row of rows) {
       try {
         const document = parseStoredScenario(row.json, now())
@@ -92,6 +94,8 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
       } catch (error) {
         const loadError = error instanceof ScenarioLoadError ? error : new ScenarioLoadError('corrupt', '$', String(error))
         skipped.push({ id: row.id, json: row.json, reason: loadError.kind, detail: loadError.message })
+        if (loadError.kind === 'newer-version') newestVersion = Math.max(newestVersion, loadError.version ?? SCENARIO_SCHEMA_VERSION + 1)
+        else otherSkipped = true
       }
     }
 
@@ -105,6 +109,8 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
     const orphans = [...valid.values()].filter((document) => !ordered.includes(document)).sort(byCreated)
     ordered.push(...orphans)
 
+    // Every record is a future format: go read-only instead of writing defaults over them.
+    if (ordered.length === 0 && newestVersion > 0 && !otherSkipped) return { status: 'newer-version', version: newestVersion }
     if (ordered.length === 0) {
       const defaults = createDefaultProject(siteId, now())
       return { status: 'ready', project: defaults.project, scenarios: defaults.scenarios, skipped, repaired: true }
@@ -119,7 +125,7 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
     return { status: 'ready', project, scenarios: ordered, skipped, repaired }
   }
 
-  function decodeBundle(json: string): { project: ProjectRecord; scenarios: ScenarioDocument[] } {
+  function decodeBundle(json: string): { project: ProjectRecord; scenarios: ScenarioDocument[]; unreadable: { id: string; json: string }[] } {
     let raw: unknown
     try {
       raw = JSON.parse(json)
@@ -150,7 +156,12 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
     if (ids.length !== project.scenarioIds.length || !project.scenarioIds.every((id) => ids.includes(id))) {
       throw new ScenarioLoadError('corrupt', 'project.scenarioIds', 'must list exactly the scenarios in the file')
     }
-    return { project, scenarios }
+    // Unreadable records the export kept verbatim go back as raw rows, so a round trip doesn't delete them.
+    const unreadable = Array.isArray(raw.unreadable)
+      ? raw.unreadable.flatMap((entry: unknown) => isRecord(entry) && typeof entry.id === 'string' && typeof entry.json === 'string' && !ids.includes(entry.id)
+        ? [{ id: entry.id, json: entry.json }] : [])
+      : []
+    return { project, scenarios, unreadable }
   }
 
   return {
@@ -187,11 +198,14 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
       return JSON.stringify(bundle, null, 2)
     },
     async importProject(json, expectedSiteId) {
-      const { project, scenarios } = decodeBundle(json)
+      const { project, scenarios, unreadable } = decodeBundle(json)
       if (expectedSiteId !== undefined && project.siteId !== expectedSiteId) {
         throw new ScenarioLoadError('corrupt', 'project.siteId', `This backup is for site "${project.siteId}", not "${expectedSiteId}"`)
       }
-      const rows = scenarios.map((document) => ({ id: document.id, siteId: document.siteId, json: serializeScenario(document) }))
+      const rows = [
+        ...scenarios.map((document) => ({ id: document.id, siteId: document.siteId, json: serializeScenario(document) })),
+        ...unreadable.map(({ id, json: raw }) => ({ id, siteId: project.siteId, json: raw })),
+      ]
       await enqueue(`project:${project.siteId}`, () => store.replaceSite({ siteId: project.siteId, json: JSON.stringify(project) }, rows))
       return load(project.siteId)
     },

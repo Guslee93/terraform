@@ -22,7 +22,10 @@ export const TERRARIUM_URL = 'https://s3.amazonaws.com/elevation-tiles-prod/terr
  * Border regions can be misclassified; the manifest discloses this approximation. */
 export function timeZoneFor(latitude: number, longitude: number): string {
   const within = (w: number, s: number, e: number, n: number) => longitude >= w && longitude <= e && latitude >= s && latitude <= n
-  if (within(19,59.7,31.6,70.1)) return 'Europe/Helsinki'
+  // Finland as stepped boxes following the Gulf of Bothnia, the Torne valley and the northern arm,
+  // so Norrland (Umeå, Luleå, Kiruna) and Finnmark (Alta, Kirkenes) stay on CET.
+  if (within(19.3,59.7,31.6,63) || within(21,63,31.6,64.5) || within(24,64.5,31.6,65.7) || within(23.6,65.7,31.6,68.4) ||
+    within(20.5,68.4,22.5,69.1) || within(22.5,68.4,24.5,68.7) || within(24.5,68.4,28.9,69.4) || within(25.8,69.4,28,70.1)) return 'Europe/Helsinki'
   if (within(8,54.5,11.3,57.8) || within(11.3,54.5,12.7,56.3) || within(14.6,54.95,15.2,55.35)) return 'Europe/Copenhagen'
   if (within(10.9,55.3,24.2,69.1)) return 'Europe/Stockholm'
   if (within(4,57.9,31.5,71.5)) return 'Europe/Oslo'
@@ -165,7 +168,10 @@ export function terrariumProvider(): TerrainProvider {
           rasters.set(key,raster)
         }
         // Pixel centres lie half a pixel inside the XYZ tile edges.
-        samples.push({height:sampleTerrarium(raster,(tx-x)*raster.width-0.5,(ty-y)*raster.height-0.5),kind:'land'})
+        // Terrarium carries bathymetry: below 0 m is sea floor, modelled (like Kartverket's sea) as a 0 m water surface.
+        // ponytail: also flags rare below-sea-level land (polders) as water; add a water mask if such sites matter.
+        const height = sampleTerrarium(raster,(tx-x)*raster.width-0.5,(ty-y)*raster.height-0.5)
+        samples.push(height !== null && height < 0 ? {height:0,kind:'water'} : {height,kind:'land'})
       }
       return samples
     },

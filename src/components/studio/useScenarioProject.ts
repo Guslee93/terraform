@@ -240,15 +240,18 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
     // Storage first: if it fails this throws and nothing on screen changes, so the UI never
     // shows a deletion that didn't happen (review).
     if (persistent) {
+      // Index first: if it fails, nothing changed. Swallowing it left the deleted id listed, so a
+      // reload reported the deleted scenario as "couldn't be opened".
+      await repository.saveProject(project)
       autosave.discard(id)
       try {
         await repository.deleteScenario(id)
       } catch (error) {
+        await repository.saveProject(data.project).catch(() => undefined) // best effort; an orphan row is re-listed on load
         const kept = latest(id)
         if (kept) autosave.commit(kept) // the scenario still exists: don't drop its unsaved edits (review m1)
         throw error
       }
-      await repository.saveProject(project).catch(() => undefined) // a stale index is repaired on load
     }
     const stored = new Map(id === activeId ? data.stored : parkActive(data))
     stored.delete(id)
@@ -281,7 +284,12 @@ export function useScenarioProject({ siteId, repository, now = systemNow }: {
     if (persistent) {
       await autosave.flush()
       for (const id of ids) autosave.discard(id)
-      await repository.resetSite(siteId)
+      try {
+        await repository.resetSite(siteId)
+      } catch (error) {
+        for (const document of scenarios) autosave.commit(document) // nothing was reset: keep the edits queued
+        throw error
+      }
     }
     for (const id of ids) autosave.discard(id)
     apply(persistent ? { status: 'empty' } : { status: 'unavailable', reason: "This browser can't store data" })

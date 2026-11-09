@@ -403,6 +403,10 @@ export function ViewportCanvas({
   const profile = resolveProfile(renderPreference, rendererName ?? '')
   const { manifest, terrain, buildings } = sitePackage
   const initialPreset = manifest.cameraPresets.isometric
+  // Fog, orbit limit and far plane were tuned for the curated sites (farthest preset ≈ 870 m).
+  // Large imports put presets farther out: scale up so they stay reachable and out of the fog.
+  const viewScale = Math.max(1, ...Object.values(manifest.cameraPresets).map((p) =>
+    Math.hypot(p.position[0] - p.target[0], p.position[1] - p.target[1], p.position[2] - p.target[2]) / 870))
   const initialPosition = enuToThreeXyz(initialPreset.position)
   const initialTarget = enuToThreeXyz(initialPreset.target)
   const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
@@ -449,11 +453,11 @@ export function ViewportCanvas({
               position: initialPosition,
               fov: initialPreset.fov ?? 32,
               near: 0.5,
-              far: 2600,
+              far: 2600 * viewScale,
             }}
           >
             <color attach="background" args={[VIEWPORT_BACKGROUND]} />
-            <fog attach="fog" args={[VIEWPORT_BACKGROUND, 600, 1400]} />
+            <fog attach="fog" args={[VIEWPORT_BACKGROUND, 600 * viewScale, 1400 * viewScale]} />
             <SiteLights sitePackage={sitePackage} sun={sun} profile={profile} />
 
             {layers.terrain && (
@@ -522,7 +526,7 @@ export function ViewportCanvas({
               enableDamping={demoOrbitDeg === null}
               dampingFactor={0.075}
               minDistance={20}
-              maxDistance={1100}
+              maxDistance={1100 * viewScale}
               minPolarAngle={0.02}
               maxPolarAngle={Math.PI / 2 - 0.015}
               target={initialTarget}

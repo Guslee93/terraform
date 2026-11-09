@@ -3,8 +3,8 @@
  *
  * Pure module: it takes a plain, serialisable description of a keydown event and
  * returns the history action it maps to. React/Three types are deliberately
- * absent so the matcher stays renderer-free and trivially testable. It is not
- * wired into the studio UI yet.
+ * absent so the matcher stays renderer-free and trivially testable.
+ * Wired in StudioShell's window keydown handler.
  *
  * Rules (spec §15.3b D7):
  * - mod = `metaKey || ctrlKey` (macOS ⌘ and Windows/Linux Ctrl).

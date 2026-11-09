@@ -59,6 +59,13 @@ describe('massing history', () => {
     expect(execute(history, { label: 'No-op', apply: (document) => document })).toBe(history)
   })
 
+  it('records nothing for a rebuilt but identical document, and keeps redo', () => {
+    const undone = undo(execute(createHistory(base), rename('A')))
+    const after = execute(undone, { label: 'Move mass', apply: (document) => ({ ...document, volumes: document.volumes.map((v) => ({ ...v })) }) })
+    expect(after).toBe(undone)
+    expect(after.redoStack).toHaveLength(1)
+  })
+
   it('restores document and selection on undo and redo', () => {
     const selected = select(createHistory(base), { volumeId: 'v1', tierId: 't1' })
     const renamed = execute(selected, { ...rename('A'), selectionAfter: EMPTY_SELECTION })

@@ -17,6 +17,7 @@ import { localDayMinuteToInstant } from '../../features/analysis/time'
 import type { SunTime } from './SunPanel'
 import type { MassingCommand } from '../../features/editor/history'
 import { commandError, displayedDocument } from '../../features/editor/interaction'
+import { matchHistoryShortcut } from '../../features/editor/shortcuts'
 import { getScenarioRepository } from '../../features/scenarios/defaultRepository'
 import type { ScenarioRepository } from '../../features/scenarios/repository'
 import { scenarioMetrics } from '../../features/massing/metrics'
@@ -147,7 +148,7 @@ export function StudioShell({
   const [sweepOn, setSweepOn] = useState(false)
   const sweep = useWindSweep(windCircle, analysisBuildings, climateMode === 'wind' && sweepOn, wind.downwash)
   const sweepSummary = useMemo(() => (sweep ? summariseSweep(sweep, ROSE_THRESHOLD_MS / localSpeedMs(1, wind.refSpeed)) : null), [sweep, wind.refSpeed])
-  const worstCase = useMemo(() => (sweep && sweepSummary ? { cells: sweep.cells, maxRatio: sweepSummary.maxRatio } : null), [sweep, sweepSummary])
+  const worstCase = useMemo(() => (sweep && sweepSummary ? { cells: sweep.cells, maxRatio: sweepSummary.maxRatio, solved: sweep.directions.length } : null), [sweep, sweepSummary])
   const worstFrom = useMemo(() => (sweep && sweepSummary ? Array.from(sweepSummary.worstIndex, (i) => sweep.directions[i] ?? Number.NaN) : []), [sweep, sweepSummary])
   const baselineMismatch = !!baseline && !!windCentre && !baselineMatches(baseline, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)
   useEffect(() => {
@@ -281,6 +282,14 @@ export function StudioShell({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
+      // ⌘/Ctrl+Z, ⇧⌘Z, Ctrl+Y (the matcher leaves text fields to native undo); same gate as the buttons.
+      const shortcut = matchHistoryShortcut({ key: event.key, metaKey: event.metaKey, ctrlKey: event.ctrlKey, shiftKey: event.shiftKey, altKey: event.altKey, targetTag: target?.tagName, targetEditable: target?.isContentEditable })
+      if (shortcut) {
+        if (!editable) return
+        event.preventDefault()
+        dispatch({ type: shortcut })
+        return
+      }
       // The scenario menu is a text-entry surface: letters there are not shortcuts.
       if (target?.closest('input, select, textarea, dialog, [role="group"][aria-label="Scenarios"], [contenteditable="true"]')) return
 
@@ -300,7 +309,7 @@ export function StudioShell({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [dispatch, requestCamera])
+  }, [dispatch, requestCamera, editable])
 
   const checks = useMemo(() => summarizeChecks(envelope, clearance, sitePackage?.manifest.constraints ?? null), [envelope, clearance, sitePackage])
   const annotations = useMemo(() => new Map<string, MassAnnotation>(analysisDocument.volumes.flatMap((volume) => {

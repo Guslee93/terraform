@@ -104,6 +104,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
   const sampled = await step('terrain','Terrain providers',async()=>{
     const points = terrainPoints(frame)
     const failures: string[] = []
+    let gappy: TerrainPolicyError | null = null
     for (const provider of deps.terrain) {
       checkAbort(signal)
       if (!provider.covers(frame.latitude,frame.longitude)) { progress('terrain','skipped',`${provider.name}: outside coverage`); continue }
@@ -114,13 +115,16 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
         return {samples,grid,provider,failures}
       } catch (error) {
         checkAbort(signal)
-        // An incomplete grid must not silently become a successful flat import.
-        if (error instanceof TerrainPolicyError && (error.reason !== 'all-null' || timeZoneFor(frame.latitude,frame.longitude) === 'Europe/Oslo')) throw error
+        // An incomplete grid must not silently become a successful flat import. Too many gaps (a frame
+        // over the national border) tries the next provider, but never ends in a flat grid.
+        if (error instanceof TerrainPolicyError && (error.reason === 'invalid' || (error.reason === 'all-null' && timeZoneFor(frame.latitude,frame.longitude) === 'Europe/Oslo'))) throw error
+        if (error instanceof TerrainPolicyError && error.reason === 'too-many-estimates') gappy = error
         const detail = `${provider.name}: ${messageOf(error)}`
         failures.push(detail)
         progress('terrain','failed',detail)
       }
     }
+    if (gappy) throw gappy
     const detail = `All applicable terrain providers failed or had no coverage; flat zero grid substituted, not measured terrain.${failures.length ? ` ${failures.join('; ')}` : ''}`
     warnings.push({code:'terrain-flat',message:detail})
     const samples: TerrainSample[] = points.map(()=>({height:null,kind:'land'}))

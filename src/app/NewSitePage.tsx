@@ -128,6 +128,7 @@ export function NewSitePage() {
         warnings: result.warnings,
         importedAt: new Date().toISOString(),
       }
+      if (current.signal.aborted) return
       try { await saveImported(imported) }
       catch (problem) {
         if (current.signal.aborted) return
@@ -269,14 +270,17 @@ function PlaceSearch({ disabled, onSelect }: { disabled: boolean; onSelect: (pla
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
   const [message, setMessage] = useState('')
+  // The label just picked: putting it in the box must not search (and reopen the list) again.
+  const chosen = useRef<string | null>(null)
 
   useEffect(() => {
     const trimmed = query.trim()
-    if (trimmed.length < 3) return
+    if (trimmed.length < 3 || query === chosen.current) return
     const controller = new AbortController()
     const timer = window.setTimeout(() => {
       searchPlaces(trimmed, controller.signal)
         .then((places) => {
+          if (controller.signal.aborted) return
           setResults(places)
           setActive(-1)
           setOpen(true)
@@ -296,6 +300,7 @@ function PlaceSearch({ disabled, onSelect }: { disabled: boolean; onSelect: (pla
   }, [query])
 
   function choose(place: PlaceResult) {
+    chosen.current = place.label
     setQuery(place.label)
     setOpen(false)
     setResults([])

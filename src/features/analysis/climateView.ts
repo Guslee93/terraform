@@ -164,7 +164,7 @@ function tally<K extends string>(
 const NOISE_ORDER: readonly NoiseBand[] = ['quiet', 'moderate', 'loud', 'very-loud', 'extreme']
 
 /** Worst case over the all-directions sweep (ADR-0015): per open-ground cell, the highest ratio. */
-export type WorstCase = { readonly cells: Float32Array; readonly maxRatio: Float32Array }
+export type WorstCase = { readonly cells: Float32Array; readonly maxRatio: Float32Array; /** Directions solved so far (progressive sweep). */ readonly solved?: number }
 export const WORST_NOTE = 'Worst case over 8 wind directions, each weighted equally — not measured climate frequency.'
 /** Threshold for the rose's "share above": too windy to stand comfortably (Lawson B/C boundary, 4 m/s). */
 export const ROSE_THRESHOLD_MS = LAWSON_NORCONSULT.thresholds[1]
@@ -194,7 +194,8 @@ export function buildClimateView(
         const count = points.filter((p) => p.band === b.band).length
         return { label: b.label, colour: b.colour, count, share: points.length ? count / points.length : 0 }
       }),
-      disclaimer: `${WORST_NOTE} ${ACTIVITY_NOTE} ${FLOW_DISCLAIMER}`,
+      // Mid-sweep the map covers fewer than 8 directions: say so rather than claim all 8.
+      disclaimer: `${WORST_NOTE}${worst && worst.solved !== undefined && worst.solved < 8 ? ` Partial: ${worst.solved} of 8 directions solved so far.` : ''} ${ACTIVITY_NOTE} ${FLOW_DISCLAIMER}`,
       assessed: points.length,
     }
   }

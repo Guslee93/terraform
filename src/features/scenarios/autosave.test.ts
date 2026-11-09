@@ -133,4 +133,14 @@ describe('autosave', () => {
     await autosave.flush()
     expect(save).not.toHaveBeenCalled()
   })
+
+  it('clears a save error once the failed scenario is discarded', async () => {
+    const save = vi.fn().mockRejectedValue(new StoreError('quota', 'full'))
+    const autosave = createAutosave({ save, now: () => NOW, schedule: manualTimers().schedule })
+    autosave.commit(doc('x'))
+    await autosave.flush()
+    expect(autosave.status().state).toBe('error')
+    autosave.discard('x')
+    expect(autosave.status().state).toBe('saved')
+  })
 })

@@ -50,7 +50,9 @@ export function select(history: MassingHistory, selection: MassSelection): Massi
 /** Applies and validates a command. Throws on invalid results; the input history is never changed. */
 export function execute(history: MassingHistory, command: MassingCommand): MassingHistory {
   const after = command.apply(history.document)
-  if (after === history.document) return history
+  // Commands rebuild the document, so identity alone misses no-op edits (zero-delta drag, "3.20" vs 3.2).
+  // ponytail: JSON compare is fine at scenario sizes; switch to a structural walk if documents grow large.
+  if (after === history.document || JSON.stringify(after) === JSON.stringify(history.document)) return history
   const issues = validateScenario(after)
   if (issues.length > 0) throw new MassingValidationError(issues)
 

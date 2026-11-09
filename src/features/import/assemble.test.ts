@@ -117,6 +117,12 @@ it('does not flatten an incomplete Norwegian grid or bypass the 5% cap', async (
     await expect(importSite(grunerlokka,{tiles:emptyTiles,terrain:[provider('Kartverket fixture',samples)]})).rejects.toThrow(/Kartverket fixture/)
   }
 })
+it('falls back to the next provider when a border frame has too many gaps', async () => {
+  const gappy=[...missing().slice(0,9),...measured().slice(9)]
+  const result=await importSite(grunerlokka,{tiles:emptyTiles,terrain:[provider('Kartverket fixture',gappy),provider('Terrarium fixture',measured())]})
+  expect(result.sitePackage.manifest.sources.map(s=>s.title)).toContain('Terrarium fixture')
+  expect(result.warnings.map(w=>w.code)).not.toContain('terrain-flat')
+})
 it('skips providers outside coverage and does not fetch them', async () => {
   const sample=vi.fn()
   const result=await importSite(grunerlokka,{tiles:emptyTiles,terrain:[{...provider('Outside',[]),covers:()=>false,sample}]})

@@ -163,4 +163,19 @@ describe('scenario repository', () => {
     expect(bundle.rawProject).toEqual({ siteId: SITE, json: rawProject })
     expect(bundle.unreadable).toHaveLength(2)
   })
+
+  it('re-importing its own backup keeps the unreadable records it carried', async () => {
+    const { store, repository } = await seeded()
+    await store.putScenario({ id: 'damaged', siteId: SITE, json: '{"broken":' })
+    const exported = await repository.exportProject(SITE)
+    const imported = ready(await repository.importProject(exported, SITE))
+    expect(imported.skipped.map((record) => [record.id, record.json])).toEqual([['damaged', '{"broken":']])
+  })
+
+  it('stays read-only when every stored record is from a newer version, even without an index', async () => {
+    const store = createMemoryStore()
+    await store.putScenario({ id: 'future', siteId: SITE, json: JSON.stringify({ schemaVersion: 7 }) })
+    expect(await createScenarioRepository(store, options).load(SITE)).toEqual({ status: 'newer-version', version: 7 })
+    expect(await store.getProject(SITE)).toBeUndefined()
+  })
 })

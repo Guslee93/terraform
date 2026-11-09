@@ -38,8 +38,9 @@ export function CameraRig({ presetId, nonce, presets, controlsRef }: CameraRigPr
     startTarget.current.copy(controls?.target ?? new Vector3(0, 0, 0))
     endTarget.current.set(...enuToThreeXyz(preset.target))
 
-    if (camera instanceof PerspectiveCamera && preset.fov) {
-      camera.fov = preset.fov
+    // No fov means the default (32°, as Compare thumbnails use), not whatever the last preset set.
+    if (camera instanceof PerspectiveCamera && camera.fov !== (preset.fov ?? 32)) {
+      camera.fov = preset.fov ?? 32
       camera.updateProjectionMatrix()
     }
 

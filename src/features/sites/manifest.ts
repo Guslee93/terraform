@@ -115,6 +115,13 @@ function asArray(value: unknown, path: string): unknown[] {
   return value
 }
 
+/** An IANA zone Intl accepts; an unknown one would otherwise throw later while the studio renders. */
+function asTimeZone(value: unknown, path: string): string {
+  const zone = asString(value, path)
+  try { new Intl.DateTimeFormat('en', { timeZone: zone }) } catch { fail(path, `Unknown time zone "${zone}"`) }
+  return zone
+}
+
 function asStringArray(value: unknown, path: string): string[] {
   return asArray(value, path).map((entry, index) =>
     asString(entry, `${path}[${index}]`),
@@ -213,7 +220,7 @@ export function parseSiteManifest(value: unknown): SiteManifest {
     location: {
       latitude,
       longitude,
-      timeZone: asString(location.timeZone, 'manifest.location.timeZone'),
+      timeZone: asTimeZone(location.timeZone, 'manifest.location.timeZone'),
     },
     crs: {
       sourceEPSG: asString(crs.sourceEPSG, 'manifest.crs.sourceEPSG'),
