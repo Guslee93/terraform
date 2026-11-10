@@ -625,3 +625,4 @@ zoom in because the quads are small at the default site camera.
 - Fix: `sampleTerrainHeight` follows the same two triangles per cell as the drawn terrain, so heatmaps, particles, roads and trees sit on the surface on twisted cells.
 - Not fixed, by design: the solver does not model terrain-driven flow (ADR-0014). Added a "Steep site" note in the wind panel when the circle's relief is 10 m or more.
 - `npm run lint`, `npm run test` (960 passed / 4 skipped), `npm run build` pass. Evidence: `docs/screenshots/wind-slope-roofs-{before,after}-1440x900.png`.
+- Deployed (2026-11-10): Vercel production from main (72acce6) via `vercel deploy --prod` — measured roofs (ADR-0022) and the slope fixes. Live: https://terraform-studio-murex.vercel.app — real imports of Grünerløkka (105 pitched / 53 flat / 42 other / 2 unmeasured) and Kampen (106 / 57 / 45 / 0) run from the production origin, so the Kartverket surface download works there.
