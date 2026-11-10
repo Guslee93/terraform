@@ -10,6 +10,7 @@ import { QUICK_PICKS } from '../features/import/cities'
 import { FRAME_SIZES, frameAt, framePixels, frameReadout, type FrameSize } from '../features/import/framing'
 import { saveImported, openImportedWithoutSaving, type ImportedSite } from '../features/import/session'
 import { StoreError, toStoreError } from '../features/scenarios/store'
+import { kartverketSurface } from '../features/import/surface'
 import { kartverketProvider, terrariumProvider } from '../features/import/terrain'
 import { openFreeMapSource } from '../features/import/tiles'
 import { overpassTrees } from '../features/import/trees'
@@ -25,12 +26,13 @@ const STEPS: readonly { id: ImportStep; label: string; source: string }[] = [
   { id: 'buildings', label: 'Buildings', source: 'OpenStreetMap' },
   { id: 'context', label: 'Streets and green space', source: 'OpenStreetMap' },
   { id: 'terrain', label: 'Terrain', source: 'Kartverket or AWS Terrain Tiles' },
+  { id: 'roofs', label: 'Roof shapes', source: 'Kartverket surface model (Norway only)' },
   { id: 'assemble', label: 'Site package', source: 'Validated locally' },
 ]
 type StepState = 'waiting' | 'start' | 'done' | 'skipped' | 'failed'
 const STATUS_WORD: Record<StepState, string> = { waiting: 'Waiting', start: 'Loading', done: 'Done', skipped: 'Skipped', failed: 'Failed' }
 const WAITING: Record<ImportStep, { state: StepState; detail?: string }> = {
-  tiles: { state: 'waiting' }, buildings: { state: 'waiting' }, context: { state: 'waiting' }, terrain: { state: 'waiting' }, assemble: { state: 'waiting' },
+  tiles: { state: 'waiting' }, buildings: { state: 'waiting' }, context: { state: 'waiting' }, terrain: { state: 'waiting' }, roofs: { state: 'waiting' }, assemble: { state: 'waiting' },
 }
 
 type Phase = 'idle' | 'loading' | 'cancelled' | 'error'
@@ -117,7 +119,7 @@ export function NewSitePage() {
     try {
       const result = await importSite(
         framed.frame,
-        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], trees: overpassTrees() },
+        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], trees: overpassTrees(), roofs: kartverketSurface() },
         {
           signal: current.signal,
           onProgress: (step, state, detail) => setSteps((previous) => ({ ...previous, [step]: { state, detail } })),

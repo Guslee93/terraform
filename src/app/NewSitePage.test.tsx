@@ -142,8 +142,8 @@ describe('NewSitePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
     const progress = screen.getByRole('list', { name: 'Import progress' })
-    expect(within(progress).getAllByRole('listitem')).toHaveLength(5)
-    expect(within(progress).getAllByText('Waiting')).toHaveLength(5)
+    expect(within(progress).getAllByRole('listitem')).toHaveLength(6)
+    expect(within(progress).getAllByText('Waiting')).toHaveLength(6)
 
     pending.options().onProgress?.('tiles', 'start')
     await waitFor(() => expect(within(progress).getByText('Map tiles').closest('li')).toHaveTextContent('Loading'))
@@ -180,7 +180,7 @@ describe('NewSitePage', () => {
       await new Promise<void>((resolve) => { finish = resolve })
       await put(site)
     })
-    importSite.mockImplementation(async (frame) => ({ sitePackage: importedFixture(frame.id).sitePackage, warnings: [], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, assemble: 0 } }))
+    importSite.mockImplementation(async (frame) => ({ sitePackage: importedFixture(frame.id).sitePackage, warnings: [], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, roofs: 0, assemble: 0 } }))
     renderPage()
     await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
     await waitFor(() => expect(store.put).toHaveBeenCalled())
@@ -192,7 +192,7 @@ describe('NewSitePage', () => {
   it.each(['quota', 'unavailable'] as const)('offers one-session opening after a %s failure', async (kind) => {
     const user = userEvent.setup()
     stores.current!.failNext = kind
-    importSite.mockImplementation(async (frame) => ({ sitePackage: importedFixture(frame.id).sitePackage, warnings: [], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, assemble: 0 } }))
+    importSite.mockImplementation(async (frame) => ({ sitePackage: importedFixture(frame.id).sitePackage, warnings: [], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, roofs: 0, assemble: 0 } }))
     renderPage()
     await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
     expect(await screen.findByRole('alert')).toHaveTextContent(`This browser could not save the site (${kind}). You can still open it once.`)
@@ -212,7 +212,7 @@ describe('NewSitePage', () => {
     expect(frame?.id).toMatch(/^import-[a-z0-9]+$/)
 
     const sitePackage = importedFixture(frame?.id).sitePackage
-    pending.resolve({ sitePackage, warnings: [{ code: 'roofs-flat', message: 'Roofs are flat.' }], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, assemble: 0 } })
+    pending.resolve({ sitePackage, warnings: [{ code: 'roofs-flat', message: 'Roofs are flat.' }], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, roofs: 0, assemble: 0 } })
 
     expect(await screen.findByText(`studio ${frame?.id}`)).toBeInTheDocument()
     const stored = await getImported(frame?.id)

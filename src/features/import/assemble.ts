@@ -7,11 +7,13 @@ import { extractLandCover, extractRoads } from './context'
 import { frameBounds, validateFrame, type ImportFrame } from './frame'
 import { ringArea } from './geometry'
 import { abortable, checkAbort } from './request'
+import { fitRoof, roofSamplePoints } from './roofFit'
+import { sampleSurface, type SurfaceRaster, type SurfaceSource } from './surface'
 import { buildTerrainGrid, GRID_SIZE, terrainPoints, TerrainPolicyError, timeZoneFor, type TerrainGrid, type TerrainProvider, type TerrainSample } from './terrain'
 import { decodeTile, tileCover, type TileFeature, type TileSource } from './tiles'
 import { illustrativeTrees, mappedTrees, placeTrees, type TreeSource } from './trees'
 
-export type ImportStep = 'tiles' | 'buildings' | 'context' | 'terrain' | 'assemble'
+export type ImportStep = 'tiles' | 'buildings' | 'context' | 'terrain' | 'roofs' | 'assemble'
 export type ImportWarning = {
   code: 'terrain-estimated' | 'terrain-water' | 'terrain-flat' | 'heights-estimated' | 'trees-unavailable' | 'roofs-flat'
   message: string
@@ -35,11 +37,11 @@ async function sourceChecksum(parts: Uint8Array[], samples: TerrainSample[], sig
 
 /** No writes or app integration. A package becomes visible only after all parsers
  * and cross-asset checks pass. Timings are elapsed seconds, matching the C3 report. */
-export async function importSite(input: ImportFrame, deps: { tiles: TileSource; terrain: TerrainProvider[]; trees?: TreeSource }, options: ImportOptions = {}): Promise<ImportResult> {
+export async function importSite(input: ImportFrame, deps: { tiles: TileSource; terrain: TerrainProvider[]; trees?: TreeSource; roofs?: SurfaceSource }, options: ImportOptions = {}): Promise<ImportResult> {
   const {signal,onProgress} = options
   checkAbort(signal)
   const frame = validateFrame(input)
-  const timings: ImportResult['timings'] = {tiles:0,buildings:0,context:0,terrain:0,assemble:0}
+  const timings: ImportResult['timings'] = {tiles:0,buildings:0,context:0,terrain:0,roofs:0,assemble:0}
   const warnings: ImportWarning[] = [
     {code:'heights-estimated',message:'OpenMapTiles render_height values are partly estimated; heights are not survey data.'},
     {code:'roofs-flat',message:'Roofs are modelled as flat extrusions; sloped and stepped roof shapes are not represented.'},
@@ -132,6 +134,16 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     return {samples, grid:null, provider:null, failures}
   })
   checkAbort(signal)
+  // Roof heights only make sense on terrain in the same vertical datum; a failed download keeps flat roofs.
+  let surface: SurfaceRaster | null = null
+  const roofs = deps.roofs
+  if (!roofs || !roofs.covers(frame.latitude,frame.longitude) || sampled.provider?.verticalDatum !== roofs.verticalDatum) {
+    progress('roofs','skipped',roofs ? `${roofs.name}: no coverage on this terrain` : 'no surface model configured')
+  } else {
+    try { surface = await step('roofs',roofs.name,()=>roofs.fetchSurface(frameBounds(frame).lonLat,frame.sizeMetres,signal)) }
+    catch { checkAbort(signal) }
+  }
+  checkAbort(signal)
   const sitePackage = await step('assemble','SitePackage validation',async()=>{
     const {grid,provider} = sampled
     const absolute = grid?.absolute ?? Array<number>(GRID_SIZE*GRID_SIZE).fill(0)
@@ -145,11 +157,25 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
       heights:Array.from({length:GRID_SIZE},(_,row)=>absolute.slice(row*GRID_SIZE,(row+1)*GRID_SIZE).map(height=>round(height-originElevation))),
       source: provider ? `${provider.name}; ${counts.measured} measured / ${counts.water} water-surface / ${counts.estimated} estimated samples` : 'Flat zero grid — all providers unavailable; not measured terrain',
     }))
+    const roofCounts = {gabled:0,flat:0,complex:0}
     const buildings = parseBuildings(wrap({buildings:drafts.map(({id,height,footprint})=>{
       const centroid = ringCentroid(footprint)
-      return {id,kind:'other',height,footprint,area:round(ringArea(footprint),1),withinStudyArea:centroid.every(v=>Math.abs(v)<=studyHalf),
-        baseElevation:round(Math.min(...[...footprint,centroid].map(([x,y])=>sampleTerrainHeight(terrain,x,y)))-0.3)}
+      const baseElevation = round(Math.min(...[...footprint,centroid].map(([x,y])=>sampleTerrainHeight(terrain,x,y)))-0.3)
+      // Surface heights are absolute; the package is relative to the origin, the roof to the building's base.
+      const fit = surface ? fitRoof(footprint,roofSamplePoints(footprint).map(([x,y])=>{
+        const z = sampleSurface(surface,frame.sizeMetres,x,y)
+        return {x,y,z:z === null ? null : z-terrain.originElevation-baseElevation}
+      })) : null
+      if (fit) roofCounts[fit.kind] += 1
+      return {id,kind:'other',height:fit ? Math.min(200,Math.max(2.5,fit.height)) : height,footprint,area:round(ringArea(footprint),1),withinStudyArea:centroid.every(v=>Math.abs(v)<=studyHalf),
+        baseElevation,...(fit?.kind === 'gabled' ? {roof:fit.roof} : {})}
     })}))
+    const measured = roofCounts.gabled+roofCounts.flat+roofCounts.complex
+    if (measured && roofs) {
+      const total = buildings.buildings.length
+      warnings.find(w=>w.code === 'heights-estimated')!.message = `${measured} of ${total} building heights are measured from ${roofs.name}; the rest are OpenMapTiles render_height estimates. Not survey data.`
+      warnings.find(w=>w.code === 'roofs-flat')!.message = `Roofs from ${roofs.name} (1 m lidar): ${roofCounts.gabled} pitched (drawn as simple gables), ${roofCounts.flat} flat, ${roofCounts.complex} other shapes drawn flat at their measured height; ${total-measured} not measured and kept as flat extrusions. Hipped, mansard and stepped roofs are not represented; sun, wind and noise use each building's mean roof height.`
+    }
     const studyArea = parseStudyArea(wrap({label:'Study area — not a cadastral parcel',polygon:[[-studyHalf,-studyHalf],[studyHalf,-studyHalf],[studyHalf,studyHalf],[-studyHalf,studyHalf],[-studyHalf,-studyHalf]]}))
     const roads = parseRoads(wrap({roads:context.roads}))
     const landcover = parseLandCover(wrap({areas:context.areas}))
@@ -160,6 +186,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     const sources: SiteSource[] = [{title:deps.tiles.name,attribution:deps.tiles.attribution,acquiredAt,...(deps.tiles.url ? {url:deps.tiles.url} : {}),...(deps.tiles.license ? {license:deps.tiles.license} : {})}]
     if (context.treesMapped && deps.trees) sources.push({title:deps.trees.name,attribution:deps.trees.attribution,acquiredAt,...(deps.trees.url ? {url:deps.trees.url} : {}),...(deps.trees.license ? {license:deps.trees.license} : {})})
     if (provider) sources.push({title:provider.name,attribution:provider.attribution,acquiredAt,...(provider.url ? {url:provider.url} : {}),...(provider.license ? {license:provider.license} : {})})
+    if (measured && roofs) sources.push({title:roofs.name,attribution:roofs.attribution,acquiredAt,url:roofs.url,license:roofs.license})
     const checksum = await sourceChecksum(tileBuffers,sampled.samples,signal)
     checkAbort(signal)
     const manifest = parseSiteManifest({

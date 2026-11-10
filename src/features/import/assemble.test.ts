@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import grunerlokkaTerrain from './__fixtures__/terrain/grunerlokka.json'
 import bjorvikaTerrain from './__fixtures__/terrain/bjorvika.json'
 import { importSite, type ImportStep } from './assemble'
+import { kartverketSurface, type SurfaceSource } from './surface'
 import { bjorvika, fixtureTiles, grunerlokka } from './testFixtures'
 import { buildTerrainGrid, kartverketProvider, parseKartverketSamples, terrainPoints, type TerrainProvider, type TerrainSample } from './terrain'
 import { parseSiteManifest } from '../sites/manifest'
@@ -46,8 +47,8 @@ it.each([{frame:grunerlokka,record:grunerlokkaTerrain,count:202},{frame:bjorvika
   expect(pkg.buildings.buildings.every(b=>isSimpleRing(b.footprint))).toBe(true)
   expect(pkg.manifest.constraints.label).toMatch(/Illustrative design constraint/)
   expect(result.warnings.map(w=>w.code)).toEqual(expect.arrayContaining(['heights-estimated','roofs-flat','trees-unavailable']))
-  expect(events).toEqual(['tiles:start','tiles:done','buildings:start','buildings:done','context:start','context:done','terrain:start','terrain:done','assemble:start','assemble:done'])
-  expect(Object.keys(result.timings)).toEqual(['tiles','buildings','context','terrain','assemble'])
+  expect(events).toEqual(['tiles:start','tiles:done','buildings:start','buildings:done','context:start','context:done','terrain:start','terrain:done','roofs:skipped','assemble:start','assemble:done'])
+  expect(Object.keys(result.timings)).toEqual(['tiles','buildings','context','terrain','roofs','assemble'])
   expect(Object.values(result.timings).every(n=>Number.isFinite(n)&&n>=0)).toBe(true)
   if(frame===bjorvika) {
     const samples=await fixtureTerrain(record).sample(terrainPoints(frame))
@@ -58,6 +59,44 @@ it.each([{frame:grunerlokka,record:grunerlokkaTerrain,count:202},{frame:bjorvika
     expect(pkg.terrain.heights[9]![3]).toBe(0.21)
   }
   expect(network).not.toHaveBeenCalled()
+})
+const levelSurface = (absolute: number): SurfaceSource => ({...kartverketSurface(),async fetchSurface(_bounds,pixels){
+  return {width:pixels,height:pixels,heights:new Float32Array(pixels*pixels).fill(absolute)}
+}})
+it('measures roofs from a surface model on matching terrain and says so (ADR-0022)', async () => {
+  vi.stubGlobal('fetch',vi.fn(()=>{throw new Error('Tests must not use the network')}))
+  const events: string[]=[]
+  const flat=await importSite(grunerlokka,{tiles:fixtureTiles,terrain:[fixtureTerrain(grunerlokkaTerrain)]})
+  const result=await importSite(grunerlokka,{tiles:fixtureTiles,terrain:[fixtureTerrain(grunerlokkaTerrain)],roofs:levelSurface(60)},{onProgress:(step,state)=>events.push(`${step}:${state}`)})
+  const {buildings,terrain,manifest}=result.sitePackage
+  expect(events).toEqual(expect.arrayContaining(['roofs:start','roofs:done']))
+  // A level surface at 60 m (NN2000): every roof is flat, and its top sits at that absolute height.
+  expect(buildings.buildings.every(b=>b.roof===undefined)).toBe(true)
+  for (const b of buildings.buildings) expect(b.baseElevation+b.height).toBeCloseTo(60-terrain.originElevation,0)
+  expect(buildings.buildings.some((b,i)=>Math.abs(b.height-flat.sitePackage.buildings.buildings[i]!.height)>1)).toBe(true)
+  expect(result.warnings.find(w=>w.code==='roofs-flat')?.message).toMatch(/^Roofs from Kartverket surface model \(DOM\).* 0 pitched .*, \d+ flat, 0 other shapes/)
+  expect(result.warnings.find(w=>w.code==='heights-estimated')?.message).toMatch(/building heights are measured/)
+  expect(manifest.sources.map(source=>source.title)).toContain('Kartverket surface model (DOM)')
+  expect(parseBuildings(buildings).buildings).toHaveLength(buildings.buildings.length)
+})
+it('keeps flat estimated roofs when the surface model fails, shows ground, or sits on another datum', async () => {
+  vi.stubGlobal('fetch',vi.fn(()=>{throw new Error('Tests must not use the network')}))
+  const base=await importSite(grunerlokka,{tiles:fixtureTiles,terrain:[fixtureTerrain(grunerlokkaTerrain)]})
+  const heights=(result: typeof base)=>result.sitePackage.buildings.buildings.map(b=>b.height)
+  const events: string[]=[]
+  const failing: SurfaceSource={...kartverketSurface(),async fetchSurface(){throw new Error('HTTP 503')}}
+  const failed=await importSite(grunerlokka,{tiles:fixtureTiles,terrain:[fixtureTerrain(grunerlokkaTerrain)],roofs:failing},{onProgress:(step,state)=>events.push(`${step}:${state}`)})
+  expect(events).toContain('roofs:failed')
+  expect(heights(failed)).toEqual(heights(base))
+  expect(failed.warnings.find(w=>w.code==='roofs-flat')?.message).toMatch(/flat extrusions/)
+  // A surface below every building's base: the model shows no buildings, so nothing is "measured".
+  const ground=await importSite(grunerlokka,{tiles:fixtureTiles,terrain:[fixtureTerrain(grunerlokkaTerrain)],roofs:levelSurface(base.sitePackage.terrain.originElevation-50)})
+  expect(heights(ground)).toEqual(heights(base))
+  // A terrain provider without the NN2000 datum must not be combined with NN2000 roof heights.
+  events.length=0
+  const other=await importSite(grunerlokka,{tiles:fixtureTiles,terrain:[provider('Measured',measured())],roofs:levelSurface(60)},{onProgress:(step,state)=>events.push(`${step}:${state}`)})
+  expect(events).toContain('roofs:skipped')
+  expect(heights(other)).toEqual(heights(base))
 })
 it('names a failing tile source in a failed progress event and rejects', async () => {
   const progress=vi.fn()

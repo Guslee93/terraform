@@ -611,3 +611,17 @@ zoom in because the quads are small at the default site camera.
 - `npm run lint`, `npm run test` (936 passed / 4 skipped), `npm run build` pass. Browser: compact site 21 Jun spreads across bands, no console errors.
 - Not done: the `sun-hours-*` and `sun-roof-solar-*` screenshots still show the old bands; rerun `scripts/capture-sun.mjs`.
 - Deployed (2026-11-10): Vercel production from main (7a84ab5) via `vercel deploy --prod` — sun analyses (ADR-0021). Live: https://terraform-studio-murex.vercel.app — compact-infill Sun → Roof solar runs in the worker and colours roofs, no console errors. Imported-site links are per-browser (local storage), so they can't be checked from another browser.
+
+## 2026-11-10 — Measured roof shapes (ADR-0022)
+- Import now downloads Kartverket's surface model (DOM) for the frame and fits each building: gabled, flat, complex (flat at measured height) or not measured. Heights of measured buildings are now measured too.
+- First fit called low gables "flat" and rejected roofs with dormers; reordered (gable first) and relaxed the fit share 0.6 → 0.7 after dumping stats from a real Grünerløkka import (84 → 105 pitched).
+- Stray fan-shaped edge lines on one frame-edge building were checked against production: they predate this work (clipped footprint), not fixed here.
+- `npm run lint`, `npm run test` (955 passed / 4 skipped), `npm run build` pass. Real imports captured with `scripts/capture-roofs.mjs` (Grünerløkka, Kampen).
+- Not done: demo sites (immutable packages), pitched-roof-aware analyses, hipped/mansard shapes. Not deployed.
+
+## 2026-11-10 — Wind on steep sites
+- Reproduced on a dense Bergen hillside (42 m relief in the circle): roof wind colours floated metres off the roofs.
+- Fix: roof overlays (wind, solar) use the building's own `baseElevation`; drawn masses still use terrain at the centroid.
+- Fix: `sampleTerrainHeight` follows the same two triangles per cell as the drawn terrain, so heatmaps, particles, roads and trees sit on the surface on twisted cells.
+- Not fixed, by design: the solver does not model terrain-driven flow (ADR-0014). Added a "Steep site" note in the wind panel when the circle's relief is 10 m or more.
+- `npm run lint`, `npm run test` (960 passed / 4 skipped), `npm run build` pass. Evidence: `docs/screenshots/wind-slope-roofs-{before,after}-1440x900.png`.

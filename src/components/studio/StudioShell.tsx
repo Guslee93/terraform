@@ -19,7 +19,7 @@ import type { SunTime } from './SunPanel'
 import type { MassingCommand } from '../../features/editor/history'
 import { commandError, displayedDocument, createEditorState, reduceEditor } from '../../features/editor/interaction'
 import { matchHistoryShortcut } from '../../features/editor/shortcuts'
-import { sampleTerrainHeight } from '../../features/sites/geometry'
+import { sampleTerrainHeight, terrainRelief } from '../../features/sites/geometry'
 import { normalizeRing, polygonArea, ringCentroid } from '../../lib/polygon'
 import type { CameraPresetId } from '../../features/sites/manifest'
 import type { SitePackage } from '../../features/sites/package'
@@ -339,7 +339,7 @@ export function StudioShell({
   }])), [analysisDocument])
   const selectedDeletable = !!selectedVolume && !selectedVolume.locked
   const climatePanel = (only: 'wind' | 'noise') => sitePackage ? (
-    <ClimatePanel showModes={false} showQuick={false} availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
+    <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick={false} availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
       streamlines={streamlines} onStreamlinesChange={setStreamlines}
       baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
       onSetBaseline={() => { if (windFlow?.settled && windFlow.slicesComplete && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}

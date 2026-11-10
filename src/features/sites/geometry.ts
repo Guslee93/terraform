@@ -24,7 +24,29 @@ export function sampleTerrainHeight(terrain: TerrainData, east: number, north: n
   const h01 = row1[x0] ?? 0
   const h11 = row1[x1] ?? 0
 
-  return h00 * (1 - fx) * (1 - fy) + h10 * fx * (1 - fy) + h01 * (1 - fx) * fy + h11 * fx * fy
+  // The same two triangles per grid cell as the drawn terrain mesh (createTerrainGeometry), not a
+  // bilinear patch: on steep, twisted cells the two differ by metres, which buried or floated
+  // everything draped on the terrain (heatmaps, roads, trees, building bases).
+  return fx + fy <= 1
+    ? h00 + fx * (h10 - h00) + fy * (h01 - h00)
+    : h11 + (1 - fx) * (h01 - h11) + (1 - fy) * (h10 - h11)
+}
+
+/** Height difference (m) of the terrain inside a circle, sampled on a 9 × 9 grid over it. */
+export function terrainRelief(terrain: TerrainData, centre: readonly [number, number], radius: number): number {
+  let min = Number.POSITIVE_INFINITY
+  let max = Number.NEGATIVE_INFINITY
+  for (let row = -4; row <= 4; row += 1) {
+    for (let col = -4; col <= 4; col += 1) {
+      const dx = (col / 4) * radius
+      const dy = (row / 4) * radius
+      if (Math.hypot(dx, dy) > radius) continue
+      const height = sampleTerrainHeight(terrain, centre[0] + dx, centre[1] + dy)
+      min = Math.min(min, height)
+      max = Math.max(max, height)
+    }
+  }
+  return Number.isFinite(max - min) ? max - min : 0
 }
 
 export function terrainHeightRange(terrain: TerrainData): { min: number; max: number } {

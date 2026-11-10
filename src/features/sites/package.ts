@@ -1,3 +1,4 @@
+import { parseRoof, type Roof } from './roof'
 import {
   SitePackageError,
   parseSiteManifest,
@@ -38,6 +39,8 @@ export type ContextBuilding = {
   area: number
   withinStudyArea: boolean
   footprint: Vec2Tuple[]
+  /** Measured gable (ADR-0022). Absent = flat extrusion at `height`. */
+  roof?: Roof
 }
 
 export type BuildingsData = {
@@ -224,6 +227,14 @@ export function parseTerrain(value: unknown): TerrainData {
   }
 }
 
+function asRoof(value: unknown, footprint: readonly Vec2Tuple[], path: string): Roof {
+  try {
+    return parseRoof(value, footprint, path)
+  } catch (error) {
+    return fail(path, error instanceof Error ? error.message : 'invalid roof')
+  }
+}
+
 function parseBuilding(value: unknown, path: string): ContextBuilding {
   const root = asRecord(value, path)
   const kind = asString(root.kind, `${path}.kind`)
@@ -241,6 +252,7 @@ function parseBuilding(value: unknown, path: string): ContextBuilding {
   if (polygonArea(footprint) <= 0) fail(`${path}.footprint`, 'must have area')
   if (!isSimpleRing(footprint)) fail(`${path}.footprint`, 'must be a simple ring')
   return {
+    ...(root.roof === undefined ? {} : { roof: asRoof(root.roof, footprint, `${path}.roof`) }),
     id: asString(root.id, `${path}.id`),
     kind: kind as BuildingKind,
     height,

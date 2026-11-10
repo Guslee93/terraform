@@ -1,5 +1,6 @@
 import { pointInPolygon } from '../../lib/polygon'
 import type { Vec2 } from '../../lib/coordinates'
+import type { Roof } from '../sites/roof'
 
 export type GridCell = { readonly x: number; readonly y: number }
 
@@ -19,7 +20,12 @@ export function sampleGrid(polygon: readonly Vec2[], cellM: number): GridCell[] 
   return cells
 }
 
-export type FootprintBuilding = { readonly height: number; readonly footprint: readonly Vec2[] }
+/**
+ * `height` is above the building's own base. `roof` and `baseElevation` are carried for drawing only
+ * (ADR-0022): every analysis treats a building as flat at `height`. A context building stands on
+ * `baseElevation` (its lowest corner); a drawn mass has none and stands on the terrain at its centroid.
+ */
+export type FootprintBuilding = { readonly height: number; readonly footprint: readonly Vec2[]; readonly roof?: Roof; readonly baseElevation?: number }
 
 export function insideAnyBuilding(x: number, y: number, buildings: readonly FootprintBuilding[]) {
   return buildings.some((b) => pointInPolygon([x, y], b.footprint))

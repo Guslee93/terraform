@@ -6,6 +6,8 @@ import {
   Vector2,
 } from 'three'
 import type { ContextBuilding, Road, TerrainData } from '../features/sites/package'
+import { ringWithRidgeVertices, roofHeightAt } from '../features/sites/roof'
+import { roofTriangles } from './roofGeometry'
 import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import type { ContourSegment } from '../features/sites/contours'
 
@@ -166,6 +168,32 @@ export function createContextGeometry(buildings: readonly ContextBuilding[]): Bu
         ),
     )
     if (signedArea(contour) < 0) contour.reverse()
+
+    if (building.roof) {
+      // Measured gable (ADR-0022): walls rise to the roof surface, which is split along the ridge.
+      const roof = building.roof
+      const ring = contour.map((point): [number, number] => [point.x, point.y])
+      const topAt = (east: number, north: number) => base + roofHeightAt(roof, east, north)
+      const walls = ringWithRidgeVertices(ring, roof)
+      walls.forEach((a, index) => {
+        const b = walls[(index + 1) % walls.length]
+        if (!b) return
+        pushVertex(positions, a[0], base, a[1])
+        pushVertex(positions, b[0], base, b[1])
+        pushVertex(positions, b[0], topAt(b[0], b[1]), b[1])
+
+        pushVertex(positions, a[0], base, a[1])
+        pushVertex(positions, b[0], topAt(b[0], b[1]), b[1])
+        pushVertex(positions, a[0], topAt(a[0], a[1]), a[1])
+      })
+      for (const [a, b, c] of roofTriangles(ring, roof)) {
+        const cross = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+        for (const point of cross < 0 ? [a, c, b] : [a, b, c]) {
+          pushVertex(positions, point[0], topAt(point[0], point[1]), point[1])
+        }
+      }
+      continue
+    }
 
     for (let index = 0; index < contour.length; index += 1) {
       const a = contour[index]

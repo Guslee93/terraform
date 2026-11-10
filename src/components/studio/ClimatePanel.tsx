@@ -72,7 +72,12 @@ export function useWindDemo(wind: WindSettings, streamlines: boolean, onWindChan
   return { playing: orbitDeg !== null, orbitDeg, toggle, stop, stopWith }
 }
 
+/** Above this much relief inside the circle the panel says the wind model ignores the slope. */
+export const STEEP_RELIEF_M = 10
+
 type ClimatePanelProps = {
+  /** Terrain height difference (m) inside the wind circle. */
+  terrainReliefM?: number
   /** Direction and speed sliders; off where the dock hosts them (WindQuick). */
   showQuick?: boolean
   /** Off / Wind / Noise switch; hidden in the dock, where the active card picks the mode. */
@@ -159,7 +164,7 @@ function Section({ title, children, action, regionLabel }: { title: string; chil
   )
 }
 
-export function ClimatePanel({ showQuick = true, showModes = true, availableHeights = [], slicesComplete = false, sliceHeights = [2, 10, 20, 35], demoPlaying = false, onToggleDemo, onDemoEdit, sweepOn = false, onSweepChange, sweep = null, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
+export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes = true, availableHeights = [], slicesComplete = false, sliceHeights = [2, 10, 20, 35], demoPlaying = false, onToggleDemo, onDemoEdit, sweepOn = false, onSweepChange, sweep = null, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
   const slicesReady = availableHeights.length >= 2
   // While the demo plays, an edit stops it (restoring the user's settings) and keeps the edit.
   const set = (patch: Partial<WindSettings>) => (demoPlaying && onDemoEdit ? onDemoEdit(patch) : onWindChange({ ...wind, ...patch }))
@@ -187,6 +192,11 @@ export function ClimatePanel({ showQuick = true, showModes = true, availableHeig
       )}
       {mode === 'wind' && wind.display !== 'delta' && <p className="mt-2 text-caption text-ink-secondary">Shares are for open ground inside the circle; roofs are coloured but not counted.</p>}
       <p className="mt-2 text-caption text-ink-secondary">{view.disclaimer}</p>
+      {mode === 'wind' && terrainReliefM >= STEEP_RELIEF_M && (
+        <p className="mt-2 text-caption text-ink-secondary">
+          Steep site: the ground rises about {Math.round(terrainReliefM)} m across this circle. The wind model follows the ground and does not model the slope itself, so hills neither shelter nor speed up the flow here. Treat these results as rougher than on a flat site.
+        </p>
+      )}
     </div>
   )
 

@@ -1,11 +1,12 @@
 import { useEffect, useMemo } from 'react'
-import { BufferGeometry, Color, Float32BufferAttribute, ShapeUtils, Vector2 } from 'three'
+import { BufferGeometry, Color, Float32BufferAttribute } from 'three'
 import { baselineMatches, windColour, type WindBaseline, type WindSettings } from '../features/analysis/climateView'
 import type { FlowResult, FlowSlice } from '../features/analysis/flowRunner'
 import type { FootprintBuilding } from '../features/analysis/grid'
 import { sampleVelocity } from '../features/analysis/lbm'
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import { ringCentroid } from '../lib/polygon'
+import { roofBase, roofLift, roofTriangles } from './roofGeometry'
 import { WindSurface, type WindCircle } from './WindHeatmap'
 
 export function roofSlice(slices: readonly FlowSlice[], height: number): FlowSlice | undefined {
@@ -42,11 +43,10 @@ export function roofGeometry(buildings: readonly FootprintBuilding[], flow: Flow
     const slice = roofSlice(flow.slices ?? [], building.height)
     if (!slice) continue
     const beforeSlice = compatible ? roofSlice(baseline.flow.slices ?? [], building.height) : undefined
-    const roofZ = heightAt(...centre) + building.height + 0.3
-    const triangles = ShapeUtils.triangulateShape(building.footprint.map((p) => new Vector2(...p)), [])
+    const ground = roofBase(building, heightAt) + 0.3
+    const lift = roofLift(building)
     const minX = Math.min(...building.footprint.map((p) => p[0])), minY = Math.min(...building.footprint.map((p) => p[1]))
-    for (const triangle of triangles) {
-      const points = triangle.map((i) => building.footprint[i]!)
+    for (const points of roofTriangles(building.footprint, building.roof)) {
       const maxX = Math.max(...points.map((p) => p[0])), maxY = Math.max(...points.map((p) => p[1]))
       for (let y = minY + Math.floor((Math.min(...points.map((p) => p[1])) - minY) / 3) * 3; y < maxY; y += 3) {
         for (let x = minX + Math.floor((Math.min(...points.map((p) => p[0])) - minX) / 3) * 3; x < maxX; x += 3) {
@@ -60,7 +60,7 @@ export function roofGeometry(buildings: readonly FootprintBuilding[], flow: Flow
             })
             if (samples.some((c) => c === null)) continue
             vertices.forEach((p, j) => {
-              positions.push(...enuToThreeXyz([p[0], p[1], roofZ]))
+              positions.push(...enuToThreeXyz([p[0], p[1], ground + lift(p[0], p[1])]))
               colour.set(samples[j]!); colours.push(colour.r, colour.g, colour.b)
             })
           }

@@ -64,6 +64,13 @@ describe('buildClimateView', () => {
 })
 
 describe('ClimatePanel', () => {
+  it('says the wind model ignores the slope only on steep sites', () => {
+    const view = buildClimateView('wind', area, [], [], null)
+    const { rerender } = render(<ClimatePanel mode="wind" onModeChange={() => {}} wind={DEFAULT_WIND} onWindChange={() => {}} view={view} terrainReliefM={4} />)
+    expect(screen.queryByText(/Steep site/)).toBeNull()
+    rerender(<ClimatePanel mode="wind" onModeChange={() => {}} wind={DEFAULT_WIND} onWindChange={() => {}} view={view} terrainReliefM={23.4} />)
+    expect(screen.getByText(/Steep site: the ground rises about 23 m across this circle/)).toBeVisible()
+  })
   it('switches mode, shows the wind direction and the claim label', () => {
     const onMode = vi.fn()
     const onFrom = vi.fn()

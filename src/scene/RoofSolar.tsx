@@ -1,13 +1,13 @@
 import { useEffect, useMemo } from 'react'
-import { BufferGeometry, Color, DoubleSide, Float32BufferAttribute, ShapeUtils, Vector2 } from 'three'
+import { BufferGeometry, Color, DoubleSide, Float32BufferAttribute } from 'three'
 import type { FootprintBuilding } from '../features/analysis/grid'
 import { ROOF_SOLAR_COLOUR, roofSolarBand, type RoofSolarValue } from '../features/analysis/roofSolar'
 import { enuToThreeXyz } from '../lib/coordinates'
-import { ringCentroid } from '../lib/polygon'
+import { roofBase, roofLift, roofTriangles } from './roofGeometry'
 
 const noRaycast = () => null
 
-/** Flat roof polygons coloured by clear-sky annual irradiation; one merged geometry, one draw call. */
+/** Roof surfaces (flat or gabled) coloured by clear-sky annual irradiation; one merged geometry, one draw call. */
 export function roofSolarGeometry(
   buildings: readonly FootprintBuilding[],
   values: readonly RoofSolarValue[],
@@ -19,18 +19,12 @@ export function roofSolarGeometry(
   buildings.forEach((building, index) => {
     const value = values[index]
     if (!value) return
-    const centroid = ringCentroid(building.footprint)
-    const z = heightAt(centroid[0], centroid[1]) + building.height + 0.3
+    const ground = roofBase(building, heightAt) + 0.3
+    const lift = roofLift(building)
     colour.set(ROOF_SOLAR_COLOUR[roofSolarBand(value.kwhPerM2)])
-    const triangles = ShapeUtils.triangulateShape(
-      building.footprint.map((point) => new Vector2(point[0], point[1])),
-      [],
-    )
-    for (const triangle of triangles) {
-      for (const vertex of triangle) {
-        const point = building.footprint[vertex]
-        if (!point) continue
-        positions.push(...enuToThreeXyz([point[0], point[1], z]))
+    for (const triangle of roofTriangles(building.footprint, building.roof)) {
+      for (const point of triangle) {
+        positions.push(...enuToThreeXyz([point[0], point[1], ground + lift(point[0], point[1])]))
         colours.push(colour.r, colour.g, colour.b)
       }
     }
