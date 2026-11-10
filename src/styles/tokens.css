@@ -42,7 +42,17 @@
 
   --focus: var(--accent);
 
-  /* Radii are theme tokens in global.css. No elevation: no shadows. */
+  /* Studio v3 (ADR-0016): warm grey canvas, floating cards with one soft shadow. */
+  --canvas: #eeeeee;
+  --card: #f7f7f6;
+  --card-line: #e1e1de;
+  /* Units after large figures (>= 24 px): 3.3:1 on --canvas, 3.6:1 on --card; AA for large text only. */
+  --ink-unit: #828280;
+  --shadow-card: 0 1px 2px rgb(20 20 20 / 4%), 0 4px 16px rgb(20 20 20 / 4%);
+  --shadow-float: 0 2px 6px rgb(20 20 20 / 6%), 0 8px 24px rgb(20 20 20 / 6%);
+  --frost: rgb(247 247 246 / 72%);
+
+  /* Radii are theme tokens in global.css. */
 
   /* Typefaces are self-hosted through @fontsource-variable so the demo works offline. */
   --typeface-sans: 'Geist Variable', 'Geist', system-ui, sans-serif;

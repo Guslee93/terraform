@@ -1,4 +1,4 @@
-import { act, render as rtlRender, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps, ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
@@ -18,63 +18,63 @@ function requireSite(id: string): SiteSummary {
 }
 
 const site = requireSite('compact-infill')
-const layers = { terrain: true, context: true, streets: true, trees: true, parcel: true, setback: true, heightLimit: true }
 const baseProps: ComponentProps<typeof Inspector> = {
   check: <p>Check slot</p>,
-  figures: <p>Figures slot</p>,
-  sun: null,
+  notes: <p>Notes slot</p>,
   site,
   metrics: null,
   manifest: null,
   packageStatus: 'ready',
-  layers,
-  onToggleLayer: () => undefined,
   renderPreference: 'auto',
   onRenderPreferenceChange: () => undefined,
+  grid: true,
+  onGridChange: () => undefined,
   selected: null,
   canEdit: true,
   editingEnabled: true,
   onCommand: () => null,
-  masses: [],
-  onSelectMass: () => undefined,
   onSelectTier: () => undefined,
 }
 
-describe('Studio panel', () => {
-  it('labels the quality select, describes Auto and permits keyboard focus and selection', async () => {
+describe('Parameters panel', () => {
+  it('labels the quality select, describes it and permits keyboard selection', async () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
     render(<Inspector {...baseProps} onRenderPreferenceChange={onChange} />)
-    await user.click(screen.getByText('Layers and render quality'))
     const quality = screen.getByRole('combobox', { name: 'Render quality' })
     expect(quality).toHaveValue('auto')
-    expect(quality).toHaveAccessibleDescription('Auto lowers quality on software rendering.')
-    // It immediately follows the last layer checkbox in the keyboard sequence.
-    screen.getByRole('checkbox', { name: 'Height limit' }).focus()
+    expect(quality).toHaveAccessibleDescription('Sets shadows and ambient occlusion. Auto lowers quality on software rendering.')
+    // It follows the grid switch in the keyboard sequence.
+    screen.getByRole('checkbox', { name: 'Ground grid · 1 m / 10 m' }).focus()
     await user.tab()
     expect(quality).toHaveFocus()
     await user.selectOptions(quality, 'low')
     expect(onChange).toHaveBeenCalledWith('low')
   })
 
-  it('is always rendered as a non-modal panel with the check and figures first', () => {
-    render(<Inspector {...baseProps} />)
-    const panel = screen.getByRole('complementary', { name: 'Inspector' })
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(panel.textContent?.indexOf('Check slot')).toBeLessThan(panel.textContent?.indexOf('Figures slot') ?? 0)
-    expect(screen.getByText('No mass selected')).toBeInTheDocument()
-    expect(screen.getByText(/Draw building/)).toBeInTheDocument()
+  it('toggles the ground grid', async () => {
+    const onGridChange = vi.fn()
+    render(<Inspector {...baseProps} onGridChange={onGridChange} />)
+    await userEvent.setup().click(screen.getByRole('checkbox', { name: 'Ground grid · 1 m / 10 m' }))
+    expect(onGridChange).toHaveBeenCalledWith(false)
   })
 
-  it('opens and focuses the Layers group when asked by the toolbar', () => {
-    vi.useFakeTimers({ toFake: ['requestAnimationFrame'] })
-    const { rerender } = render(<Inspector {...baseProps} focusGroup="layers" focusNonce={0} />)
-    expect(screen.queryByRole('checkbox', { name: 'Terrain' })).not.toBeVisible()
-    rerender(<MemoryRouter><Inspector {...baseProps} focusGroup="layers" focusNonce={1} /></MemoryRouter>)
-    act(() => { vi.runAllTimers() })
-    expect(screen.getByRole('checkbox', { name: 'Terrain' })).toBeVisible()
-    expect(screen.getByText('Layers and render quality').closest('summary')).toHaveFocus()
-    vi.useRealTimers()
+  it('is a non-modal panel: selected mass, check, site, view, notes in that order', () => {
+    render(<Inspector {...baseProps} />)
+    const panel = screen.getByRole('complementary', { name: 'Parameters' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    const text = panel.textContent ?? ''
+    const order = ['Selected mass', 'Check slot', 'Site', 'View', 'Notes slot'].map((label) => text.indexOf(label))
+    expect(order.every((at) => at >= 0)).toBe(true)
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+    expect(screen.getByText('Draw a footprint, or click a mass to select it.')).toBeInTheDocument()
+  })
+
+  it('hides massing groups in the analysis-only studio', () => {
+    render(<Inspector {...baseProps} analysisOnly />)
+    expect(screen.queryByText('Selected mass')).not.toBeInTheDocument()
+    expect(screen.queryByText('Notes slot')).not.toBeInTheDocument()
+    expect(screen.getByText('Study area')).toBeInTheDocument()
   })
 
   it('shows editable fields for the selected mass', () => {
@@ -82,7 +82,6 @@ describe('Studio panel', () => {
     const volume = createVolume({ id: 'v1', name: 'Mass 1', tiers: [tier] })
     render(<Inspector {...baseProps} selected={{ volume, tier }} />)
 
-    expect(screen.getByText('1 selected')).toBeInTheDocument()
     expect(screen.getByLabelText('Name')).toHaveValue('Mass 1')
     expect(screen.getByLabelText('Storeys')).toHaveValue('5')
     expect(screen.getByText('16.0 m')).toBeInTheDocument()

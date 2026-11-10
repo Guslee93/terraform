@@ -30,9 +30,17 @@
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-focus: var(--focus);
+  --color-canvas: var(--canvas);
+  --color-card: var(--card);
+  --color-card-line: var(--card-line);
+  --color-ink-unit: var(--ink-unit);
+  --color-frost: var(--frost);
+  --shadow-card: var(--shadow-card);
+  --shadow-float: var(--shadow-float);
 
   /* Radii live here (not tokens.css) so the theme names do not self-reference. */
   --radius-card: 10px;
+  --radius-panel: 16px;
   --radius-chip: 4px;
   --radius-control: 8px;
   --radius-pill: 999px;
@@ -97,6 +105,32 @@
 @utility text-body-sm {
   font-size: 13px;
   line-height: 1.4;
+}
+/* Dock card figure (ADR-0016): light, tabular, ~36 px. */
+@utility text-stat {
+  font-family: var(--typeface-sans);
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+@utility text-stat-s {
+  font-family: var(--typeface-sans);
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+/* Uppercase card label: small, letter-spaced, grey. */
+@utility text-eyebrow {
+  font-family: var(--typeface-sans);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 @utility text-label {
   font-family: var(--typeface-mono);
@@ -168,6 +202,40 @@
   button:not(:disabled),
   [role='button']:not([aria-disabled='true']) {
     cursor: pointer;
+  }
+
+  /* Range inputs (ADR-0016): a 2 px hairline track and a small white thumb. */
+  input[type='range'] {
+    appearance: none;
+    height: 20px;
+    background: transparent;
+  }
+  input[type='range']::-webkit-slider-runnable-track {
+    height: 2px;
+    border-radius: 999px;
+    background: var(--card-line);
+  }
+  input[type='range']::-moz-range-track {
+    height: 2px;
+    border-radius: 999px;
+    background: var(--card-line);
+  }
+  input[type='range']::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -6px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink-primary);
+    background: var(--card);
+    box-shadow: var(--shadow-float);
+  }
+  input[type='range']::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink-primary);
+    background: var(--card);
   }
 
   ::selection {

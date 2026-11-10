@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test } from '@playwright/test'
+import { openAnalysis, parameters } from './studio-helpers'
 
 // D33 — M3 fixed-camera evidence screenshots (docs/plans/M3-fable-plan.md §10, §11).
 //
@@ -37,7 +38,7 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
 
   // Summer solstice day: morning (09:00) → noon (12:00) → evening (18:00), 3D camera.
   // Time presets live in the collapsed Sun group of the inspector panel.
-  await page.getByRole('complementary', { name: 'Inspector' }).locator('summary').filter({ hasText: /^Sun/ }).click()
+  await openAnalysis(page, 'Sun')
   await page.getByRole('button', { name: 'Morning' }).click()
   await page.waitForTimeout(1500)
   await shoot('m3-morning-21jun')
@@ -96,7 +97,7 @@ test('D33: captures the fixed-camera M3 evidence set', async ({ page }) => {
   await expect(page.getByRole('button', { name: /^Mass 1 is outside the setback/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /above the limit/ })).toBeVisible()
   // Show the design check, not the fields the Storeys edit scrolled to.
-  await page.getByRole('complementary', { name: 'Inspector' }).evaluate((panel) => panel.scrollTo(0, 0))
+  await parameters(page).evaluate((panel) => panel.scrollTo(0, 0))
   await page.waitForTimeout(1500)
   await shoot('m3-envelope-violation-iso')
 

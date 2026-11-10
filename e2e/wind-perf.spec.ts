@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openAnalysis } from './studio-helpers'
 
 // Wind performance probe (docs/plans/wind-finish-plan.md E1/E2). Opt-in:
 //   WIND_PERF=1 npx playwright test e2e/wind-perf.spec.ts
@@ -25,12 +26,9 @@ const probe = () => new Promise<{ fps: number; longTasks: number; worstMs: numbe
 for (const mode of ['off', 'particles', '3d-streamlines'] as const) {
   test(`frame rate — Compact Infill, wind ${mode}`, async ({ page }) => {
     await page.goto('/studio/compact-infill')
-    const inspector = page.getByRole('complementary', { name: 'Inspector' })
     await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-    const wind = inspector.getByRole('button', { name: 'Wind', exact: true })
-    if (!(await wind.isVisible())) await inspector.locator('summary').filter({ hasText: /^Wind and noise/ }).click()
     if (mode !== 'off') {
-      await inspector.getByRole('group', { name: 'Climate layer' }).getByRole('button', { name: 'Wind', exact: true }).click()
+      await openAnalysis(page, 'Wind')
       if (mode === '3d-streamlines') await page.getByRole('checkbox', { name: 'Streamlines' }).check()
       await expect(page.getByLabel(/Streamline height/i)).toBeEnabled({ timeout: 120_000 })
     }

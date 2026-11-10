@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { openAnalysis } from './studio-helpers'
 
 // D34 — claim and disclaimer audit (docs/plans/M3-fable-plan.md §10, AGENTS.md §7).
 //
@@ -48,10 +49,8 @@ test('D34: required wording is present in the studio panels and forbidden claims
   await page.goto('/studio/compact-infill')
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
 
-  const panel = page.getByRole('complementary', { name: 'Inspector' })
-
   // Sun group: the method note states this is not a daylight or sun-hours assessment.
-  await panel.locator('summary').filter({ hasText: /^Sun/ }).click()
+  await openAnalysis(page, 'Sun')
   await expect(page.getByText('Geometric sun direction for this site (suncalc). Not a daylight or sun-hours assessment.')).toBeVisible()
   await expectNoForbiddenClaims(page, 'studio Sun group')
 
@@ -64,7 +63,8 @@ test('D34: required wording is present in the studio panels and forbidden claims
 
   // Metrics: the "About these numbers" group needs a mass to render its notes.
   await createSmallMass(page)
-  await panel.locator('summary').filter({ hasText: 'About these numbers' }).click()
+  // Method notes sit with the Area figures in Parameters.
+  await openAnalysis(page, 'Area')
   await expect(page.getByText('Concept GFA is not BRA, BYA or %-BRA.', { exact: true })).toBeVisible()
   await expect(page.locator('body')).toContainText('Concept GFA is not BRA, BYA or %-BRA.')
   await expectNoForbiddenClaims(page, 'studio panel with metrics')

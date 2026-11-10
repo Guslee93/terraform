@@ -357,9 +357,9 @@ export async function downloadText(download: Download): Promise<string> {
   return readFile(filePath, 'utf8')
 }
 
-/** Open the panel's "Site and sources" group (it holds Export and Import) without toggling it shut. */
+/** Open the panel's "Site" group (it holds Export and Import) without toggling it shut. */
 export async function openSiteGroup(page: Page): Promise<void> {
-  const group = page.getByRole('complementary', { name: 'Inspector' }).locator('details', { has: page.locator('summary', { hasText: 'Site and sources' }) })
+  const group = page.getByRole('complementary', { name: 'Parameters' }).locator('details', { has: page.locator('summary', { hasText: /^Site/ }) }).first()
   if (!(await group.evaluate((element) => (element as HTMLDetailsElement).open))) await group.locator('summary').click()
 }
 

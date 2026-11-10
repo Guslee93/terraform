@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { openAnalysis, parameters } from './studio-helpers'
 
 // X4 — wind flow e2e (docs/handoffs/X4-minimax-wind-e2e-casestudy.md).
 //
@@ -20,25 +21,21 @@ async function openStudio(page: Page) {
   await expect(page.getByRole('region', { name: /3D site viewport for Compact Infill/i })).toBeVisible()
 }
 
-/** The "Wind and noise" group is collapsed in the inspector; open it when it is. */
+/** Activate the Wind dock card: the wind layer turns on and its controls open in Parameters. */
 async function openClimateGroup(page: Page) {
-  const inspector = page.getByRole('complementary', { name: 'Inspector' })
-  const windButton = inspector.getByRole('button', { name: 'Wind', exact: true })
-  if (!(await windButton.isVisible())) {
-    await inspector.locator('summary').filter({ hasText: /^Wind and noise/ }).click()
-  }
-  await expect(windButton).toBeVisible()
+  await openAnalysis(page, 'Wind')
+  await expect(page.getByRole('group', { name: 'Wind map shows' })).toBeVisible()
 }
 
 test('X4: the wind layer shows its disclaimer and legend, and the baseline/delta round trip works', async ({ page }) => {
   await openStudio(page)
   await openClimateGroup(page)
 
-  // Wind on: the screening disclaimer and a legend appear once the flow is solved.
-  await page.getByRole('group', { name: 'Climate layer' }).getByRole('button', { name: 'Wind', exact: true }).click()
-  // The claim shows in the panel and, persistently, on the viewport (C23 review finding 3).
-  await expect(page.getByText(DISCLAIMER)).toHaveCount(2, { timeout: 15_000 })
-  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(DISCLAIMER)).toBeVisible()
+  // Wind on: the claim shows on the viewport (C23 review finding 3), under the dock's quick
+  // controls, and in Parameters with the legend once the flow is solved.
+  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(DISCLAIMER)).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('region', { name: 'Wind quick controls' }).getByText(DISCLAIMER)).toBeVisible()
+  await expect(parameters(page).getByText(DISCLAIMER)).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: 15_000 })
 
   // Comfort is the default map; Direction shows the speed ratio against open ground.
@@ -81,8 +78,6 @@ test('ADR-0015: the all-directions sweep fills the rose, opens Worst case, and a
   test.slow() // eight solves (~15–30 s under load)
   await openStudio(page)
   await openClimateGroup(page)
-  const inspector = page.getByRole('complementary', { name: 'Inspector' })
-  await inspector.getByRole('group', { name: 'Climate layer' }).getByRole('button', { name: 'Wind', exact: true }).click()
   const section = page.getByRole('region', { name: 'All wind directions' })
   await section.getByRole('button', { name: 'Analyse 8 directions' }).click()
   await expect(section.getByText(/Worst direction:/)).toBeVisible({ timeout: 60_000 })

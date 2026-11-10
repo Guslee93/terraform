@@ -14,13 +14,13 @@ type CameraPresetsProps = {
   onSelect: (preset: CameraPresetId) => void
 }
 
-/** Views as words with an underline for the active one, top-right of the canvas beside the compass. */
+/** Camera views as a segmented row in the Parameters View group (ADR-0016). */
 export function CameraPresets({ active, onSelect }: CameraPresetsProps) {
   return (
     <div
       role="group"
       aria-label="Camera presets"
-      className="absolute right-14 top-[60px] z-10 flex items-center gap-5 rounded-chip bg-surface/85 px-2 py-0.5 xl:top-3.5"
+      className="flex items-center gap-0.5 rounded-control bg-canvas p-0.5"
     >
       {PRESETS.map((preset) => (
         <button
@@ -29,7 +29,7 @@ export function CameraPresets({ active, onSelect }: CameraPresetsProps) {
           onClick={() => onSelect(preset.id)}
           aria-pressed={active === preset.id}
           title={preset.title}
-          className={cn('min-h-9 border-b border-transparent text-body-sm text-ink-secondary transition-colors duration-200 hover:text-ink aria-pressed:border-ink aria-pressed:text-ink')}
+          className={cn('min-h-8 flex-1 rounded-[6px] text-body-sm text-ink-secondary transition-colors duration-200 hover:text-ink aria-pressed:bg-card aria-pressed:text-ink aria-pressed:shadow-card')}
         >
           {preset.label}
         </button>

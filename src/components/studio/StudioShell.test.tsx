@@ -79,7 +79,9 @@ describe('analysis-first studio', () => {
     const user = userEvent.setup()
     renderStudio()
     expect(screen.getByRole('heading', { name: 'Study area' })).toBeVisible()
-    expect(screen.getByRole('group', { name: 'Climate layer' })).toBeVisible()
+    const cards = screen.getByRole('group', { name: 'Analysis cards' })
+    expect(within(cards).getByRole('button', { name: /^Noise/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(cards).queryByRole('button', { name: /^Draw/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Draw building' })).not.toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Scenario' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Compare' })).not.toBeInTheDocument()
@@ -102,7 +104,7 @@ describe('studio rendering states', () => {
     const { container, rerender } = render(view(false))
     expect(screen.getByRole('status')).toHaveTextContent('Loading site package')
     expect(Canvas).not.toHaveBeenCalled()
-    expect(screen.queryByRole('region', { name: 'Scenario' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Analysis' })).not.toBeInTheDocument()
     const placeholders = container.querySelectorAll('.motion-safe\\:animate-pulse')
     expect(placeholders).toHaveLength(2)
     for (const placeholder of placeholders) {
@@ -112,7 +114,7 @@ describe('studio rendering states', () => {
     rerender(view(true))
     expect(screen.queryByText('Loading site package')).not.toBeInTheDocument()
     expect(screen.getByTestId('canvas')).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Scenario' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Analysis' })).toBeInTheDocument()
   })
 
   it.each([null, 'Unexpected token < in JSON at position 0'])('offers plain-language recovery for a missing or failed package (%s)', async (packageError) => {
@@ -146,7 +148,7 @@ describe('studio rendering states', () => {
     expect(screen.getByRole('button', { name: 'Concept A' })).toBeVisible()
   })
 
-  it('updates coverage, envelope and amber tint during a live drag, then restores them on Escape', () => {
+  it('updates coverage, envelope and amber tint during a live drag, then restores them on Escape', async () => {
     const tier = factories.createTier({ id: 'ground', footprint: factories.createRectangleFootprint(10, 10), storeys: 1 })
     const volume = factories.createVolume({ id: 'moving', name: 'Moving wing', tiers: [tier] })
     const document = factories.createScenario({ siteId: 'compact-infill', volumes: [volume] })
@@ -164,6 +166,7 @@ describe('studio rendering states', () => {
     const massLayer = sceneChildren().find((child) => isValidElement<ComponentProps<typeof MassLayer>>(child) && child.type === MassLayer)
     if (!isValidElement<ComponentProps<typeof MassLayer>>(massLayer)) throw new Error('Missing mass adapter')
     const dispatch = massLayer.props.dispatch
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Area/ }))
     expect(screen.queryByText('Outside study area')).not.toBeInTheDocument()
     act(() => dispatch({ type: 'pointerDown', point: [0, 0], gesture: moveGesture('moving') }))
     act(() => dispatch({ type: 'pointerMove', point: [20, 0] }))
@@ -189,9 +192,10 @@ describe('studio rendering states', () => {
     const document = factories.createScenario({ siteId: 'compact-infill', volumes: [visible, hidden] })
     vi.spyOn(factories, 'createScenario').mockReturnValue(document)
     renderStudio({ ...sitePackage, studyArea: { ...sitePackage.studyArea, polygon: [[-20, -25], [20, -25], [20, 25], [-20, 25], [-20, -25]] } })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: /^Area/ }))
     const metrics = screen.getByRole('region', { name: 'Scenario' })
     expect(within(metrics).getByText('1 building')).toBeVisible()
-    const user = userEvent.setup()
     const constraints = screen.getByRole('region', { name: 'Envelope constraints' })
     expect(within(constraints).queryByRole('button', { name: /Hidden wing/ })).not.toBeInTheDocument()
     await user.click(within(constraints).getByRole('button', { name: /Visible wing is outside the setback/ }))
@@ -207,8 +211,8 @@ describe('studio rendering states', () => {
     renderStudio()
     expect(state.mock.lastCall?.[0]).toEqual(solar.DEMO_SUN_INSTANT)
     const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: /^Sun/ }))
     await user.click(screen.getByRole('button', { name: /Winter solstice/ }))
-    await user.click(screen.getByText('Sun'))
     await user.click(screen.getByRole('button', { name: 'Evening' }))
     expect(screen.getByRole('status')).toHaveTextContent('Sun below horizon')
     // The sun band owns the one playback clock.
@@ -224,9 +228,9 @@ describe('studio rendering states', () => {
     expect(screen.getByText(/WebGL isn't available in this browser/)).toBeInTheDocument()
     expect(Canvas).not.toHaveBeenCalled()
     expect(screen.queryByTestId('canvas')).not.toBeInTheDocument()
-    // The toolbar's Layers button opens that panel group; Site and sources is one more.
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Layers' }))
-    await userEvent.setup().click(screen.getByText('Site and sources'))
+    // The viewport's Layers card opens the layer switches; Site is a Parameters group.
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Layers/ }))
+    await userEvent.setup().click(screen.getByText('Site', { selector: 'summary span' }))
     expect(screen.getByText('137 simplified')).toBeVisible()
     const terrain = screen.getByRole('checkbox', { name: 'Terrain' })
     await userEvent.setup().click(terrain)
@@ -234,11 +238,14 @@ describe('studio rendering states', () => {
     expect(screen.getByRole('combobox', { name: 'Render quality' })).toBeEnabled()
   })
 
-  it.each([-5, 20])('shows the below-horizon chip only at night (%s degrees)', (elevationDeg) => {
+  it.each([-5, 20])('shows the below-horizon chip only at night (%s degrees)', async (elevationDeg) => {
     vi.spyOn(solar, 'sunState').mockReturnValue({ azimuthDeg: 180, elevationDeg, instant: solar.DEMO_SUN_INSTANT, localLabel: '', belowHorizon: elevationDeg <= 0, directionEnu: null })
     renderStudio()
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Sun/ }))
     if (elevationDeg <= 0) {
       expect(screen.getByRole('status')).toHaveTextContent('Sun below horizon')
+      // The dock card shows no figure at night, only the plain state.
+      expect(within(screen.getByRole('button', { name: /^Sun/ })).getByText('Sun below horizon')).toBeInTheDocument()
     } else {
       expect(screen.queryByText('Sun below horizon')).not.toBeInTheDocument()
     }
@@ -249,8 +256,8 @@ describe('studio rendering states', () => {
 
   it('lets Enter reach a group summary instead of the editor', () => {
     renderStudio()
-    const summary = screen.getByText('Layers and render quality').closest('summary')
-    if (!summary) throw new Error('Missing Layers summary')
+    const summary = screen.getByText('View', { selector: 'summary span' }).closest('summary')
+    if (!summary) throw new Error('Missing View summary')
     summary.focus()
     const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
     summary.dispatchEvent(event)
@@ -270,16 +277,26 @@ describe('studio rendering states', () => {
     expect(within(screen.getByRole('list', { name: 'Masses' })).getByText('5 floors · 15.0 m · 2 tiers')).toBeInTheDocument()
   })
 
+  it('wires the dock cards to the live scenario: Area GFA matches the metrics panel', async () => {
+    const tier = factories.createTier({ id: 'g', footprint: factories.createRectangleFootprint(20, 10), storeys: 3, storeyHeight: 3.2 })
+    vi.spyOn(factories, 'createScenario').mockReturnValue(factories.createScenario({ siteId: 'compact-infill', volumes: [factories.createVolume({ id: 'v', name: 'Block', tiers: [tier] })] }))
+    renderStudio()
+    const cards = screen.getByRole('group', { name: 'Analysis cards' })
+    const area = within(cards).getByRole('button', { name: /^Area/ })
+    expect(area).toHaveTextContent('600 m²')
+    expect(within(cards).getByRole('button', { name: /^Draw/ })).toHaveTextContent('1 mass')
+    await userEvent.setup().click(area)
+    expect(within(screen.getByRole('region', { name: 'Scenario' })).getByText('600')).toBeInTheDocument()
+  })
+
   it('applies and persists quality, including after remount', async () => {
     const user = userEvent.setup()
     const { unmount } = renderStudio()
-    await user.click(screen.getByRole('button', { name: 'Layers' }))
     await user.selectOptions(screen.getByRole('combobox', { name: 'Render quality' }), 'low')
     expect(vi.mocked(Canvas).mock.lastCall?.[0].shadows).toBe(false)
     expect(localStorage.getItem(RENDER_QUALITY_KEY)).toBe('low')
     unmount()
     renderStudio()
-    await user.click(screen.getByRole('button', { name: 'Layers' }))
     expect(screen.getByRole('combobox', { name: 'Render quality' })).toHaveValue('low')
     expect(vi.mocked(Canvas).mock.lastCall?.[0].shadows).toBe(false)
     await user.selectOptions(screen.getByRole('combobox', { name: 'Render quality' }), 'high')
@@ -343,7 +360,9 @@ describe('studio guide', () => {
     await user.tab()
     expect(screen.getByRole('button', { name: 'Skip' })).toHaveFocus()
     await user.tab()
-    expect(screen.getByRole('button', { name: 'Select' })).toHaveFocus()
+    // The pill toolbar sits in the top bar, before the guide; Tab moves on into the viewport.
+    expect(screen.getByRole('button', { name: /^Layers/ })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: /^Sun/ }))
     await user.click(screen.getByRole('slider', { name: 'Local time' }))
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('region', { name: 'Studio guide' })).not.toBeInTheDocument()

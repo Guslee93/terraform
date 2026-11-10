@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openAnalysis } from './studio-helpers'
 
 // K1 (docs/reviews/studio-v2-code-review.md, docs/plans/M4-plan.md §6):
 // the studio is keyboard-operable in visual order with a visible focus ring.
@@ -12,8 +13,8 @@ async function openStudio(page: Page) {
 
 type Stop = { group: string; label: string; outline: string; shadow: string }
 
-/** Which landmark group the focused element belongs to, in visual order. */
-const GROUPS = ['topbar', 'tools', 'camera', 'sun', 'inspector'] as const
+/** Which landmark group the focused element belongs to, in visual order (ADR-0016 layout). */
+const GROUPS = ['topbar', 'tools', 'viewport', 'parameters', 'dock'] as const
 
 async function tabThrough(page: Page, max = 80): Promise<Stop[]> {
   const stops: Stop[] = []
@@ -22,16 +23,16 @@ async function tabThrough(page: Page, max = 80): Promise<Stop[]> {
     const stop = await page.evaluate(() => {
       const el = document.activeElement
       if (!(el instanceof HTMLElement) || el === document.body) return null
-      const group = el.closest('header')
-        ? 'topbar'
-        : el.closest('nav[aria-label="Studio tools"]')
-          ? 'tools'
-          : el.closest('[role="group"][aria-label="Camera presets"]')
-            ? 'camera'
-            : el.closest('[aria-label="Sun and shadows"]')
-              ? 'sun'
-              : el.closest('aside[aria-label="Inspector"]')
-                ? 'inspector'
+      const group = el.closest('nav[aria-label="Studio tools"]')
+        ? 'tools'
+        : el.closest('header')
+          ? 'topbar'
+          : el.closest('section[aria-label="Studio viewport"]')
+            ? 'viewport'
+            : el.closest('aside[aria-label="Parameters"]')
+              ? 'parameters'
+              : el.closest('section[aria-label="Analysis"]')
+                ? 'dock'
                 : 'other'
       const cs = getComputedStyle(el)
       return {
@@ -47,7 +48,8 @@ async function tabThrough(page: Page, max = 80): Promise<Stop[]> {
   return stops
 }
 
-test('Tab reaches top bar, tools, camera, sun band and inspector in visual order', async ({ page }) => {
+test('Tab reaches top bar, tools, viewport, Parameters and the analysis dock in visual order', async ({ page }) => {
+  test.slow() // one Tab per stop over a live WebGL scene
   await openStudio(page)
   const stops = await tabThrough(page)
   const groups = stops.map((s) => s.group)
@@ -63,19 +65,22 @@ test('Tab reaches top bar, tools, camera, sun band and inspector in visual order
   // Named stops within the groups, in order.
   const labels = stops.map((s) => s.label)
   const expected = [
-    'Terraform home',
-    'Fit site',
-    'About',
+    'Back',
     'Select',
     'Draw building',
+    'Test a building',
+    'Fit site',
+    'About',
     'Layers',
     '3D',
     'Plan',
     'North',
     'South',
     'Street',
-    'Local time',
-    'Play',
+    'Small',
+    'Medium',
+    'Large',
+    'Sun',
   ]
   const at = expected.map((name) => labels.findIndex((l) => l.startsWith(name)))
   for (const [i, name] of expected.entries()) {
@@ -87,6 +92,7 @@ test('Tab reaches top bar, tools, camera, sun band and inspector in visual order
 })
 
 test('every Tab stop has a visible focus indicator', async ({ page }) => {
+  test.slow()
   await openStudio(page)
   const stops = await tabThrough(page)
   expect(stops.length).toBeGreaterThan(10)
@@ -94,10 +100,11 @@ test('every Tab stop has a visible focus indicator', async ({ page }) => {
   expect(invisible, 'stops without outline or box-shadow').toEqual([])
 })
 
-test('Enter toggles each inspector panel group', async ({ page }) => {
+test('Enter toggles each Parameters group', async ({ page }) => {
   await openStudio(page)
-  const inspector = page.getByRole('complementary', { name: 'Inspector' })
-  const names = ['Sun', 'Layers and render quality', 'Site and sources', 'Assumptions', 'About these numbers']
+  const inspector = page.getByRole('complementary', { name: 'Parameters' })
+  // The first group is the active dock analysis (Draw by default in Test a building).
+  const names = ['Draw', 'Selected mass', 'Design check', 'Site', 'View', 'Notes']
   for (const name of names) {
     const summary = inspector.locator('details > summary').filter({ hasText: new RegExp(`^${name}`) })
     await expect(summary, name).toHaveCount(1)
@@ -115,6 +122,8 @@ test('Enter toggles each inspector panel group', async ({ page }) => {
 
 test('Local time slider: Arrow = 15 min, Shift+Arrow = 1 h', async ({ page }) => {
   await openStudio(page)
+  // The time band is the Sun card's quick control in the dock.
+  await openAnalysis(page, 'Sun')
   const slider = page.getByRole('slider', { name: 'Local time' })
   await expect(slider).toHaveAttribute('aria-valuetext', /15:00/)
   await slider.focus()

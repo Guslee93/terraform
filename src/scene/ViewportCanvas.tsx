@@ -4,7 +4,7 @@ import { WindRampBar } from './WindRampBar'
 import type { FootprintBuilding } from '../features/analysis/grid'
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Line, OrbitControls } from '@react-three/drei'
+import { Grid, Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
 import { DoubleSide, EdgesGeometry, NeutralToneMapping, Vector3 } from 'three'
 import type { CameraPresetId } from '../features/sites/manifest'
@@ -90,12 +90,18 @@ type ViewportProps = {
   windCircle?: { readonly centre: Vec2; readonly radius: number } | null
   /** When set, the next ground click picks a point (e.g. placing the wind circle) instead of editing. */
   onPickPoint?: (point: Vec2) => void
+  /** Endless ENU floor grid (1 m minor, 10 m major) under the site block. */
+  grid?: boolean
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
 const CLICK_TOLERANCE_PX = 4
 
 const VIEWPORT_BACKGROUND = '#F1F1EF'
+/** Ground plane one step below the background; fog fades it into the horizon. */
+const GROUND_COLOR = '#EBEBE8'
+const GRID_MINOR_COLOR = '#DDDDD9'
+const GRID_MAJOR_COLOR = '#D8D8D3'
 const CONTEXT_COLOR = '#FAF9F6'
 const EDGE_COLOR = '#7E7D7A'
 /** One line-weight knob. 0.85 matches Hektar's thin mid-grey outline (≈ 140/255 on white walls). */
@@ -265,6 +271,55 @@ function StudyBoundary({ sitePackage }: { sitePackage: SitePackage }) {
   )
 }
 
+/** Matches createTerrainSkirtGeometry's default drop. */
+const SKIRT_DROP_M = 2
+
+/**
+ * Endless floor grid (ADR-0016). It sits at the base of the terrain skirt (2 m below the lowest
+ * terrain sample), so the terrain block stands on it like a model on a table and the two never
+ * share a depth (no z-fighting). The ground plane sits a further 0.6 m down for the same reason.
+ * Lines fall on whole ENU metres (mesh at east = north = 0). Two layers, so nothing aliases:
+ * 10 m lines fade out around the site; 1 m lines exist only within ~140 m of the camera, i.e.
+ * once you zoom in, where they are several pixels apart.
+ */
+function FloorGrid({ terrain, viewScale }: { terrain: SitePackage['terrain']; viewScale: number }) {
+  const floor = terrainHeightRange(terrain).min - SKIRT_DROP_M
+  return (
+    <>
+      <mesh rotation-x={-Math.PI / 2} position={[0, floor - 0.6, 0]}>
+        <circleGeometry args={[3000 * viewScale, 64]} />
+        <meshBasicMaterial color={GROUND_COLOR} toneMapped={false} />
+      </mesh>
+      <Grid
+        position={[0, floor, 0]}
+        infiniteGrid
+        cellSize={10}
+        cellThickness={0}
+        sectionSize={10}
+        sectionThickness={0.8}
+        sectionColor={GRID_MAJOR_COLOR}
+        fadeDistance={460 * viewScale}
+        fadeStrength={2.2}
+        fadeFrom={0}
+        followCamera={false}
+      />
+      <Grid
+        position={[0, floor + 0.01, 0]}
+        infiniteGrid
+        cellSize={1}
+        cellThickness={0}
+        sectionSize={1}
+        sectionThickness={0.6}
+        sectionColor={GRID_MINOR_COLOR}
+        fadeDistance={140}
+        fadeStrength={1.5}
+        fadeFrom={1}
+        followCamera={false}
+      />
+    </>
+  )
+}
+
 /** Floor for the shadow volume's height so proposed masses taller than the context still cast. */
 const MIN_SHADOW_HEIGHT = 60
 
@@ -389,6 +444,7 @@ export function ViewportCanvas({
   onStopDemo,
   windCircle = null,
   onPickPoint,
+  grid = true,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   useEffect(() => {
@@ -459,6 +515,7 @@ export function ViewportCanvas({
             <color attach="background" args={[VIEWPORT_BACKGROUND]} />
             <fog attach="fog" args={[VIEWPORT_BACKGROUND, 600 * viewScale, 1400 * viewScale]} />
             <SiteLights sitePackage={sitePackage} sun={sun} profile={profile} />
+            {grid && <FloorGrid terrain={terrain} viewScale={viewScale} />}
 
             {layers.terrain && (
               <TerrainMesh

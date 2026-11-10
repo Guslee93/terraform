@@ -8,7 +8,11 @@
 
 This document is the written contract the visual gate reviews against. It is intentionally stricter than "make it look nice". Change it by ADR, not by ad-hoc component styling.
 
-## 0. Draft 4 editor layout (ADR-0010) — current
+## 0a. Studio v3 (ADR-0016) — current for the studio screen
+
+Card layout on a warm grey canvas with soft shadows, pill toolbar, 300 px Parameters panel, bottom analysis dock (S/M/L), ENU floor grid, outline selection. Where ADR-0016 and §0 disagree for the studio, ADR-0016 wins; tokens `--canvas`, `--card`, `--card-line`, `--ink-unit`, `--shadow-card`, `--shadow-float`, `--frost`, `rounded-panel`. Evidence: `docs/screenshots/studio-v3-*`.
+
+## 0. Draft 4 editor layout (ADR-0010) — superseded for the studio by ADR-0016
 
 Reference image: `docs/design/ux-assessment/06-proposed-dashboard-v4.png`. Where this section and §2–§7 disagree, this section wins.
 

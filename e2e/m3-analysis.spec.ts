@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { openAnalysis, openGroup } from './studio-helpers'
 
 // D32 — M3 live-analysis e2e (docs/plans/M3-fable-plan.md §10, docs/handoffs/C8-C10-m3-ui.md).
 //
@@ -25,9 +26,9 @@ function centreClip(box: { x: number; y: number; width: number; height: number }
   return { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
 }
 
-/** Open the collapsed "Sun" group in the inspector panel (readout, date, time presets, notes). */
+/** Activate the Sun card: the time band in the dock, readout, date and presets in Parameters. */
 async function openSunGroup(page: Page) {
-  await page.getByRole('complementary', { name: 'Inspector' }).locator('summary').filter({ hasText: /^Sun/ }).click()
+  await openAnalysis(page, 'Sun')
 }
 
 /** The Sun group readout sentence (FR-063). */
@@ -123,7 +124,9 @@ test('D32: a mass drawn across the study boundary exceeds the envelope and its w
   await expect(page.getByRole('button', { name: /^Mass 1 is outside the study area/ })).toBeVisible()
 
   await warning.click()
-  await expect(page.getByText('1 selected')).toBeVisible()
+  // The warning selects the mass: Selected mass names it.
+  const selectedGroup = await openGroup(page, 'Selected mass')
+  await expect(selectedGroup.locator('summary')).toContainText('Mass 1')
   await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
 })
 

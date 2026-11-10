@@ -120,13 +120,13 @@ export function SunBand({ time, onChange, state, location, playback }: SunProps)
   const setMinute = (minute: number) => onChange((value) => ({ ...value, minuteOfDay: ((minute % 1440) + 1440) % 1440 }))
 
   return (
-    <section aria-label="Sun and shadows" className="grid shrink-0 grid-cols-[auto_1fr_auto] items-end gap-x-8 border-t border-line px-6 pb-4 pt-3 max-sm:grid-cols-1 max-sm:gap-y-3">
+    <section aria-label="Sun and shadows" className="grid shrink-0 grid-cols-[auto_1fr_auto] items-end gap-x-6 gap-y-2 @max-xl:grid-cols-[1fr_auto]">
       <div>
         <p className="flex items-center gap-2 text-caption text-ink-secondary">
           <span aria-hidden="true" className="size-[7px] rounded-pill bg-sun-high" />
           Sun · {shortDate(time.date)}
         </p>
-        <p aria-hidden="true" className="mt-1.5 text-figure text-ink">{clockLabel(time.minuteOfDay)}</p>
+        <p aria-hidden="true" className="mt-1 text-stat-s text-ink">{clockLabel(time.minuteOfDay)}</p>
         <div role="group" aria-label="Date presets" className="mt-2 flex gap-3.5">
           {DATE_PRESETS.map((preset) => (
             <button key={preset.id} type="button" className={segment} aria-label={`${preset.label} · ${shortDate(preset.date)}`} title={preset.label} aria-pressed={time.date === preset.date} onClick={() => onChange((value) => ({ ...value, date: preset.date }))}>
@@ -136,7 +136,7 @@ export function SunBand({ time, onChange, state, location, playback }: SunProps)
         </div>
       </div>
 
-      <div className="min-w-0">
+      <div className="min-w-0 @max-xl:order-last @max-xl:col-span-2">
         <div className="relative h-11 rounded-chip has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-focus">
           <div aria-hidden="true" className="flex h-full items-end justify-between">
             {slots.map((elevation, slot) => {
@@ -183,7 +183,8 @@ export function SunBand({ time, onChange, state, location, playback }: SunProps)
             { at: 720, label: '12' },
             { at: 1440, label: '24' },
             ...(times ? [{ at: times.sunrise, label: clockLabel(times.sunrise) }, { at: times.sunset, label: clockLabel(times.sunset) }] : []),
-          ].sort((a, b) => a.at - b.at).map((tick) => (
+          ].filter((tick, _, all) => (tick.label !== '00' && tick.label !== '24') || all.every((other) => other === tick || other.label === '12' || Math.abs(other.at - tick.at) > 90))
+            .sort((a, b) => a.at - b.at).map((tick) => (
             <span
               key={tick.label}
               className="absolute top-1.5 -translate-x-1/2 first:translate-x-0 last:-translate-x-full"

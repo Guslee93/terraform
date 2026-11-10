@@ -24,9 +24,9 @@ export function ScenarioNotes({ notes, disabled, onCommit }: { notes: string; di
       window.removeEventListener('pagehide', save, true)
     }
   }, [])
-  return <section className="px-6 pb-4">
-    <label htmlFor={id} className="text-caption text-ink-secondary">Notes</label>
-    <textarea id={id} value={draft} maxLength={MAX_NOTES_LENGTH} disabled={disabled} aria-describedby={`${id}-limit`} className={`${inputClass} mt-2 h-20 py-2 font-sans`} onChange={(event) => setDraft(event.target.value)} onBlur={commit} />
-    <p id={`${id}-limit`} className="text-caption text-ink-secondary">{draft.length} / {MAX_NOTES_LENGTH.toLocaleString('en-GB')} characters</p>
+  return <section className="rounded-control bg-canvas p-3">
+    <label htmlFor={id} className="text-caption text-ink-secondary">Scenario notes</label>
+    <textarea id={id} value={draft} maxLength={MAX_NOTES_LENGTH} disabled={disabled} aria-describedby={`${id}-limit`} className={`${inputClass} mt-1.5 h-24 border-card-line bg-card py-2 font-sans text-body-sm`} onChange={(event) => setDraft(event.target.value)} onBlur={commit} />
+    <p id={`${id}-limit`} className="mt-1 text-caption text-ink-secondary">{draft.length} / {MAX_NOTES_LENGTH.toLocaleString('en-GB')} characters · saved on blur</p>
   </section>
 }

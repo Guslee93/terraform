@@ -14,8 +14,8 @@ export function SiteFactsPanel({ facts }: { facts: SiteFacts | null }) {
     ['Mean height', facts.meanHeightM === null ? '—' : formatMetres(facts.meanHeightM)],
   ]
   return (
-    <section aria-labelledby="site-facts-heading" className="px-6 pb-4 pt-5">
-      <h2 id="site-facts-heading" className="text-caption text-ink-secondary">Study area</h2>
+    <section aria-labelledby="site-facts-heading">
+      <h2 id="site-facts-heading" className="sr-only">Study area</h2>
       <dl className="mt-2 grid grid-cols-2 gap-x-6">
         {rows.map(([label, value]) => (
           <div key={label} className="border-b border-line py-2">

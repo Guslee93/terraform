@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openGroup } from './studio-helpers'
 import {
   expectSaved,
   expectSaveStatus,
@@ -114,8 +115,9 @@ test('D37: captures the M4 evidence set at 1440×900', async ({ browser }) => {
   await openStudio(quotaPage)
   await expectSaved(quotaPage)
   await failPutsWithQuota(quotaPage)
-  await quotaPage.getByLabel('Notes').fill('Storage is full — export a backup')
-  await quotaPage.getByLabel('Notes').press('Tab')
+  await openGroup(quotaPage, 'Notes')
+  await quotaPage.getByLabel('Scenario notes').fill('Storage is full — export a backup')
+  await quotaPage.getByLabel('Scenario notes').press('Tab')
   await expectSaveStatus(quotaPage, 'Not saved — storage is full')
   await expect(quotaPage.getByRole('region', { name: 'Project recovery' })).toBeVisible()
   await quotaPage.waitForTimeout(800)

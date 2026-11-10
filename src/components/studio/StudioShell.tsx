@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { constraintsFromManifest, evaluateEnvelope, type HeightReference } from '../../features/analysis/constraints'
 import { sunState } from '../../features/analysis/sun'
 import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, localSpeedMs, ROSE_THRESHOLD_MS, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
-import { ClimatePanel, useWindDemo } from './ClimatePanel'
+import { ClimatePanel, WindQuick, useWindDemo } from './ClimatePanel'
+import { ShareBar } from './DirectionRose'
+import { pillButtonClass } from '../ui/controls'
 import { useWindFlow } from '../../features/analysis/useWindFlow'
 import { useWindSweep } from '../../features/analysis/useWindSweep'
 import { summariseSweep, SWEEP_DIRECTIONS } from '../../features/analysis/directionSweep'
@@ -38,8 +41,8 @@ import { summarizeChecks } from './checks'
 import { ConstraintsPanel } from './ConstraintsPanel'
 import { formatArea, formatMetres } from './format'
 import { massSummary } from '../../features/analysis/massSummary'
-import { Inspector, type PanelGroup } from './Inspector'
-import { MetricsPanel } from './MetricsPanel'
+import { Inspector } from './Inspector'
+import { MetricsNotes, MetricsPanel } from './MetricsPanel'
 import type { SnapshotResult, SnapshotRequest } from '../../scene/ScenarioSnapshots'
 import { ComparePanel } from './ComparePanel'
 import { ProjectBackup, RecoveryStrip } from './ProjectRecovery'
@@ -47,8 +50,16 @@ import { ScenarioMenu } from './ScenarioMenu'
 import { ScenarioNotes } from './ScenarioNotes'
 import { StudioGuide, readGuideDismissed } from './StudioGuide'
 import { StudioTopBar } from './StudioTopBar'
-import { SunBand, SunDetails, shortDate, useSunPlayback } from './SunPanel'
+import { SunBand, SunDetails, clockLabel, useSunPlayback } from './SunPanel'
 import { ToolRail, type ToolId } from './ToolRail'
+import { AnalysisDock, type DockCard, type DockCardId, type DockSize } from './AnalysisDock'
+import { LayersCard } from './LayersCard'
+import { areaStat, drawStat, noiseStat, sunStat, windStat } from './dockValues'
+import { MassList } from './MassList'
+import { downloadProject } from './ProjectRecovery'
+import { computeNoise, NOISE_DISCLAIMER } from '../../features/analysis/noise'
+import { FLOW_DISCLAIMER } from '../../features/analysis/lbm'
+import { removeVolume } from '../../features/editor/commands'
 import { useScenarioProject } from './useScenarioProject'
 
 type PackageStatus = 'loading' | 'ready' | 'error'
@@ -93,7 +104,6 @@ export function StudioShell({
     return { resolved, state: sunState(resolved.instant, latitude, longitude, timeZone) }
   }, [sunTime, sitePackage])
   const playback = useSunPlayback(setSunTime)
-  const [panelFocus, setPanelFocus] = useState<{ group: PanelGroup; nonce: number }>({ group: 'layers', nonce: 0 })
   const [renderPreference, setRenderPreference] = useState(readRenderPreference)
   // Below 640 px the studio is a read-only preview (M0 visual gate).
   const [wide, setWide] = useState(() => window.matchMedia('(min-width: 640px)').matches)
@@ -110,7 +120,12 @@ export function StudioShell({
     setback: true,
     heightLimit: true,
   })
-  const [climateMode, setClimateMode] = useState<ClimateMode>('noise')
+  // The active dock card drives the one climate layer (ADR-0016): Wind and Noise colour the ground.
+  const [dockActive, setDockActive] = useState<DockCardId>(() => (readTestBuilding() ? 'draw' : 'noise'))
+  const [dockSize, setDockSize] = useState<DockSize>('M')
+  const [grid, setGrid] = useState(true)
+  const climateMode: ClimateMode = dockActive === 'wind' ? 'wind' : dockActive === 'noise' ? 'noise' : 'off'
+  const setClimateMode = (mode: ClimateMode) => setDockActive(mode === 'wind' ? 'wind' : mode === 'noise' ? 'noise' : 'sun')
   const [wind, setWind] = useState<WindSettings>(DEFAULT_WIND)
   const [streamlines, setStreamlines] = useState(false)
   const windDemo = useWindDemo(wind, streamlines, setWind, setStreamlines)
@@ -169,6 +184,13 @@ export function StudioShell({
     if (!sitePackage || !studyArea || !windArea || climateMode === 'off') return null
     return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline, worstCase)
   }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind, windCentre, baseline, worstCase])
+  // Dock figures (ADR-0016): every value comes from the same analysis the layers draw.
+  const noiseCells = useMemo(() => (sitePackage && studyArea ? computeNoise(studyArea, sitePackage.roads, analysisBuildings, 10) : []), [sitePackage, studyArea, analysisBuildings])
+  const windComfortView = useMemo(() => {
+    if (!sitePackage || !windArea || climateMode !== 'wind' || !windFlow) return null
+    if (wind.display === 'activity' && climateView) return climateView
+    return buildClimateView('wind', windArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, display: 'activity', centre: windCentre })
+  }, [sitePackage, windArea, climateMode, windFlow, wind, climateView, analysisBuildings, windCentre])
   const facts = useMemo(() => sitePackage ? siteFacts(normalizeRing(sitePackage.studyArea.polygon), analysisBuildings) : null, [sitePackage, analysisBuildings])
   const metrics = useMemo(() => sitePackage
     ? scenarioMetrics(analysisDocument, normalizeRing(sitePackage.studyArea.polygon))
@@ -257,6 +279,7 @@ export function StudioShell({
     if (!next) {
       dispatch({ type: 'setTool', tool: 'select' })
       setComparePair(null)
+      setDockActive((current) => (current === 'draw' || current === 'area' ? 'noise' : current))
     }
   }
 
@@ -329,18 +352,85 @@ export function StudioShell({
     ? { a: compareA, b: compareB, preset: sitePackage.manifest.cameraPresets[cameraPreset], site: envelopeSite, layers, sunKey: `${sunTime.date}:${sunTime.minuteOfDay}` }
     : null, [compareA, compareB, sitePackage, envelopeSite, cameraPreset, layers, sunTime])
   const closeCompare = () => { setComparePair(null); compareTrigger.current?.focus() }
+  const selectedDeletable = !!selectedVolume && !selectedVolume.locked
+  const climatePanel = (only: 'wind' | 'noise') => sitePackage ? (
+    <ClimatePanel showModes={false} showQuick={false} availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
+      streamlines={streamlines} onStreamlinesChange={setStreamlines}
+      baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
+      onSetBaseline={() => { if (windFlow?.settled && windFlow.slicesComplete && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}
+      onClearBaseline={() => { setBaseline(null); setWind((w) => ({ ...w, display: w.display === 'delta' ? 'activity' : w.display })) }} />
+  ) : null
+  const drawHint = 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'
+  const dockCards: DockCard[] = [
+    ...(testBuilding ? [{
+      id: 'draw' as const,
+      label: 'Draw',
+      icon: 'pen' as const,
+      stat: drawStat(metrics),
+      note: 'Concept massing · default storey 3.2 m',
+      quick: (
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+          <p className="text-body-sm text-ink">{editor.tool === 'draw' ? drawHint : 'Draw a footprint, then edit storeys, height and tiers in Parameters.'}</p>
+          {editable && editor.tool !== 'draw' && <button type="button" onClick={() => selectTool('draw')} className={pillButtonClass}>Draw another <Icon name="plus" size={12} /></button>}
+        </div>
+      ),
+    }] : []),
+    {
+      id: 'sun',
+      label: 'Sun',
+      icon: 'sun',
+      stat: solar ? sunStat(solar.state, clockLabel(sunTime.minuteOfDay)) : { value: null, unit: '', hint: 'Site loading', secondary: [] },
+      note: 'Geometric sun direction — not a daylight assessment',
+      quick: solar && sitePackage ? <SunBand time={sunTime} onChange={setSunTime} state={solar.state} location={sitePackage.manifest.location} playback={playback} /> : undefined,
+    },
+    {
+      id: 'wind',
+      label: 'Wind',
+      icon: 'wind',
+      stat: windStat(windComfortView, wind.from, wind.refSpeed, climateMode === 'wind'),
+      note: `${FLOW_DISCLAIMER} · figure = share of open ground ≥ ${ROSE_THRESHOLD_MS} m/s`,
+      quick: <WindQuick wind={wind} idPrefix="dock-wind" onChange={(patch) => (windDemo.playing ? windDemo.stopWith(patch) : setWind((w) => ({ ...w, ...patch })))} />,
+    },
+    {
+      id: 'noise',
+      label: 'Noise',
+      icon: 'noise',
+      stat: noiseStat(noiseCells, sitePackage?.roads ?? []),
+      note: NOISE_DISCLAIMER,
+      quick: climateMode === 'noise' && climateView && climateView.assessed > 0
+        ? <ShareBar entries={climateView.legend} label="Share of the study area by band" />
+        : undefined,
+    },
+    ...(testBuilding ? [{
+      id: 'area' as const,
+      label: 'Area',
+      icon: 'area' as const,
+      stat: areaStat(metrics),
+      note: 'Concept GFA — not BRA, BYA or %-BRA · Illustrative — not planning advice',
+    }] : []),
+  ]
+  const activeCard = dockCards.find((card) => card.id === dockActive)
+  const panelAnalysis = activeCard ? {
+    title: activeCard.label,
+    body: dockActive === 'sun' ? (solar && sitePackage ? <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} /> : null)
+      : dockActive === 'wind' ? climatePanel('wind')
+      : dockActive === 'noise' ? climatePanel('noise')
+      : dockActive === 'area' ? <div className="-mx-5 space-y-4"><MetricsPanel metrics={metrics} tallestM={visibleHeights.length > 0 ? Math.max(...visibleHeights) : undefined} limitM={limits?.maxHeightMeters ?? null} reference={heightReference} /><div className="px-5"><MetricsNotes metrics={metrics} /></div></div>
+      : <p className="text-body-sm text-ink-secondary">{drawHint}. Drag a selected mass's roof handle to change storeys.</p>,
+  } : null
+  const ready = packageStatus === 'ready'
   return (
-    <div ref={studioRoot} data-demo={windDemo.playing ? 'playing' : undefined} className="flex min-h-dvh flex-col bg-app text-ink lg:h-dvh">
-      <style>{`[data-demo="playing"] aside[aria-label="Inspector"] { scrollbar-width: none; }
-        [data-demo="playing"] aside[aria-label="Inspector"]::-webkit-scrollbar { display: none; }`}</style>
+    <div ref={studioRoot} data-demo={windDemo.playing ? 'playing' : undefined} className="flex min-h-dvh flex-col gap-3 bg-canvas p-3 text-ink lg:h-dvh">
+      <style>{`[data-demo="playing"] aside[aria-label="Parameters"] { scrollbar-width: none; }
+        [data-demo="playing"] aside[aria-label="Parameters"]::-webkit-scrollbar { display: none; }`}</style>
       <StudioTopBar
         site={site}
         scenario={scenario}
-        guideAction={wide && packageStatus === 'ready' && project.ready ? (
-          <button type="button" className="min-h-9 text-caption underline underline-offset-4" onClick={() => setGuideOpen(true)}>Guide</button>
+        guideAction={wide && ready && project.ready ? (
+          <button type="button" className="min-h-9 text-body-sm text-ink-secondary hover:text-ink" onClick={() => setGuideOpen(true)}>Guide</button>
         ) : null}
         scenarioMenu={<ScenarioMenu project={project} site={envelopeSite} />}
-        compareAction={<button ref={compareTrigger} type="button" className="min-h-9 text-caption disabled:text-ink-disabled" disabled={!project.ready || !idle || !envelopeSite || project.scenarios.length < 2} onClick={async () => {
+        compareAction={<button ref={compareTrigger} type="button" className="min-h-9 text-body-sm text-ink-secondary hover:text-ink disabled:text-ink-disabled" disabled={!project.ready || !idle || !envelopeSite || project.scenarios.length < 2} onClick={async () => {
           await project.actions.flush()
           const index = project.scenarios.findIndex((item) => item.id === project.activeId)
           const a = project.scenarios[index]
@@ -349,137 +439,130 @@ export function StudioShell({
         }}>Compare</button>}
         saveStatus={project.saveStatus}
         storage={project.storage}
-        canFit={packageStatus === 'ready'}
+        canFit={ready}
         onFitSite={() => requestCamera('isometric')}
         analysisOnly={analysisOnly}
-        modeAction={packageStatus === 'ready' && wide ? (
-          <button type="button" aria-pressed={testBuilding} onClick={toggleTestBuilding} className="min-h-9 rounded-chip border border-line px-3 text-caption text-ink aria-pressed:bg-ink aria-pressed:text-ink-on-inverse">
+        toolbar={testBuilding && wide ? (
+          <ToolRail
+            ready={ready}
+            activeTool={editor.tool === 'draw' ? 'draw' : 'select'}
+            onSelect={selectTool}
+            canUndo={editable && idle && editor.history.undoStack.length > 0}
+            canRedo={editable && idle && editor.history.redoStack.length > 0}
+            onUndo={() => dispatch({ type: 'undo' })}
+            onRedo={() => dispatch({ type: 'redo' })}
+            canDelete={editable && idle && selectedDeletable}
+            onDelete={() => { if (selectedVolume) runCommand(removeVolume(selectedVolume.id)) }}
+            onExport={() => downloadProject(project.actions.exportProject(), site.id)}
+            exportDisabled={!project.ready || !idle}
+          />
+        ) : null}
+        modeAction={ready && wide ? (
+          <button type="button" aria-pressed={testBuilding} onClick={toggleTestBuilding} className="min-h-9 rounded-pill border border-card-line bg-card px-3.5 text-body-sm text-ink shadow-card aria-pressed:border-accent aria-pressed:text-accent">
             Test a building
           </button>
         ) : null}
       />
 
-      {testBuilding && guideOpen && wide && packageStatus === 'ready' && project.ready && (
+      {testBuilding && guideOpen && wide && ready && project.ready && (
         <StudioGuide onClose={closeGuide} onShowControl={(step) => {
           const selectors = ['[data-guide="draw"]', '[aria-label="Local time"]', '[data-guide="scenarios"]']
           const selector = selectors[step]
-          if (selector) studioRoot.current?.querySelector<HTMLElement>(selector)?.focus()
+          const focus = () => { if (selector) studioRoot.current?.querySelector<HTMLElement>(selector)?.focus() }
+          // The time slider lives in the Sun card's controls: open them, then focus after the render.
+          if (step === 1) { flushSync(() => { setDockActive('sun'); setDockSize((size) => (size === 'S' ? 'M' : size)) }) }
+          focus()
         }} />
       )}
 
-      <main className="grid flex-1 gap-2 px-4 pb-4 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_392px]">
-        <section aria-label="Studio viewport" className="tf-rise flex h-[min(720px,78dvh)] min-w-0 flex-col overflow-hidden rounded-card bg-viewport max-sm:h-auto lg:h-auto">
-          <div className="relative min-h-0 flex-1 max-sm:h-[360px] max-sm:flex-none">
-            {/* First in tab order: the toolbar sits top-left, before the views (review). */}
-            {testBuilding && <ToolRail
-              ready={packageStatus === 'ready'}
-              activeTool={editor.tool}
-              onSelect={selectTool}
-              canUndo={editable && idle && editor.history.undoStack.length > 0}
-              canRedo={editable && idle && editor.history.redoStack.length > 0}
-              onUndo={() => dispatch({ type: 'undo' })}
-              onRedo={() => dispatch({ type: 'redo' })}
-              onOpenLayers={() => setPanelFocus((current) => ({ group: 'layers', nonce: current.nonce + 1 }))}
-            />}
-            {packageStatus === 'ready' && sitePackage && solar ? (
-              <>
-                <ViewportCanvas
-                  sitePackage={sitePackage}
-                  snapshotRequest={snapshotRequest}
-                  onSnapshot={setSnapshot}
-                  sun={solar.state}
-                  constraints={constraints}
-                  envelope={envelope}
-                  layers={layers}
-                  presetId={cameraPreset}
-                  cameraNonce={cameraNonce}
-                  editor={editor}
-                  dispatch={dispatch}
-                  editable={editable}
-                  warnedVolumes={warnedVolumes}
-                  annotations={annotations}
-                  renderPreference={renderPreference}
-                  climate={climateView?.overlay ?? null}
-                  demoOrbitDeg={windDemo.orbitDeg}
-                  onStopDemo={windDemo.stop}
-                  windStreamlines={streamlines}
-                  windSettings={wind}
-                  windBuildings={analysisBuildings}
-                  windBaseline={baseline}
-                  windFlow={climateMode === 'wind' ? windFlow : null}
-                  windWorst={climateMode === 'wind' && wind.display === 'worst' && sweep ? { cells: sweep.cells, worstFrom } : null}
-                  windCircle={climateMode === 'wind' ? windCircle : null}
-                  onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
-                />
-                <CameraPresets active={cameraPreset} onSelect={requestCamera} />
-              </>
-            ) : packageStatus === 'loading' ? (
-              <div className="flex h-full flex-col gap-6 p-6 pt-20">
-                <p role="status" className="text-body-sm text-ink-secondary">Loading site package</p>
-                <div aria-hidden="true" className="flex flex-1 flex-col justify-between motion-safe:animate-pulse motion-reduce:animate-none">
-                  <div className="h-4 w-40 rounded-chip bg-muted-fill" />
-                  <div className="min-h-32 flex-1 my-6 rounded-card border border-line bg-app" />
-                  <div className="h-12 border-t border-line bg-surface" />
-                </div>
+      <main className="grid flex-1 gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[minmax(0,1fr)_auto]">
+        <section aria-label="Studio viewport" className="tf-rise relative flex h-[min(720px,70dvh)] min-w-0 flex-col overflow-hidden rounded-panel border border-card-line bg-viewport shadow-card max-sm:h-[360px] lg:h-auto lg:min-h-[280px]">
+          {ready && sitePackage && solar ? (
+            <>
+              <ViewportCanvas
+                sitePackage={sitePackage}
+                snapshotRequest={snapshotRequest}
+                onSnapshot={setSnapshot}
+                sun={solar.state}
+                constraints={constraints}
+                envelope={envelope}
+                layers={layers}
+                presetId={cameraPreset}
+                cameraNonce={cameraNonce}
+                editor={editor}
+                dispatch={dispatch}
+                editable={editable}
+                warnedVolumes={warnedVolumes}
+                annotations={annotations}
+                renderPreference={renderPreference}
+                climate={climateView?.overlay ?? null}
+                demoOrbitDeg={windDemo.orbitDeg}
+                onStopDemo={windDemo.stop}
+                windStreamlines={streamlines}
+                windSettings={wind}
+                windBuildings={analysisBuildings}
+                windBaseline={baseline}
+                windFlow={climateMode === 'wind' ? windFlow : null}
+                windWorst={climateMode === 'wind' && wind.display === 'worst' && sweep ? { cells: sweep.cells, worstFrom } : null}
+                windCircle={climateMode === 'wind' ? windCircle : null}
+                onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
+                grid={grid}
+              />
+              <LayersCard manifest={sitePackage.manifest} layers={layers} onToggleLayer={toggleLayer} />
+            </>
+          ) : packageStatus === 'loading' ? (
+            <div className="flex h-full flex-col gap-6 p-6 pt-20">
+              <p role="status" className="text-body-sm text-ink-secondary">Loading site package</p>
+              <div aria-hidden="true" className="flex flex-1 flex-col justify-between motion-safe:animate-pulse motion-reduce:animate-none">
+                <div className="h-4 w-40 rounded-chip bg-muted-fill" />
+                <div className="my-6 min-h-32 flex-1 rounded-card border border-line bg-app" />
               </div>
-            ) : (
-              <div className="grid h-full place-items-center p-4 pt-20">
-                <div className="w-full max-w-[23rem] text-center">
-                  <p className="text-caption text-ink-secondary">{site.title} · Package error</p>
-                  <h1 className="mt-2.5 text-balance text-title text-ink">
-                    The site model could not be loaded.
-                  </h1>
-                  <p className="mx-auto mt-3 max-w-[36ch] text-body-sm leading-relaxed text-ink-secondary">
-                    The site package is missing or could not be read. Try again, or choose another site.
-                  </p>
-                  <div className="mt-4 flex flex-wrap justify-center gap-4">
-                    <button type="button" className={textButtonClass} onClick={onRetry}>
-                      Try again
-                    </button>
-                    <Link to="/#sites" className={textButtonClass}>Back to sites</Link>
-                  </div>
-                </div>
-              </div>
-            )}
-
-
-            {/* Errors and draw instructions only: warnings live in the design check (assessment #5). */}
-            {packageStatus === 'ready' && (editor.error || editor.tool === 'draw') && (
-              <div className="pointer-events-none absolute inset-x-0 top-16 z-10 flex justify-center px-6">
-                <p
-                  role="status"
-                  aria-live="polite"
-                  className={cn(
-                    'max-w-[60ch] rounded-chip bg-surface-inverse px-3 py-1.5 text-center text-mono-sm',
-                    editor.error ? 'text-ink-on-inverse' : 'text-ink-on-inverse-2',
-                  )}
-                >
-                  {editor.error && <Icon name="warn" size={12} className="mr-1.5 inline text-danger" />}
-                  {editor.error ?? 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'}
+            </div>
+          ) : (
+            <div className="grid h-full place-items-center p-4 pt-20">
+              <div className="w-full max-w-[23rem] text-center">
+                <p className="text-caption text-ink-secondary">{site.title} · Package error</p>
+                <h1 className="mt-2.5 text-balance text-title text-ink">
+                  The site model could not be loaded.
+                </h1>
+                <p className="mx-auto mt-3 max-w-[36ch] text-body-sm leading-relaxed text-ink-secondary">
+                  The site package is missing or could not be read. Try again, or choose another site.
                 </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-4">
+                  <button type="button" className={textButtonClass} onClick={onRetry}>
+                    Try again
+                  </button>
+                  <Link to="/#sites" className={textButtonClass}>Back to sites</Link>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {solar && sitePackage && (
-            <SunBand time={sunTime} onChange={setSunTime} state={solar.state} location={sitePackage.manifest.location} playback={playback} />
+          {/* Errors and draw instructions only: warnings live in the design check (assessment #5). */}
+          {ready && (editor.error || editor.tool === 'draw') && (
+            <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-52">
+              <p
+                role="status"
+                aria-live="polite"
+                className={cn(
+                  'max-w-[60ch] rounded-pill bg-surface-inverse px-3 py-1.5 text-center text-mono-sm',
+                  editor.error ? 'text-ink-on-inverse' : 'text-ink-on-inverse-2',
+                )}
+              >
+                {editor.error && <Icon name="warn" size={12} className="mr-1.5 inline text-danger" />}
+                {editor.error ?? 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'}
+              </p>
+            </div>
           )}
         </section>
 
         {packageStatus === 'loading' ? (
-          <div aria-hidden="true" className="overflow-hidden rounded-card bg-surface p-6 lg:overflow-y-auto">
+          <div aria-hidden="true" className="overflow-hidden rounded-panel border border-card-line bg-card p-6 shadow-card">
             <div className="space-y-6 motion-safe:animate-pulse motion-reduce:animate-none">
               <div className="h-4 w-28 rounded-chip bg-muted-fill" />
               <div className="h-24 rounded-chip bg-muted-fill" />
-              <div className="grid grid-cols-2 gap-4 border-t border-line pt-6">
-                <div className="h-16 rounded-chip bg-muted-fill" />
-                <div className="h-16 rounded-chip bg-muted-fill" />
-              </div>
-              <div className="space-y-4 border-t border-line pt-6">
-                <div className="h-4 w-32 rounded-chip bg-muted-fill" />
-                <div className="h-10 rounded-chip bg-muted-fill" />
-                <div className="h-10 rounded-chip bg-muted-fill" />
-              </div>
+              <div className="h-10 rounded-chip bg-muted-fill" />
+              <div className="h-10 rounded-chip bg-muted-fill" />
             </div>
           </div>
         ) : testBuilding && compareA && compareB && envelopeSite ? <ComparePanel
@@ -489,12 +572,13 @@ export function StudioShell({
           onPairChange={(a, b) => setComparePair([a, b])}
           onEdit={(id) => { project.actions.switchTo(id); closeCompare() }} onClose={closeCompare}
         /> : <Inspector
+          analysis={panelAnalysis}
           recovery={<RecoveryStrip project={project} siteId={site.id} />}
           backup={analysisOnly ? undefined : <ProjectBackup project={project} siteId={site.id} />}
           analysisOnly={analysisOnly}
-          facts={<SiteFactsPanel facts={facts} />}
+          masses={<MassList items={masses} selectedId={selectedVolume?.id ?? null} onSelect={selectMass} />}
           notes={<ScenarioNotes key={`${shown.id}:${shown.notes}`} notes={shown.notes} disabled={!editable || !idle} onCommit={project.actions.setNotes} />}
-          check={
+          check={analysisOnly ? <SiteFactsPanel facts={facts} /> : (
             <ConstraintsPanel
               envelope={envelope}
               limits={limits}
@@ -505,43 +589,30 @@ export function StudioShell({
               checks={checks}
               clearance={clearance}
             />
-          }
-          figures={<MetricsPanel metrics={metrics} tallestM={visibleHeights.length > 0 ? Math.max(...visibleHeights) : undefined} limitM={limits?.maxHeightMeters ?? null} reference={heightReference} />}
-          sun={solar && sitePackage ? (
-            <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} />
-          ) : null}
-          sunMeta={sitePackage
-            ? `${shortDate(sunTime.date)} · ${Math.abs(sitePackage.manifest.location.latitude).toFixed(1)}° ${sitePackage.manifest.location.latitude >= 0 ? 'N' : 'S'}`
-            : shortDate(sunTime.date)}
-          climate={sitePackage ? (
-            <ClimatePanel availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={climateMode} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateView}
-              streamlines={streamlines} onStreamlinesChange={setStreamlines}
-              baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
-              onSetBaseline={() => { if (windFlow?.settled && windFlow.slicesComplete && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}
-              onClearBaseline={() => { setBaseline(null); setWind((w) => ({ ...w, display: w.display === 'delta' ? 'activity' : w.display })) }} />
-          ) : null}
-          climateMeta={climateMode === 'off' ? 'Off' : climateMode === 'wind' ? 'Wind' : 'Noise'}
+          )}
           metrics={metrics}
           site={site}
           manifest={sitePackage?.manifest ?? null}
           packageStatus={packageStatus}
-          layers={layers}
-          onToggleLayer={toggleLayer}
           renderPreference={renderPreference}
           onRenderPreferenceChange={(preference) => setRenderPreference(writeRenderPreference(preference))}
-          focusGroup={panelFocus.group}
-          focusNonce={panelFocus.nonce}
+          views={ready ? <CameraPresets active={cameraPreset} onSelect={requestCamera} /> : null}
+          grid={grid}
+          onGridChange={setGrid}
           selected={selected}
           canEdit={editable}
           editingEnabled={editable && idle}
           onCommand={runCommand}
-          masses={masses}
-          onSelectMass={selectMass}
           onSelectTier={(tierId) =>
             dispatch({ type: 'select', selection: { volumeId: editor.history.selection.volumeId, tierId } })
           }
-          onAddMass={() => selectTool('draw')}
         />}
+
+        {ready && (
+          <div className="min-w-0 lg:col-span-2">
+            <AnalysisDock cards={dockCards} active={dockActive} onActivate={setDockActive} size={dockSize} onSizeChange={setDockSize} />
+          </div>
+        )}
       </main>
     </div>
   )

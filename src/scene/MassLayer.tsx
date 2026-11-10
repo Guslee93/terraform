@@ -29,9 +29,8 @@ const RISE_SECONDS = 0.5
 const reducedMotion = () =>
   typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-/** The selected mass is the one solid accent object in the scene (draft 4). */
-const SELECTED_FILL = '#3550E0'
-const SELECTED_EDGE = '#172DA8'
+/** Selection is a thin bright outline over the normal fill, not a solid colour (ADR-0016). */
+const SELECTED_EDGE = '#3550E0'
 const SELECTION_COLOR = '#355E79'
 /** Storey bands and unselected outlines: a darker accent so they read on the tinted faces. */
 const MASS_LINE_COLOR = '#355E79'
@@ -158,7 +157,7 @@ function TierMesh({
     >
       {/* Faces pushed back so storey bands and edges lying on them do not z-fight. */}
       <meshStandardMaterial
-        color={invalid ? INVALID_COLOR : selected ? SELECTED_FILL : warning ? WARNING_COLOR : MASS_COLOR}
+        color={invalid ? INVALID_COLOR : warning ? WARNING_COLOR : MASS_COLOR}
         roughness={0.85}
         metalness={0}
         polygonOffset
@@ -166,12 +165,12 @@ function TierMesh({
         polygonOffsetUnits={1}
       />
       {selected ? (
-        <Edges color={SELECTED_EDGE} threshold={20} lineWidth={1.5} />
+        <Edges color={SELECTED_EDGE} threshold={20} lineWidth={2.25} />
       ) : (
         <Edges threshold={20} color={MASS_LINE_COLOR} transparent opacity={MASS_LINE_OPACITY} />
       )}
       <lineSegments geometry={storeyLines} raycast={() => null}>
-        <lineBasicMaterial color={selected ? '#FFFFFF' : MASS_LINE_COLOR} transparent opacity={selected ? 0.25 : MASS_LINE_OPACITY} />
+        <lineBasicMaterial color={MASS_LINE_COLOR} transparent opacity={MASS_LINE_OPACITY} />
       </lineSegments>
     </mesh>
     </group>

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openAnalysis } from './studio-helpers'
 
 // Wind panel accessibility (docs/plans/wind-finish-plan.md D1/D2). No axe dependency: the same
 // DOM-level checks as e2e/m5-a11y.spec.ts — every control named, WCAG 2.2 target size ≥ 24 px —
@@ -7,18 +8,16 @@ test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 
 async function openWind(page: Page) {
   await page.goto('/studio/compact-infill')
-  const inspector = page.getByRole('complementary', { name: 'Inspector' })
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  const wind = inspector.getByRole('button', { name: 'Wind', exact: true })
-  if (!(await wind.isVisible())) await inspector.locator('summary').filter({ hasText: /^Wind and noise/ }).click()
-  await inspector.getByRole('group', { name: 'Climate layer' }).getByRole('button', { name: 'Wind', exact: true }).click()
+  const inspector = await openAnalysis(page, 'Wind')
   await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(/Indicative wind screening/)).toBeVisible({ timeout: 15_000 })
   return inspector
 }
 
 test('every Wind panel control has an accessible name and a 24 px target', async ({ page }) => {
-  const inspector = await openWind(page)
-  const climate = inspector.locator('[data-panel-group="climate"], details:has(summary:has-text("Wind and noise"))').first()
+  await openWind(page)
+  // Both homes of the wind controls: the dock's quick controls and the Parameters group.
+  const climate = page.locator('#panel-group-analysis, [role="region"][aria-label="Wind quick controls"]')
   const problems = await climate.locator('button, input, select').evaluateAll((els) => els.flatMap((el) => {
     const e = el as HTMLInputElement
     const r = e.getBoundingClientRect()

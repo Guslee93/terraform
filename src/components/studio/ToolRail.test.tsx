@@ -7,8 +7,9 @@ function setup(overrides: Partial<Parameters<typeof ToolRail>[0]> = {}) {
   const props = {
     activeTool: 'select' as const,
     onSelect: vi.fn(),
-    onOpenLayers: vi.fn(),
-    layersOpen: false,
+    canDelete: false,
+    onDelete: vi.fn(),
+    onExport: vi.fn(),
     canUndo: true,
     canRedo: false,
     onUndo: vi.fn(),
@@ -33,5 +34,29 @@ describe('ToolRail history buttons', () => {
     setup({ canUndo: false, canRedo: false })
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled()
+  })
+})
+
+describe('ToolRail tools', () => {
+  it('marks the active tool and switches tools', async () => {
+    const props = setup()
+    expect(screen.getByRole('button', { name: 'Select' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Draw building' })).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Draw building' }))
+    expect(props.onSelect).toHaveBeenCalledWith('draw')
+  })
+
+  it('deletes only when a mass can be deleted', async () => {
+    setup()
+    expect(screen.getByRole('button', { name: 'Delete selected mass' })).toBeDisabled()
+  })
+
+  it('runs delete and the one primary action', async () => {
+    const props = setup({ canDelete: true })
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Delete selected mass' }))
+    await user.click(screen.getByRole('button', { name: 'Export' }))
+    expect(props.onDelete).toHaveBeenCalledOnce()
+    expect(props.onExport).toHaveBeenCalledOnce()
   })
 })

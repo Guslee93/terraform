@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
+import { openAnalysis } from './studio-helpers'
 
 // X5 — wind evidence screenshots (docs/handoffs/X5-minimax-wind-evidence.md).
 //
@@ -35,12 +36,7 @@ async function openWind(page: Page, site: string) {
   })
   await page.goto(`/studio/${site}`)
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  const inspector = page.getByRole('complementary', { name: 'Inspector' })
-  const windButton = inspector.getByRole('button', { name: 'Wind', exact: true })
-  if (!(await windButton.isVisible())) {
-    await inspector.locator('summary').filter({ hasText: /^Wind and noise/ }).click()
-  }
-  await inspector.getByRole('group', { name: 'Climate layer' }).getByRole('button', { name: 'Wind', exact: true }).click()
+  await openAnalysis(page, 'Wind')
   // The claim shows in the panel and on the viewport (C23 finding 3); check the viewport copy.
   await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText('Indicative wind screening — 2D flow, not engineering')).toBeVisible({ timeout: 15_000 })
 }

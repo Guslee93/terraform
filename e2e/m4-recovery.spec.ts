@@ -1,4 +1,5 @@
 import { expect, test, type BrowserContext } from '@playwright/test'
+import { openGroup } from './studio-helpers'
 import {
   openSiteGroup,
   blockIndexedDb,
@@ -128,8 +129,9 @@ test('QA-14: a quota failure is reported truthfully and Try again recovers to Sa
 
   // Every write from here on fails with QuotaExceededError.
   await failPutsWithQuota(page)
-  await page.getByLabel('Notes').fill('Backup before closing this tab')
-  await page.getByLabel('Notes').press('Tab') // blur commits the note
+  await openGroup(page, 'Notes')
+  await page.getByLabel('Scenario notes').fill('Backup before closing this tab')
+  await page.getByLabel('Scenario notes').press('Tab') // blur commits the note
 
   await expectSaveStatus(page, 'Not saved — storage is full')
   const strip = page.getByRole('region', { name: 'Project recovery' })
@@ -154,9 +156,10 @@ test('QA-14: without IndexedDB the studio still works and never claims Saved', a
   await expect(strip.getByText(/can't store data, so changes last only until you close the tab/)).toBeVisible()
 
   // Editing still works in memory…
-  await page.getByLabel('Notes').fill('Session-only note')
-  await page.getByLabel('Notes').press('Tab')
-  await expect(page.getByLabel('Notes')).toHaveValue('Session-only note')
+  await openGroup(page, 'Notes')
+  await page.getByLabel('Scenario notes').fill('Session-only note')
+  await page.getByLabel('Scenario notes').press('Tab')
+  await expect(page.getByLabel('Scenario notes')).toHaveValue('Session-only note')
 
   // …and it never claims to have saved.
   await page.waitForTimeout(1500)
@@ -174,7 +177,7 @@ test('FR-048: export, reset demo and import restore the exact geometry', async (
 
   // Export the project backup.
   await openSiteGroup(page)
-  const inspector = page.getByRole('complementary', { name: 'Inspector' })
+  const inspector = page.getByRole('complementary', { name: 'Parameters' })
   const downloadPromise = page.waitForEvent('download')
   await inspector.getByRole('button', { name: 'Export project', exact: true }).click()
   const download = await downloadPromise

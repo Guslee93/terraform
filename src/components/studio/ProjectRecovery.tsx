@@ -34,7 +34,7 @@ export function RecoveryStrip({ project, siteId }: { project: ScenarioProject; s
     catch (problem) { setError(problem instanceof Error ? problem.message : 'Export failed.') }
     finally { setBusy(false) }
   }
-  return <section aria-label="Project recovery" className="border-b border-line bg-warning-soft px-6 py-4 text-body-sm text-warning-ink">
+  return <section aria-label="Project recovery" className="mx-4 mb-2 rounded-control bg-warning-soft px-4 py-3 text-body-sm text-warning-ink">
     <div aria-live="polite">
       {project.storage === 'memory' && <p>This browser can't store data, so changes last only until you close the tab.</p>}
       {project.storage === 'read-only' && <p>These scenarios were saved by a newer version of Terraform (format {project.newerVersion}) and can't be opened here. Nothing will be overwritten.</p>}
