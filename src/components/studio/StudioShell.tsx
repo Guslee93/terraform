@@ -423,47 +423,6 @@ export function StudioShell({
     <div ref={studioRoot} data-demo={windDemo.playing ? 'playing' : undefined} className="flex min-h-dvh flex-col gap-3 bg-canvas p-3 text-ink lg:h-dvh">
       <style>{`[data-demo="playing"] aside[aria-label="Parameters"] { scrollbar-width: none; }
         [data-demo="playing"] aside[aria-label="Parameters"]::-webkit-scrollbar { display: none; }`}</style>
-      <StudioTopBar
-        site={site}
-        scenario={scenario}
-        guideAction={wide && ready && project.ready ? (
-          <button type="button" className="min-h-9 text-body-sm text-ink-secondary hover:text-ink" onClick={() => setGuideOpen(true)}>Guide</button>
-        ) : null}
-        scenarioMenu={<ScenarioMenu project={project} site={envelopeSite} />}
-        compareAction={<button ref={compareTrigger} type="button" className="min-h-9 text-body-sm text-ink-secondary hover:text-ink disabled:text-ink-disabled" disabled={!project.ready || !idle || !envelopeSite || project.scenarios.length < 2} onClick={async () => {
-          await project.actions.flush()
-          const index = project.scenarios.findIndex((item) => item.id === project.activeId)
-          const a = project.scenarios[index]
-          const b = project.scenarios[(index + 1) % project.scenarios.length]
-          if (a && b) setComparePair([a.id, b.id])
-        }}>Compare</button>}
-        saveStatus={project.saveStatus}
-        storage={project.storage}
-        canFit={ready}
-        onFitSite={() => requestCamera('isometric')}
-        analysisOnly={analysisOnly}
-        toolbar={testBuilding && wide ? (
-          <ToolRail
-            ready={ready}
-            activeTool={editor.tool === 'draw' ? 'draw' : 'select'}
-            onSelect={selectTool}
-            canUndo={editable && idle && editor.history.undoStack.length > 0}
-            canRedo={editable && idle && editor.history.redoStack.length > 0}
-            onUndo={() => dispatch({ type: 'undo' })}
-            onRedo={() => dispatch({ type: 'redo' })}
-            canDelete={editable && idle && selectedDeletable}
-            onDelete={() => { if (selectedVolume) runCommand(removeVolume(selectedVolume.id)) }}
-            onExport={() => downloadProject(project.actions.exportProject(), site.id)}
-            exportDisabled={!project.ready || !idle}
-          />
-        ) : null}
-        modeAction={ready && wide ? (
-          <button type="button" aria-pressed={testBuilding} onClick={toggleTestBuilding} className="min-h-9 rounded-pill border border-card-line bg-card px-3.5 text-body-sm text-ink shadow-card aria-pressed:border-accent aria-pressed:text-accent">
-            Test a building
-          </button>
-        ) : null}
-      />
-
       {testBuilding && guideOpen && wide && ready && project.ready && (
         <StudioGuide onClose={closeGuide} onShowControl={(step) => {
           const selectors = ['[data-guide="draw"]', '[aria-label="Local time"]', '[data-guide="scenarios"]']
@@ -475,8 +434,48 @@ export function StudioShell({
         }} />
       )}
 
-      <main className="grid flex-1 gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[minmax(0,1fr)_auto]">
-        <section aria-label="Studio viewport" className="tf-rise relative flex h-[min(720px,70dvh)] min-w-0 flex-col overflow-hidden rounded-panel border border-card-line bg-viewport shadow-card max-sm:h-[360px] lg:h-auto lg:min-h-[280px]">
+      <main className="grid flex-1 gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[auto_minmax(0,1fr)_auto] lg:[&>aside]:col-start-2 lg:[&>aside]:row-span-2 lg:[&>aside]:row-start-2">
+        <StudioTopBar
+          site={site}
+          scenario={scenario}
+          guideAction={wide && ready && project.ready ? (
+            <button type="button" className="min-h-9 text-body-sm text-ink-secondary hover:text-ink" onClick={() => setGuideOpen(true)}>Guide</button>
+          ) : null}
+          scenarioMenu={<ScenarioMenu project={project} site={envelopeSite} />}
+          compareAction={<button ref={compareTrigger} type="button" className="min-h-9 text-body-sm text-ink-secondary hover:text-ink disabled:text-ink-disabled" disabled={!project.ready || !idle || !envelopeSite || project.scenarios.length < 2} onClick={async () => {
+            await project.actions.flush()
+            const index = project.scenarios.findIndex((item) => item.id === project.activeId)
+            const a = project.scenarios[index]
+            const b = project.scenarios[(index + 1) % project.scenarios.length]
+            if (a && b) setComparePair([a.id, b.id])
+          }}>Compare</button>}
+          saveStatus={project.saveStatus}
+          storage={project.storage}
+          canFit={ready}
+          onFitSite={() => requestCamera('isometric')}
+          analysisOnly={analysisOnly}
+          toolbar={testBuilding && wide ? (
+            <ToolRail
+              ready={ready}
+              activeTool={editor.tool === 'draw' ? 'draw' : 'select'}
+              onSelect={selectTool}
+              canUndo={editable && idle && editor.history.undoStack.length > 0}
+              canRedo={editable && idle && editor.history.redoStack.length > 0}
+              onUndo={() => dispatch({ type: 'undo' })}
+              onRedo={() => dispatch({ type: 'redo' })}
+              canDelete={editable && idle && selectedDeletable}
+              onDelete={() => { if (selectedVolume) runCommand(removeVolume(selectedVolume.id)) }}
+              onExport={() => downloadProject(project.actions.exportProject(), site.id)}
+              exportDisabled={!project.ready || !idle}
+            />
+          ) : null}
+          modeAction={ready && wide ? (
+            <button type="button" aria-pressed={testBuilding} onClick={toggleTestBuilding} className="min-h-9 rounded-pill border border-card-line bg-card px-3.5 text-body-sm text-ink shadow-card aria-pressed:border-accent aria-pressed:text-accent">
+              Test a building
+            </button>
+          ) : null}
+        />
+        <section aria-label="Studio viewport" className="tf-rise relative flex h-[min(720px,70dvh)] min-w-0 flex-col overflow-hidden rounded-panel border border-card-line bg-viewport shadow-card max-sm:h-[360px] lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-auto lg:min-h-[280px]">
           {ready && sitePackage && solar ? (
             <>
               <ViewportCanvas
@@ -540,7 +539,7 @@ export function StudioShell({
 
           {/* Errors and draw instructions only: warnings live in the design check (assessment #5). */}
           {ready && (editor.error || editor.tool === 'draw') && (
-            <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-52">
+            <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-52 lg:top-[60px]">
               <p
                 role="status"
                 aria-live="polite"
@@ -557,7 +556,7 @@ export function StudioShell({
         </section>
 
         {packageStatus === 'loading' ? (
-          <div aria-hidden="true" className="overflow-hidden rounded-panel border border-card-line bg-card p-6 shadow-card">
+          <div aria-hidden="true" className="overflow-hidden rounded-panel border border-card-line bg-card p-6 shadow-card lg:col-start-2 lg:row-span-2 lg:row-start-2">
             <div className="space-y-6 motion-safe:animate-pulse motion-reduce:animate-none">
               <div className="h-4 w-28 rounded-chip bg-muted-fill" />
               <div className="h-24 rounded-chip bg-muted-fill" />
@@ -609,7 +608,7 @@ export function StudioShell({
         />}
 
         {ready && (
-          <div className="min-w-0 lg:col-span-2">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-3">
             <AnalysisDock cards={dockCards} active={dockActive} onActivate={setDockActive} size={dockSize} onSizeChange={setDockSize} />
           </div>
         )}

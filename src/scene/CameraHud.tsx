@@ -26,7 +26,7 @@ export function CameraHud({ layers }: { layers?: SceneLayers } = {}) {
 
       <div
         data-testid="legend"
-        className="pointer-events-none absolute right-3 top-3 z-10 hidden items-center gap-5 rounded-control border border-card-line bg-frost px-3 py-1.5 backdrop-blur-md text-caption text-ink-secondary sm:flex"
+        className="pointer-events-none absolute right-3 top-3 z-10 hidden lg:top-[60px] items-center gap-5 rounded-control border border-card-line bg-frost px-3 py-1.5 backdrop-blur-md text-caption text-ink-secondary sm:flex"
       >
         <span data-testid="scale-bar" className="inline-flex items-center gap-2">
           <span aria-hidden="true" className="h-[5px] border-x border-b border-ink" style={{ width: `${scaleWidthPx}px` }} />

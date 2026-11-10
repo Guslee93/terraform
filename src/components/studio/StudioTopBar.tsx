@@ -44,8 +44,10 @@ const quiet = 'inline-flex min-h-9 items-center text-body-sm text-ink-secondary 
 /** Studio top bar (ADR-0016): back, site and scenario left; pill toolbar centre; actions right. */
 export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, guideAction, saveStatus, storage, canFit, onFitSite, modeAction, toolbar, analysisOnly = false }: StudioTopBarProps) {
   return (
-    <header className="grid min-h-[52px] grid-cols-1 items-center gap-x-6 gap-y-2 px-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1">
+    // On lg the header dissolves into the studio grid: back/site float over the viewport's top-left,
+    // the toolbar floats top-centre, and the actions sit above the full-height Parameters panel.
+    <header className="grid min-h-[52px] grid-cols-1 items-center gap-x-6 gap-y-2 px-2 lg:contents">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1 lg:z-20 lg:col-start-1 lg:row-start-1 lg:m-3 lg:max-w-[calc(100%-24rem)] lg:self-start lg:justify-self-start lg:rounded-control lg:border lg:border-card-line lg:bg-frost lg:px-3 lg:shadow-float lg:backdrop-blur-md">
         <Link to="/#sites" className={quiet}>
           <Icon name="chevron-left" size={14} className="-ml-1 mr-0.5" />
           Back
@@ -60,8 +62,8 @@ export function StudioTopBar({ site, scenario, scenarioMenu, compareAction, guid
           </div>
         )}
       </div>
-      <div className="flex justify-center max-lg:justify-start">{toolbar}</div>
-      <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 max-lg:justify-start">
+      <div className="flex justify-center max-lg:justify-start lg:z-20 lg:col-start-1 lg:row-start-1 lg:mt-3 lg:self-start lg:justify-self-center">{toolbar}</div>
+      <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 max-lg:justify-start lg:col-start-2 lg:row-start-1 lg:flex-nowrap lg:gap-x-2.5 lg:self-center lg:px-2">
         {modeAction}
         {!analysisOnly && <>{compareAction}{guideAction}</>}
         {canFit && (

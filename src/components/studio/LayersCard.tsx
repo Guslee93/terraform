@@ -29,7 +29,7 @@ export function LayersCard({ manifest, layers, onToggleLayer }: {
   const listId = useId()
   const on = LAYER_ROWS.filter((row) => !row.asset || manifest?.assetPaths[row.asset])
   return (
-    <div className="absolute left-3 top-3 z-10 w-[188px] rounded-control border border-card-line bg-frost shadow-float backdrop-blur-md">
+    <div className="absolute left-3 top-3 z-10 lg:top-[60px] w-[188px] rounded-control border border-card-line bg-frost shadow-float backdrop-blur-md">
       <button
         type="button"
         aria-label="Layers"

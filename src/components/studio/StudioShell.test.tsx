@@ -360,8 +360,8 @@ describe('studio guide', () => {
     await user.tab()
     expect(screen.getByRole('button', { name: 'Skip' })).toHaveFocus()
     await user.tab()
-    // The pill toolbar sits in the top bar, before the guide; Tab moves on into the viewport.
-    expect(screen.getByRole('button', { name: /^Layers/ })).toHaveFocus()
+    // The top bar now lives in the studio grid after the guide; Tab moves on to Back.
+    expect(screen.getByRole('link', { name: 'Back' })).toHaveFocus()
     await user.click(screen.getByRole('button', { name: /^Sun/ }))
     await user.click(screen.getByRole('slider', { name: 'Local time' }))
     await user.keyboard('{Escape}')
