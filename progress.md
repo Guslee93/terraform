@@ -610,3 +610,4 @@ zoom in because the quads are small at the default site camera.
 - Sun panel note: "Not a daylight assessment" (was also denying sun hours).
 - `npm run lint`, `npm run test` (936 passed / 4 skipped), `npm run build` pass. Browser: compact site 21 Jun spreads across bands, no console errors.
 - Not done: the `sun-hours-*` and `sun-roof-solar-*` screenshots still show the old bands; rerun `scripts/capture-sun.mjs`.
+- Deployed (2026-11-10): Vercel production from main (7a84ab5) via `vercel deploy --prod` — sun analyses (ADR-0021). Live: https://terraform-studio-murex.vercel.app — compact-infill Sun → Roof solar runs in the worker and colours roofs, no console errors. Imported-site links are per-browser (local storage), so they can't be checked from another browser.
