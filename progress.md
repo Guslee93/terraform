@@ -529,3 +529,9 @@
 - e2e update (2026-11-10): new `e2e/studio-helpers.ts` (`parameters`, `openAnalysis`, `openGroup`); keyboard spec rewritten for the new visual order (top bar → toolbar → viewport → Parameters → dock); Sun/Wind/Area specs open their dock card; Inspector → Parameters; "Site and sources" → "Site". Real bugs found by e2e and fixed: unit grey after figures was 2.98:1 on the card fill (now `#828280`, 3.3:1); the scenario menu opened off-screen (x = −62) because it was right-anchored and its trigger moved left — now left-anchored and card-styled; Layers button named "Layers" (count hidden from the name); Streamlines checkbox target enlarged to 32 px; "All wind directions" region name restored.
 - Deployed (2026-11-10): Vercel production, project terraform-studio, from branch studio-v3-redesign (fe2a461) via `vercel deploy --prod`. Live: https://terraform-studio-murex.vercel.app — studio loads with the new layout, no console errors.
 - Deployed (2026-11-10): Vercel production from main (ae2d9bf) via `vercel deploy --prod` — studio layout: viewport to top with floating back pill, full-height Parameters panel, dock under viewport only. Live: https://terraform-studio-murex.vercel.app — verified at 1440×900, no console errors.
+
+### Rendering spec Phases 1–2 (2026-11-10, Claude)
+- Phase 1 (a4fc27c): RoomEnvironment PMREM as image-based fill, light rig rebalanced (ADR-0017). Kept Neutral tone mapping, MSAA and the white context model.
+- Phase 2 (ADR-0018): Balanced gets half-res N8AO; Auto drops one tier when a 3 s window averages over 33 ms; AO switches off during mass drags and fades back over 300 ms. Selective bloom tried and removed (bleaches wind lines on a light scene).
+- fps (M1 Pro, 1440×900, wind on): High 51, Balanced 60, Low 60. lint ✅ · 1035 tests ✅ · build ✅.
+

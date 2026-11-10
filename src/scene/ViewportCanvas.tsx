@@ -34,7 +34,7 @@ import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
 import { webglRendererName } from './rendererTier'
-import { RENDER_PROFILES, resolveProfile, type RenderPreference, type RenderProfile } from './renderQuality'
+import { createFrameBudget, downgrade, RENDER_PROFILES, resolveProfile, type RenderPreference, type RenderProfile } from './renderQuality'
 import { detectWebGL } from './webglSupport'
 import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
@@ -403,18 +403,28 @@ const SceneComposer = lazy(() => import('./SceneComposer'))
 /** Below this canvas width the scene renders without ambient occlusion (ADR-0005 §3). */
 const AO_MIN_WIDTH_PX = 640
 
-/** Ambient occlusion on wide canvases when the resolved quality profile enables it. */
-function AmbientOcclusion({ profile }: { profile: RenderProfile }) {
+/** Ambient occlusion on wide canvases at the resolved profile's resolution; off on Low. */
+function AmbientOcclusion({ profile, busy }: { profile: RenderProfile; busy: boolean }) {
   const wide = useThree((state) => state.size.width >= AO_MIN_WIDTH_PX)
-  if (!wide || !RENDER_PROFILES[profile].ambientOcclusion) return null
+  const ao = RENDER_PROFILES[profile].ambientOcclusion
+  if (!wide || !ao) return null
   // If the composer cannot start, drop AO and keep R3F's own render loop.
   return (
     <SceneErrorBoundary fallback={null}>
       <Suspense fallback={null}>
-        <SceneComposer />
+        <SceneComposer ao={ao} busy={busy} />
       </Suspense>
     </SceneErrorBoundary>
   )
+}
+
+/** Calls `onSlow` each time a 3 s window averages over the 33 ms budget (ADR-0018). */
+function FrameBudgetWatch({ onSlow }: { onSlow: () => void }) {
+  const [sample] = useState(createFrameBudget)
+  useFrame((_, delta) => {
+    if (sample(delta)) onSlow()
+  })
+  return null
 }
 
 function WindDemoCamera({ orbitDeg, controlsRef }: { orbitDeg: number | null; controlsRef: RefObject<OrbitControlsHandle | null> }) {
@@ -484,7 +494,11 @@ export function ViewportCanvas({
   const controlsRef = useRef<OrbitControlsHandle>(null)
   const [webgl] = useState(detectWebGL)
   const [rendererName, setRendererName] = useState<string | null>(null)
-  const profile = resolveProfile(renderPreference, rendererName ?? '')
+  // Auto drops one tier per slow window and stays dropped for the session; explicit tiers never drop.
+  const [slow, setSlow] = useState({ preference: renderPreference, steps: 0 })
+  const steps = renderPreference === 'auto' && slow.preference === 'auto' ? slow.steps : 0
+  const profile = downgrade(resolveProfile(renderPreference, rendererName ?? ''), steps)
+  const onSlow = useCallback(() => setSlow((current) => ({ preference: 'auto', steps: current.preference === 'auto' ? current.steps + 1 : 1 })), [])
   const { manifest, terrain, buildings } = sitePackage
   const initialPreset = manifest.cameraPresets.isometric
   // Fog, orbit limit and far plane were tuned for the curated sites (farthest preset ≈ 870 m).
@@ -602,7 +616,8 @@ export function ViewportCanvas({
             <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />
             {/* Wait for renderer detection so Auto never starts AO on software GL. */}
-            {rendererName !== null && <AmbientOcclusion profile={profile} />}
+            {rendererName !== null && <AmbientOcclusion profile={profile} busy={cameraLocked(editor)} />}
+            {rendererName !== null && renderPreference === 'auto' && profile !== 'low' && <FrameBudgetWatch key={profile} onSlow={onSlow} />}
 
             <OrbitControls
               ref={controlsRef}

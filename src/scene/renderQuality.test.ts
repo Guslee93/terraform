@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
-  readRenderPreference, RENDER_QUALITY_KEY, resolveProfile, writeRenderPreference,
+  createFrameBudget, downgrade, readRenderPreference, RENDER_QUALITY_KEY, resolveProfile, writeRenderPreference,
 } from './renderQuality'
 
 afterEach(() => {
@@ -45,5 +45,34 @@ describe('render preference storage', () => {
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('private') })
     expect(readRenderPreference()).toBe('auto')
     expect(writeRenderPreference('low')).toBe('auto')
+  })
+})
+
+describe('downgrade', () => {
+  it('steps one tier at a time and stops at Low', () => {
+    expect(downgrade('high', 0)).toBe('high')
+    expect(downgrade('high', 1)).toBe('balanced')
+    expect(downgrade('high', 2)).toBe('low')
+    expect(downgrade('balanced', 5)).toBe('low')
+  })
+})
+
+describe('createFrameBudget', () => {
+  const run = (sample: (d: number) => boolean, delta: number, seconds: number) => {
+    let hits = 0
+    for (let t = 0; t < seconds; t += delta) if (sample(delta)) hits += 1
+    return hits
+  }
+  it('ignores the warm-up window, then flags each slow window', () => {
+    const sample = createFrameBudget(33, 3)
+    expect(run(sample, 0.05, 3.01)).toBe(0)
+    expect(run(sample, 0.05, 3.01)).toBe(1)
+  })
+  it('never flags frames inside budget', () => {
+    expect(run(createFrameBudget(33, 3), 1 / 60, 30)).toBe(0)
+  })
+  it('ignores hidden-tab gaps', () => {
+    const sample = createFrameBudget(33, 3)
+    expect(run(sample, 1, 30)).toBe(0)
   })
 })
