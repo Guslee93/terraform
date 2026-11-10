@@ -633,3 +633,11 @@ zoom in because the quads are small at the default site camera.
 - Numbers, legends and shares are unchanged (display only). With the Context buildings layer off, a one- to two-cell fringe of filled colour is visible inside footprints.
 - `npm run lint`, `npm run test`, `npm run build` pass. Evidence: `docs/screenshots/ground-edge-*`.
 - Deployed (2026-11-10): Vercel production from main (3af201f) via `vercel deploy --prod` — ground overlays reach the footprints. Live: https://terraform-studio-murex.vercel.app — Bergen (Bryggen) import, wind Direction view: no gap along the walls.
+
+## 2026-11-10 — Wind trails
+- Particles were 2,500 straight dashes sampling the nearest flow cell. Now up to 4,000 trails, each a 16-point ribbon (about 1 s of travel), carried with interpolated velocity and midpoint steps so they curve round buildings; tails fade out and retract instead of popping.
+- Trails fly 2 m above the ground (was 1.5 m) and keep a constant width on screen; fewer are shown when zoomed out so they never merge into a wash.
+- Budget: the trail update's own time is measured; over 3 ms per frame it sheds a quarter of the trails (floor 1,200), and adds them back only with headroom.
+- First attempt used GL lines and a whole-frame guard: lines were too faint at 2× DPR and the guard stripped trails whenever the scene itself was slow. Both replaced.
+- Measured (M1 Pro, headed): about +1 ms per frame at 1×, +0.5 ms at 2×. `npm run lint`, `npm run test`, `npm run build` pass.
+- Not checked: the reduced-motion still trails were not viewed in a browser (the studio shows streamlines in that mode).
