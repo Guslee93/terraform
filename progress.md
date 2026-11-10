@@ -632,3 +632,4 @@ zoom in because the quads are small at the default site camera.
 - Noise and sun hours are no longer flat 10 m squares: they drape on the terrain and blend between cells.
 - Numbers, legends and shares are unchanged (display only). With the Context buildings layer off, a one- to two-cell fringe of filled colour is visible inside footprints.
 - `npm run lint`, `npm run test`, `npm run build` pass. Evidence: `docs/screenshots/ground-edge-*`.
+- Deployed (2026-11-10): Vercel production from main (3af201f) via `vercel deploy --prod` — ground overlays reach the footprints. Live: https://terraform-studio-murex.vercel.app — Bergen (Bryggen) import, wind Direction view: no gap along the walls.
