@@ -27,6 +27,16 @@ export function sampleGrid(polygon: readonly Vec2[], cellM: number): GridCell[] 
  */
 export type FootprintBuilding = { readonly height: number; readonly footprint: readonly Vec2[]; readonly roof?: Roof; readonly baseElevation?: number }
 
+/** A reusable "is this point inside a building" test with a bounding-box shortcut per building. */
+export function footprintTester(buildings: readonly FootprintBuilding[]): (x: number, y: number) => boolean {
+  const boxes = buildings.map((building) => {
+    const xs = building.footprint.map((point) => point[0])
+    const ys = building.footprint.map((point) => point[1])
+    return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys), footprint: building.footprint }
+  })
+  return (x, y) => boxes.some((box) => x >= box.minX && x <= box.maxX && y >= box.minY && y <= box.maxY && pointInPolygon([x, y], box.footprint))
+}
+
 export function insideAnyBuilding(x: number, y: number, buildings: readonly FootprintBuilding[]) {
   return buildings.some((b) => pointInPolygon([x, y], b.footprint))
 }

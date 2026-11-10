@@ -556,7 +556,7 @@ export function ViewportCanvas({
             <group name={ANALYSIS_OVERLAY_NAME}>
             {climate && layers.terrain && (windCircle
               ? <WindHeatmap overlay={climate} heightAt={heightAt} circle={windCircle} />
-              : <ClimateLayer overlay={climate} heightAt={heightAt} />)}
+              : <ClimateLayer overlay={climate} heightAt={heightAt} buildings={windBuildings} />)}
             {roofSolar && layers.terrain && <RoofSolar buildings={windBuildings} values={roofSolar} heightAt={heightAt} />}
             {facade && layers.terrain && <FacadeSun overlay={facade} heightAt={heightAt} />}
             {windWorst && layers.terrain && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
