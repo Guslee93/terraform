@@ -6,8 +6,9 @@ describe('lightRig', () => {
     expect(lightRig({ azimuthDeg: 217, elevationDeg }, 'high')).toEqual({
       night: false,
       sun: { azimuthDeg: 217, elevationDeg, intensity: 3.2, castShadow: true },
-      ambient: 0.28,
-      hemisphere: { sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.75 },
+      ambient: 0.08,
+      environment: 0.22,
+      hemisphere: { sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.35 },
     })
   })
 
@@ -16,16 +17,18 @@ describe('lightRig', () => {
     expect(rig.sun?.intensity).toBe(1.6)
     expect(rig.sun?.castShadow).toBe(true)
     expect(rig.night).toBe(false)
-    expect(rig.ambient).toBe(0.28)
-    expect(rig.hemisphere).toEqual({ sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.75 })
+    expect(rig.ambient).toBe(0.08)
+    expect(rig.environment).toBe(0.22)
+    expect(rig.hemisphere).toEqual({ sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.35 })
   })
 
   it.each([0, -10])('removes direct sun at %s degrees and keeps the model readable', (elevationDeg) => {
     expect(lightRig({ azimuthDeg: 180, elevationDeg }, 'high')).toEqual({
       night: true,
       sun: null,
-      ambient: 0.35,
-      hemisphere: { sky: '#C9D3E0', ground: '#B9BEC4', intensity: 1 },
+      ambient: 0.2,
+      environment: 0.6,
+      hemisphere: { sky: '#C9D3E0', ground: '#B9BEC4', intensity: 0.7 },
     })
   })
 

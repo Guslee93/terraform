@@ -6,7 +6,8 @@ import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Grid, Line, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, NeutralToneMapping, Vector3 } from 'three'
+import { DoubleSide, EdgesGeometry, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import { contourSegments } from '../features/sites/contours'
@@ -320,6 +321,32 @@ function FloorGrid({ terrain, viewScale }: { terrain: SitePackage['terrain']; vi
   )
 }
 
+/**
+ * Image-based fill (rendering spec Phase 1): a procedural room baked once into a PMREM, so
+ * faces get soft, direction-varied daylight instead of one flat ambient grey. No HDRI file.
+ * The background stays the flat viewport colour; only lit materials see it.
+ */
+function EnvironmentLight({ intensity }: { intensity: number }) {
+  const gl = useThree((state) => state.gl)
+  const scene = useThree((state) => state.scene)
+  useEffect(() => {
+    const pmrem = new PMREMGenerator(gl)
+    const room = new RoomEnvironment()
+    const target = pmrem.fromScene(room, 0.04)
+    room.dispose()
+    pmrem.dispose()
+    scene.environment = target.texture
+    return () => {
+      scene.environment = null
+      target.dispose()
+    }
+  }, [gl, scene])
+  useEffect(() => {
+    scene.environmentIntensity = intensity
+  }, [scene, intensity])
+  return null
+}
+
 /** Floor for the shadow volume's height so proposed masses taller than the context still cast. */
 const MIN_SHADOW_HEIGHT = 60
 
@@ -344,6 +371,7 @@ function SiteLights({ sitePackage, sun, profile }: {
   return (
     <>
       {/* Fill low enough that walls read by their angle to the sun (Hektar: ≈195 away, ≈225 oblique, white facing). */}
+      <EnvironmentLight intensity={rig.environment} />
       <ambientLight intensity={rig.ambient} />
       <hemisphereLight args={[rig.hemisphere.sky, rig.hemisphere.ground, rig.hemisphere.intensity]} />
       {rig.sun && (

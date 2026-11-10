@@ -7,6 +7,8 @@ export type LightRig = {
   night: boolean
   sun: (SunDirection & { intensity: number; castShadow: boolean }) | null
   ambient: number
+  /** scene.environmentIntensity for the procedural room IBL (soft fill + faint specular). */
+  environment: number
   hemisphere: { sky: string; ground: string; intensity: number }
 }
 
@@ -15,8 +17,9 @@ export function lightRig(sun: SunDirection, profile: RenderProfile): LightRig {
     return {
       night: true,
       sun: null,
-      ambient: 0.35,
-      hemisphere: { sky: '#C9D3E0', ground: '#B9BEC4', intensity: 1.0 },
+      ambient: 0.2,
+      environment: 0.6,
+      hemisphere: { sky: '#C9D3E0', ground: '#B9BEC4', intensity: 0.7 },
     }
   }
   return {
@@ -26,8 +29,9 @@ export function lightRig(sun: SunDirection, profile: RenderProfile): LightRig {
       intensity: 3.2 * Math.min(sun.elevationDeg / 6, 1),
       castShadow: RENDER_PROFILES[profile].shadows,
     },
-    ambient: 0.28,
-    hemisphere: { sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.75 },
+    ambient: 0.08,
+    environment: 0.22,
+    hemisphere: { sky: '#EEF3FA', ground: '#D2D5D8', intensity: 1.35 },
   }
 }
 
