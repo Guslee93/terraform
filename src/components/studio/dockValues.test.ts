@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { buildClimateView, DEFAULT_WIND } from '../../features/analysis/climateView'
 import { computeNoise } from '../../features/analysis/noise'
 import { DEMO_SUN_INSTANT, sunState } from '../../features/analysis/sun'
+import type { FacadeSample } from '../../features/analysis/facadeSamples'
 import type { Vec2 } from '../../lib/coordinates'
-import { noiseStat, sunStat, windStat } from './dockValues'
+import { facadeSunStat, noiseStat, roofSolarStat, sunHoursStat, sunStat, vscStat, windStat } from './dockValues'
 
 const parcel: Vec2[] = [[-50, -50], [50, -50], [50, 50], [-50, 50], [-50, -50]]
 const text = (parts: readonly (readonly [string, string])[]) => parts.map(([value, unit]) => value + unit).join('')
@@ -42,5 +43,30 @@ describe('dock card values come from the analysis, not constants', () => {
     // Stroll (4–6), walk (6–8) and above are at or above the 4 m/s stand threshold: 0.2 + 0.1.
     expect(stat).toMatchObject({ value: '30', unit: '%' })
     expect(text(stat.secondary)).toBe('worst Band 3')
+  })
+
+  it('Sun analysis cards use the medians of the same samples the layers draw', () => {
+    const cells = [
+      { x: 0, y: 0, hours: 2, band: '20-40' as const },
+      { x: 10, y: 0, hours: 6, band: '60-80' as const },
+    ]
+    expect(sunHoursStat(cells, '2026-06-21')).toMatchObject({ value: '4.0', unit: ' h' })
+    expect(text(sunHoursStat(cells, '2026-06-21').secondary)).toBe('median · 21 Jun')
+
+    expect(roofSolarStat([{ kwhPerM2: 800, sampleCount: 1 }, { kwhPerM2: 1000, sampleCount: 1 }]))
+      .toMatchObject({ value: '900', unit: ' kWh' })
+    expect(text(roofSolarStat([{ kwhPerM2: 800, sampleCount: 1 }]).secondary)).toBe('/m²·yr · clear sky')
+
+    const sample: FacadeSample = { p: [0, 0, 1], normal: [0, -1], massId: 'm', tierIndex: 0 }
+    expect(facadeSunStat([
+      { sample, hours: 2, band: '20-40' },
+      { sample, hours: 6, band: '60-80' },
+    ], '2026-06-21')).toMatchObject({ value: '4.0', unit: ' h' })
+    expect(facadeSunStat([], '2026-06-21')).toMatchObject({ value: null, hint: 'Draw a block to see façades' })
+    expect(vscStat([
+      { sample, vsc: 10, band: 'under-15' },
+      { sample, vsc: 30, band: '27-plus' },
+    ])).toMatchObject({ value: '20.0', unit: ' %' })
+    expect(vscStat([])).toMatchObject({ value: null, hint: 'Draw a block to see façades' })
   })
 })

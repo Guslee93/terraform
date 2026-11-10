@@ -16,9 +16,9 @@ beforeEach(() => vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addE
 afterEach(() => { vi.unstubAllGlobals() })
 
 describe('D34 claim and disclaimer audit', () => {
-  it('states in the Sun method note that it is not a daylight or sun-hours assessment', () => {
+  it('states in the Sun method note that it is not a daylight assessment', () => {
     render(<SunPanelHarness />)
-    expect(screen.getByText('Geometric sun direction for this site (suncalc). Not a daylight or sun-hours assessment.')).toBeVisible()
+    expect(screen.getByText('Geometric sun direction for this site (suncalc). Not a daylight assessment.')).toBeVisible()
   })
 
 })

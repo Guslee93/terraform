@@ -3,9 +3,10 @@ import type { Vec3 } from '../../lib/coordinates'
 import { formatLocalLabel, resolveLocalTime, type LocalDate, type LocalTime } from './time'
 
 /**
- * Geometric sun direction only (AGENTS.md §7 claim policy). Nothing here is a daylight,
- * sunlight-hours or planning statement: `belowHorizon` is a rendering state, `dayModel` is the
- * scrubber's frame of reference.
+ * Geometric sun direction only (AGENTS.md §7 claim policy). `belowHorizon` is a rendering state and
+ * `dayModel` is the scrubber's frame of reference. The screening analyses built on these vectors live
+ * in `shadowRay.ts`, `sunHours.ts`, `roofSolar.ts`, `facadeSun.ts` and `vsc.ts` (ADR-0021); each
+ * carries its own disclaimer and none is a daylight, compliance or verified-sunlight statement.
  */
 
 /** Default sun for a fresh scene: 21 June, 15:00 Oslo summer time (UTC+2), the Hektar view. */

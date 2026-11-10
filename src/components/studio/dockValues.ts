@@ -1,6 +1,11 @@
 import { ACTIVITY_BANDS, ROSE_THRESHOLD_MS, type ClimateView } from '../../features/analysis/climateView'
 import { ROAD_LEVEL_AT_10M, type NoiseCell, type NoiseRoad } from '../../features/analysis/noise'
+import { medianSunHours, type SunHoursCell } from '../../features/analysis/sunHours'
+import { medianRoofSolar, type RoofSolarValue } from '../../features/analysis/roofSolar'
+import { medianFacadeSun, type FacadeSunValue } from '../../features/analysis/facadeSun'
+import { medianVsc, type VscValue } from '../../features/analysis/vsc'
 import { compassPoint, type SunState } from '../../features/analysis/sun'
+import { shortDate } from './SunPanel'
 import { formatNumber } from './format'
 
 /** A value with its unit: the value reads dark, the unit grey (ADR-0016 card style). */
@@ -26,6 +31,53 @@ export function sunStat(state: SunState, clock: string): DockStat {
       [`${Math.round(state.azimuthDeg)}°`, ` ${compassPoint(state.azimuthDeg)} · `],
       [clock, ' local'],
     ],
+  }
+}
+
+/** Median assessed ground hours for the selected date; the date names the result. */
+export function sunHoursStat(cells: readonly SunHoursCell[], date: string): DockStat {
+  const median = medianSunHours(cells)
+  if (median === null) return { ...empty('No assessed ground'), secondary: [[shortDate(date), '']] }
+  return {
+    value: formatNumber(median, 1),
+    unit: ' h',
+    secondary: [['median · ', ''], [shortDate(date), '']],
+  }
+}
+
+/** Median direct-sun hours on the user's façades for the selected date. */
+export function facadeSunStat(values: readonly FacadeSunValue[], date: string): DockStat {
+  const median = medianFacadeSun(values)
+  if (median === null) {
+    return { ...empty('Draw a block to see façades'), secondary: [[shortDate(date), '']] }
+  }
+  return {
+    value: formatNumber(median, 1),
+    unit: ' h',
+    secondary: [['median · ', ''], [shortDate(date), '']],
+  }
+}
+
+/** Median VSC on the user's façades under the CIE overcast sky. */
+export function vscStat(values: readonly VscValue[]): DockStat {
+  const median = medianVsc(values)
+  if (median === null) return empty('Draw a block to see façades')
+  return {
+    value: formatNumber(median, 1),
+    unit: ' %',
+    secondary: [['median · ', ''], ['overcast sky', '']],
+  }
+}
+
+/** Median clear-sky annual irradiation across roofs; an upper bound, not a yield estimate. */
+export function roofSolarStat(values: readonly RoofSolarValue[] | null): DockStat {
+  if (!values || values.length === 0) return empty('Computing roof solar…')
+  const median = medianRoofSolar(values)
+  if (median === null) return empty('No roofs to assess')
+  return {
+    value: formatNumber(median),
+    unit: ' kWh',
+    secondary: [['/m²·yr · ', ''], ['clear sky', '']],
   }
 }
 

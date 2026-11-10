@@ -553,3 +553,60 @@ Validation: lint and build pass; final full Vitest 97 files passed / 1 skipped, 
 - Claude: search-first landing (one screen, frosted search card, ready-made templates + city chips, lime/grey wash from the owner's references), `/new` reduced to the framing step and opened at the searched place (`?lat&lon&label`), `PlaceSearch` split out so the landing doesn't load maplibre (index 1.55 MB → 280 KB); old marketing components removed.
 - Codex C28: studio cuts (scenarios, compare, guide, project JSON, design check, boundary/setback/height layers, facts/GFA, tiers/detail, render knobs); session-only minimal blocks; dead code + tests removed (report `docs/reviews/C28-simplify-studio.md`).
 - Browser: landing search → framing at Karl Johans gate 1 → studio; Add a block → 12 storeys (38.4 m) → wind solves around it; export actions present.
+
+### Sun analyses — ADR-0021 (2026-11-10, Claude)
+
+Owner brief: `docs/plans/sun-analyses-deepseek-prompt.md`. All four phases were implemented in one
+session because they share the shadow-ray core; each phase was tested before the next was wired.
+
+- **Phase 1 — ground sun hours.** `shadowRay.ts` is the shared exact test: extruded footprints,
+  first-crossing logic, sun-below-horizon handling, and a 20 m bounding-box grid walked with
+  Amanatides–Woo so a ray only visits nearby cells. `sunHours.ts` samples the study area at 10 m,
+  15-minute sun samples, bands 0–2 / 2–4 / 4–6 / 6–8 / 8+ h. `climateView` gained a `sun-hours`
+  branch and `SunPanel` gained the labelled segmented control. Measured 21.9 ms on the compact site
+  (456 cells, 137 buildings, 75 samples) — the spatial index cut 59 ms → 22 ms.
+- **Phase 2 — roof solar.** `roofSolar.ts`: 2 m roof samples (centroid under 4 m²), 15th of each
+  month at 30-minute steps, Meinel clear-sky DNI `1000 × 0.7^(AM^0.678)`, 10 % constant diffuse,
+  monthly weights summing 365. Unshaded Oslo roof fixture = **915.9 kWh/m²·yr**. Exact site compute
+  is ≈1.1 s, so `roofSolarWorker.ts` + `useRoofSolar.ts` run it off the main thread with a 250 ms
+  debounce and a result cache. `RoofSolar.tsx` colours flat roof polygons; the optional readout uses
+  20 % panel efficiency and 0.8 performance ratio and says so.
+- **Phase 3 — façade sun hours.** `facadeSamples.ts` walks only user-mass exterior edges at 3 m,
+  mid-storey heights every 3 m, 0.1 m outward with CCW outward normals. `facadeSun.ts` counts a
+  sample when the sun is in front and the ray is clear; no self-skip, so another wing shades it.
+  `FacadeSun.tsx` is one instanced quad mesh. Fixtures cover the summer ordering, the decisive
+  midwinter north/south gap (0 h north, full day south) and the shaded inside corner of an L.
+- **Phase 4 — VSC.** `vsc.ts` integrates the CIE overcast sky on a 5° hemisphere grid; the horizontal
+  reference uses the full 360° sky. Unobstructed vertical façade = **39.6 %** for all orientations;
+  a wall subtending ≈26.6° drops it clearly. Bands < 15 / 15–27 / 27 %+. 196 samples compute in
+  ≈21 ms. The first run returned 1425 % because the horizontal reference was missing a 2π azimuth
+  factor; the 39.6 % fixture caught it immediately.
+
+Claim wording is exact in the dock and panel:
+`Indicative sun hours — geometric, clear sky, buildings only. Not a daylight assessment.`,
+`Indicative clear-sky irradiation — upper bound, no weather or cloud data. Not a yield estimate.` and
+`Indicative Vertical Sky Component — early massing screening, not a daylight assessment.`
+
+Evidence: `docs/screenshots/sun-{hours,roof-solar,facade,vsc}-{compact-infill,sloped-edge}-1440x900.png`
+(8 images, 1440×900, isometric, façade/VSC views zoomed to the drawn block). Capture script:
+`scripts/capture-sun.mjs`.
+
+Gate: `npm run lint` ✅ · `npm run test` **936 passed / 4 skipped** (104 files, 1 skipped) ✅ ·
+`npm run build` ✅. No new dependency. No wind, noise or export behaviour changed.
+
+Limitations carried, not fixed: terrain does not cast shade (sloped sites read sunny), trees are
+ignored, clear sky only, roofs are flat, façade/VSC sample user masses only, VSC is not a daylight
+factor or a BRE check. Embodied carbon was not attempted: there is no material data, so any number
+would be invented.
+
+Open: roof solar is the only worker; façade/VSC stay on the main thread and would need the same
+worker treatment if a scenario ever draws many blocks. The captured façade/VSC views deliberately
+zoom in because the quads are small at the default site camera.
+
+
+## 2026-11-10 — Sun analyses review fixes
+- Roof solar: Meinel solar constant corrected to 1353 W/m²; fixture 1239.3 kWh/m²·yr; bands 0–300…1200+.
+- Sun hours: bands are now shares of the day's possible sun, so 21 June no longer paints one colour.
+- Sun panel note: "Not a daylight assessment" (was also denying sun hours).
+- `npm run lint`, `npm run test` (936 passed / 4 skipped), `npm run build` pass. Browser: compact site 21 Jun spreads across bands, no console errors.
+- Not done: the `sun-hours-*` and `sun-roof-solar-*` screenshots still show the old bands; rerun `scripts/capture-sun.mjs`.

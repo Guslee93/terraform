@@ -1,11 +1,35 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { DATE_PRESETS, TIME_PRESETS, dayModel, describeSunState, sunDirection, type DayModel, type SunState } from '../../features/analysis/sun'
 import { formatLocalLabel, localDayMinuteToInstant, minutesOfLocalDay, toLocalWallClock, type LocalDate, type ResolvedLocalTime } from '../../features/analysis/time'
+import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
+import { ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
+import { FACADE_SUN_DISCLAIMER } from '../../features/analysis/facadeSun'
+import { VSC_DISCLAIMER } from '../../features/analysis/vsc'
 import type { SiteManifest } from '../../features/sites/manifest'
 import { cn } from '../../lib/cn'
 import { inputClass } from '../ui/controls'
+import { formatNumber } from './format'
 
 export type SunTime = { date: LocalDate; minuteOfDay: number }
+
+/** Which sun screening layer is showing; `shadows` is the plain scene (ADR-0021). */
+export type SunAnalysis = 'shadows' | 'sun-hours' | 'roof-solar' | 'facade' | 'vsc'
+
+export const SUN_ANALYSIS_OPTIONS: readonly { id: SunAnalysis; label: string }[] = [
+  { id: 'shadows', label: 'Shadows' },
+  { id: 'sun-hours', label: 'Sun hours' },
+  { id: 'roof-solar', label: 'Roof solar' },
+  { id: 'facade', label: 'Façade' },
+  { id: 'vsc', label: 'VSC' },
+]
+
+/** The claim for each analysis, shown beside its legend (AGENTS.md §7). */
+export const SUN_ANALYSIS_NOTE: Record<Exclude<SunAnalysis, 'shadows'>, string> = {
+  'sun-hours': SUN_HOURS_DISCLAIMER,
+  'roof-solar': ROOF_SOLAR_DISCLAIMER,
+  facade: FACADE_SUN_DISCLAIMER,
+  vsc: VSC_DISCLAIMER,
+}
 
 export type SunPlayback = {
   playing: boolean
@@ -21,6 +45,10 @@ type SunProps = {
   state: SunState
   location: SiteManifest['location']
   playback: SunPlayback
+  analysis?: SunAnalysis
+  onAnalysisChange?: (analysis: SunAnalysis) => void
+  /** Total annual panel readout when Roof solar is active; a documented upper-bound constant. */
+  roofSolar?: { readonly totalKwhPerYear: number; readonly roofAreaM2: number } | null
 }
 
 const SPEEDS = [30, 60, 120] as const
@@ -33,6 +61,31 @@ const isLocalDate = (value: string): value is LocalDate => /^\d{4}-\d{2}-\d{2}$/
 /** `21 Jun` from `2026-06-21`. */
 export const shortDate = (date: string) => `${Number(date.slice(8, 10))} ${MONTHS[Number(date.slice(5, 7)) - 1] ?? ''}`
 const segment = 'border-b border-transparent pb-0.5 text-caption text-ink-secondary transition-colors duration-200 hover:text-ink aria-pressed:border-ink aria-pressed:text-ink disabled:text-ink-disabled'
+
+/** Labelled segmented control for the sun screening layer; buttons carry `aria-pressed`. */
+export function SunAnalysisSwitch({
+  value,
+  onChange,
+}: {
+  value: SunAnalysis
+  onChange: (analysis: SunAnalysis) => void
+}) {
+  return (
+    <div role="group" aria-label="Sun analysis" className="flex flex-wrap gap-x-4 gap-y-2">
+      {SUN_ANALYSIS_OPTIONS.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          className={segment}
+          aria-pressed={value === option.id}
+          onClick={() => onChange(option.id)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 /** Playback state shared by the sun band and the sun details: one clock, advanced in whole local minutes. */
 export function useSunPlayback(onChange: Dispatch<SetStateAction<SunTime>>): SunPlayback {
@@ -110,7 +163,7 @@ export function daySlots(date: string, latitude: number, longitude: number, time
  * The sun band under the scene (draft 4): clock, date presets, the day barcode (which is the
  * `Local time` slider: 15 min per arrow, 1 h with Shift, Home/End = sunrise/sunset) and Play.
  */
-export function SunBand({ time, onChange, state, location, playback }: SunProps) {
+export function SunBand({ time, onChange, state, location, playback, analysis, onAnalysisChange }: SunProps) {
   const { latitude, longitude, timeZone } = location
   const slots = useMemo(() => daySlots(time.date, latitude, longitude, timeZone), [time.date, latitude, longitude, timeZone])
   const day = useMemo(() => dayModel(time.date, latitude, longitude, timeZone), [time.date, latitude, longitude, timeZone])
@@ -121,6 +174,12 @@ export function SunBand({ time, onChange, state, location, playback }: SunProps)
 
   return (
     <section aria-label="Sun and shadows" className="grid shrink-0 grid-cols-[auto_1fr_auto] items-end gap-x-6 gap-y-2 @max-xl:grid-cols-[1fr_auto]">
+      {analysis && onAnalysisChange && (
+        <div className="col-span-full flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-line pb-2">
+          <p className="text-caption text-ink-secondary">Analysis</p>
+          <SunAnalysisSwitch value={analysis} onChange={onAnalysisChange} />
+        </div>
+      )}
       <div>
         <p className="flex items-center gap-2 text-caption text-ink-secondary">
           <span aria-hidden="true" className="size-[7px] rounded-pill bg-sun-high" />
@@ -210,7 +269,7 @@ export function SunBand({ time, onChange, state, location, playback }: SunProps)
 }
 
 /** The panel's Sun group: readout, date and time controls, playback speed, notes and the sun path. */
-export function SunDetails({ time, onChange, state, location, playback, resolved }: SunProps & { resolved: ResolvedLocalTime }) {
+export function SunDetails({ time, onChange, state, location, playback, resolved, analysis, onAnalysisChange, roofSolar }: SunProps & { resolved: ResolvedLocalTime }) {
   const { latitude, longitude, timeZone } = location
   const day = useMemo(() => dayModel(time.date, latitude, longitude, timeZone), [time.date, latitude, longitude, timeZone])
   const dayLabel = day.kind === 'normal'
@@ -219,6 +278,18 @@ export function SunDetails({ time, onChange, state, location, playback, resolved
 
   return (
     <section aria-label="Sun controls" className="space-y-4 text-body-sm">
+      {analysis && onAnalysisChange && (
+        <div className="space-y-1.5">
+          <p className="text-caption text-ink-secondary">Analysis</p>
+          <SunAnalysisSwitch value={analysis} onChange={onAnalysisChange} />
+          {analysis !== 'shadows' && <p className="text-caption text-ink-secondary">{SUN_ANALYSIS_NOTE[analysis]}</p>}
+        </div>
+      )}
+      {analysis === 'roof-solar' && roofSolar && (
+        <p className="text-caption text-ink-secondary">
+          ≈ {formatNumber(roofSolar.totalKwhPerYear)} kWh/yr if every roof were fully covered at 20 % panel efficiency and 0.8 performance ratio ({formatNumber(roofSolar.roofAreaM2)} m² of roof).
+        </p>
+      )}
       <div aria-live="polite" aria-atomic="true" className="space-y-0.5 font-mono tabular-nums">
         <p className="text-ink">{describeSunState(state)}</p>
         <p className="text-ink-secondary">{formatLocalLabel(resolved.instant, timeZone)}</p>
@@ -257,7 +328,7 @@ export function SunDetails({ time, onChange, state, location, playback, resolved
         {resolved.kind !== 'normal' && <p>{resolved.kind === 'gap-shifted'
           ? `This time doesn't exist on this date (clocks change); showing ${toLocalWallClock(resolved.instant, timeZone).time}.`
           : 'This time occurs twice; showing the earlier (summer time).'}</p>}
-        <p>Geometric sun direction for this site (suncalc). Not a daylight or sun-hours assessment.</p>
+        <p>Geometric sun direction for this site (suncalc). Not a daylight assessment.</p>
       </div>
     </section>
   )

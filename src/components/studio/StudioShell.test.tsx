@@ -10,7 +10,12 @@ import compactStudyArea from '../../../public/sites/compact-infill/study-area.js
 import { parseSiteManifest } from '../../features/sites/manifest'
 import { parseBuildings, parseStudyArea, parseTerrain } from '../../features/sites/package'
 import { SITES } from '../../features/sites/siteCatalog'
+import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
+import { ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
+import { FACADE_SUN_DISCLAIMER } from '../../features/analysis/facadeSun'
+import { VSC_COLOUR, VSC_DISCLAIMER } from '../../features/analysis/vsc'
 import { moveGesture } from '../../features/editor/interaction'
+import { removeVolume } from '../../features/editor/commands'
 import { ViewportCanvas } from '../../scene/ViewportCanvas'
 import { StudioShell } from './StudioShell'
 
@@ -31,9 +36,9 @@ function scene(): ComponentProps<typeof ViewportCanvas> {
   if (!call) throw new Error('No viewport')
   return call[0]
 }
-function draw() {
+function draw(points: readonly (readonly [number, number])[] = [[0, 0], [20, 0], [20, 20], [0, 20]]) {
   act(() => scene().dispatch({ type: 'setTool', tool: 'draw' }))
-  for (const point of [[0, 0], [20, 0], [20, 20], [0, 20]] as const) act(() => scene().dispatch({ type: 'pointerDown', point, elevation: 0 }))
+  for (const point of points) act(() => scene().dispatch({ type: 'pointerDown', point, elevation: 0 }))
   act(() => scene().dispatch({ type: 'key', key: 'Enter' }))
 }
 beforeEach(() => {
@@ -54,7 +59,89 @@ it('starts with only Sun/Wind/Noise and automatic rendering; block tools are opt
   for (const label of ['Compare', 'Guide', 'Saved', 'Design check', 'Study area', 'Data notes', 'Render quality']) expect(screen.queryByText(label)).not.toBeInTheDocument()
 })
 
+it('draws ground sun hours, recomputes when a block is added and returns to shadows', async () => {
+  mount()
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('button', { name: /^Sun/ }))
+  const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
+  if (!control) throw new Error('Missing sun analysis control')
+  await user.click(within(control).getByRole('button', { name: 'Sun hours' }))
+  expect(within(control).getByRole('button', { name: 'Sun hours' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getAllByText(SUN_HOURS_DISCLAIMER).length).toBeGreaterThan(0)
+  const before = scene().climate?.cells.length ?? 0
+  expect(before).toBeGreaterThan(0)
+  await user.click(screen.getByRole('button', { name: 'Add a block' }))
+  // Draw over an empty part of the study area so the cells inside it were assessed before.
+  draw([[-20, 75], [0, 75], [0, 95], [-20, 95]])
+  expect(scene().windBuildings).toHaveLength((sitePackage.buildings.buildings.length) + 1)
+  expect(scene().climate?.cells.length ?? 0).toBeLessThan(before)
+  const volume = scene().editor.history.document.volumes[0]
+  if (!volume) throw new Error('No drawn volume')
+  const beforeMove = (scene().climate?.cells ?? []).map((cell) => `${cell.x},${cell.y}`).join(';')
+  act(() => scene().dispatch({ type: 'pointerDown', point: [0, 0], gesture: moveGesture(volume.id) }))
+  act(() => scene().dispatch({ type: 'pointerMove', point: [30, 0] }))
+  act(() => scene().dispatch({ type: 'pointerUp' }))
+  const afterMove = (scene().climate?.cells ?? []).map((cell) => `${cell.x},${cell.y}`).join(';')
+  expect(afterMove).not.toBe(beforeMove)
+  act(() => scene().dispatch({ type: 'command', command: removeVolume(volume.id) }))
+  expect(scene().climate?.cells.length ?? 0).toBe(before)
+  await user.click(within(control).getByRole('button', { name: 'Shadows' }))
+  expect(scene().climate).toBeNull()
+})
+it('offers roof solar with its upper-bound disclaimer and no invented value while computing', async () => {
+  mount()
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('button', { name: /^Sun/ }))
+  const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
+  if (!control) throw new Error('Missing sun analysis control')
+  await user.click(within(control).getByRole('button', { name: 'Roof solar' }))
+  expect(screen.getAllByText(ROOF_SOLAR_DISCLAIMER).length).toBeGreaterThan(0)
+  // jsdom has no Worker: the card says it is computing rather than showing a placeholder number.
+  const cards = within(screen.getByRole('group', { name: 'Analysis cards' }))
+  expect(cards.getByRole('button', { name: /^Sun/ })).toHaveTextContent('Computing roof solar')
+})
+
+it('colours the façades of a user block and removes the layer in Shadows', async () => {
+  mount()
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('button', { name: 'Add a block' }))
+  draw()
+  await user.click(screen.getByRole('button', { name: /^Sun/ }))
+  const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
+  if (!control) throw new Error('Missing sun analysis control')
+  await user.click(within(control).getByRole('button', { name: 'Façade' }))
+  expect(screen.getAllByText(FACADE_SUN_DISCLAIMER).length).toBeGreaterThan(0)
+  expect(scene().facade?.values.length ?? 0).toBeGreaterThan(0)
+  const volume = scene().editor.history.document.volumes[0]
+  if (!volume) throw new Error('No drawn volume')
+  const beforeMove = scene().facade?.values[0]?.sample.p[0]
+  act(() => scene().dispatch({ type: 'pointerDown', point: [0, 0], gesture: moveGesture(volume.id) }))
+  act(() => scene().dispatch({ type: 'pointerMove', point: [20, 0] }))
+  act(() => scene().dispatch({ type: 'pointerUp' }))
+  expect(scene().facade?.values[0]?.sample.p[0]).not.toBe(beforeMove)
+  act(() => scene().dispatch({ type: 'command', command: removeVolume(volume.id) }))
+  expect(scene().facade).toBeNull()
+  await user.click(within(control).getByRole('button', { name: 'Shadows' }))
+  expect(scene().facade).toBeNull()
+})
+
+it('colours the same façades with VSC and shows the daylight disclaimer', async () => {
+  mount()
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('button', { name: 'Add a block' }))
+  draw()
+  await user.click(screen.getByRole('button', { name: /^Sun/ }))
+  const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
+  if (!control) throw new Error('Missing sun analysis control')
+  await user.click(within(control).getByRole('button', { name: 'VSC' }))
+  expect(screen.getAllByText(VSC_DISCLAIMER).length).toBeGreaterThan(0)
+  const first = scene().facade?.values[0]
+  expect(first).toBeDefined()
+  expect(Object.values(VSC_COLOUR)).toContain(first?.colour)
+})
+
 it('feeds new and preview blocks into analysis, cancels a drag and commits it as one undo entry', async () => {
+
   mount()
   await userEvent.setup().click(screen.getByRole('button', { name: 'Add a block' }))
   const initial = scene().windBuildings?.length ?? 0

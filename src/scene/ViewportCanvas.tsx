@@ -20,12 +20,15 @@ import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
 import type { SunDirection } from '../features/analysis/sun'
 import { ClimateLayer } from './ClimateLayer'
+import { FacadeSun, type FacadeOverlay } from './FacadeSun'
+import { RoofSolar } from './RoofSolar'
 import { WindStreamlines } from './WindStreamlines'
 import { FLOW_DISCLAIMER } from '../features/analysis/lbm'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
 import { WorstArrows } from './WorstArrows'
 import type { FlowResult } from '../features/analysis/flowRunner'
+import type { RoofSolarValue } from '../features/analysis/roofSolar'
 import { DEFAULT_WIND, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
@@ -67,6 +70,10 @@ type ViewportProps = {
   renderPreference: RenderPreference
   /** Wind or noise screening cells; null when the climate layer is off. */
   climate?: ClimateOverlay | null
+  /** Per-roof clear-sky irradiation, aligned with `windBuildings`; null when Roof solar is off. */
+  roofSolar?: readonly RoofSolarValue[] | null
+  /** Façade sun-hours or VSC quads; null when neither façade layer is showing. */
+  facade?: FacadeOverlay | null
   /** Live 2D wind flow for the particle layer; null when wind is off. */
   windFlow?: FlowResult | null
   windSettings?: WindSettings
@@ -439,6 +446,8 @@ export function ViewportCanvas({
   annotations,
   renderPreference,
   climate = null,
+  roofSolar = null,
+  facade = null,
   windFlow = null,
   windStreamlines = false,
   windWorst = null,
@@ -548,6 +557,8 @@ export function ViewportCanvas({
             {climate && layers.terrain && (windCircle
               ? <WindHeatmap overlay={climate} heightAt={heightAt} circle={windCircle} />
               : <ClimateLayer overlay={climate} heightAt={heightAt} />)}
+            {roofSolar && layers.terrain && <RoofSolar buildings={windBuildings} values={roofSolar} heightAt={heightAt} />}
+            {facade && layers.terrain && <FacadeSun overlay={facade} heightAt={heightAt} />}
             {windWorst && layers.terrain && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
             {!windWorst && windFlow?.slices && windCircle && layers.terrain && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
             {!windWorst && windFlow && windCircle && layers.terrain && ((windStreamlines || reducedMotion)

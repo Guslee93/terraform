@@ -170,3 +170,18 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [x] Lint, 898 unit tests, production build and source review pass; report file inventory.
 - [ ] Browser execution and fixed-camera screenshots: Vite listen EPERM in sandbox.
 - No commit. Report: `docs/reviews/C28-simplify-studio.md`.
+
+## Sun analyses — ADR-0021 (2026-11-10)
+
+- [x] Shared exact shadow ray + 20 m spatial index (`shadowRay.ts`)
+- [x] Ground sun hours at 10 m for the selected date, with bands and disclaimer
+- [x] Clear-sky annual roof solar at 2 m, run in `roofSolarWorker.ts`
+- [x] Façade sun hours on user-drawn blocks (3 m edges, 3 m heights)
+- [x] VSC on user-drawn blocks (5° CIE overcast grid, 39.6 % fixture)
+- [x] Segmented control in the Sun card; ground/roof/façade scene layers
+- [x] Unit/UI tests, exact claim wording, ADR, agent log, progress log
+- [x] 8 screenshots at 1440×900 for both sites (`docs/screenshots/sun-*`)
+- **Status:** complete — lint, 936 tests, build pass; no new dependency
+- **Known limitations:** terrain and trees do not shade; clear sky only; flat roofs; façade/VSC cover
+  user masses only. Embodied carbon excluded until material data exists.
+
