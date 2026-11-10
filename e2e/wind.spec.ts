@@ -18,6 +18,7 @@ const DISCLAIMER = 'Indicative wind screening — 2D flow, not engineering'
 
 async function openStudio(page: Page) {
   await page.goto('/studio/compact-infill')
+  await expect(page.getByRole('button', { name: 'Add a block' })).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('region', { name: /3D site viewport for Compact Infill/i })).toBeVisible()
 }
 

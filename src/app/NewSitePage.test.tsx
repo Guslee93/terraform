@@ -58,9 +58,9 @@ function StudioStub() {
   return <p>studio {importId}</p>
 }
 
-function renderPage() {
+function renderPage(entry = '/new') {
   return render(
-    <MemoryRouter initialEntries={['/new']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/new" element={<NewSitePage />} />
         <Route path="/studio/import/:importId" element={<StudioStub />} />
@@ -109,7 +109,7 @@ describe('NewSitePage', () => {
     expect(screen.queryByRole('option')).not.toBeInTheDocument()
     expect(search).toHaveValue('Thorvald Meyers gate 40')
     expect(mapCalls.flyTo.at(-1)).toMatchObject({ center: [10.7595, 59.9225] })
-    expect(screen.getByText(/Thorvald Meyers gate 40 · Study area — not a cadastral parcel/)).toBeInTheDocument()
+    expect(screen.getByText(/Thorvald Meyers gate 40 · Area to load — not a cadastral parcel/)).toBeInTheDocument()
   })
 
   it('says when search finds nothing or fails', async () => {
@@ -125,13 +125,10 @@ describe('NewSitePage', () => {
     expect(await screen.findByText(/Search is unavailable right now/)).toBeInTheDocument()
   })
 
-  it('quick picks set the title and frame sizes update the readout', async () => {
+  it('starts at a place passed from the landing search and frame sizes update the readout', async () => {
     const user = userEvent.setup()
-    renderPage()
-
-    const picks = screen.getByRole('group', { name: 'Quick picks' })
-    await user.click(within(picks).getByRole('button', { name: 'Bergen (Bryggen)' }))
-    expect(screen.getByText(/Bergen \(Bryggen\) · Study area/)).toBeInTheDocument()
+    renderPage('/new?lat=60.397&lon=5.324&label=Bergen%20(Bryggen)')
+    expect(screen.getByText(/Bergen \(Bryggen\) · Area to load/)).toBeInTheDocument()
 
     expect(screen.getByText('400 × 400 m · 16 ha')).toBeInTheDocument()
     await user.click(within(screen.getByRole('radiogroup', { name: 'Frame size' })).getByRole('radio', { name: '600 m' }))
@@ -143,7 +140,7 @@ describe('NewSitePage', () => {
     const pending = pendingImport()
     renderPage()
 
-    await user.click(screen.getByRole('button', { name: 'Load in 3D' }))
+    await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
     const progress = screen.getByRole('list', { name: 'Import progress' })
     expect(within(progress).getAllByRole('listitem')).toHaveLength(5)
     expect(within(progress).getAllByText('Waiting')).toHaveLength(5)
@@ -152,12 +149,12 @@ describe('NewSitePage', () => {
     await waitFor(() => expect(within(progress).getByText('Map tiles').closest('li')).toHaveTextContent('Loading'))
     pending.options().onProgress?.('tiles', 'done')
     await waitFor(() => expect(within(progress).getByText('Map tiles').closest('li')).toHaveTextContent('Done'))
-    expect(screen.getByRole('button', { name: 'Load in 3D' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Open in 3D' })).toBeDisabled()
 
     await user.click(screen.getByRole('button', { name: 'Cancel import' }))
     expect(pending.options().signal?.aborted).toBe(true)
     expect(await screen.findByText('Import cancelled')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Load in 3D' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Open in 3D' })).toBeEnabled()
   })
 
   it('shows failures in an alert with a retry', async () => {
@@ -165,7 +162,7 @@ describe('NewSitePage', () => {
     importSite.mockRejectedValueOnce(new Error('OpenFreeMap tile 14/1/1: HTTP 503'))
     renderPage()
 
-    await user.click(screen.getByRole('button', { name: 'Load in 3D' }))
+    await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('HTTP 503')
 
@@ -185,7 +182,7 @@ describe('NewSitePage', () => {
     })
     importSite.mockImplementation(async (frame) => ({ sitePackage: importedFixture(frame.id).sitePackage, warnings: [], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, assemble: 0 } }))
     renderPage()
-    await user.click(screen.getByRole('button', { name: 'Load in 3D' }))
+    await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
     await waitFor(() => expect(store.put).toHaveBeenCalled())
     expect(screen.queryByText(/^studio import-/)).not.toBeInTheDocument()
     finish()
@@ -197,7 +194,7 @@ describe('NewSitePage', () => {
     stores.current!.failNext = kind
     importSite.mockImplementation(async (frame) => ({ sitePackage: importedFixture(frame.id).sitePackage, warnings: [], timings: { tiles: 0, buildings: 0, context: 0, terrain: 0, assemble: 0 } }))
     renderPage()
-    await user.click(screen.getByRole('button', { name: 'Load in 3D' }))
+    await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
     expect(await screen.findByRole('alert')).toHaveTextContent(`This browser could not save the site (${kind}). You can still open it once.`)
     expect(await stores.current!.list()).toEqual([])
     await user.click(screen.getByRole('button', { name: 'Open without saving' }))
@@ -209,7 +206,7 @@ describe('NewSitePage', () => {
     const pending = pendingImport()
     renderPage()
 
-    await user.click(screen.getByRole('button', { name: 'Load in 3D' }))
+    await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
     const frame = importSite.mock.calls[0]?.[0]
     expect(frame).toMatchObject({ latitude: 59.9239, longitude: 10.7579, sizeMetres: 400, title: 'Oslo (Grünerløkka)' })
     expect(frame?.id).toMatch(/^import-[a-z0-9]+$/)

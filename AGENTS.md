@@ -1,6 +1,6 @@
 # Terraform — Agent Operating Guide
 
-**Status:** M3 complete · M4 implemented, gate pending · M5 polish in progress · M6 site import P1–P4 on local main · Wind simulator (ADR-0014) v1 + W5 3D look done; finish session report in docs/reviews
+**Status:** Simplified to search → analyse → export (ADR-0020, tag `pre-simplify` for the old scope) · Wind simulator ADR-0014/0015 · rendering spec ADR-0017–0019
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
 **Product type:** architectural portfolio prototype, not a commercial SaaS
 

@@ -14,7 +14,7 @@ async function openStudio(page: Page) {
 type Stop = { group: string; label: string; outline: string; shadow: string }
 
 /** Which landmark group the focused element belongs to, in visual order (ADR-0016 layout). */
-const GROUPS = ['topbar', 'tools', 'viewport', 'parameters', 'dock'] as const
+const GROUPS = ['topbar', 'parameters', 'dock'] as const
 
 async function tabThrough(page: Page, max = 80): Promise<Stop[]> {
   const stops: Stop[] = []
@@ -64,24 +64,7 @@ test('Tab reaches top bar, tools, viewport, Parameters and the analysis dock in 
 
   // Named stops within the groups, in order.
   const labels = stops.map((s) => s.label)
-  const expected = [
-    'Back',
-    'Select',
-    'Draw building',
-    'Test a building',
-    'Fit site',
-    'About',
-    'Layers',
-    '3D',
-    'Plan',
-    'North',
-    'South',
-    'Street',
-    'Small',
-    'Medium',
-    'Large',
-    'Sun',
-  ]
+  const expected = ['Back', 'Add a block', 'Export', 'Fit site', 'About', 'Layers', '3D', 'Plan', 'North', 'South', 'Street', 'Sun']
   const at = expected.map((name) => labels.findIndex((l) => l.startsWith(name)))
   for (const [i, name] of expected.entries()) {
     expect(at[i], `stop "${name}" not reached: ${JSON.stringify(labels)}`).toBeGreaterThanOrEqual(0)
@@ -104,7 +87,7 @@ test('Enter toggles each Parameters group', async ({ page }) => {
   await openStudio(page)
   const inspector = page.getByRole('complementary', { name: 'Parameters' })
   // The first group is the active dock analysis (Draw by default in Test a building).
-  const names = ['Draw', 'Selected mass', 'Design check', 'Site', 'View', 'Notes']
+  const names = ['Noise', 'Layers', 'Export', 'Site']
   for (const name of names) {
     const summary = inspector.locator('details > summary').filter({ hasText: new RegExp(`^${name}`) })
     await expect(summary, name).toHaveCount(1)

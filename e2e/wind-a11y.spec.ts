@@ -8,6 +8,7 @@ test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 
 async function openWind(page: Page) {
   await page.goto('/studio/compact-infill')
+  await expect(page.getByRole('button', { name: 'Add a block' })).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   const inspector = await openAnalysis(page, 'Wind')
   await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(/Indicative wind screening/)).toBeVisible({ timeout: 15_000 })

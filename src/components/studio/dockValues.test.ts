@@ -2,32 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { buildClimateView, DEFAULT_WIND } from '../../features/analysis/climateView'
 import { computeNoise } from '../../features/analysis/noise'
 import { DEMO_SUN_INSTANT, sunState } from '../../features/analysis/sun'
-import { createRectangleFootprint, createScenario, createTier, createVolume } from '../../features/massing/factories'
-import { scenarioMetrics } from '../../features/massing/metrics'
 import type { Vec2 } from '../../lib/coordinates'
-import { areaStat, drawStat, noiseStat, sunStat, windStat } from './dockValues'
+import { noiseStat, sunStat, windStat } from './dockValues'
 
 const parcel: Vec2[] = [[-50, -50], [50, -50], [50, 50], [-50, 50], [-50, -50]]
 const text = (parts: readonly (readonly [string, string])[]) => parts.map(([value, unit]) => value + unit).join('')
 
 describe('dock card values come from the analysis, not constants', () => {
-  it('Area and Draw follow scenarioMetrics: 20 × 10 m, 3 storeys of 3.2 m', () => {
-    const tier = createTier({ id: 't', footprint: createRectangleFootprint(20, 10), storeys: 3, storeyHeight: 3.2 })
-    const metrics = scenarioMetrics(createScenario({ siteId: 's', volumes: [createVolume({ id: 'v', tiers: [tier] })] }), parcel)
-    // 200 m² plate × 3 storeys; 200 / 10 000 m² parcel = 2 %.
-    expect(areaStat(metrics)).toMatchObject({ value: '600', unit: ' m²' })
-    expect(text(areaStat(metrics).secondary)).toBe('200 m² · 2.0% cover')
-    expect(drawStat(metrics)).toMatchObject({ value: '1', unit: ' mass' })
-    expect(text(drawStat(metrics).secondary)).toBe('600 m² GFA')
-  })
-
-  it('Area shows a dash and a hint, never 0 m², when nothing is drawn', () => {
-    const empty = scenarioMetrics(createScenario({ siteId: 's', volumes: [] }), parcel)
-    expect(areaStat(empty)).toMatchObject({ value: null, hint: 'Draw a mass to measure' })
-    expect(drawStat(empty)).toMatchObject({ value: '0', unit: ' masses' })
-    expect(areaStat(null).value).toBeNull()
-  })
-
   it('Sun uses the geometric sun state and hides the figure below the horizon', () => {
     const day = sunState(DEMO_SUN_INSTANT, 59.91, 10.75)
     const stat = sunStat(day, '15:00')

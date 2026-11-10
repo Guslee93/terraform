@@ -16,9 +16,7 @@ type ToolRailProps = {
   /** Deletes the selected mass; disabled when nothing deletable is selected. */
   canDelete: boolean
   onDelete: () => void
-  /** The one primary action (project JSON export). */
-  onExport?: () => void
-  exportDisabled?: boolean
+
 }
 
 const tool = 'grid size-9 place-items-center rounded-pill text-ink-secondary transition-colors duration-200 hover:bg-canvas hover:text-ink disabled:cursor-not-allowed disabled:text-ink-disabled disabled:hover:bg-transparent aria-pressed:bg-accent-soft aria-pressed:text-accent'
@@ -31,14 +29,13 @@ function ToolButton({ icon, label, ...props }: { icon: IconName; label: string }
   )
 }
 
-/** Floating pill toolbar (ADR-0016): tools, history, one accent primary action. */
-export function ToolRail({ ready = true, activeTool, onSelect, canUndo, canRedo, onUndo, onRedo, canDelete, onDelete, onExport, exportDisabled = false }: ToolRailProps) {
+/** Floating pill toolbar: block tools and history. */
+export function ToolRail({ ready = true, activeTool, onSelect, canUndo, canRedo, onUndo, onRedo, canDelete, onDelete }: ToolRailProps) {
   return (
     <nav aria-label="Studio tools" className="flex items-center gap-1 rounded-pill border border-card-line bg-card p-1 shadow-float">
       <ToolButton icon="cursor" label="Select" aria-pressed={activeTool === 'select'} disabled={!ready} onClick={() => onSelect('select')} />
       <button
         type="button"
-        data-guide="draw"
         aria-label="Draw building"
         title="Draw building"
         aria-pressed={activeTool === 'draw'}
@@ -53,18 +50,7 @@ export function ToolRail({ ready = true, activeTool, onSelect, canUndo, canRedo,
       <span aria-hidden="true" className="mx-1 h-5 w-px bg-card-line" />
       <ToolButton icon="undo" label="Undo" disabled={!canUndo} onClick={onUndo} />
       <ToolButton icon="redo" label="Redo" disabled={!canRedo} onClick={onRedo} />
-      {onExport && <>
-        <span aria-hidden="true" className="mx-1 h-5 w-px bg-card-line" />
-        <button
-          type="button"
-          onClick={onExport}
-          disabled={exportDisabled}
-          title="Download every scenario for this site as JSON"
-          className="min-h-9 rounded-pill bg-accent px-4 text-body-sm font-medium text-ink-on-inverse transition-opacity duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Export
-        </button>
-      </>}
+
     </nav>
   )
 }

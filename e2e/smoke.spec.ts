@@ -3,10 +3,10 @@ import { expect, test } from '@playwright/test'
 test('landing page opens the primary studio and the package loads', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { level: 1 })).toContainText(/know a site/i)
-  await expect(page.getByRole('heading', { name: 'Compact Infill' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(/see the wind and sun/i)
+  await expect(page.getByRole('combobox', { name: 'Search an address or place' })).toBeVisible()
 
-  await page.getByRole('link', { name: /open compact infill in the studio/i }).click()
+  await page.getByRole('link', { name: /open compact infill · oslo in the studio/i }).click()
 
   await expect(page).toHaveURL(/\/studio\/compact-infill$/)
   await expect(
@@ -18,8 +18,7 @@ test('landing page opens the primary studio and the package loads', async ({ pag
   await page.getByRole('button', { name: 'Plan', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Plan', exact: true })).toHaveAttribute('aria-pressed', 'true')
 
-  // Layers live in a panel group; the toolbar's Layers button opens it.
-  await page.getByRole('button', { name: 'Layers', exact: true }).click()
+  // Layers sit directly in the Parameters panel (ADR-0020: no toolbar Layers button).
   const contextLayer = page.getByRole('checkbox', { name: 'Context buildings' })
   await expect(contextLayer).toBeChecked()
   await contextLayer.uncheck()

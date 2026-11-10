@@ -12,42 +12,22 @@ function renderRoute(path: string) {
 }
 
 describe('application routes', () => {
-  it('presents the landing proposition and both sites', () => {
+  it('presents the search-first landing (ADR-0020)', () => {
     renderRoute('/')
 
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/know a site/i)
-    expect(screen.getByRole('heading', { name: 'Compact Infill' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Sloped Edge' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/see the wind and sun on any site/i)
+    expect(screen.getByRole('combobox', { name: 'Search an address or place' })).toBeInTheDocument()
+    expect(screen.getByText(/Screening from open map data — not engineering/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about')
   })
 
-  it('links each card to its studio route', () => {
+  it('links the ready-made sites to the studio and places to the framing step', () => {
     renderRoute('/')
 
-    expect(screen.getByRole('link', { name: /open compact infill in the studio/i })).toHaveAttribute(
-      'href',
-      '/studio/compact-infill',
-    )
-    expect(screen.getByRole('link', { name: /open sloped edge in the studio/i })).toHaveAttribute(
-      'href',
-      '/studio/sloped-edge',
-    )
-  })
-
-  it('keeps landing actions, landmarks and study disclosures reachable', () => {
-    renderRoute('/')
-
-    const main = screen.getByRole('main')
-    expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', `#${main.id}`)
-    expect(within(main).getAllByRole('link', { name: /^Try it/ }).every((link) => link.getAttribute('href') === '/new')).toBe(true)
-    expect(within(main).getAllByRole('link', { name: /^Try it/ })[0]).toHaveAttribute('href', '/new')
-    expect(within(main).getByRole('link', { name: 'Open Compact Infill' })).toHaveAttribute('href', '/studio/compact-infill')
-    expect(within(main).getByRole('link', { name: 'About the prototype' })).toHaveAttribute('href', '/about')
-    expect(within(main).getByRole('heading', { level: 2, name: 'Choose a site to begin.' }).closest('section')).toHaveAttribute('id', 'sites')
-    expect(within(main).getByText('Open map data · simplified context · screening estimates')).toBeInTheDocument()
-    expect(within(main).getByText('Illustrative — not surveyed')).toBeInTheDocument()
-    expect(screen.getByRole('banner')).toBeInTheDocument()
-    expect(within(screen.getByRole('contentinfo')).getByText(/constraints are illustrative and not planning advice/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /open compact infill · oslo in the studio/i })).toHaveAttribute('href', '/studio/compact-infill')
+    expect(screen.getByRole('link', { name: /open sloped edge · oslo in the studio/i })).toHaveAttribute('href', '/studio/sloped-edge')
+    expect(screen.getByRole('link', { name: 'Bergen (Bryggen)' }).getAttribute('href')).toMatch(/^\/new\?lat=.*&lon=.*&label=Bergen/)
   })
 
   it('renders the about page with explicit limitations', () => {

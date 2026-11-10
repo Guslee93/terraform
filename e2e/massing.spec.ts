@@ -49,6 +49,7 @@ async function createMass(page: Page): Promise<void> {
   ).toBeVisible()
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
 
+  await page.getByRole('button', { name: 'Add a block' }).click()
   await page.getByRole('button', { name: 'Plan', exact: true }).click()
   // The preset snaps instantly with reduced motion; allow one short settle for the renderer.
   await page.waitForTimeout(400)
@@ -71,9 +72,8 @@ async function createMass(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Draw building' }).evaluate((button) => button.blur())
   await page.keyboard.press('Enter')
 
-  await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
   // The roof handle's aria-label contains "storeys", so target the input by role.
-  await expect(page.getByRole('textbox', { name: 'Storeys' })).toHaveValue('3')
+  await expect(page.getByRole('spinbutton', { name: 'Storeys' })).toHaveValue('3')
 }
 
 /** Re-seat the camera in the isometric preset and return the handle centre. */
@@ -89,7 +89,7 @@ test('Esc cancels a roof drag and restores the original storeys', async ({ page 
   await createMass(page)
 
   const handle = await moveToRoofDragView(page)
-  const storeys = page.getByRole('textbox', { name: 'Storeys' })
+  const storeys = page.getByRole('spinbutton', { name: 'Storeys' })
 
   await page.mouse.move(handle.x, handle.y)
   await page.mouse.down()
@@ -108,7 +108,7 @@ test('a committed roof drag is one undo entry', async ({ page }) => {
   await createMass(page)
 
   const handle = await moveToRoofDragView(page)
-  const storeys = page.getByRole('textbox', { name: 'Storeys' })
+  const storeys = page.getByRole('spinbutton', { name: 'Storeys' })
 
   await page.mouse.move(handle.x, handle.y)
   await page.mouse.down()
@@ -119,4 +119,18 @@ test('a committed roof drag is one undo entry', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Undo' }).click()
   await expect(storeys).toHaveValue('3')
+})
+test('storeys, delete, undo and reload use session-only blocks', async ({ page }) => {
+  await createMass(page)
+  const storeys = page.getByRole('spinbutton', { name: 'Storeys' })
+  await storeys.fill('8')
+  await storeys.press('Enter')
+  await expect(page.getByText('Height · 25.6 m')).toBeVisible()
+  await page.getByRole('button', { name: 'Delete', exact: true }).click()
+  await expect(storeys).toHaveCount(0)
+  await page.getByRole('button', { name: 'Undo', exact: true }).click()
+  await expect(storeys).toHaveValue('8')
+  await page.reload()
+  await page.getByRole('button', { name: 'Add a block' }).click()
+  await expect(page.getByRole('group', { name: 'Analysis cards' }).getByRole('button', { name: /^Blocks/ })).toContainText('0')
 })

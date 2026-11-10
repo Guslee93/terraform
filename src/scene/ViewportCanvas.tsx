@@ -4,7 +4,7 @@ import { WindRampBar } from './WindRampBar'
 import type { FootprintBuilding } from '../features/analysis/grid'
 import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Grid, Line, OrbitControls } from '@react-three/drei'
+import { Grid, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
 import { DoubleSide, EdgesGeometry, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
@@ -15,13 +15,10 @@ import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geome
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import { EMPTY_SELECTION } from '../features/massing/types'
 import { cameraLocked, displayedDocument, type EditorEvent, type EditorState } from '../features/editor/interaction'
-import { ScenarioSnapshots, type SnapshotRequest, type SnapshotResult } from './ScenarioSnapshots'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
 import type { SunDirection } from '../features/analysis/sun'
-import type { EnvelopeConstraints, EnvelopeResult } from '../features/analysis/constraints'
-import { ConstraintLayer } from './ConstraintLayer'
 import { ClimateLayer } from './ClimateLayer'
 import { WindStreamlines } from './WindStreamlines'
 import { FLOW_DISCLAIMER } from '../features/analysis/lbm'
@@ -45,7 +42,6 @@ import {
   createContextGeometry,
   createContourGeometry,
   createRoadGeometry,
-  drapePolyline,
   createTerrainGeometry,
   createTerrainGridGeometry,
   createTerrainSkirtGeometry,
@@ -56,25 +52,17 @@ export type SceneLayers = {
   context: boolean
   streets: boolean
   trees: boolean
-  parcel: boolean
-  setback: boolean
-  heightLimit: boolean
 }
 
 type ViewportProps = {
-  snapshotRequest?: SnapshotRequest | null
-  onSnapshot?: (result: SnapshotResult) => void
   sitePackage: SitePackage
   sun: SunDirection
-  constraints: EnvelopeConstraints | null
-  envelope: EnvelopeResult | null
   layers: SceneLayers
   presetId: CameraPresetId
   cameraNonce: number
   editor: EditorState
   dispatch: (event: EditorEvent) => void
   editable: boolean
-  warnedVolumes: ReadonlySet<string>
   annotations?: ReadonlyMap<string, MassAnnotation>
   renderPreference: RenderPreference
   /** Wind or noise screening cells; null when the climate layer is off. */
@@ -253,27 +241,6 @@ function Streets({ sitePackage }: { sitePackage: SitePackage }) {
         polygonOffsetUnits={-2}
       />
     </mesh>
-  )
-}
-
-function StudyBoundary({ sitePackage }: { sitePackage: SitePackage }) {
-  // The ring is closed (first point repeated), so draping it as a polyline closes the loop.
-  const points = useMemo(
-    () => drapePolyline(sitePackage.studyArea.polygon, sitePackage.terrain, 4, 0.6),
-    [sitePackage],
-  )
-
-  return (
-    <Line
-      points={points}
-      color="#355E79"
-      lineWidth={2}
-      dashed
-      dashSize={3}
-      gapSize={2}
-      transparent
-      opacity={0.95}
-    />
   )
 }
 
@@ -461,10 +428,6 @@ function WindDemoCamera({ orbitDeg, controlsRef }: { orbitDeg: number | null; co
 }
 
 export function ViewportCanvas({
-  snapshotRequest,
-  onSnapshot,
-  constraints,
-  envelope,
   sitePackage,
   sun,
   layers,
@@ -473,7 +436,6 @@ export function ViewportCanvas({
   editor,
   dispatch,
   editable,
-  warnedVolumes,
   annotations,
   renderPreference,
   climate = null,
@@ -581,7 +543,6 @@ export function ViewportCanvas({
             )}
             {layers.context && <ContextBuildings buildings={buildings.buildings} />}
             {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
-            {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
             {climate && layers.terrain && (windCircle
@@ -597,26 +558,16 @@ export function ViewportCanvas({
 
             <group name="live-scenario">
             {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
-            <ConstraintLayer
-              sitePackage={sitePackage}
-              constraints={constraints}
-              envelope={envelope}
-              selectedVolume={displayedDocument(editor).volumes.find((volume) => volume.visible && volume.id === editor.history.selection.volumeId) ?? null}
-              setback={layers.setback}
-              heightLimit={layers.heightLimit}
-            />
             <MassLayer
               editor={editor}
               dispatch={dispatch}
               editable={editable}
               controlsRef={controlsRef}
               heightAt={heightAt}
-              warnedVolumes={warnedVolumes}
               annotations={annotations}
             />
 
             </group>
-            {snapshotRequest && onSnapshot && <ScenarioSnapshots request={snapshotRequest} sitePackage={sitePackage} onResult={onSnapshot} />}
             <CameraRig
               presetId={presetId}
               nonce={cameraNonce}

@@ -161,3 +161,12 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [ ] Production-preview persistence check/screenshots blocked by sandbox socket EPERM.
 - [x] Write P4 report and session logs.
 - [ ] Commit blocked: sandbox denies parent checkout worktree index.lock. No push, merge or deployment.
+
+
+## C28 studio simplification — 2026-11-10
+- [x] Read handoff/HARD RULE, ADR-0020 and simplify plan; identify protected/shared files.
+- [x] Remove scenario/planning UI; retain analysis/export and implement session-only minimal blocks.
+- [x] Remove dead components/commands/tests and update remaining unit/e2e coverage.
+- [x] Lint, 898 unit tests, production build and source review pass; report file inventory.
+- [ ] Browser execution and fixed-camera screenshots: Vite listen EPERM in sandbox.
+- No commit. Report: `docs/reviews/C28-simplify-studio.md`.

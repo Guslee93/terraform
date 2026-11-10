@@ -22,8 +22,6 @@ import { createStoreyLineGeometry, createTierGeometry, roofHandlePosition } from
 // Accent-family tint: the proposal is the only coloured object against the white context.
 const MASS_COLOR = soften('#C9DBE5')
 const INVALID_COLOR = '#EBC9C4'
-/** Amber tint for clearance warnings (design contract: amber = warning). */
-const WARNING_COLOR = soften('#EFD9AC')
 /** New masses rise from the ground once, over this many seconds (contract §7); off for reduced motion. */
 const RISE_SECONDS = 0.5
 const reducedMotion = () =>
@@ -42,13 +40,11 @@ type MassLayerProps = {
   editable: boolean
   controlsRef: RefObject<OrbitControlsHandle | null>
   heightAt: (east: number, north: number) => number
-  /** Ids of volumes with clearance warnings. */
-  warnedVolumes: ReadonlySet<string>
   /** Two-line leader labels per volume id, built from the scenario metrics (spec §7.3). */
   annotations?: ReadonlyMap<string, MassAnnotation>
 }
 
-export type MassAnnotation = { readonly title: string; readonly detail: string; readonly status: 'attention' | 'pass' }
+export type MassAnnotation = { readonly title: string; readonly detail: string }
 
 type StartDrag = (plane: Plane, toPoint: (hit: Vector3) => Vec2) => void
 
@@ -107,14 +103,12 @@ function TierMesh({
   tier,
   selected,
   invalid,
-  warning,
   onPointerDown,
   swallowClicks = true,
 }: {
   tier: MassTier
   selected: boolean
   invalid: boolean
-  warning: boolean
   onPointerDown?: (event: ThreeEvent<PointerEvent>) => void
   swallowClicks?: boolean
 }) {
@@ -157,7 +151,7 @@ function TierMesh({
     >
       {/* Faces pushed back so storey bands and edges lying on them do not z-fight. */}
       <meshStandardMaterial
-        color={invalid ? INVALID_COLOR : warning ? WARNING_COLOR : MASS_COLOR}
+        color={invalid ? INVALID_COLOR : MASS_COLOR}
         roughness={0.85}
         metalness={0}
         polygonOffset
@@ -189,7 +183,6 @@ function Annotation({ volume, annotation, selected }: { volume: MassVolume; anno
       <div aria-hidden="true" className="relative flex -translate-x-1/2 -translate-y-full flex-col items-center">
         <div className="whitespace-nowrap rounded-chip bg-surface/90 px-2.5 py-1.5 text-body-sm leading-tight">
           <p className={selected ? 'flex items-center gap-1.5 font-medium text-accent' : 'flex items-center gap-1.5 font-medium text-ink'}>
-            <span className={annotation.status === 'attention' ? 'size-1.5 rounded-pill bg-warning' : 'size-1.5 rounded-pill bg-positive'} />
             {annotation.title}
           </p>
           <p className="mt-0.5 font-mono text-caption text-ink-secondary">{annotation.detail}</p>
@@ -254,7 +247,6 @@ export function MassLayer({
   editable,
   controlsRef,
   heightAt,
-  warnedVolumes,
   annotations,
 }: MassLayerProps) {
   const document = displayedDocument(editor)
@@ -330,7 +322,6 @@ export function MassLayer({
               // Outline the tier the inspector edits; single-tier masses read as the whole mass.
               selected={selection.volumeId === volume.id && selection.tierId === tier.id}
               invalid={invalidPreview && selection.volumeId === volume.id}
-              warning={warnedVolumes.has(volume.id)}
               onPointerDown={editable ? startMove(volume, tier) : undefined}
               swallowClicks={editor.tool === 'select'}
             />

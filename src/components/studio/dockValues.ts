@@ -1,7 +1,6 @@
 import { ACTIVITY_BANDS, ROSE_THRESHOLD_MS, type ClimateView } from '../../features/analysis/climateView'
 import { ROAD_LEVEL_AT_10M, type NoiseCell, type NoiseRoad } from '../../features/analysis/noise'
 import { compassPoint, type SunState } from '../../features/analysis/sun'
-import type { ScenarioMetrics } from '../../features/massing/metrics'
 import { formatNumber } from './format'
 
 /** A value with its unit: the value reads dark, the unit grey (ADR-0016 card style). */
@@ -16,29 +15,6 @@ export type DockStat = {
 }
 
 const empty = (hint: string): DockStat => ({ value: null, unit: '', hint, secondary: [] })
-
-export function drawStat(metrics: ScenarioMetrics | null): DockStat {
-  if (!metrics) return empty('Site loading')
-  const count = metrics.buildingCount
-  return {
-    value: String(count),
-    unit: count === 1 ? ' mass' : ' masses',
-    secondary: count > 0 ? [[formatNumber(metrics.gfaM2), ' m² GFA']] : [['', 'Draw a footprint to start']],
-  }
-}
-
-export function areaStat(metrics: ScenarioMetrics | null): DockStat {
-  if (!metrics || metrics.buildingCount === 0) return empty('Draw a mass to measure')
-  return {
-    value: formatNumber(metrics.gfaM2),
-    unit: ' m²',
-    secondary: [
-      // Volume and the rest stay in the Area group of Parameters; the card keeps one short line.
-      [formatNumber(metrics.groundFootprintM2), ' m² · '],
-      [formatNumber(metrics.coverageWithinParcel * 100, 1), '% cover'],
-    ],
-  }
-}
 
 export function sunStat(state: SunState, clock: string): DockStat {
   if (state.belowHorizon) return { ...empty('Sun below horizon'), secondary: [[clock, ' local']] }

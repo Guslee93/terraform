@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
-import { drawMass, openStudio } from './m4-helpers'
+import { drawMass, openStudio } from './studio-helpers'
 
 // D40 — M5 accessibility checks (docs/plans/M5-plan.md, docs/handoffs/D39-D40-m5-perf-a11y.md).
 //

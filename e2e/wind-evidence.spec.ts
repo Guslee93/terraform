@@ -31,9 +31,6 @@ const FOV_DEG = 32
 
 /** Open a site, pin the render quality and switch the wind layer on. */
 async function openWind(page: Page, site: string) {
-  await page.addInitScript(() => {
-    window.localStorage.setItem('terraform.renderQuality', 'high')
-  })
   await page.goto(`/studio/${site}`)
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   await openAnalysis(page, 'Wind')
@@ -78,15 +75,6 @@ test('X5: the comfort bands at 6 m/s on Sloped Edge', async ({ page }) => {
 })
 
 test.describe('delta against a baseline', () => {
-  // The delta shot starts in the analysis-only studio and switches massing on with the button, so
-  // it gets its own storage state: no leaked test-building flag, no guide.
-  test.use({
-    storageState: {
-      cookies: [],
-      origins: [{ origin: 'http://127.0.0.1:5173', localStorage: [{ name: 'terraform:studio-guide-dismissed:v1', value: 'true' }] }],
-    },
-  })
-
   test('X5: the delta after a tower is drawn on the upwind side of Sloped Edge', async ({ page }) => {
     await openWind(page, 'sloped-edge')
     await waitForSettled(page)
@@ -94,7 +82,7 @@ test.describe('delta against a baseline', () => {
     await expect(page.getByRole('button', { name: 'Delta', exact: true })).toBeVisible()
 
     // Massing on, then the top view: metres map linearly to pixels there.
-    await page.getByRole('button', { name: 'Test a building' }).click()
+    await page.getByRole('button', { name: 'Add a block' }).click()
     await page.getByRole('button', { name: 'Plan', exact: true }).click()
     await page.waitForTimeout(800)
 
@@ -115,10 +103,9 @@ test.describe('delta against a baseline', () => {
     }
     await page.getByRole('button', { name: 'Draw building' }).evaluate((button) => button.blur())
     await page.keyboard.press('Enter')
-    await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
 
-    // 12 storeys at the 3.2 m default = 38.4 m: tall enough to matter, short enough to stay legal.
-    const storeys = page.getByRole('textbox', { name: 'Storeys' })
+    // 12 storeys at the 3.2 m default = 38.4 m: tall enough to affect the screening field.
+    const storeys = page.getByRole('spinbutton', { name: 'Storeys' })
     await storeys.fill('12')
     await storeys.press('Enter')
     await expect(storeys).toHaveValue('12')
@@ -136,10 +123,10 @@ test.describe('delta against a baseline', () => {
     await page.waitForTimeout(1500)
     await page.screenshot({ path: `${OUT_DIR}/wind-delta.png` })
 
-    // Delete the mass again so the stored project stays clean.
+    // Delete the session block again.
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
     // The mass fields disappear once nothing is selected — the mass is really gone.
-    await expect(page.getByRole('textbox', { name: 'Storeys' })).toHaveCount(0)
+    await expect(page.getByRole('spinbutton', { name: 'Storeys' })).toHaveCount(0)
   })
 })
 

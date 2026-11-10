@@ -1,13 +1,13 @@
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { PlaceSearch } from './PlaceSearch'
 import { Button } from '../components/ui/Button'
 import { cn } from '../lib/cn'
 import { importSite, type ImportStep } from '../features/import/assemble'
 import { QUICK_PICKS } from '../features/import/cities'
 import { FRAME_SIZES, frameAt, framePixels, frameReadout, type FrameSize } from '../features/import/framing'
-import { searchPlaces, type PlaceResult } from '../features/import/geocode'
 import { saveImported, openImportedWithoutSaving, type ImportedSite } from '../features/import/session'
 import { StoreError, toStoreError } from '../features/scenarios/store'
 import { kartverketProvider, terrariumProvider } from '../features/import/terrain'
@@ -37,14 +37,24 @@ type Phase = 'idle' | 'loading' | 'cancelled' | 'error'
 
 const prefersReducedMotion = () => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+/** The place in `?lat=&lon=&label=`, if valid; otherwise the default start. */
+function startFrom(params: URLSearchParams) {
+  const latitude = Number(params.get('lat'))
+  const longitude = Number(params.get('lon'))
+  const valid = params.has('lat') && params.has('lon') && Math.abs(latitude) <= 85 && Math.abs(longitude) <= 180 && Number.isFinite(latitude) && Number.isFinite(longitude)
+  return valid ? { latitude, longitude, label: params.get('label')?.slice(0, 120) || 'Custom area' } : START
+}
+
 export function NewSitePage() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const [start] = useState(() => startFrom(params))
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const controller = useRef<AbortController | null>(null)
-  const [view, setView] = useState({ latitude: START.latitude, longitude: START.longitude, zoom: START_ZOOM })
+  const [view, setView] = useState({ latitude: start.latitude, longitude: start.longitude, zoom: START_ZOOM })
   const [size, setSize] = useState<FrameSize>(400)
-  const [title, setTitle] = useState(START.label)
+  const [title, setTitle] = useState(start.label)
   const [phase, setPhase] = useState<Phase>('idle')
   const [steps, setSteps] = useState(WAITING)
   const [unsaved, setUnsaved] = useState<ImportedSite | null>(null)
@@ -55,7 +65,7 @@ export function NewSitePage() {
     const instance = new maplibregl.Map({
       container: mapContainer.current,
       style: MAP_STYLE,
-      center: [START.longitude, START.latitude],
+      center: [start.longitude, start.latitude],
       zoom: START_ZOOM,
       attributionControl: { compact: false },
     })
@@ -78,6 +88,8 @@ export function NewSitePage() {
       instance.remove()
       map.current = null
     }
+    // The map is created once, at the start place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Leaving the page cancels an import in flight.
@@ -175,23 +187,15 @@ export function NewSitePage() {
       >
         <header>
           <Link to="/" className="text-caption text-ink-secondary underline underline-offset-4 hover:text-ink">
-            Terraform · back to the sites
+            Terraform · back to search
           </Link>
-          <h1 className="mt-3 text-figure-s text-ink">Start from any address</h1>
+          <h1 className="mt-3 text-figure-s text-ink">Frame the site</h1>
           <p className="mt-2 text-body-sm leading-relaxed text-ink-secondary">
-            Move the map to place the frame, then load open map data in 3D.
+            Move the map to place the frame, then open it in 3D.
           </p>
         </header>
 
         <PlaceSearch disabled={loading} onSelect={(place) => goTo(place.latitude, place.longitude, place.label)} />
-
-        <div role="group" aria-label="Quick picks" className="flex flex-wrap gap-2">
-          {QUICK_PICKS.map((pick) => (
-            <Button key={pick.id} variant="secondary" disabled={loading} className="min-h-9 px-3 text-caption" onClick={() => goTo(pick.latitude, pick.longitude, pick.label)}>
-              {pick.label}
-            </Button>
-          ))}
-        </div>
 
         <fieldset disabled={loading}>
           <legend id="frame-size-label" className="text-caption text-ink-secondary">Frame size</legend>
@@ -205,7 +209,7 @@ export function NewSitePage() {
           </div>
           <p className="mt-3 text-body-sm text-ink">{frameReadout(size)}</p>
           <p className="mt-1 text-caption text-ink-secondary">
-            {title} · Study area — not a cadastral parcel
+            {title} · Area to load — not a cadastral parcel
           </p>
         </fieldset>
 
@@ -213,7 +217,7 @@ export function NewSitePage() {
 
         <div className="flex gap-2">
           <Button className="min-h-11 flex-1" disabled={loading || !('frame' in framed)} onClick={() => void load()}>
-            Load in 3D
+            Open in 3D
           </Button>
           {loading && (
             <Button variant="secondary" className="min-h-11" onClick={cancel}>
@@ -259,122 +263,6 @@ export function NewSitePage() {
           OpenStreetMap context · heights partly estimated · not survey data. Imported sites are saved in this browser only.
         </p>
       </aside>
-    </div>
-  )
-}
-
-function PlaceSearch({ disabled, onSelect }: { disabled: boolean; onSelect: (place: PlaceResult) => void }) {
-  const id = useId()
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<PlaceResult[]>([])
-  const [open, setOpen] = useState(false)
-  const [active, setActive] = useState(-1)
-  const [message, setMessage] = useState('')
-  // The label just picked: putting it in the box must not search (and reopen the list) again.
-  const chosen = useRef<string | null>(null)
-
-  useEffect(() => {
-    const trimmed = query.trim()
-    if (trimmed.length < 3 || query === chosen.current) return
-    const controller = new AbortController()
-    const timer = window.setTimeout(() => {
-      searchPlaces(trimmed, controller.signal)
-        .then((places) => {
-          if (controller.signal.aborted) return
-          setResults(places)
-          setActive(-1)
-          setOpen(true)
-          setMessage(places.length ? '' : 'No places found')
-        })
-        .catch(() => {
-          if (controller.signal.aborted) return
-          setResults([])
-          setOpen(false)
-          setMessage('Search is unavailable right now. You can still move the map.')
-        })
-    }, 300)
-    return () => {
-      window.clearTimeout(timer)
-      controller.abort()
-    }
-  }, [query])
-
-  function choose(place: PlaceResult) {
-    chosen.current = place.label
-    setQuery(place.label)
-    setOpen(false)
-    setResults([])
-    setMessage('')
-    onSelect(place)
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'ArrowDown' && results.length) {
-      event.preventDefault()
-      setOpen(true)
-      setActive((index) => (index + 1) % results.length)
-    } else if (event.key === 'ArrowUp' && results.length) {
-      event.preventDefault()
-      setActive((index) => (index <= 0 ? results.length - 1 : index - 1))
-    } else if (event.key === 'Enter' && open && results[active]) {
-      event.preventDefault()
-      choose(results[active])
-    } else if (event.key === 'Escape') {
-      setOpen(false)
-    }
-  }
-
-  const expanded = open && results.length > 0
-
-  return (
-    <div className="relative">
-      <label htmlFor={`${id}-input`} className="text-caption text-ink-secondary">Search for an address or place</label>
-      <input
-        id={`${id}-input`}
-        type="search"
-        role="combobox"
-        aria-expanded={expanded}
-        aria-controls={`${id}-list`}
-        aria-autocomplete="list"
-        aria-activedescendant={expanded && active >= 0 ? `${id}-option-${active}` : undefined}
-        autoComplete="off"
-        disabled={disabled}
-        value={query}
-        placeholder="Thorvald Meyers gate 40, Oslo"
-        onChange={(event) => {
-          setQuery(event.target.value)
-          if (event.target.value.trim().length < 3) {
-            setResults([])
-            setOpen(false)
-            setMessage('')
-          }
-        }}
-        onKeyDown={onKeyDown}
-        className="mt-2 min-h-11 w-full rounded-control border border-line bg-surface px-3 text-body-sm text-ink placeholder:text-ink-disabled focus-visible:outline-2 focus-visible:outline-focus"
-      />
-      <ul
-        id={`${id}-list`}
-        role="listbox"
-        aria-label="Places"
-        hidden={!expanded}
-        className="absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-control border border-line bg-surface py-1 shadow-lg"
-      >
-        {results.map((place, index) => (
-          <li
-            key={place.id}
-            id={`${id}-option-${index}`}
-            role="option"
-            aria-selected={index === active}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => choose(place)}
-            className={cn('cursor-pointer px-3 py-2', index === active ? 'bg-muted-fill' : 'hover:bg-surface-hover')}
-          >
-            <span className="block text-body-sm text-ink">{place.label}</span>
-            <span className="block text-caption text-ink-secondary">{place.detail}</span>
-          </li>
-        ))}
-      </ul>
-      <p role="status" className="mt-1 min-h-4 text-caption text-ink-secondary">{message}</p>
     </div>
   )
 }

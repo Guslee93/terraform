@@ -9,7 +9,6 @@ function setup(overrides: Partial<Parameters<typeof ToolRail>[0]> = {}) {
     onSelect: vi.fn(),
     canDelete: false,
     onDelete: vi.fn(),
-    onExport: vi.fn(),
     canUndo: true,
     canRedo: false,
     onUndo: vi.fn(),
@@ -51,12 +50,10 @@ describe('ToolRail tools', () => {
     expect(screen.getByRole('button', { name: 'Delete selected mass' })).toBeDisabled()
   })
 
-  it('runs delete and the one primary action', async () => {
+  it('runs delete', async () => {
     const props = setup({ canDelete: true })
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: 'Delete selected mass' }))
-    await user.click(screen.getByRole('button', { name: 'Export' }))
     expect(props.onDelete).toHaveBeenCalledOnce()
-    expect(props.onExport).toHaveBeenCalledOnce()
   })
 })

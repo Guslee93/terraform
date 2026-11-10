@@ -7,8 +7,8 @@ import {
   createTier,
   createVolume,
 } from '../massing/factories'
-import { updateTier, updateVolume } from './commands'
-import { createHistory, execute } from './history'
+import { updateTier } from './commands'
+import { createHistory } from './history'
 import {
   cameraLocked,
   commandError,
@@ -116,7 +116,7 @@ describe('drag transactions', () => {
   })
 
   it('refuses to start a gesture on a locked mass', () => {
-    const locked = createEditorState(execute(createHistory(base), updateVolume('v1', { locked: true })))
+    const locked = createEditorState(createHistory({ ...base, volumes: base.volumes.map((volume) => ({ ...volume, locked: true })) }))
     const state = run(locked, down([0, 0], { gesture: moveGesture('v1') }))
     expect(state.interaction.kind).toBe('idle')
     expect(state.error).toMatch(/locked/)
@@ -173,7 +173,7 @@ describe('inspector commands', () => {
 
   it('is ignored while a gesture is open', () => {
     const dragging = run(start, down([0, 0], { gesture: moveGesture('v1') }))
-    const command = updateVolume('v1', { name: 'Renamed' })
+    const command = updateTier('v1', 't1', { storeys: 5 })
     expect(commandError(dragging, command)).toBe('Finish the current edit first.')
     expect(run(dragging, { type: 'command', command })).toBe(dragging)
   })

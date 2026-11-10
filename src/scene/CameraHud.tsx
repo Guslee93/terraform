@@ -1,5 +1,4 @@
 import type { SceneLayers } from './ViewportCanvas'
-import { ACCENT, AMBER } from './ConstraintLayer'
 import { useHudStore } from './hudStore'
 import { soften } from './palette'
 
@@ -32,18 +31,6 @@ export function CameraHud({ layers }: { layers?: SceneLayers } = {}) {
           <span aria-hidden="true" className="h-[5px] border-x border-b border-ink" style={{ width: `${scaleWidthPx}px` }} />
           {scaleLabel}
         </span>
-        {layers?.parcel !== false && (
-          <span className="hidden items-center gap-1.5 md:inline-flex" title="Authored study area — not a cadastral parcel">
-            <span aria-hidden="true" className="w-4 border-t border-dashed" style={{ borderColor: ACCENT }} />
-            Study boundary
-          </span>
-        )}
-        {layers?.setback && (
-          <span className="hidden items-center gap-1.5 md:inline-flex" title="Illustrative constraint — not planning advice">
-            <span aria-hidden="true" className="w-4 border-t border-dashed" style={{ borderColor: AMBER }} />
-            Setback
-          </span>
-        )}
         {(layers?.terrain ?? true) && (
           <span className="hidden items-center gap-1.5 lg:inline-flex">
             <span aria-hidden="true" className="size-2" style={{ backgroundColor: GREEN_SPACE }} />

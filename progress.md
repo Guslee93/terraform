@@ -541,3 +541,15 @@
 - ADR-0019: View → Export visuals. "Image passes" saves 4K still (with AO), linear depth, white model and a transparent analysis overlay; "Record 6 s clip" saves WebM/MP4 of the live viewport. Reverses ADR-0012 for these passes only.
 - Verified headless on M1 Pro: 4 × 3840×2498 PNGs + 3.4 MB WebM; Low tier exports too; viewport normal afterwards.
 
+
+
+## C28 — 2026-11-10 — Codex
+Executed `docs/handoffs/C28-simplify-studio.md` within its HARD RULE. Removed studio scenarios, comparison, guide, project JSON, planning checks/layers, facts/GFA and detailed block/render controls. Session-only blocks retain validated transactional editing and feed unchanged analysis/export. Full inventory and retained-module reasoning: `docs/reviews/C28-simplify-studio.md`.
+
+Validation: lint and build pass; final full Vitest 97 files passed / 1 skipped, 898 tests passed / 4 skipped (24.68 s); Playwright discovery 58 tests in 14 files. Browser run failed before launch: Vite `listen EPERM 127.0.0.1:5173`; no screenshots produced. Initial unit run: obsolete Export assertion fixed; protected wind test timed out under concurrent check load then passed full reruns unchanged. Initial script/typecheck mistakes resolved, detailed in report. No commit/deploy. Parallel Claude page/styles/smoke edits and pre-existing screenshot deletions left untouched.
+
+### Simplification — search-first landing + studio cuts (2026-11-10, Claude + Codex)
+- Owner: keep the wow (3D site, sun, full wind incl. expert controls, noise, export, cameras, labels, minimal Add a block); cut the rest. ADR-0020; recovery tag `pre-simplify` (also captures the rendering-spec session's uncommitted export wiring, committed as found in 1cc150a).
+- Claude: search-first landing (one screen, frosted search card, ready-made templates + city chips, lime/grey wash from the owner's references), `/new` reduced to the framing step and opened at the searched place (`?lat&lon&label`), `PlaceSearch` split out so the landing doesn't load maplibre (index 1.55 MB → 280 KB); old marketing components removed.
+- Codex C28: studio cuts (scenarios, compare, guide, project JSON, design check, boundary/setback/height layers, facts/GFA, tiers/detail, render knobs); session-only minimal blocks; dead code + tests removed (report `docs/reviews/C28-simplify-studio.md`).
+- Browser: landing search → framing at Karl Johans gate 1 → studio; Add a block → 12 storeys (38.4 m) → wind solves around it; export actions present.

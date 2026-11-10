@@ -10,11 +10,10 @@ test('Streets and Trees checkboxes exist on compact-infill', async ({ page }) =>
     page.getByRole('region', { name: /3D site viewport for Compact Infill/i }),
   ).toBeVisible()
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in a panel group; the toolbar's Layers button opens it.
-  await page.getByRole('button', { name: 'Layers', exact: true }).click()
 
   await expect(page.getByRole('checkbox', { name: 'Streets' })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Trees' })).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: /Study boundary|Setback|Height limit/ })).toHaveCount(0)
 })
 
 test('Streets and Trees checkboxes exist on sloped-edge', async ({ page }) => {
@@ -23,19 +22,16 @@ test('Streets and Trees checkboxes exist on sloped-edge', async ({ page }) => {
     page.getByRole('region', { name: /3D site viewport for Sloped Edge/i }),
   ).toBeVisible()
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in a panel group; the toolbar's Layers button opens it.
-  await page.getByRole('button', { name: 'Layers', exact: true }).click()
 
   await expect(page.getByRole('checkbox', { name: 'Streets' })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Trees' })).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: /Study boundary|Setback|Height limit/ })).toHaveCount(0)
 })
 
 test('the 3D view changes when Trees is toggled off then on', async ({ page }) => {
   await page.goto('/studio/compact-infill')
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in a panel group; the toolbar's Layers button opens it.
-  await page.getByRole('button', { name: 'Layers', exact: true }).click()
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
   const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
@@ -63,8 +59,6 @@ test('the 3D view changes when Streets is toggled off then on', async ({ page })
   await page.goto('/studio/compact-infill')
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  // Layers live in a panel group; the toolbar's Layers button opens it.
-  await page.getByRole('button', { name: 'Layers', exact: true }).click()
   const box = await viewport.boundingBox()
   if (!box) throw new Error('The 3D site viewport region was not found')
   const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
@@ -121,7 +115,7 @@ test('the viewport HUD items never overlap and the page never scrolls sideways',
     const items: Array<[string, Box]> = []
     for (const [name, locator] of [
       ['legend', page.getByTestId('legend')],
-      ['toolbar', page.getByRole('navigation', { name: 'Studio tools' })],
+
       ['camera views', page.getByRole('group', { name: 'Camera presets' })],
     ] as const) {
       const box = await locator.boundingBox()

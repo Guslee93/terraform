@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { openAnalysis, openGroup } from './studio-helpers'
+import { openAnalysis } from './studio-helpers'
 
 // D32 — M3 live-analysis e2e (docs/plans/M3-fable-plan.md §10, docs/handoffs/C8-C10-m3-ui.md).
 //
@@ -37,10 +37,6 @@ function sunReadout(page: Page) {
 }
 
 test('D32: Sun time presets change the rendered canvas and the sun readout', async ({ page }) => {
-  // Pixels matter here: pin High so shadows + AO are actually rendered (Auto → Low on software GL).
-  await page.addInitScript(() => {
-    window.localStorage.setItem('terraform.renderQuality', 'high')
-  })
   await openStudio(page)
   const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
   const box = await viewport.boundingBox()
@@ -90,44 +86,6 @@ test('D32: winter solstice evening shows the Sun below horizon chip and no eleva
   await expect(page.getByText('Sun below horizon').first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'Winter solstice' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: 'Evening' })).toHaveAttribute('aria-pressed', 'true')
-})
-
-test('D32: a mass drawn across the study boundary exceeds the envelope and its warning selects it', async ({ page }) => {
-  await openStudio(page)
-  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
-  const box = await viewport.boundingBox()
-  if (!box) throw new Error('The 3D site viewport region was not found')
-  const cx = box.x + box.width / 2
-  const cy = box.y + box.height / 2
-
-  await page.getByRole('button', { name: 'Plan', exact: true }).click()
-  await page.waitForTimeout(500)
-
-  await page.getByRole('button', { name: 'Draw building' }).click()
-  // Top view has uniform metres per pixel, so 0.26 × viewport height east/west of the origin
-  // lands near ±103 m: across the study boundary (±95 m; the setback sits at ±91 m) yet inside
-  // the 13 × 13 terrain grid (≈ ±112 m), so every corner reliably clicks the ground.
-  const step = Math.round(box.height * 0.26)
-  for (const [dx, dy] of [[-step, -80], [step, -80], [step, 80], [-step, 80]]) {
-    await page.mouse.click(cx + dx, cy + dy)
-  }
-  await page.getByRole('button', { name: 'Draw building' }).evaluate((button) => button.blur())
-  await page.keyboard.press('Enter')
-  await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
-
-  await expect(page.getByRole('heading', { name: 'Exceeds demo envelope' })).toBeVisible()
-  await expect(page.getByText('Illustrative constraint — not planning advice')).toBeVisible()
-
-  // One button per problem: the setback and the study-area breach are listed separately.
-  const warning = page.getByRole('button', { name: /^Mass 1 is outside the setback/ })
-  await expect(warning).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Mass 1 is outside the study area/ })).toBeVisible()
-
-  await warning.click()
-  // The warning selects the mass: Selected mass names it.
-  const selectedGroup = await openGroup(page, 'Selected mass')
-  await expect(selectedGroup.locator('summary')).toContainText('Mass 1')
-  await expect(page.getByLabel('Name')).toHaveValue('Mass 1')
 })
 
 test('D32: the DST gap for 2026-03-29 02:30 is disclosed in the Sun group', async ({ page }) => {
