@@ -535,3 +535,9 @@
 - Phase 2 (ADR-0018): Balanced gets half-res N8AO; Auto drops one tier when a 3 s window averages over 33 ms; AO switches off during mass drags and fades back over 300 ms. Selective bloom tried and removed (bleaches wind lines on a light scene).
 - fps (M1 Pro, 1440×900, wind on): High 51, Balanced 60, Low 60. lint ✅ · 1035 tests ✅ · build ✅.
 
+- Deployed (2026-11-10): Vercel production from main (0063654) via `vercel deploy --prod` — rendering spec Phases 1–2. Live: https://terraform-studio-murex.vercel.app — live bundles contain the half-res AO switch and environment light; compact-infill studio loads with no console errors.
+
+### Rendering spec Phase 3 (2026-11-10, Claude)
+- ADR-0019: View → Export visuals. "Image passes" saves 4K still (with AO), linear depth, white model and a transparent analysis overlay; "Record 6 s clip" saves WebM/MP4 of the live viewport. Reverses ADR-0012 for these passes only.
+- Verified headless on M1 Pro: 4 × 3840×2498 PNGs + 3.4 MB WebM; Low tier exports too; viewport normal afterwards.
+

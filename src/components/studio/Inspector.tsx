@@ -35,6 +35,8 @@ type InspectorProps = {
   onRenderPreferenceChange: (preference: RenderPreference) => void
   /** Camera preset buttons. */
   views?: ReactNode
+  /** Image pass and clip export (ADR-0019). */
+  visuals?: ReactNode
   grid: boolean
   onGridChange: (on: boolean) => void
   selected: { volume: MassVolume; tier: MassTier; warnings?: readonly ClearanceIssue[] } | null
@@ -94,6 +96,7 @@ export function Inspector({
   renderPreference,
   onRenderPreferenceChange,
   views,
+  visuals,
   grid,
   onGridChange,
   selected,
@@ -210,7 +213,8 @@ export function Inspector({
             <option value="low">Low</option>
           </select>
         </div>
-        <p id="render-quality-hint" className="text-caption text-ink-secondary">Sets shadows and ambient occlusion. Auto lowers quality on software rendering.</p>
+        <p id="render-quality-hint" className="text-caption text-ink-secondary">Sets shadows and ambient occlusion. Auto lowers quality on software rendering or when frames run slow.</p>
+        {visuals}
       </Group>
 
       {!analysisOnly && notes && (

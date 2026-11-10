@@ -37,6 +37,8 @@ import { cn } from '../../lib/cn'
 import { textButtonClass } from '../ui/controls'
 import { Icon } from '../ui/Icon'
 import { CameraPresets } from './CameraPresets'
+import { ExportVisuals, downloadPasses } from './ExportVisuals'
+import type { PassImages } from '../../scene/exportPasses'
 import { summarizeChecks } from './checks'
 import { ConstraintsPanel } from './ConstraintsPanel'
 import { formatArea, formatMetres } from './format'
@@ -105,6 +107,12 @@ export function StudioShell({
   }, [sunTime, sitePackage])
   const playback = useSunPlayback(setSunTime)
   const [renderPreference, setRenderPreference] = useState(readRenderPreference)
+  const [exportRequest, setExportRequest] = useState<number | null>(null)
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
+  const onExport = useCallback((result: PassImages | Error) => {
+    setExportRequest(null)
+    setExportMessage(result instanceof Error ? result.message : `Saved ${downloadPasses(result, site.id)} images.`)
+  }, [site.id])
   // Below 640 px the studio is a read-only preview (M0 visual gate).
   const [wide, setWide] = useState(() => window.matchMedia('(min-width: 640px)').matches)
   // Editing waits for the scenario project to load, so no edit can be lost to the load.
@@ -506,6 +514,8 @@ export function StudioShell({
                 windCircle={climateMode === 'wind' ? windCircle : null}
                 onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
                 grid={grid}
+                exportRequest={exportRequest}
+                onExport={onExport}
               />
               <LayersCard manifest={sitePackage.manifest} layers={layers} onToggleLayer={toggleLayer} />
             </>
@@ -596,6 +606,8 @@ export function StudioShell({
           renderPreference={renderPreference}
           onRenderPreferenceChange={(preference) => setRenderPreference(writeRenderPreference(preference))}
           views={ready ? <CameraPresets active={cameraPreset} onSelect={requestCamera} /> : null}
+          visuals={ready ? <ExportVisuals siteId={site.id} exporting={exportRequest !== null} message={exportMessage}
+            onExportPasses={() => { setExportMessage('Rendering 4K passes…'); setExportRequest(Date.now()) }} /> : null}
           grid={grid}
           onGridChange={setGrid}
           selected={selected}

@@ -43,7 +43,7 @@ describe('Parameters panel', () => {
     render(<Inspector {...baseProps} onRenderPreferenceChange={onChange} />)
     const quality = screen.getByRole('combobox', { name: 'Render quality' })
     expect(quality).toHaveValue('auto')
-    expect(quality).toHaveAccessibleDescription('Sets shadows and ambient occlusion. Auto lowers quality on software rendering.')
+    expect(quality).toHaveAccessibleDescription('Sets shadows and ambient occlusion. Auto lowers quality on software rendering or when frames run slow.')
     // It follows the grid switch in the keyboard sequence.
     screen.getByRole('checkbox', { name: 'Ground grid · 1 m / 10 m' }).focus()
     await user.tab()

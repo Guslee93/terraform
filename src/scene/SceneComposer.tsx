@@ -28,6 +28,8 @@ export default function SceneComposer({ ao, busy }: { ao: 'full' | 'half'; busy:
   const scene = useThree((state) => state.scene)
   const camera = useThree((state) => state.camera)
   const size = useThree((state) => state.size)
+  // The composer sizes its targets from the renderer's pixel ratio; resize when it changes (export).
+  const dpr = useThree((state) => state.viewport.dpr)
 
   // Built inside the effect, not useMemo: StrictMode mounts effects twice, and a memoised
   // composer disposed by the first cleanup has no passes left, freezing the canvas on its
@@ -56,7 +58,7 @@ export default function SceneComposer({ ao, busy }: { ao: 'full' | 'half'; busy:
     }
   }, [gl, scene, camera, ao])
 
-  useEffect(() => passes?.composer.setSize(size.width, size.height), [passes, size.width, size.height])
+  useEffect(() => passes?.composer.setSize(size.width, size.height), [passes, size.width, size.height, dpr])
 
   // A priority-1 frame callback switches off R3F's own render, so draw directly until ready.
   useFrame((_, delta) => {

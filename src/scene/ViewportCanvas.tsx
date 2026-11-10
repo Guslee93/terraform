@@ -36,6 +36,8 @@ import { visibleTierFootprints } from './massFootprints'
 import { webglRendererName } from './rendererTier'
 import { createFrameBudget, downgrade, RENDER_PROFILES, resolveProfile, type RenderPreference, type RenderProfile } from './renderQuality'
 import { detectWebGL } from './webglSupport'
+import { PassExporter } from './PassExporter'
+import { ANALYSIS_OVERLAY_NAME, type PassImages } from './exportPasses'
 import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
 import { SceneErrorBoundary, SceneUnavailable } from './SceneErrorBoundary'
@@ -93,6 +95,9 @@ type ViewportProps = {
   onPickPoint?: (point: Vec2) => void
   /** Endless ENU floor grid (1 m minor, 10 m major) under the site block. */
   grid?: boolean
+  /** Each new number captures the export passes once (ADR-0019). */
+  exportRequest?: number | null
+  onExport?: (result: PassImages | Error) => void
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
@@ -483,6 +488,8 @@ export function ViewportCanvas({
   windCircle = null,
   onPickPoint,
   grid = true,
+  exportRequest = null,
+  onExport,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   useEffect(() => {
@@ -575,6 +582,8 @@ export function ViewportCanvas({
             {layers.context && <ContextBuildings buildings={buildings.buildings} />}
             {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
             {layers.parcel && <StudyBoundary sitePackage={sitePackage} />}
+            {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
+            <group name={ANALYSIS_OVERLAY_NAME}>
             {climate && layers.terrain && (windCircle
               ? <WindHeatmap overlay={climate} heightAt={heightAt} circle={windCircle} />
               : <ClimateLayer overlay={climate} heightAt={heightAt} />)}
@@ -584,6 +593,7 @@ export function ViewportCanvas({
               ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlineHeight} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
               : <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} />)}
             {windCircle && layers.terrain && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}
+            </group>
 
             <group name="live-scenario">
             {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
@@ -613,6 +623,7 @@ export function ViewportCanvas({
               presets={manifest.cameraPresets}
               controlsRef={controlsRef}
             />
+            {onExport && <PassExporter request={exportRequest} controls={controlsRef} onDone={onExport} />}
             <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />
             {/* Wait for renderer detection so Auto never starts AO on software GL. */}
