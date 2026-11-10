@@ -641,3 +641,4 @@ zoom in because the quads are small at the default site camera.
 - First attempt used GL lines and a whole-frame guard: lines were too faint at 2× DPR and the guard stripped trails whenever the scene itself was slow. Both replaced.
 - Measured (M1 Pro, headed): about +1 ms per frame at 1×, +0.5 ms at 2×. `npm run lint`, `npm run test`, `npm run build` pass.
 - Not checked: the reduced-motion still trails were not viewed in a browser (the studio shows streamlines in that mode).
+- Deployed (2026-11-10): Vercel production from main (cc6d68e) via `vercel deploy --prod` — wind ribbon trails. Live: https://terraform-studio-murex.vercel.app — Bergen (Bryggen) import, wind Direction view at 2× DPR: trails curve round the buildings; 25.3–25.7 ms per frame (24.6–25.0 ms with the old particles).
