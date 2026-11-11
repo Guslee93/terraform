@@ -169,7 +169,7 @@ Scene colours are TypeScript constants in `src/scene/*`; they are the single sou
 | Selection outline | dark blue-grey |
 | Grid | `#B9C0B6`, sections `#9AA399`; shown only in Top view or while drawing |
 | Contours | `#6F6E6A`, 1 m at 0.14, 5 m at 0.32; only when relief ≥ 2 m |
-| Streets (OSM) | `#ADAAA3`, warm mid-grey well below the ground value (darkened 2026-11-11: barely visible at site scale) |
+| Streets (OSM) | `#C1BEB7`, warm light grey (half the on-screen contrast of `#ADAAA3`) well below the ground value (darkened 2026-11-11: barely visible at site scale) |
 | Trees (OSM) | leaf-cluster canopies (18–28 jittered clumps, greens `#A9CBA0` `#8FBB8A` `#C3DAB5` `#7FAE7E` per clump), 6 variants × round/tall, branches `#A39A8C`; size 0.75–1.35×, varied by position (Codex C2) |
 | Green space (OSM park/grass/wood) | rendered ≈ `#D3DCCB` (muted sage), painted into the terrain texture |
 | Water (OSM) | rendered ≈ `#C6DCE8`, painted into the terrain texture |
