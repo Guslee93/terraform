@@ -53,6 +53,19 @@ describe('clear-sky annual roof irradiation', () => {
     expect(value?.kwhPerM2 ?? 0).toBeGreaterThan(1000)
   })
 
+  it('leaves the part of a podium roof under a tower out of its value', () => {
+    const podium = box([0, 0], 20, 20, 12)
+    const tower = box([0, 0], 16, 16, 40)
+    const alone = computeRoofSolar([podium], OSLO)[0]!
+    const [withTower, top] = computeRoofSolar([podium, tower], OSLO)
+    // The covered middle is not roof; the open ring around the tower is only partly shaded.
+    expect(withTower!.exposedShare).toBeGreaterThan(0.2)
+    expect(withTower!.exposedShare).toBeLessThan(0.5)
+    expect(withTower!.kwhPerM2).toBeGreaterThan(600)
+    expect(withTower!.kwhPerM2).toBeLessThan(alone.kwhPerM2)
+    expect(top!.exposedShare).toBe(1)
+  })
+
   it('lowers the value when a much taller block stands to the south', () => {
     const roof = box([0, 0], 20, 20, 10)
     const tower = box([0, -50], 60, 60, 30)

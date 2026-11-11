@@ -185,3 +185,23 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - **Known limitations:** terrain and trees do not shade; clear sky only; flat roofs; façade/VSC cover
   user masses only. Embodied carbon excluded until material data exists.
 
+
+## GIS data audit and fixes — 2026-11-11
+
+- [x] Read-only audit of roads, trees, water and greenery on the curated and import paths, with counts computed from the shipped JSON and the recorded tiles.
+- [x] Close a multipolygon whose outer ring leaves the extract (sloped-edge forest and recreation ground) by caching the missing member ways.
+- [x] Keep covered passages as streets; split roads at missing nodes rather than joining across the gap.
+- [x] Draw waterway lines and pedestrian areas as ground tints; correct the park/protected-area labels; width the `path` class per subclass.
+- [x] Make the curated attribution file reachable; drop asset paths user imports do not have.
+- [x] Add a Land cover layer toggle; keep the legend in step.
+- [x] Replace loose assertions with exact counts in the import and builder tests.
+- [x] `npm run lint`, `npm run test` (978 passed / 4 skipped), `npm run build` and the builder self-checks pass.
+- [ ] NVDB as the road source — needs an ADR and a product decision, not a bug fix.
+
+## Data check and bug review — 2026-11-11
+
+- [x] Confirm each ground layer reaches the screen on both sites; fix the Land cover toggle (e2e test added).
+- [x] Four read-only reviews (analysis, data/persistence, scene/editor, app/UI): 22 candidates.
+- [x] Fix 15 confirmed bugs with tests; `npm run lint`, `npm run test` (989 / 4 skipped), `npm run build` pass.
+- [ ] Verify the 4K export and sloped-site façade fixes in a browser.
+- [ ] Open items: stale import title, no saved-sites list, Baltic time zone, constraints outside-boundary check, trees inside footprints.

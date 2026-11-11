@@ -1,4 +1,4 @@
-import { polygonArea, ringCentroid } from '../../lib/polygon'
+import { pointInPolygon, polygonArea, ringCentroid } from '../../lib/polygon'
 import type { Vec2, Vec3 } from '../../lib/coordinates'
 import { sampleGrid, type FootprintBuilding } from './grid'
 import { blockedAlong, prepareScene, type SunLocation } from './shadowRay'
@@ -73,6 +73,8 @@ export type RoofSolarValue = {
   /** Mean annual clear-sky irradiation over the roof, kWh/m²·yr. */
   readonly kwhPerM2: number
   readonly sampleCount: number
+  /** Share of the footprint that is open roof; the rest lies under a taller overlapping block. */
+  readonly exposedShare?: number
 }
 
 /**
@@ -87,12 +89,24 @@ export function computeRoofSolar(
 ): RoofSolarValue[] {
   const samples = annualSunSamples(location)
   const prepared = prepareScene(buildings)
-  return buildings.map((building) => {
+  const boxes = buildings.map(({ footprint }) => {
+    const xs = footprint.map((p) => p[0]), ys = footprint.map((p) => p[1])
+    return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] as const
+  })
+  return buildings.map((building, index) => {
     const area = polygonArea(building.footprint)
     let points: readonly Vec2[] = sampleGrid(building.footprint, cellM).map((cell): Vec2 => [cell.x, cell.y])
     if (points.length === 0 || area < ROOF_SOLAR_MIN_SAMPLE_AREA_M2) {
       points = [ringCentroid(building.footprint)]
     }
+    // A point under a taller overlapping footprint (the tier above, a building part) is not roof.
+    const box = boxes[index]!
+    const above = buildings.filter((other, j) => {
+      const o = boxes[j]!
+      return j !== index && other.height > building.height && o[0] <= box[2] && o[2] >= box[0] && o[1] <= box[3] && o[3] >= box[1]
+    })
+    const sampled = points.length
+    if (above.length) points = points.filter((point) => !above.some((other) => pointInPolygon(point, other.footprint)))
     let totalKwh = 0
     for (const point of points) {
       const roofPoint: Vec3 = [point[0], point[1], building.height + 0.05]
@@ -109,6 +123,7 @@ export function computeRoofSolar(
     return {
       kwhPerM2: points.length === 0 ? 0 : totalKwh / points.length,
       sampleCount: points.length,
+      exposedShare: points.length / sampled,
     }
   })
 }
@@ -141,7 +156,11 @@ export function roofSolarBand(kwhPerM2: number): RoofSolarBand {
   return '1200+'
 }
 
-export function roofSolarLegend(values: readonly RoofSolarValue[]): LegendEntry[] {
+/** Roofs with open area; one fully under another block has no roof to report. */
+const openRoofs = (values: readonly RoofSolarValue[]) => values.filter((value) => value.exposedShare !== 0)
+
+export function roofSolarLegend(all: readonly RoofSolarValue[]): LegendEntry[] {
+  const values = openRoofs(all)
   return ROOF_SOLAR_ORDER.map((band) => {
     const count = values.filter((value) => roofSolarBand(value.kwhPerM2) === band).length
     return {
@@ -154,7 +173,7 @@ export function roofSolarLegend(values: readonly RoofSolarValue[]): LegendEntry[
 }
 
 export function medianRoofSolar(values: readonly RoofSolarValue[]): number | null {
-  const sorted = values.map((value) => value.kwhPerM2).sort((a, b) => a - b)
+  const sorted = openRoofs(values).map((value) => value.kwhPerM2).sort((a, b) => a - b)
   if (sorted.length === 0) return null
   const middle = Math.floor(sorted.length / 2)
   if (sorted.length % 2 === 1) return sorted[middle] ?? null

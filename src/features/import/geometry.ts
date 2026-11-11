@@ -87,7 +87,8 @@ export function clipPolyline(points: Ring, extent: Bounds): Ring[] {
     const last = current[current.length - 1]
     if (last && Math.hypot(last[0] - start[0], last[1] - start[1]) < 1e-6) current.push(end)
     else { if (current.length >= 2) runs.push(current); current = [start, end] }
-    if (!same(end, b)) { runs.push(current); current = [] }
+    // `end` is a + (b - a) * 1, which can miss b by one float step; only a real clip ends the run.
+    if (Math.hypot(end[0] - b[0], end[1] - b[1]) > 1e-6) { runs.push(current); current = [] }
   }
   if (current.length >= 2) runs.push(current)
   return runs

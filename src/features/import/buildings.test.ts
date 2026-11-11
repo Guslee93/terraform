@@ -63,3 +63,16 @@ it('clips in the supplied origin rather than assuming the frame centre', () => {
   expect(ringArea(result[0]!.footprint)).toBeCloseTo(400,4)
   expect(Math.max(...result[0]!.footprint.map(p=>p[0]))).toBeGreaterThan(300)
 })
+it('clamps a height above the package limit instead of failing the import', () => {
+  const [tower] = extractBuildings([feature(left,7,{render_height:246,render_min_height:0})],grunerlokka)
+  expect(tower!.height).toBe(200)
+})
+it('coarsens an outline with more vertices than the package accepts', () => {
+  // A 260 m façade with 1.5 m teeth: every vertex survives the 0.3 m simplification.
+  const teeth: Ring = Array.from({length:260},(_,i):[number,number]=>[i-130,i%2?1.5:0])
+  const result = extractBuildings([feature([...teeth,[129,-20],[-130,-20]],8)],grunerlokka)
+  expect(result).toHaveLength(1)
+  expect(result[0]!.footprint.length).toBeLessThanOrEqual(200)
+  expect(isSimpleRing(result[0]!.footprint)).toBe(true)
+  expect(ringArea(result[0]!.footprint)).toBeGreaterThan(5000)
+})

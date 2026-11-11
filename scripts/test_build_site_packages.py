@@ -1,12 +1,13 @@
 """Offline geometry self-checks: python3 scripts/test_build_site_packages.py"""
+import json
 import sys
 from tempfile import TemporaryDirectory
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from build_site_packages import (  # noqa: E402
-    LANDCOVER_TAGS, clip_polyline, clip_ring, join_outer_rings, parse_osm_landcover,
-    polygon_area, unproject,
+    LANDCOVER_TAGS, clip_polyline, clip_ring, join_outer_rings, parse_osm_context,
+    parse_osm_landcover, polygon_area, unproject,
 )
 
 EXTENT = (0.0, 0.0, 10.0, 10.0)
@@ -89,3 +90,29 @@ for area in areas:
     assert abs(polygon_area(ring) - 64) < 1e-6
     assert sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(ring, ring[1:] + ring[:1])) > 0
 print("parse_osm_landcover: ok")
+
+# The shipped packages must match the cached extracts. A multipolygon whose outer ring runs
+# outside the bbox extract needs its missing member ways, or the whole polygon is dropped.
+RAW = Path(__file__).parent.parent / "data" / "raw"
+PUBLIC = Path(__file__).parent.parent / "public" / "sites"
+EXPECTED = {
+    "compact-infill": {"roads": 137, "trees": 128, "areas": {"grass": 8, "park": 1, "water": 1}},
+    "sloped-edge": {"roads": 33, "trees": 122, "areas": {"grass": 1, "wood": 2, "park": 1}},
+}
+for site_id, expected in EXPECTED.items():
+    manifest = json.loads((PUBLIC / site_id / "manifest.json").read_text())
+    terrain = json.loads((PUBLIC / site_id / "terrain.json").read_text())
+    origin = (manifest["crs"]["originLatitude"], manifest["crs"]["originLongitude"])
+    extent = (terrain["minX"], terrain["minY"], terrain["maxX"], terrain["maxY"])
+    extra = RAW / f"{site_id}-ways.xml"
+    roads, trees = parse_osm_context(RAW / f"{site_id}.osm", origin, extent)
+    areas = parse_osm_landcover(
+        RAW / f"{site_id}.osm", origin, extent, extra if extra.exists() else None
+    )
+    assert len(roads) == expected["roads"], (site_id, "roads", len(roads))
+    assert len(trees) == expected["trees"], (site_id, "trees", len(trees))
+    kinds = {}
+    for area in areas:
+        kinds[area["kind"]] = kinds.get(area["kind"], 0) + 1
+    assert kinds == expected["areas"], (site_id, "areas", kinds)
+print("shipped packages match the cached extracts: ok")

@@ -17,6 +17,8 @@ export type FacadeTier = {
   readonly footprint: readonly Vec2[]
   readonly baseZ: number
   readonly topZ: number
+  /** Absolute terrain height the local heights are measured from, so the scene can draw them. */
+  readonly ground?: number
 }
 
 export type FacadeMass = {
@@ -31,6 +33,8 @@ export type FacadeSample = {
   readonly normal: Vec2
   readonly massId: string
   readonly tierIndex: number
+  /** The tier's ground; `p[2]` is measured from it. */
+  readonly ground?: number
 }
 
 /** A façade sample with the colour chosen by the active analysis. */
@@ -80,6 +84,7 @@ export function facadeSamples(
               normal: [nx, ny],
               massId: mass.id,
               tierIndex: tier.tierIndex,
+              ...(tier.ground === undefined ? {} : { ground: tier.ground }),
             })
           }
         }

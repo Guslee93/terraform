@@ -32,7 +32,8 @@ export function FacadeSun({
       const [x, y, z] = enuToThreeXyz([
         sample.p[0],
         sample.p[1],
-        heightAt(sample.p[0], sample.p[1]) + sample.p[2],
+        // Heights are measured from the block's ground, not from the terrain under each sample.
+        (sample.ground ?? heightAt(sample.p[0], sample.p[1])) + sample.p[2],
       ])
       dummy.position.set(x, y, z)
       normal.set(sample.normal[0], 0, -sample.normal[1])
@@ -43,6 +44,8 @@ export function FacadeSun({
     })
     target.instanceMatrix.needsUpdate = true
     if (target.instanceColor) target.instanceColor.needsUpdate = true
+    // The culling sphere is cached from the first matrices; a moved mass must not be culled by the old one.
+    target.computeBoundingSphere()
   }, [overlay, heightAt])
 
   if (overlay.values.length === 0) return null

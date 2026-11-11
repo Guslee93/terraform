@@ -2,6 +2,15 @@ import type { ImportFrame, Origin } from './frame'
 import { frameBounds } from './frame'
 import { clipRing, mergeRings, outerRings, repairRing, simplifyRing, toLocal, type Ring } from './geometry'
 import type { TileFeature } from './tiles'
+/** Limits the package parser enforces; a draft outside them would fail the whole import. */
+const MAX_HEIGHT_M = 200
+const MAX_FOOTPRINT_VERTICES = 200
+/** Coarsen an outline until it fits the parser's vertex limit, rather than rejecting the site. */
+function capVertices(ring: Ring): Ring {
+  let out = ring
+  for (let tolerance = 0.6; out.length > MAX_FOOTPRINT_VERTICES && tolerance <= 40; tolerance *= 2) out = simplifyRing(ring, tolerance)
+  return out
+}
 export type BuildingDraft = { id: string; sourceId: string; footprint: Ring; height: number; minHeight: number }
 export function extractBuildings(features: readonly TileFeature[], frame: ImportFrame, origin: Origin = frame): BuildingDraft[] {
   const extent = frameBounds(frame, origin).enu
@@ -23,9 +32,9 @@ export function extractBuildings(features: readonly TileFeature[], frame: Import
   for (const [sourceId, group] of groups) {
     // Repair inputs without an area cutoff so a small seam piece can join its neighbour.
     const inputs = group.rings.flatMap((r) => repairRing(r, 0))
-    const rings = mergeRings(inputs).flatMap((r) => repairRing(simplifyRing(r)))
+    const rings = mergeRings(inputs).flatMap((r) => repairRing(capVertices(simplifyRing(r))))
     for (const [part, footprint] of rings.entries()) {
-      buildings.push({ id: `${sourceId}-${part}`, sourceId, footprint, height: Math.max(2.5, group.renderHeight - group.minHeight), minHeight: group.minHeight })
+      buildings.push({ id: `${sourceId}-${part}`, sourceId, footprint, height: Math.min(MAX_HEIGHT_M, Math.max(2.5, group.renderHeight - group.minHeight)), minHeight: group.minHeight })
     }
   }
   return buildings

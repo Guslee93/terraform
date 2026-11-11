@@ -55,6 +55,8 @@ export type SceneLayers = {
   context: boolean
   streets: boolean
   trees: boolean
+  /** Illustrative ground tints for parks, grass, woods, plazas, protected areas and water. */
+  ground: boolean
 }
 
 type ViewportProps = {
@@ -123,12 +125,15 @@ function TerrainMesh({
   terrain,
   landcover,
   showGrid,
+  showGround,
   onGroundClick,
   onGroundMove,
 }: {
   terrain: SitePackage['terrain']
   landcover: SitePackage['landcover']
   showGrid: boolean
+  /** The land cover tint rides on the terrain mesh, so the toggle drops the texture, not the mesh. */
+  showGround: boolean
 } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
@@ -173,8 +178,11 @@ function TerrainMesh({
         }
       >
         <meshStandardMaterial
+          // three compiles the texture lookup into the shader, so dropping `map` on a live
+          // material leaves the tint on screen. A new material per state recompiles it.
+          key={showGround ? 'tinted' : 'plain'}
           vertexColors
-          map={landcoverTexture}
+          map={showGround ? landcoverTexture : undefined}
           roughness={0.97}
           metalness={0}
         />
@@ -542,6 +550,7 @@ export function ViewportCanvas({
                 terrain={terrain}
                 landcover={sitePackage.landcover}
                 showGrid={presetId === 'top' || drawing}
+                showGround={layers.ground}
                 onGroundClick={onGroundClick}
                 onGroundMove={
                   drawing && editor.interaction.kind === 'drawing'

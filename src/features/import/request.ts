@@ -17,7 +17,7 @@ export async function abortable<T>(action: () => Promise<T>, signal?: AbortSigna
     if (onAbort) signal?.removeEventListener('abort', onAbort)
   }
 }
-export async function requestBytes(url: string, source: string, signal?: AbortSignal, timeoutMs = 30_000): Promise<ArrayBuffer> {
+export async function requestBytes(url: string, source: string, signal?: AbortSignal, timeoutMs = 30_000, init?: RequestInit): Promise<ArrayBuffer> {
   checkAbort(signal)
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(new Error(`timed out after ${timeoutMs / 1000} s`)), timeoutMs)
@@ -25,7 +25,7 @@ export async function requestBytes(url: string, source: string, signal?: AbortSi
   signal?.addEventListener('abort', cancel, { once: true })
   try {
     return await abortable(async () => {
-      const response = await fetch(url, { signal: controller.signal })
+      const response = await fetch(url, { ...init, signal: controller.signal })
       checkAbort(signal)
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
       return await response.arrayBuffer()

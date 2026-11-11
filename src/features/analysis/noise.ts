@@ -62,24 +62,78 @@ function screened(from: Vec2, to: Vec2, buildings: readonly FootprintBuilding[])
   })
 }
 
+/** Ends closer than this (m) are the same junction node. */
+const JOIN_TOLERANCE_M = 0.5
+/** Two pieces continue one street when the direction turns less than this at the join. */
+const CONTINUE_MAX_TURN_DEG = 35
+
 /**
- * Level at one point: energy sum over roads, one source per road at its closest point.
- * ponytail: closest-point-per-road ignores road length, so long roads read slightly quiet;
+ * Pieces of one street, joined end to end with little turn and the same class. Data splits a
+ * street into several ways (at junctions, bridges, tile seams); each piece used to count as its
+ * own source, so a receiver next to a split read 3 dB louder. Separate streets, including a side
+ * street meeting at a junction, stay separate sources.
+ */
+const streetCache = new WeakMap<readonly NoiseRoad[], NoiseRoad[][]>()
+export function groupStreets(roads: readonly NoiseRoad[]): NoiseRoad[][] {
+  const cached = streetCache.get(roads)
+  if (cached) return cached
+  const parent = roads.map((_, index) => index)
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)))
+  // Each end: its point and the unit direction pointing away from the piece along the street.
+  const ends = roads.flatMap((road, index) => {
+    const line = road.centreline
+    if (line.length < 2) return []
+    const out = (from: Vec2, to: Vec2): Vec2 => {
+      const length = Math.hypot(to[0] - from[0], to[1] - from[1]) || 1
+      return [(to[0] - from[0]) / length, (to[1] - from[1]) / length]
+    }
+    const first = line[0]!, second = line[1]!, last = line[line.length - 1]!, before = line[line.length - 2]!
+    return [
+      { index, point: first, direction: out(second, first) },
+      { index, point: last, direction: out(before, last) },
+    ]
+  })
+  const minCos = Math.cos((CONTINUE_MAX_TURN_DEG * Math.PI) / 180)
+  for (let a = 0; a < ends.length; a++) {
+    for (let b = a + 1; b < ends.length; b++) {
+      const p = ends[a]!, q = ends[b]!
+      if (p.index === q.index || roads[p.index]!.highway !== roads[q.index]!.highway) continue
+      if (Math.hypot(p.point[0] - q.point[0], p.point[1] - q.point[1]) > JOIN_TOLERANCE_M) continue
+      // Continuing pieces leave the join in opposite directions.
+      if (-(p.direction[0] * q.direction[0] + p.direction[1] * q.direction[1]) < minCos) continue
+      parent[find(p.index)] = find(q.index)
+    }
+  }
+  const groups = new Map<number, NoiseRoad[]>()
+  roads.forEach((road, index) => {
+    const root = find(index)
+    groups.set(root, [...(groups.get(root) ?? []), road])
+  })
+  const streets = [...groups.values()]
+  streetCache.set(roads, streets)
+  return streets
+}
+
+/**
+ * Level at one point: energy sum over streets, one source per street at its closest point.
+ * ponytail: closest-point-per-street ignores street length, so long streets read slightly quiet;
  * sample sources along the centreline if that matters.
  */
 export function noiseAt(x: number, y: number, roads: readonly NoiseRoad[], buildings: readonly FootprintBuilding[]): number | null {
   let energy = 0
-  for (const road of roads) {
-    const level = ROAD_LEVEL_AT_10M[road.highway]
+  for (const street of groupStreets(roads)) {
+    const level = ROAD_LEVEL_AT_10M[street[0]!.highway]
     if (level === undefined) continue
     let best: Vec2 | null = null
     let bestD = Infinity
-    for (let i = 0; i + 1 < road.centreline.length; i++) {
-      const c = closestOnSegment([x, y], road.centreline[i] as Vec2, road.centreline[i + 1] as Vec2)
-      const d = Math.hypot(c[0] - x, c[1] - y)
-      if (d < bestD) {
-        bestD = d
-        best = c
+    for (const road of street) {
+      for (let i = 0; i + 1 < road.centreline.length; i++) {
+        const c = closestOnSegment([x, y], road.centreline[i] as Vec2, road.centreline[i + 1] as Vec2)
+        const d = Math.hypot(c[0] - x, c[1] - y)
+        if (d < bestD) {
+          bestD = d
+          best = c
+        }
       }
     }
     if (!best) continue

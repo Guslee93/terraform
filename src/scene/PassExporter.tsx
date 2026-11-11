@@ -28,7 +28,10 @@ export function PassExporter({ request, controls, onDone }: {
     const originalDpr = viewport.dpr
     let frames = SETTLE_FRAMES
     let finished = false
-    setDpr(exportPixelRatio(size.width, size.height, gl.capabilities.maxTextureSize))
+    const exportDpr = exportPixelRatio(size.width, size.height, gl.capabilities.maxTextureSize)
+    // Frames allowed to re-raise the ratio before capturing anyway (never worse than a screen-size export).
+    let reraises = 120
+    setDpr(exportDpr)
     const finish = (result: PassImages | Error) => {
       finished = true
       handled.current = request
@@ -37,7 +40,15 @@ export function PassExporter({ request, controls, onDone }: {
       done.current(result)
     }
     const stop = addAfterEffect(() => {
-      if (finished || --frames > 0) return
+      if (finished) return
+      // Any re-render of the canvas (sun playback, wind demo) puts the pixel ratio back to the
+      // screen value. Raise it again and wait for a frame actually drawn at the export size.
+      if (get().viewport.dpr !== exportDpr && --reraises > 0) {
+        get().setDpr(exportDpr)
+        frames = Math.max(frames, 1)
+        return
+      }
+      if (--frames > 0) return
       try {
         const { gl: renderer, scene, camera } = get()
         const still = renderer.domElement.toDataURL('image/png')

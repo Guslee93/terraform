@@ -110,7 +110,7 @@
   },
   "sources": [
     {
-      "title": "OpenStreetMap building footprints",
+      "title": "OpenStreetMap site extract (buildings, roads, trees, land cover)",
       "url": "https://www.openstreetmap.org/copyright",
       "license": "ODbL 1.0",
       "attribution": "\u00a9 OpenStreetMap contributors",

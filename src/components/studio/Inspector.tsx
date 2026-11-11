@@ -66,9 +66,19 @@ export function Inspector({ analysis, analysisOnly, layers, site, manifest, pack
     <Group {...group('site')} title="Site">
       <p className="text-body-sm text-ink">{site.title} · Local ENU metres</p>
       {site.notices && <ul aria-label="Import notes" className="mt-2 list-disc pl-4 text-caption text-ink-secondary">{site.notices.map((notice) => <li key={notice}>{notice}</li>)}</ul>}
-      <p className="mt-3 text-caption text-ink-secondary">{site.dataStatus === 'user-import' && manifest
+      <p className="mt-3 text-caption text-ink-secondary">{manifest
         ? manifest.sources.map((source) => source.attribution).join(' · ')
         : 'Buildings © OpenStreetMap contributors (ODbL) · Terrain © Kartverket (CC BY 4.0)'}</p>
+      {manifest?.assetPaths.attribution && (
+        <a
+          className="mt-1 inline-flex min-h-8 items-center text-caption text-ink-secondary underline underline-offset-2 hover:text-ink"
+          href={`/sites/${encodeURIComponent(manifest.id)}/${encodeURIComponent(manifest.assetPaths.attribution)}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Data attribution and simplifications
+        </a>
+      )}
     </Group>
   </aside>
 }

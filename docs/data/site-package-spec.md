@@ -17,7 +17,7 @@ public/sites/<site-id>/
   study-area.json          # authored boundary; not a cadastral parcel
   roads.json               # optional: OSM highway centrelines + illustrative widths (ADR-0005)
   trees.json               # optional: OSM natural=tree points
-  landcover.json           # optional: OSM water/park/grass/wood polygons (illustrative ground tints)
+  landcover.json           # optional: OSM water/park/grass/wood/plaza/nature polygons (illustrative ground tints)
   attribution.md
 ```
 
@@ -27,17 +27,28 @@ the Streets and Trees layer toggles are hidden for such packages.
 
 `landcover.json` is optional through `assetPaths.landcover`; absent paths load as
 `landcover: []` without a request. Its schema is `{ schemaVersion: 1, siteId,
-areas: [{ id, kind, ring }] }`, where kind is `water | park | grass | wood` and ring
-is an open, counter-clockwise array of local `[east, north]` points. The builder
-clips closed ways and joined multipolygon outer rings to the terrain, simplifies
-at 0.5 m and drops areas below 4 m². Inner rings and incomplete rings are ignored.
-IDs retain `way/<id>` or `relation/<id>`; multiple outer rings of a relation share
-its source ID. Polygons are illustrative ground tints; this addition supplies data
-only, without rendering or layer controls.
+areas: [{ id, kind, ring }] }`, where kind is `water | park | grass | wood | plaza |
+nature` and ring is an open, counter-clockwise array of local `[east, north]` points.
+The builder clips closed ways and joined multipolygon outer rings to the terrain,
+simplifies at 0.5 m and drops areas below 4 m². Inner rings and incomplete rings are
+ignored. When a multipolygon's outer ring runs outside the bbox extract, its missing
+member ways are fetched separately (`data/raw/<site-id>-ways.xml`) so the ring can still
+be closed; without them the whole polygon would be dropped. Rivers, canals and streams
+mapped as lines become illustrative ribbons of water. IDs retain `way/<id>` or
+`relation/<id>`; multiple outer rings of a relation share its source ID. Polygons are
+illustrative ground tints drawn as a plan texture on the terrain, switched by the
+**Land cover** layer toggle.
+
+`plaza` is a paved pedestrian area and `nature` a protected area; both are ground
+tints, not built or surveyed surfaces.
 
 The card thumbnail lives at `public/sites/<site-id>.svg` and is referenced from
 `assetPaths.thumbnail`. Paths in the manifest are relative to the package root,
-except the thumbnail; no remote URLs.
+except the thumbnail; no remote URLs. `assetPaths.thumbnail` and `assetPaths.attribution`
+are optional: a user import keeps its assets in browser storage rather than as static
+files, so it lists its sources in `manifest.sources` instead and ships no attribution
+file. A curated package points `assetPaths.attribution` at its `attribution.md`, which
+the studio links from the inspector.
 
 ## 2. Manifest contract
 
@@ -71,8 +82,8 @@ interface SiteManifest {
     terrain: string
     buildings: string
     studyArea: string
-    thumbnail: string
-    attribution: string
+    thumbnail?: string
+    attribution?: string
     roads?: string
     trees?: string
     landcover?: string
@@ -150,9 +161,10 @@ Unknown fields are rejected or ignored explicitly; required fields are validated
 - [ ] Manifest statistics match the building count, terrain samples and boundary area.
 - [ ] Attribution states that the boundary is not a cadastral parcel.
 - [ ] Deterministic load: same manifest → same scene checksum.
-- [ ] Optional roads: every run has ≥ 2 points and a width in (0, 50] m; runs are clipped to the terrain extent; tunnels and area-tagged ways omitted.
+- [ ] Optional roads: every run has ≥ 2 points and a width in (0, 50] m; runs are clipped to the terrain extent; tunnels and area-tagged ways omitted; a covered passage is kept as a street.
 - [ ] Optional trees: finite `[east, north]` points inside the terrain extent; no size data implied.
 - [ ] Optional land cover: matching site ID, ≤ 5000 areas, known kinds, ≥ 3 finite points and positive area per ring; built rings open, counter-clockwise, ≥ 4 m² and clipped to terrain; inner rings ignored and documented.
+- [ ] Every multipolygon whose outer ring leaves the extract is either closed from the supplementary ways file or reported as a dropped feature by the builder.
 
 ## 6. Performance budgets (initial)
 

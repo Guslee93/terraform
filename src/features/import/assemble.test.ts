@@ -25,7 +25,10 @@ const measured = (): TerrainSample[] => Array.from({length:169},()=>({height:10,
 const missing = (): TerrainSample[] => Array.from({length:169},()=>({height:null,kind:'land'}))
 const stockholm: ImportFrame = {...grunerlokka,latitude:59.316,longitude:18.071}
 
-it.each([{frame:grunerlokka,record:grunerlokkaTerrain,count:202},{frame:bjorvika,record:bjorvikaTerrain,count:52}])('imports $frame.title completely offline with validated assets', async ({frame,record,count}) => {
+it.each([
+  {frame:grunerlokka,record:grunerlokkaTerrain,count:202,roads:135,areas:11,kinds:{park:3,grass:7,water:1}},
+  {frame:bjorvika,record:bjorvikaTerrain,count:52,roads:162,areas:46,kinds:{park:3,grass:33,water:10}},
+])('imports $frame.title completely offline with validated assets', async ({frame,record,count,roads:roadCount,areas:areaCount,kinds}) => {
   const network=vi.fn(()=>{throw new Error('Tests must not use the network')});vi.stubGlobal('fetch',network)
   const events: string[]=[]
   const result=await importSite(frame,{tiles:fixtureTiles,terrain:[fixtureTerrain(record)]},{onProgress:(step,state)=>events.push(`${step}:${state}`)})
@@ -36,8 +39,14 @@ it.each([{frame:grunerlokka,record:grunerlokkaTerrain,count:202},{frame:bjorvika
   expect(pkg.buildings.buildings.length).toBeLessThanOrEqual(Math.floor(count*1.05))
   expect(parseStudyArea(pkg.studyArea).label).toMatch(/not a cadastral/)
   const wrap=(body: object)=>({schemaVersion:1,siteId:frame.id,...body})
-  expect(parseRoads(wrap({roads:pkg.roads})).roads.length).toBeGreaterThan(0)
-  expect(parseLandCover(wrap({areas:pkg.landcover})).areas.length).toBeGreaterThan(0)
+  // Exact counts, so a layer that silently stops loading fails the suite instead of the demo.
+  expect(parseRoads(wrap({roads:pkg.roads})).roads.length).toBe(roadCount)
+  const areas=parseLandCover(wrap({areas:pkg.landcover})).areas
+  expect(areas.length).toBe(areaCount)
+  const byKind:Record<string,number>={}
+  for(const area of areas) byKind[area.kind]=(byKind[area.kind]??0)+1
+  expect(byKind).toEqual(kinds)
+  expect(areas.every(area=>isSimpleRing(area.ring))).toBe(true)
   const trees=parseTrees(wrap({trees:pkg.trees})).trees
   expect(trees.length).toBeGreaterThan(0)
   expect(trees.some(t=>pkg.buildings.buildings.some(b=>pointInPolygon(t,b.footprint)))).toBe(false)

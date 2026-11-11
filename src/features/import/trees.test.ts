@@ -5,7 +5,7 @@ import { importSite } from './assemble'
 import { frameBounds } from './frame'
 import { kartverketProvider, parseKartverketSamples, type TerrainProvider } from './terrain'
 import { fixtureTiles, grunerlokka } from './testFixtures'
-import { parseOverpassTrees, placeTrees, resampleRow, type TreeSource } from './trees'
+import { overpassTrees, parseOverpassTrees, placeTrees, resampleRow, type TreeSource } from './trees'
 import { unproject } from './projection'
 
 afterEach(() => vi.unstubAllGlobals())
@@ -54,4 +54,47 @@ it('falls back to illustrative trees and says why when the source fails', async 
   expect(result.sitePackage.trees.length).toBeGreaterThan(0)
   expect(result.warnings.find((w) => w.code === 'trees-unavailable')?.message).toMatch(/illustrative.*HTTP 504/)
   expect(result.sitePackage.manifest.sources.map((s) => s.title)).not.toContain('Overpass API')
+})
+
+it('posts the tree query and fails over to the next endpoint when one is throttled', async () => {
+  const calls: { url: string; method?: string }[] = []
+  vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+    calls.push({ url: String(url), method: init?.method })
+    if (calls.length === 1) return new Response('', { status: 429 })
+    return new Response(JSON.stringify({ elements: [{ type: 'node', lat: 59.92, lon: 10.75 }] }))
+  }))
+  const source = overpassTrees()
+  const lines = await source.fetchTrees([10.75, 59.92, 10.76, 59.93])
+  expect(lines).toEqual([[[10.75, 59.92]]])
+  expect(calls[0]!.method).toBe('POST')
+  expect(calls[0]!.url).toContain('overpass-api.de')
+  expect(calls.length).toBeGreaterThan(1)
+  expect(calls[1]!.url).not.toBe(calls[0]!.url)
+})
+
+it('gives up on the tree step inside its budget and names every endpoint it tried', async () => {
+  const calls: string[] = []
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    calls.push(String(url))
+    return new Response('', { status: 503 })
+  }))
+  const source = overpassTrees()
+  await expect(source.fetchTrees([10.75, 59.92, 10.76, 59.93])).rejects.toThrow(/Overpass API:.*503.*503/s)
+  expect(calls.length).toBeGreaterThan(0)
+  expect(calls.length).toBeLessThanOrEqual(6)
+})
+
+it('treats an Overpass timeout remark as a failure, not as an area without trees', () => {
+  expect(() => parseOverpassTrees({ elements: [], remark: 'runtime error: Query timed out' })).toThrow(/timed out/)
+  expect(parseOverpassTrees({ elements: [] })).toEqual([])
+})
+
+it('thins evenly across the frame when more trees than the cap are available', () => {
+  const points: [number, number][] = []
+  for (let x = -198; x <= 198; x += 3) for (let y = -198; y <= 198; y += 3) points.push([x, y])
+  const placed = placeTrees(points, [], grunerlokka)
+  expect(points.length).toBeGreaterThan(3000)
+  expect(placed).toHaveLength(3000)
+  expect(Math.min(...placed.map((p) => p[0]))).toBeLessThan(-180)
+  expect(Math.max(...placed.map((p) => p[0]))).toBeGreaterThan(180)
 })

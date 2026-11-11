@@ -31,7 +31,7 @@ export function CameraHud({ layers }: { layers?: SceneLayers } = {}) {
           <span aria-hidden="true" className="h-[5px] border-x border-b border-ink" style={{ width: `${scaleWidthPx}px` }} />
           {scaleLabel}
         </span>
-        {(layers?.terrain ?? true) && (
+        {(layers?.terrain ?? true) && (layers?.ground ?? true) && (
           <span className="hidden items-center gap-1.5 lg:inline-flex">
             <span aria-hidden="true" className="size-2" style={{ backgroundColor: GREEN_SPACE }} />
             Green space

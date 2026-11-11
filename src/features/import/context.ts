@@ -54,7 +54,8 @@ export function extractRoads(features: readonly TileFeature[], frame: ImportFram
         ? subclass ?? 'footway'
         : className
     const width = className === 'path' ? PATH_WIDTHS[highway] : ROAD_WIDTHS[highway]
-    if (!width) continue
+    // A class named like an Object.prototype member ("constructor") must not pass as a width.
+    if (typeof width !== 'number') continue
     const g = feature.geometry
     const lines = g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : []
     for (const line of lines) for (const run of clipPolyline(toLocal(line, origin), extent)) {
@@ -88,7 +89,7 @@ export function extractLandCover(features: readonly TileFeature[], frame: Import
       // Rivers and streams mapped as lines become illustrative ribbons of water.
       const className = f.properties.class
       const width = typeof className === 'string' ? WATERWAY_WIDTHS[className] : undefined
-      if (!width) continue
+      if (typeof width !== 'number') continue
       const g = f.geometry
       const lines = g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : []
       for (const line of lines) for (const run of clipPolyline(toLocal(line, origin), extent)) {

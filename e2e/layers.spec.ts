@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openAnalysis, openGroup } from './studio-helpers'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -79,6 +80,34 @@ test('the 3D view changes when Streets is toggled off then on', async ({ page })
   await page.getByRole('checkbox', { name: 'Streets' }).check()
   await expect
     .poll(async () => (await page.screenshot({ clip })).equals(withoutStreets), { timeout: 10_000 })
+    .toBe(false)
+})
+
+test('the 3D view changes when Land cover is toggled off then on', async ({ page }) => {
+  await page.goto('/studio/compact-infill')
+  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
+  // The default noise overlay covers the ground; Sun leaves the park tint in view.
+  await openAnalysis(page, 'Sun')
+  await openGroup(page, 'Layers')
+  const box = await viewport.boundingBox()
+  if (!box) throw new Error('The 3D site viewport region was not found')
+  // Centre of the canvas only: the "Green space" legend in the HUD must not satisfy the check.
+  const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
+
+  await page.waitForTimeout(2500)
+  const withTint = await page.screenshot({ clip })
+
+  await page.getByRole('checkbox', { name: 'Land cover' }).uncheck()
+  await expect
+    .poll(async () => (await page.screenshot({ clip })).equals(withTint), { timeout: 10_000 })
+    .toBe(false)
+
+  const withoutTint = await page.screenshot({ clip })
+
+  await page.getByRole('checkbox', { name: 'Land cover' }).check()
+  await expect
+    .poll(async () => (await page.screenshot({ clip })).equals(withoutTint), { timeout: 10_000 })
     .toBe(false)
 })
 

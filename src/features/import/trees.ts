@@ -2,7 +2,7 @@ import { pointInPolygon } from '../../lib/polygon'
 import type { BuildingDraft } from './buildings'
 import { frameBounds, type ImportFrame } from './frame'
 import { clipRing, outerRings, toLocal, type Point2, type Ring } from './geometry'
-import { requestBytes } from './request'
+import { requestBytes, checkAbort } from './request'
 import type { TileFeature } from './tiles'
 
 export type TreeSource = {
@@ -16,15 +16,67 @@ const ROW_SPACING = 8
 const ILLUSTRATIVE_SPACING: Record<string, number> = { wood: 9, garden: 14, park: 16, cemetery: 18 }
 const MAX_TREES = 3000
 
+/**
+ * Planet Overpass endpoints, tried in order. The public instances are donation-funded and
+ * rate limited, so a failure moves on to the next one instead of failing the import.
+ */
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.osm.rwth-aachen.de/api/interpreter',
+] as const
+/** Wall-clock budget for the whole tree step, across every endpoint and attempt. */
+const OVERPASS_BUDGET_MS = 15_000
+/** Delay before the next endpoint, so a throttled instance is not hammered. */
+const OVERPASS_BACKOFF_MS = 500
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, ms)
+    const onAbort = () => {
+      clearTimeout(timer)
+      reject(new DOMException('Import cancelled', 'AbortError'))
+    }
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
 /** OSM natural=tree nodes plus natural=tree_row ways, resampled every 8 m along the row. */
-export function overpassTrees(endpoint = 'https://overpass-api.de/api/interpreter', timeoutMs = 6000): TreeSource {
+export function overpassTrees(endpoint: string = OVERPASS_ENDPOINTS[0], timeoutMs = 5000): TreeSource {
+  const endpoints = [endpoint, ...OVERPASS_ENDPOINTS.filter((url) => url !== endpoint)]
   return {
     name: 'Overpass API', attribution: '© OpenStreetMap contributors · ODbL 1.0', url: endpoint, license: 'ODbL 1.0',
     async fetchTrees([west, south, east, north], signal) {
       const box = `${south},${west},${north},${east}`
-      const query = `[out:json][timeout:10];(node["natural"="tree"](${box});way["natural"="tree_row"](${box}););out geom;`
-      const buffer = await requestBytes(`${endpoint}?data=${encodeURIComponent(query)}`, 'Overpass API', signal, timeoutMs)
-      return parseOverpassTrees(JSON.parse(new TextDecoder().decode(buffer)))
+      const query = `[out:json][timeout:25];(node["natural"="tree"](${box});way["natural"="tree_row"](${box}););out geom;`
+      // POST rather than a query string: the body stays a simple request, so no preflight is
+      // needed and the query cannot outgrow a URL limit.
+      const body = new URLSearchParams({ data: query })
+      const deadline = Date.now() + OVERPASS_BUDGET_MS
+      const failures: string[] = []
+      // A throttled instance is better answered by the next mirror than by an immediate retry,
+      // so every endpoint is tried once before any endpoint is tried again.
+      for (let pass = 0; pass < 2; pass++) {
+        for (const [index, url] of endpoints.entries()) {
+          if (index > 0 && deadline - Date.now() > OVERPASS_BACKOFF_MS) await sleep(OVERPASS_BACKOFF_MS, signal)
+          const remaining = deadline - Date.now()
+          if (remaining <= 0) break
+          try {
+            const buffer = await requestBytes(url, 'Overpass API', signal, Math.min(timeoutMs, remaining), {
+              method: 'POST',
+              body,
+            })
+            return parseOverpassTrees(JSON.parse(new TextDecoder().decode(buffer)))
+          } catch (error) {
+            checkAbort(signal)
+            failures.push(`${url}: ${error instanceof Error ? error.message : String(error)}`)
+          }
+        }
+      }
+      throw new Error(`Overpass API: ${failures.join('; ')}`)
     },
   }
 }
@@ -33,6 +85,8 @@ const finite = (value: unknown): value is number => typeof value === 'number' &&
 
 export function parseOverpassTrees(raw: unknown): [number, number][][] {
   if (typeof raw !== 'object' || raw === null || !('elements' in raw) || !Array.isArray(raw.elements)) throw new Error('Overpass API: missing elements')
+  // Overpass answers a timed-out query with HTTP 200, no elements and a remark: not "no trees".
+  if (!raw.elements.length && 'remark' in raw && typeof raw.remark === 'string') throw new Error(`Overpass API: ${raw.remark}`)
   const lines: [number, number][][] = []
   for (const element of raw.elements as unknown[]) {
     if (typeof element !== 'object' || element === null) continue
@@ -119,7 +173,9 @@ export function placeTrees(points: readonly Point2[], buildings: readonly Buildi
     if (boxes.some(({ box, ring }) => x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3] && pointInPolygon([x, y], ring))) continue
     seen.add(key)
     out.push([Number(x.toFixed(2)), Number(y.toFixed(2))])
-    if (out.length >= MAX_TREES) break
   }
-  return out
+  // Over the cap, thin evenly: stopping at the first MAX_TREES would leave part of the frame bare.
+  if (out.length <= MAX_TREES) return out
+  const step = out.length / MAX_TREES
+  return Array.from({ length: MAX_TREES }, (_, index) => out[Math.floor(index * step)]!)
 }

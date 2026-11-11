@@ -53,6 +53,20 @@ describe('noise (hand-computed)', () => {
     ])
     expect(noiseAt(0, 10, [primary, mirror], [])).toBeCloseTo(70 + 3.0103, 3)
   })
+  it('counts a street split into several ways once, as if it were one way', () => {
+    const tertiary = (points: Vec2[]) => road('tertiary', points)
+    const whole = noiseAt(0, 10, [tertiary([[-200, 0], [200, 0]])], [])
+    const halves = noiseAt(0, 10, [tertiary([[-200, 0], [0, 0]]), tertiary([[0, 0], [200, 0]])], [])
+    const quarters = noiseAt(0, 10, [tertiary([[-200, 0], [-100, 0]]), tertiary([[100, 0], [0, 0]]), tertiary([[-100, 0], [0, 0]]), tertiary([[100, 0], [200, 0]])], [])
+    expect(whole).toBeCloseTo(62, 6)
+    expect(halves).toBeCloseTo(62, 6)
+    expect(quarters).toBeCloseTo(62, 6)
+  })
+  it('keeps a side street meeting at a junction as its own source', () => {
+    const main = [road('tertiary', [[-200, 0], [0, 0]]), road('tertiary', [[0, 0], [200, 0]])]
+    const side = road('tertiary', [[0, 0], [0, 200]])
+    expect(noiseAt(10, 10, [...main, side], [])).toBeCloseTo(62 + 3.0103, 3)
+  })
   it('subtracts the screening loss when a building is on the line to the road', () => {
     const wall = block(-5, 5, 4, 6, 12)
     expect(noiseAt(0, 10, [primary], [wall])).toBeCloseTo(70 - SCREEN_LOSS_DB, 6)

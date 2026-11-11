@@ -357,7 +357,7 @@ export function parseLandCover(value: unknown): LandCoverData {
       if (ring.length < 3) fail(`${path}.ring`, 'expected at least three points')
       const size = polygonArea(ring)
       if (!Number.isFinite(size) || size <= 0) fail(`${path}.ring`, 'must have finite positive area')
-      return { id: asString(area.id, `${path}.id`), kind, ring }
+      return { id: asString(area.id, `${path}.id`), kind: kind as LandCoverKind, ring }
     }),
   }
 }

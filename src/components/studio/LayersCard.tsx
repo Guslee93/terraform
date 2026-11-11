@@ -6,15 +6,16 @@ const LAYER_ROWS: ReadonlyArray<{
   id: keyof SceneLayers
   label: string
   /** Optional package file the row depends on; the row is hidden when the package lacks it. */
-  asset?: 'roads' | 'trees'
+  asset?: 'roads' | 'trees' | 'landcover'
 }> = [
   { id: 'terrain', label: 'Terrain' },
+  { id: 'ground', label: 'Land cover', asset: 'landcover' },
   { id: 'context', label: 'Context buildings' },
   { id: 'streets', label: 'Streets', asset: 'roads' },
   { id: 'trees', label: 'Trees', asset: 'trees' },
 ]
 
-/** The four scene layers in the inspector. */
+/** The scene layers in the inspector. */
 export function LayersCard({ manifest, layers, onToggleLayer }: {
   manifest: SiteManifest | null
   layers: SceneLayers

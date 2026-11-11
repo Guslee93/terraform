@@ -18,11 +18,14 @@ const NewSitePage = lazy(() =>
 )
 
 function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
 
   useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
+    // A link such as /about#data goes to its section; everything else starts at the top.
+    const target = hash ? document.getElementById(decodeURIComponent(hash.slice(1))) : null
+    if (target?.scrollIntoView) target.scrollIntoView()
+    else window.scrollTo(0, 0)
+  }, [pathname, hash])
 
   return null
 }

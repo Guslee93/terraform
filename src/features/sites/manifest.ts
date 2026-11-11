@@ -46,8 +46,10 @@ export type SiteManifest = {
     terrain: string
     buildings: string
     studyArea: string
-    thumbnail: string
-    attribution: string
+    /** Optional: user imports keep their assets in browser storage, not as static files. */
+    thumbnail?: string
+    /** Optional: the attribution file a curated package ships; imports list their sources instead. */
+    attribution?: string
     /** Optional OSM context layers (ADR-0005 §5); older packages omit them. */
     roads?: string
     trees?: string
@@ -237,8 +239,12 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       terrain: asString(assetPaths.terrain, 'manifest.assetPaths.terrain'),
       buildings: asString(assetPaths.buildings, 'manifest.assetPaths.buildings'),
       studyArea: asString(assetPaths.studyArea, 'manifest.assetPaths.studyArea'),
-      thumbnail: asString(assetPaths.thumbnail, 'manifest.assetPaths.thumbnail'),
-      attribution: asString(assetPaths.attribution, 'manifest.assetPaths.attribution'),
+      thumbnail: assetPaths.thumbnail === undefined
+        ? undefined
+        : asString(assetPaths.thumbnail, 'manifest.assetPaths.thumbnail'),
+      attribution: assetPaths.attribution === undefined
+        ? undefined
+        : asString(assetPaths.attribution, 'manifest.assetPaths.attribution'),
       ...(assetPaths.roads === undefined
         ? {}
         : { roads: asString(assetPaths.roads, 'manifest.assetPaths.roads') }),

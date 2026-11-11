@@ -40,3 +40,12 @@ it('repairs repeated touching vertices instead of throwing in unkinkPolygon', ()
   expect(repaired.map(ringArea)).toEqual([50])
   expect(repaired.every(isSimpleRing)).toBe(true)
 })
+it('keeps a polyline that never leaves the extent as one run', () => {
+  // a + (b - a) can miss b by one float step; that must not read as "left the extent".
+  let seed = 1
+  const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647
+  for (let n = 0; n < 200; n++) {
+    const line: Ring = Array.from({length:10},():[number,number]=>[(random()-0.5)*380,(random()-0.5)*380])
+    expect(clipPolyline(line,[-200,-200,200,200])).toHaveLength(1)
+  }
+})

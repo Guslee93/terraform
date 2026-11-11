@@ -137,10 +137,12 @@ function TierMesh({
     if (rise.current >= 1 || !group.current) return
     rise.current = Math.min(rise.current + delta / RISE_SECONDS, 1)
     group.current.scale.y = Math.max(1 - (1 - rise.current) ** 3, 0.001)
+    // The geometry is baked at its base elevation, so scale about that level, not about y = 0.
+    group.current.position.y = baseElevation * (1 - group.current.scale.y)
   })
 
   return (
-    <group ref={group} scale={[1, rise.current >= 1 ? 1 : 0.001, 1]}>
+    <group ref={group} scale={[1, rise.current >= 1 ? 1 : 0.001, 1]} position={[0, rise.current >= 1 ? 0 : baseElevation * 0.999, 0]}>
     <mesh
       geometry={geometry}
       castShadow

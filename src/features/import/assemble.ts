@@ -195,7 +195,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
       location:{latitude:frame.latitude,longitude:frame.longitude,timeZone:timeZoneFor(frame.latitude,frame.longitude)},
       crs:{sourceEPSG:'EPSG:4326',horizontalDatum:'WGS84',verticalDatum:provider ? provider.verticalDatum ?? 'Provider datum unspecified; not survey data' : 'Unreferenced flat zero plane',originLatitude:frame.latitude,originLongitude:frame.longitude,originElevation:terrain.originElevation,projection:'local-tangent-plane-wgs84'},
       unit:'m',dataStatus:'user-import',
-      assetPaths:{terrain:'terrain.json',buildings:'buildings.json',studyArea:'study-area.json',thumbnail:'thumbnail.svg',attribution:'attribution.md',roads:'roads.json',trees:'trees.json',landcover:'landcover.json'},
+      assetPaths:{terrain:'terrain.json',buildings:'buildings.json',studyArea:'study-area.json',roads:'roads.json',trees:'trees.json',landcover:'landcover.json'},
       constraints:{maxHeightMeters:18,setbackMeters:4,label:'Illustrative design constraint — not planning advice'},
       cameraPresets:{
         isometric:preset([round(distance/direction),round(-distance*1.15/direction),round(distance/direction)]),

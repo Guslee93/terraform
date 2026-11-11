@@ -60,6 +60,18 @@ type StudioShellProps = {
   onRetry: () => void
 }
 
+/**
+ * One ground level per block, under its first tier. Measuring each tier from the terrain under its
+ * own centroid puts an upper tier's base below the lower tier's roof on a slope, so its first
+ * façade row starts inside the block below.
+ */
+function volumeGround(volume: { tiers: readonly { footprint: { vertices: readonly Vec2[] } }[] }, terrain: SitePackage['terrain']): number {
+  const first = volume.tiers[0]
+  if (!first) return 0
+  const [east, north] = ringCentroid(first.footprint.vertices)
+  return sampleTerrainHeight(terrain, east, north)
+}
+
 export function StudioShell({
   site,
   sitePackage,
@@ -90,6 +102,7 @@ export function StudioShell({
   const editable = wide && packageStatus === 'ready' && testBuilding
   const [layers, setLayers] = useState<SceneLayers>({
     terrain: true,
+    ground: true,
     context: true,
     streets: true,
     trees: true,
@@ -129,10 +142,10 @@ export function StudioShell({
   // Context buildings plus every visible mass: a building you draw changes wind and noise.
   const analysisBuildings = useMemo(() => {
     if (!sitePackage) return []
-    const masses = analysisDocument.volumes.flatMap((volume) => volume.tiers.map((tier) => {
-      const [east, north] = ringCentroid(tier.footprint.vertices)
-      return { height: Math.max(0, tierTop(tier) - sampleTerrainHeight(sitePackage.terrain, east, north)), footprint: tier.footprint.vertices }
-    }))
+    const masses = analysisDocument.volumes.flatMap((volume) => {
+      const ground = volumeGround(volume, sitePackage.terrain)
+      return volume.tiers.map((tier) => ({ height: Math.max(0, tierTop(tier) - ground), footprint: tier.footprint.vertices }))
+    })
     return [...sitePackage.buildings.buildings, ...masses]
   }, [analysisDocument, sitePackage])
   const studyArea = useMemo(() => (sitePackage ? normalizeRing(sitePackage.studyArea.polygon) : null), [sitePackage])
@@ -155,7 +168,8 @@ export function StudioShell({
     analysisBuildings.forEach((building, index) => {
       const value = roofSolarValues[index]
       if (!value) return
-      const area = polygonArea(building.footprint)
+      // Only the open part of a roof counts: a podium under a tower is not double-counted.
+      const area = polygonArea(building.footprint) * (value.exposedShare ?? 1)
       roofAreaM2 += area
       totalKwhPerYear += roofSolarYieldKwh(value, area)
     })
@@ -164,19 +178,19 @@ export function StudioShell({
   // Façades exist only on the visible user masses, so the sample count stays small and design-led.
   const facadeMasses = useMemo(() => {
     if (!sitePackage) return []
-    return analysisDocument.volumes.map((volume) => ({
-      id: volume.id,
-      tiers: volume.tiers.map((tier, tierIndex) => {
-        const [east, north] = ringCentroid(tier.footprint.vertices)
-        const ground = sampleTerrainHeight(sitePackage.terrain, east, north)
-        return {
+    return analysisDocument.volumes.map((volume) => {
+      const ground = volumeGround(volume, sitePackage.terrain)
+      return {
+        id: volume.id,
+        tiers: volume.tiers.map((tier, tierIndex) => ({
           tierIndex,
           footprint: tier.footprint.vertices,
+          ground,
           baseZ: Math.max(0, tier.baseElevation - ground),
           topZ: Math.max(0, tierTop(tier) - ground),
-        }
-      }),
-    }))
+        })),
+      }
+    })
   }, [analysisDocument, sitePackage])
   const facadeSampleList = useMemo(() => facadeSamples(facadeMasses), [facadeMasses])
   const facadeActive = dockActive === 'sun' && sunAnalysis === 'facade'
@@ -209,6 +223,10 @@ export function StudioShell({
     return null
   }, [facadeActive, facadeSunValues, vscActive, vscValues])
   const [placingCircle, setPlacingCircle] = useState(false)
+  // The Move circle button exists only on the Wind card; leaving it must end the key and click capture.
+  useEffect(() => {
+    if (climateMode !== 'wind') setPlacingCircle(false)
+  }, [climateMode])
   const windCentre = useMemo(() => wind.centre ?? (studyArea ? ringCentroid(studyArea) : null), [wind.centre, studyArea])
   // Stable object: scene layers memoise on it (roofs, heatmap), so a fresh literal would rebuild them on every render.
   const windCircle = useMemo(() => (windCentre ? { centre: windCentre, radius: wind.radius } : null), [windCentre, wind.radius])
@@ -315,7 +333,8 @@ export function StudioShell({
       // Text-entry surfaces own their keyboard input.
       if (target?.closest('input, select, textarea, dialog, [contenteditable="true"]')) return
 
-      if (event.key === 'f' || event.key === 'F') {
+      // Plain F only: Cmd/Ctrl+F belongs to the browser's Find.
+    if ((event.key === 'f' || event.key === 'F') && !event.metaKey && !event.ctrlKey && !event.altKey) {
         event.preventDefault()
         requestCamera('isometric')
       }
@@ -323,7 +342,7 @@ export function StudioShell({
       if (event.key === 'Escape') dispatch({ type: 'key', key: 'Escape' })
 
       if (event.key === 'Enter' || event.key === 'Backspace') {
-        if (target?.closest('button, a, summary')) return
+        if (target?.closest('button, a, summary, [role="button"]')) return
         event.preventDefault()
         dispatch({ type: 'key', key: event.key })
       }
@@ -551,7 +570,12 @@ export function StudioShell({
           packageStatus={packageStatus}
           views={ready ? <CameraPresets active={cameraPreset} onSelect={requestCamera} /> : null}
           visuals={ready ? <ExportVisuals siteId={site.id} exporting={exportRequest !== null} message={exportMessage}
-            onExportPasses={() => { setExportMessage('Rendering 4K passes…'); setExportRequest(Date.now()) }} /> : null}
+            onExportPasses={() => {
+              // The exporter lives inside the canvas; without one nothing would ever clear the request.
+              if (!document.querySelector('section[aria-label="Studio viewport"] canvas')) return setExportMessage('Viewport not ready.')
+              setExportMessage('Rendering 4K passes…')
+              setExportRequest(Date.now())
+            }} /> : null}
           selected={selected}
           canEdit={editable}
           editingEnabled={editable && idle}

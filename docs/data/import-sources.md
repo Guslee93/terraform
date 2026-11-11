@@ -83,6 +83,7 @@ Verdicts: **Ship** — usable keyless from the browser today ·
 - **Usage policy:** Free read-only query service on donated hardware; heavy or repeated queries are throttled/blocked, operators ask users to coordinate large deployments. Plan §3 research and the D26 lookups both hit 502/400 responses during this pass.
 - **Verdict:** Ship with conditions — trees/optional enrichment only, with backoff and a silent skip + note (exactly the plan's §3 row). Never on the core import path.
 - **vs plan §3:** Confirmed ("At capacity on 3 servers during research").
+- **As implemented:** the tree query is a POST with a URL-encoded body (a simple request, so no CORS preflight and no URL length limit). A throttled instance is answered by the next planet instance rather than by an immediate retry, so every endpoint is tried once before any endpoint is tried again, with a 500 ms backoff between attempts. The whole step is bounded by a 15 s budget, so a throttled or unreachable endpoint cannot hold the import open. If every endpoint fails the import continues with illustrative trees and says so in the import notes.
 
 ### 1.10 Dataforsyningen (DK — GSearch, DHM, GeoDanmark) — Do not ship (needs backend or agreement)
 
