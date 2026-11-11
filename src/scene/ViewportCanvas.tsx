@@ -235,8 +235,11 @@ function ContextBuildings({ buildings }: { buildings: SitePackage['buildings']['
   )
 }
 
-/** One value step darker than the ground (ref 8): streets read without a hue. */
-const ROAD_COLOR = '#E2E1DD'
+/**
+ * Warm mid-grey, without a hue. The lit ribbon renders much paler than this value, so it has to
+ * sit well below the ground colour to read as a street at site scale.
+ */
+const ROAD_COLOR = '#ADAAA3'
 
 function Streets({ sitePackage }: { sitePackage: SitePackage }) {
   const geometry = useMemo(
