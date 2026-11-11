@@ -264,18 +264,36 @@ def parse_osm_context(path: Path, origin: tuple[float, float], extent) -> tuple[
         tags = {tag.get("k"): tag.get("v") for tag in way.findall("tag")}
         width = ROAD_WIDTHS.get(tags.get("highway", ""))
         # Tunnels are underground and area-tagged ways are plazas, not centrelines.
-        if width is None or tags.get("tunnel") not in (None, "no") or tags.get("area") == "yes":
+        # A building passage is a covered public street, so it is kept.
+        if (
+            width is None
+            or tags.get("tunnel") not in (None, "no", "building_passage")
+            or tags.get("area") == "yes"
+        ):
             continue
-        points = [nodes[ref.get("ref")] for ref in way.findall("nd") if ref.get("ref") in nodes]
-        for index, run in enumerate(clip_polyline(points, extent)):
-            roads.append(
-                {
-                    "id": f"{way.get('id')}-{index}",
-                    "highway": tags["highway"],
-                    "width": width,
-                    "centreline": [[round(x, 2), round(y, 2)] for x, y in run],
-                }
-            )
+        # A node missing from the extract must not create an invented straight edge across
+        # the gap: the way is split there instead of joining the node before to the node after.
+        segments: list[list[tuple[float, float]]] = [[]]
+        for ref in way.findall("nd"):
+            key = ref.get("ref")
+            if key not in nodes:
+                segments.append([])
+                continue
+            segments[-1].append(nodes[key])
+        index = 0
+        for segment in segments:
+            if len(segment) < 2:
+                continue
+            for run in clip_polyline(segment, extent):
+                roads.append(
+                    {
+                        "id": f"{way.get('id')}-{index}",
+                        "highway": tags["highway"],
+                        "width": width,
+                        "centreline": [[round(x, 2), round(y, 2)] for x, y in run],
+                    }
+                )
+                index += 1
     roads.sort(key=lambda road: road["id"])
     trees.sort()
     return roads, trees
@@ -287,6 +305,21 @@ LANDCOVER_TAGS = {
     "park": (("leisure", "park"), ("leisure", "garden"), ("landuse", "recreation_ground"), ("leisure", "playground")),
     "grass": (("landuse", "grass"), ("landuse", "meadow"), ("landuse", "village_green"), ("natural", "grassland"), ("landuse", "flowerbed")),
 }
+
+# When one feature carries several land-cover tags the first match wins. The order is named
+# explicitly so the outcome is a stated rule and not an accident of dictionary order.
+LANDCOVER_PRIORITY: tuple[str, ...] = ("water", "wood", "park", "grass")
+
+# Waterways mapped as lines rather than as banks. Widths are illustrative, like the road widths.
+WATERWAY_WIDTHS = {"river": 10.0, "canal": 6.0, "stream": 4.0}
+
+
+def landcover_kind(tags: dict[str, str]) -> str | None:
+    """The land cover kind for a tag set, or None when it carries no land cover tag."""
+    for kind in LANDCOVER_PRIORITY:
+        if any(tags.get(key) == value for key, value in LANDCOVER_TAGS[kind]):
+            return kind
+    return None
 
 
 def clip_ring(points, extent):
@@ -351,57 +384,183 @@ def join_outer_rings(ways: list[list[str]]) -> list[list[str]]:
     return rings
 
 
-def parse_osm_landcover(path: Path, origin: tuple[float, float], extent) -> list[dict]:
-    """Illustrative ground tints from closed OSM ways and multipolygon outer rings."""
-    root = ET.parse(path).getroot()
-    nodes = {
-        node.get("id"): project(float(node.get("lat")), float(node.get("lon")), *origin)
-        for node in root.findall("node")
-    }
-    ways = {
-        way.get("id"): [ref.get("ref") for ref in way.findall("nd")]
-        for way in root.findall("way")
-    }
+def line_to_ribbon(points: list[tuple[float, float]], width: float) -> list[tuple[float, float]]:
+    """Turn a polyline into a closed ribbon polygon of the given width."""
+    if len(points) < 2:
+        return []
+    half = width / 2
+    left: list[tuple[float, float]] = []
+    right: list[tuple[float, float]] = []
+    for index, (x, y) in enumerate(points):
+        before = points[index - 1] if index > 0 else points[0]
+        after = points[index + 1] if index + 1 < len(points) else points[-1]
+        dx, dy = after[0] - before[0], after[1] - before[1]
+        length = math.hypot(dx, dy)
+        if length < 1e-9:
+            dx, dy, length = 1.0, 0.0, 1.0
+        nx, ny = -dy / length * half, dx / length * half
+        left.append((x + nx, y + ny))
+        right.append((x - nx, y - ny))
+    return left + right[::-1]
+
+
+def load_osm_documents(path: Path, extra_path: Path | None = None) -> list[ET.Element]:
+    """The roots of an OSM document and, optionally, a supplement of ways it does not contain."""
+    roots = [ET.parse(path).getroot()]
+    if extra_path is not None and extra_path.exists():
+        roots.append(ET.parse(extra_path).getroot())
+    return roots
+
+
+def parse_osm_landcover(
+    path: Path,
+    origin: tuple[float, float],
+    extent,
+    extra_path: Path | None = None,
+    drops: list[dict] | None = None,
+) -> list[dict]:
+    """Illustrative ground tints from closed OSM ways, multipolygon outer rings and waterway lines.
+
+    `extra_path` is a cached supplement of ways the bbox extract does not contain, so a
+    multipolygon whose outer ring runs outside the extract can still be closed. `drops`, when
+    given, collects one record per candidate feature that did not become an area.
+    """
+    roots = load_osm_documents(path, extra_path)
+    nodes: dict[str, tuple[float, float]] = {}
+    ways: dict[str, list[str]] = {}
+    for root in roots:
+        for node in root.findall("node"):
+            nodes.setdefault(
+                node.get("id"), project(float(node.get("lat")), float(node.get("lon")), *origin)
+            )
+        for way in root.findall("way"):
+            ways.setdefault(way.get("id"), [ref.get("ref") for ref in way.findall("nd")])
+
+    def drop(identifier: str, kind: str, reason: str) -> None:
+        if drops is not None:
+            drops.append({"id": identifier, "kind": kind, "reason": reason})
+
     areas = []
-    for element in [*root.findall("way"), *root.findall("relation")]:
-        tags = {tag.get("k"): tag.get("v") for tag in element.findall("tag")}
-        kind = next((kind for kind, matches in LANDCOVER_TAGS.items()
-                     if any(tags.get(key) == value for key, value in matches)), None)
-        if kind is None:
-            continue
-        if element.tag == "way":
-            refs = ways[element.get("id")]
-            rings = [refs] if len(refs) >= 4 and refs[0] == refs[-1] else []
-        elif tags.get("type") == "multipolygon":
-            rings = join_outer_rings([
-                ways[member.get("ref")]
-                for member in element.findall("member")
-                if member.get("type") == "way" and member.get("role") == "outer"
-                and member.get("ref") in ways
-            ])
-        else:
-            continue
-        for refs in rings:
-            # Missing nodes must not create an invented edge across an incomplete extract.
-            if any(ref not in nodes for ref in refs):
+    for root in roots:
+        for element in [*root.findall("way"), *root.findall("relation")]:
+            tags = {tag.get("k"): tag.get("v") for tag in element.findall("tag")}
+            identifier = f"{element.tag}/{element.get('id')}"
+            waterway = tags.get("waterway") if tags.get("waterway") in WATERWAY_WIDTHS else None
+            kind = "water" if waterway else landcover_kind(tags)
+            if kind is None:
                 continue
-            ring = clip_ring([nodes[ref] for ref in refs[:-1]], extent)
-            if polygon_area(ring) < 4.0:
+            if element.tag == "way" and waterway:
+                # A river or stream mapped as a line becomes an illustrative ribbon.
+                refs = ways[element.get("id")]
+                if any(ref not in nodes for ref in refs):
+                    drop(identifier, kind, "line references nodes missing from the extract")
+                    continue
+                points = [nodes[ref] for ref in refs]
+                ribbon = clip_ring(
+                    line_to_ribbon(points, WATERWAY_WIDTHS[waterway]), extent
+                )
+                if len(ribbon) < 3 or polygon_area(ribbon) < 4.0:
+                    drop(identifier, kind, "clipped ribbon below 4 m²")
+                    continue
+                signed = sum(a[0] * b[1] - b[0] * a[1]
+                             for a, b in zip(ribbon, ribbon[1:] + ribbon[:1]))
+                if signed < 0:
+                    ribbon.reverse()
+                areas.append({
+                    "id": identifier,
+                    "kind": kind,
+                    "ring": [[round(x, 2), round(y, 2)] for x, y in ribbon],
+                })
                 continue
-            ring = simplify(ring + [ring[0]], 0.5)[:-1]
-            if len(ring) < 3 or polygon_area(ring) < 4.0:
+            if element.tag == "way":
+                refs = ways[element.get("id")]
+                rings = [refs] if len(refs) >= 4 and refs[0] == refs[-1] else []
+                if not rings:
+                    drop(identifier, kind, "way is not a closed ring")
+                    continue
+            elif tags.get("type") == "multipolygon":
+                member_refs = [
+                    member.get("ref")
+                    for member in element.findall("member")
+                    if member.get("type") == "way" and member.get("role") == "outer"
+                ]
+                absent = [ref for ref in member_refs if ref not in ways]
+                rings = join_outer_rings([ways[ref] for ref in member_refs if ref in ways])
+                if not rings:
+                    detail = f", missing member way {', '.join(absent)}" if absent else ""
+                    drop(identifier, kind, f"outer ring could not be closed{detail}")
+                    continue
+            else:
+                drop(identifier, kind, f"relation type {tags.get('type')!r} is not a multipolygon")
                 continue
-            signed_area = sum(a[0] * b[1] - b[0] * a[1]
-                              for a, b in zip(ring, ring[1:] + ring[:1]))
-            if signed_area < 0:
-                ring.reverse()
-            areas.append({
-                "id": f"{element.tag}/{element.get('id')}",
-                "kind": kind,
-                "ring": [[x, y] for x, y in ring],
-            })
+            for refs in rings:
+                # Missing nodes must not create an invented edge across an incomplete extract.
+                if any(ref not in nodes for ref in refs):
+                    drop(identifier, kind, "ring references nodes missing from the extract")
+                    continue
+                ring = clip_ring([nodes[ref] for ref in refs[:-1]], extent)
+                if len(ring) < 3:
+                    drop(identifier, kind, "clipped away entirely")
+                    continue
+                if polygon_area(ring) < 4.0:
+                    drop(identifier, kind, "clipped area below 4 m²")
+                    continue
+                ring = simplify(ring + [ring[0]], 0.5)[:-1]
+                if len(ring) < 3 or polygon_area(ring) < 4.0:
+                    drop(identifier, kind, "area below 4 m² after simplification")
+                    continue
+                signed_area = sum(a[0] * b[1] - b[0] * a[1]
+                                  for a, b in zip(ring, ring[1:] + ring[:1]))
+                if signed_area < 0:
+                    ring.reverse()
+                areas.append({
+                    "id": identifier,
+                    "kind": kind,
+                    "ring": [[x, y] for x, y in ring],
+                })
     areas.sort(key=lambda area: area["id"])
     return areas
+
+
+def missing_outer_way_ids(path: Path) -> list[str]:
+    """Outer member ways of land cover multipolygons that the extract does not contain."""
+    root = ET.parse(path).getroot()
+    present = {way.get("id") for way in root.findall("way")}
+    missing: set[str] = set()
+    for element in root.findall("relation"):
+        tags = {tag.get("k"): tag.get("v") for tag in element.findall("tag")}
+        if landcover_kind(tags) is None or tags.get("type") != "multipolygon":
+            continue
+        for member in element.findall("member"):
+            if member.get("type") == "way" and member.get("role") == "outer":
+                ref = member.get("ref")
+                if ref not in present:
+                    missing.add(ref)
+    return sorted(missing)
+
+
+def download_osm_ways(way_ids: list[str], cache_path: Path) -> None:
+    """Fetch the given OSM ways with their nodes and cache them as one XML document."""
+    merged = ET.Element("osm", {"version": "0.6", "generator": "TerraformPortfolio"})
+    seen_nodes: set[str] = set()
+    seen_ways: set[str] = set()
+    for way_id in way_ids:
+        url = f"https://api.openstreetmap.org/api/0.6/way/{way_id}/full"
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(request, timeout=120, context=SSL_CONTEXT) as response:
+            document = ET.fromstring(response.read())
+        for node in document.findall("node"):
+            if node.get("id") in seen_nodes:
+                continue
+            seen_nodes.add(node.get("id"))
+            merged.append(node)
+        for way in document.findall("way"):
+            if way.get("id") in seen_ways:
+                continue
+            seen_ways.add(way.get("id"))
+            merged.append(way)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_bytes(ET.tostring(merged, encoding="utf-8", xml_declaration=True))
 
 
 SHA256SUMS = RAW / "SHA256SUMS"
@@ -729,18 +888,26 @@ Licence text: https://opendatacommons.org/licenses/odbl/1-0/
 © OpenStreetMap contributors (ODbL 1.0), from the same extract as the buildings.
 Roads are `highway` centrelines clipped to the terrain extent; widths are illustrative
 values by highway class, not measured carriageways. Tunnels and area-tagged ways are
-omitted. Trees are `natural=tree` points drawn with illustrative sizes and tints varied
-by position; no species, height or canopy data is implied.
+omitted; a covered passage through a building (`tunnel=building_passage`) is kept as a
+street. Where the extract is missing a node the way is split there rather than joined
+across the gap. Trees are `natural=tree` points drawn with illustrative sizes and tints
+varied by position; no species, height or canopy data is implied.
 
 ## Land cover
 
 © OpenStreetMap contributors (ODbL 1.0), from the same cached extract.
-Water: `natural=water`, `waterway=riverbank`, `landuse=reservoir|basin`.
+Water: `natural=water`, `waterway=riverbank`, `landuse=reservoir|basin`, and
+`waterway=river|canal|stream` drawn as illustrative ribbons (10 m, 6 m and 4 m wide).
 Wood: `natural=wood`, `landuse=forest`. Park: `leisure=park|garden|playground`,
 `landuse=recreation_ground`. Grass: `landuse=grass|meadow|village_green|flowerbed`,
 `natural=grassland`. Closed ways and multipolygon outer rings are clipped to the
 terrain extent and simplified at 0.5 m; areas below 4 m² and incomplete rings are
-omitted. Inner rings are ignored. Polygons are illustrative ground tints.
+omitted. Outer member ways that fall outside the extract are fetched separately so a
+multipolygon ring can still be closed. Inner rings are ignored. Polygons are
+illustrative ground tints.
+
+Not included: coastline and the fjord, scrub, wetland, sports pitches, cemeteries,
+allotment gardens and other land use that OSM does not tag with the keys above.
 
 ## Terrain
 
@@ -787,7 +954,18 @@ def build_site(site_id: str, offline: bool) -> None:
     boundary = study_area(site)
     extent = (terrain["minX"], terrain["minY"], terrain["maxX"], terrain["maxY"])
     roads, trees = parse_osm_context(raw_osm, origin, extent)
-    landcover = parse_osm_landcover(raw_osm, origin, extent)
+    # A multipolygon whose outer ring runs outside the bbox extract needs its missing member
+    # ways; without them the whole polygon is dropped.
+    extra_osm = RAW / f"{site_id}-ways.xml"
+    missing_ways = missing_outer_way_ids(raw_osm)
+    if missing_ways and not extra_osm.exists():
+        if offline:
+            raise RuntimeError(f"Missing outer ways cache: {extra_osm}")
+        download_osm_ways(missing_ways, extra_osm)
+    drops: list[dict] = []
+    landcover = parse_osm_landcover(
+        raw_osm, origin, extent, extra_osm if extra_osm.exists() else None, drops
+    )
 
     output = PUBLIC / site_id
     output.mkdir(parents=True, exist_ok=True)
@@ -892,6 +1070,10 @@ def build_site(site_id: str, offline: bool) -> None:
         f"{len(raw_buildings)} raw footprints, {len(roads)} road runs, {len(trees)} trees, "
         f"{len(landcover)} land cover areas ({landcover_counts})"
     )
+    if missing_ways:
+        print(f"  completed {len(missing_ways)} outer member way(s): {', '.join(missing_ways)}")
+    for drop in drops:
+        print(f"  dropped land cover {drop['id']} ({drop['kind']}): {drop['reason']}")
 
 
 def main() -> None:

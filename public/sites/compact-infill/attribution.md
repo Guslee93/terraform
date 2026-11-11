@@ -15,18 +15,26 @@ Licence text: https://opendatacommons.org/licenses/odbl/1-0/
 © OpenStreetMap contributors (ODbL 1.0), from the same extract as the buildings.
 Roads are `highway` centrelines clipped to the terrain extent; widths are illustrative
 values by highway class, not measured carriageways. Tunnels and area-tagged ways are
-omitted. Trees are `natural=tree` points drawn with illustrative sizes and tints varied
-by position; no species, height or canopy data is implied.
+omitted; a covered passage through a building (`tunnel=building_passage`) is kept as a
+street. Where the extract is missing a node the way is split there rather than joined
+across the gap. Trees are `natural=tree` points drawn with illustrative sizes and tints
+varied by position; no species, height or canopy data is implied.
 
 ## Land cover
 
 © OpenStreetMap contributors (ODbL 1.0), from the same cached extract.
-Water: `natural=water`, `waterway=riverbank`, `landuse=reservoir|basin`.
+Water: `natural=water`, `waterway=riverbank`, `landuse=reservoir|basin`, and
+`waterway=river|canal|stream` drawn as illustrative ribbons (10 m, 6 m and 4 m wide).
 Wood: `natural=wood`, `landuse=forest`. Park: `leisure=park|garden|playground`,
 `landuse=recreation_ground`. Grass: `landuse=grass|meadow|village_green|flowerbed`,
 `natural=grassland`. Closed ways and multipolygon outer rings are clipped to the
 terrain extent and simplified at 0.5 m; areas below 4 m² and incomplete rings are
-omitted. Inner rings are ignored. Polygons are illustrative ground tints.
+omitted. Outer member ways that fall outside the extract are fetched separately so a
+multipolygon ring can still be closed. Inner rings are ignored. Polygons are
+illustrative ground tints.
+
+Not included: coastline and the fjord, scrub, wetland, sports pitches, cemeteries,
+allotment gardens and other land use that OSM does not tag with the keys above.
 
 ## Terrain
 

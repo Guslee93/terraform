@@ -93,6 +93,29 @@ export function clipPolyline(points: Ring, extent: Bounds): Ring[] {
   return runs
 }
 const closed = (ring: Ring) => [...ring, ring[0]!]
+/**
+ * Turn a polyline into a closed ribbon polygon of the given width, so a watercourse mapped
+ * as a line can be drawn as a surface instead of being dropped.
+ */
+export function lineToRibbon(points: Ring, width: number): Ring {
+  if (points.length < 2) return []
+  const half = width / 2
+  const left: Ring = []
+  const right: Ring = []
+  for (let i = 0; i < points.length; i++) {
+    const [x, y] = points[i]!
+    const before = points[i - 1] ?? points[i]!
+    const after = points[i + 1] ?? points[i]!
+    let dx = after[0] - before[0]
+    let dy = after[1] - before[1]
+    const length = Math.hypot(dx, dy)
+    if (length < 1e-9) { dx = 1; dy = 0 } else { dx /= length; dy /= length }
+    const nx = -dy * half, ny = dx * half
+    left.push([x + nx, y + ny])
+    right.push([x - nx, y - ny])
+  }
+  return [...left, ...right.reverse()]
+}
 export function simplifyRing(ring: Ring, tolerance = 0.3): Ring {
   if (ring.length < 3) return []
   return openRing(toRing(simplify(polygon([closed(ring)]), { tolerance, highQuality: true }).geometry.coordinates[0]!))

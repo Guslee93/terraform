@@ -76,7 +76,12 @@ export type TreesData = {
   trees: Vec2Tuple[]
 }
 
-export type LandCoverKind = 'water' | 'park' | 'grass' | 'wood'
+/**
+ * Ground tint kinds. `plaza` is a paved pedestrian area and `nature` a protected area; both
+ * are drawn as illustrative ground tints rather than as built or surveyed surfaces.
+ */
+export const LAND_COVER_KINDS = ['water', 'park', 'grass', 'wood', 'plaza', 'nature'] as const
+export type LandCoverKind = (typeof LAND_COVER_KINDS)[number]
 
 export type LandCoverArea = {
   id: string
@@ -343,7 +348,7 @@ export function parseLandCover(value: unknown): LandCoverData {
       const path = `landcover.areas[${index}]`
       const area = asRecord(item, path)
       const kind = asString(area.kind, `${path}.kind`)
-      if (kind !== 'water' && kind !== 'park' && kind !== 'grass' && kind !== 'wood') {
+      if (!LAND_COVER_KINDS.includes(kind as LandCoverKind)) {
         fail(`${path}.kind`, 'unknown land cover kind')
       }
       const ring = asArray(area.ring, `${path}.ring`).map((point, pointIndex) =>

@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<osm version="0.6" generator="TerraformPortfolio"><node id="1137197344" visible="true" version="2" changeset="141661924" timestamp="2023-09-23T21:37:01Z" user="Necessarycoot72" uid="10882995" lat="59.8992127" lon="10.7654414" />
+ <node id="1137197367" visible="true" version="2" changeset="141661924" timestamp="2023-09-23T21:37:01Z" user="Necessarycoot72" uid="10882995" lat="59.8992127" lon="10.7660146" />
+ <node id="1137197373" visible="true" version="2" changeset="94996506" timestamp="2020-11-29T19:03:41Z" user="Ojan" uid="91295" lat="59.8983677" lon="10.7677691" />
+ <node id="1137197374" visible="true" version="2" changeset="141661924" timestamp="2023-09-23T21:37:01Z" user="Necessarycoot72" uid="10882995" lat="59.8990106" lon="10.7649266" />
+ <node id="1137197393" visible="true" version="2" changeset="141661924" timestamp="2023-09-23T21:37:01Z" user="Necessarycoot72" uid="10882995" lat="59.8985071" lon="10.7647466" />
+ <node id="1137197403" visible="true" version="2" changeset="141661924" timestamp="2023-09-23T21:37:01Z" user="Necessarycoot72" uid="10882995" lat="59.8990425" lon="10.7662443" />
+ <node id="1137197414" visible="true" version="2" changeset="136957935" timestamp="2023-06-05T07:11:37Z" user="ccamfwfwtn" uid="1883123" lat="59.8989613" lon="10.7681403" />
+ <node id="1137197418" visible="true" version="2" changeset="141661924" timestamp="2023-09-23T21:37:01Z" user="Necessarycoot72" uid="10882995" lat="59.8995002" lon="10.7653198" />
+ <node id="1137197426" visible="true" version="2" changeset="94996506" timestamp="2020-11-29T19:03:41Z" user="Ojan" uid="91295" lat="59.8981177" lon="10.7675019" />
+ <node id="1137197434" visible="true" version="2" changeset="94996506" timestamp="2020-11-29T19:03:41Z" user="Ojan" uid="91295" lat="59.8988468" lon="10.7675433" />
+ <node id="1137197447" visible="true" version="2" changeset="94996506" timestamp="2020-11-29T19:03:41Z" user="Ojan" uid="91295" lat="59.8984548" lon="10.7656151" />
+ <node id="1137197467" visible="true" version="1" changeset="7190092" timestamp="2011-02-05T09:03:56Z" user="vibrog" uid="11992" lat="59.8990213" lon="10.7651719" />
+ <node id="1137197477" visible="true" version="1" changeset="7190092" timestamp="2011-02-05T09:03:57Z" user="vibrog" uid="11992" lat="59.8990995" lon="10.7675433" />
+ <node id="1137197496" visible="true" version="2" changeset="141661924" timestamp="2023-09-23T21:37:01Z" user="Necessarycoot72" uid="10882995" lat="59.8992302" lon="10.7657888" />
+ <node id="1137197523" visible="true" version="1" changeset="7190092" timestamp="2011-02-05T09:04:01Z" user="vibrog" uid="11992" lat="59.8994741" lon="10.7656151" />
+ <node id="1137197604" visible="true" version="1" changeset="7190092" timestamp="2011-02-05T09:04:08Z" user="vibrog" uid="11992" lat="59.8989949" lon="10.7673174" />
+ <node id="10956735707" visible="true" version="1" changeset="136957935" timestamp="2023-06-05T07:11:37Z" user="ccamfwfwtn" uid="1883123" lat="59.8989523" lon="10.7683724" />
+ <way id="1179666594" visible="true" version="2" changeset="141661924" timestamp="2023-09-23T21:37:01Z" user="Necessarycoot72" uid="10882995">
+  <nd ref="1137197477" />
+  <nd ref="1137197604" />
+  <nd ref="1137197403" />
+  <nd ref="1137197367" />
+  <nd ref="1137197496" />
+  <nd ref="1137197523" />
+  <nd ref="1137197418" />
+  <nd ref="1137197344" />
+  <nd ref="1137197467" />
+  <nd ref="1137197374" />
+  <nd ref="1137197393" />
+  <nd ref="1137197447" />
+  <nd ref="1137197426" />
+  <nd ref="1137197373" />
+  <nd ref="1137197434" />
+  <nd ref="1137197414" />
+  <nd ref="10956735707" />
+  <tag k="source" v="Bing" />
+ </way>
+<node id="1137197599" visible="true" version="2" changeset="20995840" timestamp="2014-03-08T22:00:42Z" user="vibrog" uid="11992" lat="59.8991434" lon="10.7678450" />
+ <way id="1179666596" visible="true" version="1" changeset="136957935" timestamp="2023-06-05T07:11:37Z" user="ccamfwfwtn" uid="1883123">
+  <nd ref="1137197414" />
+  <nd ref="1137197599" />
+ </way>
+</osm>
