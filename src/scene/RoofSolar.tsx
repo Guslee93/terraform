@@ -18,7 +18,7 @@ export function roofSolarGeometry(
   const colour = new Color()
   buildings.forEach((building, index) => {
     const value = values[index]
-    if (!value) return
+    if (!value || !value.analysed) return
     const ground = roofBase(building, heightAt) + 0.3
     const lift = roofLift(building)
     colour.set(ROOF_SOLAR_COLOUR[roofSolarBand(value.kwhPerM2)])

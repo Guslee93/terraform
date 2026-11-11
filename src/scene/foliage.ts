@@ -92,6 +92,29 @@ export function createCanopyGeometry(shape: TreeShape, seed: number): BufferGeom
   return mergeAndDispose(parts)
 }
 
+/**
+ * A single-lump canopy in the shape's proportions, for the Low render tier.
+ *
+ * The full canopy is 18–28 clumps per tree, which is a few hundred triangles each. A city block
+ * with a thousand mapped trees turns that into hundreds of thousands of triangles, and a software
+ * rasteriser cannot draw them. One icosahedron per tree reads the same at a distance.
+ */
+export function createSimpleCanopyGeometry(shape: TreeShape): BufferGeometry {
+  const geometry = new IcosahedronGeometry(1, 0)
+  const radii = RADII[shape]
+  geometry.scale(radii[0], radii[1], radii[2])
+  const positions = geometry.getAttribute('position')
+  const base = new Color(GREENS[0] ?? GREENS[0]!) // sRGB hex → linear RGB
+  const colors: number[] = []
+  for (let face = 0; face < positions.count / 3; face += 1) {
+    const color = base.clone().multiplyScalar(0.94 + ((face * 7) % 10) * 0.012)
+    for (let corner = 0; corner < 3; corner += 1) colors.push(color.r, color.g, color.b)
+  }
+  geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
+  geometry.computeVertexNormals()
+  return geometry
+}
+
 /** Unit-height trunk rooted at y=0 with tapered forks inside the illustrative canopy. */
 export function createBranchGeometry(shape: TreeShape, seed: number): BufferGeometry {
   const random = mulberry32(seed)

@@ -105,3 +105,19 @@ describe('ground sun hours', () => {
     expect(elapsed).toBeLessThan(150)
   })
 })
+
+describe('sun hours on the shipped site', () => {
+  it('computes the study-area ground hours within a usable budget', () => {
+    const context = parseBuildings(compactBuildings).buildings
+    const buildings = context.map((building) => ({ height: building.height, footprint: building.footprint }))
+    const area = normalizeRing(parseStudyArea(compactStudyArea).polygon)
+    const samples = daySunSamples('2026-06-21', OSLO)
+    const start = performance.now()
+    const cells = computeSunHours(area, buildings, samples, 10)
+    const elapsed = performance.now() - start
+    console.info(`[sun-hours] ${elapsed.toFixed(0)} ms · ${buildings.length} context buildings · ${cells.length} cells`)
+    expect(cells.length).toBeGreaterThan(0)
+    // The studio computes this on the main thread when the Sun group opens.
+    expect(elapsed).toBeLessThan(1500)
+  })
+})

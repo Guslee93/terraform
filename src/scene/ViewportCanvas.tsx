@@ -580,7 +580,13 @@ export function ViewportCanvas({
             </group>
 
             <group name="live-scenario">
-            {layers.trees && <Trees sitePackage={sitePackage} exclude={treeExclude} />}
+            {layers.trees && (
+              <Trees
+                sitePackage={sitePackage}
+                exclude={treeExclude}
+                detail={profile === 'low' ? 'simple' : 'full'}
+              />
+            )}
             <MassLayer
               editor={editor}
               dispatch={dispatch}

@@ -80,7 +80,15 @@ export type TreesData = {
  * Ground tint kinds. `plaza` is a paved pedestrian area and `nature` a protected area; both
  * are drawn as illustrative ground tints rather than as built or surveyed surfaces.
  */
-export const LAND_COVER_KINDS = ['water', 'park', 'grass', 'wood', 'plaza', 'nature'] as const
+/**
+ * Ground-cover kinds. `park` is mown and planted green space, `wood` is tree canopy, `scrub`
+ * is low brush, `wetland` is wet ground, `field` is cultivated land, `pitch` is a sports
+ * surface, `cemetery` is grave ground, `bare` is rock or sand, `plaza` is paved, `nature` is
+ * a protected area and `water` is water.
+ */
+export const LAND_COVER_KINDS = [
+  'water', 'park', 'grass', 'wood', 'scrub', 'wetland', 'field', 'pitch', 'cemetery', 'bare', 'plaza', 'nature',
+] as const
 export type LandCoverKind = (typeof LAND_COVER_KINDS)[number]
 
 export type LandCoverArea = {

@@ -16,7 +16,7 @@
     "verticalDatum": "NN2000",
     "originLatitude": 59.9235,
     "originLongitude": 10.758,
-    "originElevation": 20.42,
+    "originElevation": 20.28,
     "projection": "local-tangent-plane-wgs84"
   },
   "unit": "m",
@@ -114,7 +114,7 @@
       "url": "https://www.openstreetmap.org/copyright",
       "license": "ODbL 1.0",
       "attribution": "\u00a9 OpenStreetMap contributors",
-      "acquiredAt": "2026-10-27"
+      "acquiredAt": "2026-11-11"
     },
     {
       "title": "Kartverket DTM1 elevation",
@@ -127,16 +127,16 @@
   "simplified": [
     "Footprints simplified with a 1.2 m tolerance; building relations omitted",
     "Heights from height, building:levels, or a typology fallback",
-    "Terrain sampled on a 13 \u00d7 13 grid and recentered to the origin",
+    "Terrain sampled on a 40 \u00d7 47 grid and recentered to the origin",
     "Study boundary is authored, not a cadastral parcel",
     "Roads are OSM centrelines with illustrative widths by highway class; tunnels omitted",
-    "Trees are OSM natural=tree points drawn with illustrative, position-varied sizes and tints",
+    "Trees are mapped OSM positions (natural=tree nodes, natural=tree_row lines every 8 m) drawn with illustrative, position-varied sizes and tints",
     "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m\u00b2 and incomplete rings omitted; multipolygon inner rings ignored"
   ],
   "statistics": {
-    "buildingCount": 137,
-    "terrainSamples": 169,
+    "buildingCount": 520,
+    "terrainSamples": 1880,
     "studyAreaM2": 45600.0,
-    "sourceChecksum": "5b58d26f69bcc64f"
+    "sourceChecksum": "417e1241ba91a643"
   }
 }

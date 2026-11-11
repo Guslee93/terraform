@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import compactBuildings from '../../../public/sites/compact-infill/buildings.json'
+import compactRoads from '../../../public/sites/compact-infill/roads.json'
+import compactStudyArea from '../../../public/sites/compact-infill/study-area.json'
 import type { Vec2 } from '../../lib/coordinates'
+import { normalizeRing } from '../../lib/polygon'
+import { parseBuildings, parseRoads, parseStudyArea } from '../sites/package'
 import { sampleGrid } from './grid'
 import { computeNoise, noiseAt, noiseBand, SCREEN_LOSS_DB } from './noise'
 
@@ -82,5 +87,30 @@ describe('noise (hand-computed)', () => {
     expect(cells.find((c) => c.x === 15 && c.y === 15)?.band).toBe('very-loud')
     expect(noiseBand(44.9)).toBe('quiet')
     expect(noiseBand(75)).toBe('extreme')
+  })
+})
+
+// ADR-0023: the context block carries 520 buildings and 627 road pieces. Screening every cell
+// against every building cost seconds per edit; the building index keeps the studio responsive.
+describe('noise on the shipped site', () => {
+  it('screens the study area within a usable budget', () => {
+    const buildings = parseBuildings(compactBuildings).buildings.map((building) => ({
+      height: building.height,
+      footprint: building.footprint,
+    }))
+    const roads = parseRoads(compactRoads).roads
+    const area = normalizeRing(parseStudyArea(compactStudyArea).polygon)
+    const start = performance.now()
+    const cells = computeNoise(area, roads, buildings, 10)
+    const elapsed = performance.now() - start
+    console.info(
+      `[noise] ${elapsed.toFixed(1)} ms · ${cells.length} cells · ${buildings.length} buildings · ${roads.length} road pieces`,
+    )
+    expect(cells.length).toBeGreaterThan(0)
+    expect(cells.some((cell) => cell.db !== null)).toBe(true)
+    // The studio recomputes this on the main thread whenever a mass changes. Measured: 145 ms on an
+    // idle machine, 258 ms under a full parallel test run; the pre-index screening took 1021 ms for
+    // the same pass, so the budget catches a return to the linear scan.
+    expect(elapsed).toBeLessThan(600)
   })
 })

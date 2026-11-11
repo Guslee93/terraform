@@ -1,6 +1,6 @@
 import { segmentsIntersect, pointInPolygon } from '../../lib/polygon'
 import type { Vec2 } from '../../lib/coordinates'
-import { insideAnyBuilding, sampleGrid, type FootprintBuilding, type GridCell } from './grid'
+import { indexBuildings, insideAnyBuilding, sampleGrid, type BuildingIndex, type FootprintBuilding, type GridCell } from './grid'
 
 export const NOISE_DISCLAIMER = 'Indicative road-noise screening — not a noise survey'
 
@@ -53,8 +53,15 @@ function closestOnSegment(p: Vec2, a: Vec2, b: Vec2): Vec2 {
   return [a[0] + t * dx, a[1] + t * dy]
 }
 
-function screened(from: Vec2, to: Vec2, buildings: readonly FootprintBuilding[]): boolean {
-  return buildings.some((b) => {
+function screened(from: Vec2, to: Vec2, index: BuildingIndex): boolean {
+  // Only buildings whose box meets the line can screen it, so the index replaces a full scan.
+  const candidates = index.query(
+    Math.min(from[0], to[0]),
+    Math.min(from[1], to[1]),
+    Math.max(from[0], to[0]),
+    Math.max(from[1], to[1]),
+  )
+  return candidates.some((b) => {
     if (b.height < SCREEN_MIN_HEIGHT_M || pointInPolygon(from, b.footprint)) return false
     return b.footprint.some((v, i) =>
       segmentsIntersect(from, to, v, b.footprint[(i + 1) % b.footprint.length] as Vec2),
@@ -119,7 +126,13 @@ export function groupStreets(roads: readonly NoiseRoad[]): NoiseRoad[][] {
  * ponytail: closest-point-per-street ignores street length, so long streets read slightly quiet;
  * sample sources along the centreline if that matters.
  */
-export function noiseAt(x: number, y: number, roads: readonly NoiseRoad[], buildings: readonly FootprintBuilding[]): number | null {
+export function noiseAt(
+  x: number,
+  y: number,
+  roads: readonly NoiseRoad[],
+  buildings: readonly FootprintBuilding[],
+  index: BuildingIndex = indexBuildings(buildings),
+): number | null {
   let energy = 0
   for (const street of groupStreets(roads)) {
     const level = ROAD_LEVEL_AT_10M[street[0]!.highway]
@@ -139,7 +152,7 @@ export function noiseAt(x: number, y: number, roads: readonly NoiseRoad[], build
     if (!best) continue
     const r = Math.max(bestD, NOISE_REFERENCE_M) // no gain closer than the reference distance
     let db = level - 10 * Math.log10(r / NOISE_REFERENCE_M) // line source: 3 dB per doubling
-    if (screened([x, y], best, buildings)) db -= SCREEN_LOSS_DB
+    if (screened([x, y], best, index)) db -= SCREEN_LOSS_DB
     energy += 10 ** (db / 10)
   }
   return energy === 0 ? null : 10 * Math.log10(energy)
@@ -151,8 +164,10 @@ export function computeNoise(
   buildings: readonly FootprintBuilding[],
   cellM = 10,
 ): NoiseCell[] {
+  // One index per pass: screening then tests the few buildings near each line, not the whole block.
+  const index = indexBuildings(buildings)
   return sampleGrid(studyArea, cellM).map((c) => {
-    const db = insideAnyBuilding(c.x, c.y, buildings) ? null : noiseAt(c.x, c.y, roads, buildings)
+    const db = insideAnyBuilding(c.x, c.y, buildings, index) ? null : noiseAt(c.x, c.y, roads, buildings, index)
     return { ...c, db, band: db === null ? null : noiseBand(db) }
   })
 }

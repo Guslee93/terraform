@@ -121,7 +121,7 @@ describe('roof overlays on a slope', () => {
 
   it('measures a context building from its own base, not the terrain at its centre', () => {
     expect(roofBase({ footprint, baseElevation: -0.3 }, slope)).toBe(-0.3)
-    const geometry = roofSolarGeometry([{ footprint, height: 8, baseElevation: -0.3 }], [{ kwhPerM2: 900, sampleCount: 1 }], slope)
+    const geometry = roofSolarGeometry([{ footprint, height: 8, baseElevation: -0.3 }], [{ kwhPerM2: 900, sampleCount: 1, analysed: true }], slope)
     const position = geometry.getAttribute('position')
     // Roof top is at −0.3 + 8 = 7.7; the overlay sits 0.3 m above it, not 5 m higher.
     for (let index = 0; index < position.count; index += 1) expect(position.getY(index)).toBeCloseTo(8, 5)

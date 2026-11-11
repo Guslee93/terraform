@@ -22,8 +22,11 @@ const WATERWAY_WIDTHS: Readonly<Record<string, number>> = { river: 10, canal: 6,
 
 /** `landcover` subclasses that are a park or a garden rather than open grass. */
 const PARK_SUBCLASSES = new Set([
-  'park', 'garden', 'village_green', 'recreation_ground', 'golf_course',
+  'park', 'garden', 'village_green', 'recreation_ground', 'golf_course', 'flowerbed',
 ])
+
+/** `landcover` subclasses that are cultivated or planted ground rather than open grass. */
+const FIELD_SUBCLASSES = new Set(['allotments', 'farmland', 'orchard', 'vineyard', 'farmyard'])
 
 /** Transportation polygons that are paved ground rather than a bridge deck or a pier. */
 const PLAZA_SUBCLASSES = new Set(['pedestrian', 'footway'])
@@ -70,16 +73,34 @@ export function extractRoads(features: readonly TileFeature[], frame: ImportFram
 /**
  * The ground tint for a polygon feature. The OpenMapTiles `park` layer holds protected areas
  * rather than urban parks; urban parks arrive as `landcover` grass with a park subclass.
+ *
+ * The tiles carry far more greenery than the studio used to show: gardens, allotments, scrub,
+ * pitches, cemeteries, beaches and bare rock all arrive in the vector tiles and are mapped here
+ * so the ground reads as a real place rather than a green wash.
  */
 function landCoverKind(feature: TileFeature): LandCoverKind | null {
   if (feature.layer === 'park') return 'nature'
   if (feature.layer === 'water') return 'water'
+  if (feature.layer === 'landuse') {
+    const className = feature.properties.class
+    if (className === 'pitch' || className === 'playground') return 'pitch'
+    if (className === 'cemetery') return 'cemetery'
+    return null
+  }
   if (feature.layer !== 'landcover') return null
   const className = feature.properties.class
-  if (className === 'wood') return 'wood'
-  if (className !== 'grass') return null
   const subclass = typeof feature.properties.subclass === 'string' ? feature.properties.subclass : undefined
-  return subclass && PARK_SUBCLASSES.has(subclass) ? 'park' : 'grass'
+  if (className === 'wood') return 'wood'
+  if (className === 'wetland') return 'wetland'
+  if (className === 'farmland') return 'field'
+  if (className === 'rock' || className === 'sand') return 'bare'
+  if (className !== 'grass') return null
+  if (!subclass) return 'grass'
+  // In the tile schema scrub is a grass subclass, not a class of its own.
+  if (subclass === 'scrub') return 'scrub'
+  if (PARK_SUBCLASSES.has(subclass)) return 'park'
+  if (FIELD_SUBCLASSES.has(subclass)) return 'field'
+  return 'grass'
 }
 export function extractLandCover(features: readonly TileFeature[], frame: ImportFrame, origin: Origin = frame): LandCoverArea[] {
   const areas: LandCoverArea[] = []

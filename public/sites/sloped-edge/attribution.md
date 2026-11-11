@@ -4,7 +4,7 @@
 
 © OpenStreetMap contributors. Licensed under the Open Database License (ODbL) 1.0.
 Source: https://www.openstreetmap.org/copyright
-Query: https://api.openstreetmap.org/api/0.6/map?bbox=10.7715,59.8965,10.776,59.9
+Query: https://api.openstreetmap.org/api/0.6/map?bbox=10.767926736065483,59.89470483725301,10.779573263934516,59.90179516274699
 
 This simplified, derived building dataset is made available under ODbL 1.0.
 If you reuse or redistribute it, keep this attribution and the ODbL notice.
@@ -17,24 +17,33 @@ Roads are `highway` centrelines clipped to the terrain extent; widths are illust
 values by highway class, not measured carriageways. Tunnels and area-tagged ways are
 omitted; a covered passage through a building (`tunnel=building_passage`) is kept as a
 street. Where the extract is missing a node the way is split there rather than joined
-across the gap. Trees are `natural=tree` points drawn with illustrative sizes and tints
-varied by position; no species, height or canopy data is implied.
+across the gap.
+
+Trees are mapped OSM positions: `natural=tree` nodes, and `natural=tree_row` lines with a
+tree placed every 8 m along the row. The positions are the mappers' own; the sizes and
+tints are illustrative and vary by position, so no species, height or canopy data is
+implied. Where OSM has no tree, none is drawn — the ground is left as it is mapped.
 
 ## Land cover
 
 © OpenStreetMap contributors (ODbL 1.0), from the same cached extract.
 Water: `natural=water`, `waterway=riverbank`, `landuse=reservoir|basin`, and
 `waterway=river|canal|stream` drawn as illustrative ribbons (10 m, 6 m and 4 m wide).
-Wood: `natural=wood`, `landuse=forest`. Park: `leisure=park|garden|playground`,
-`landuse=recreation_ground`. Grass: `landuse=grass|meadow|village_green|flowerbed`,
-`natural=grassland`. Closed ways and multipolygon outer rings are clipped to the
+Wood: `natural=wood`, `landuse=forest`. Scrub: `natural=scrub`, `natural=heath`,
+`landuse=scrub`. Wetland: `natural=wetland`, `landuse=wetland`. Bare ground:
+`natural=bare_rock|sand|scree|shingle`. Cemetery: `landuse=cemetery|grave_yard`.
+Pitch: `leisure=pitch|playground|sports_centre|stadium`. Field:
+`landuse=allotments|orchard|vineyard|farmland|farmyard`. Park:
+`leisure=park|garden`, `landuse=recreation_ground|village_green`. Grass:
+`landuse=grass|meadow|flowerbed`, `natural=grassland`.
+Closed ways and multipolygon outer rings are clipped to the
 terrain extent and simplified at 0.5 m; areas below 4 m² and incomplete rings are
 omitted. Outer member ways that fall outside the extract are fetched separately so a
 multipolygon ring can still be closed. Inner rings are ignored. Polygons are
 illustrative ground tints.
 
-Not included: coastline and the fjord, scrub, wetland, sports pitches, cemeteries,
-allotment gardens and other land use that OSM does not tag with the keys above.
+Not included: coastline and the fjord, and any land use OSM does not tag with the keys
+above.
 
 ## Terrain
 
@@ -42,8 +51,8 @@ allotment gardens and other land use that OSM does not tag with the keys above.
 Source: https://ws.geonorge.no/hoydedata/v1/ (DTM1)
 Terms: https://www.kartverket.no/api-og-data/vilkar-for-bruk/
 
-Terrain elevations were sampled on a 13 × 13 grid and
-recentered to the local origin elevation (137.20 m).
+Terrain elevations were sampled on a 42 × 50 grid and
+recentered to the local origin elevation (136.67 m).
 
 ## Study area
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Color, Object3D, type BufferGeometry, type InstancedMesh } from 'three'
 import { sampleTerrainHeight } from '../features/sites/geometry'
 import type { SitePackage } from '../features/sites/package'
-import { createBranchGeometry, createCanopyGeometry, FOLIAGE_VARIANTS } from './foliage'
+import { createBranchGeometry, createCanopyGeometry, createSimpleCanopyGeometry, FOLIAGE_VARIANTS } from './foliage'
 import { TREE_TINTS, treeVariant, type TreeShape, type TreeVariant } from './treeVariants'
 import { pointsOutsideRings } from '../lib/cullPoints'
 import type { Vec2 } from '../lib/coordinates'
@@ -20,14 +20,41 @@ type GeometryPair = {
   branches: BufferGeometry
 }
 
-function TreeInstances({ geometry, trees }: { geometry: GeometryPair; trees: readonly Placed[] }) {
+/** 'simple' is the Low render tier: one lump per canopy and no branch mesh. */
+export type TreeDetail = 'full' | 'simple'
+
+function TreeInstances({
+  geometry,
+  trees,
+  branches: withBranches = true,
+}: {
+  geometry: GeometryPair
+  trees: readonly Placed[]
+  branches?: boolean
+}) {
   const canopyRef = useRef<InstancedMesh>(null)
   const branchRef = useRef<InstancedMesh>(null)
 
   useEffect(() => {
     const canopy = canopyRef.current
     const branches = branchRef.current
-    if (!canopy || !branches) return
+    if (!canopy) return
+    if (!branches) {
+      const placer = new Object3D()
+      const color = new Color()
+      trees.forEach((tree, index) => {
+        placer.position.set(tree.east, tree.ground + (TRUNK_HEIGHT + CANOPY_RADIUS * 0.75) * tree.scale, -tree.north)
+        placer.rotation.set(0, tree.rotation, 0)
+        placer.scale.setScalar(CANOPY_RADIUS * tree.scale)
+        placer.updateMatrix()
+        canopy.setMatrixAt(index, placer.matrix)
+        canopy.setColorAt(index, color.set(TREE_TINTS[tree.tint] ?? TREE_TINTS[0]))
+      })
+      canopy.instanceMatrix.needsUpdate = true
+      if (canopy.instanceColor) canopy.instanceColor.needsUpdate = true
+      canopy.computeBoundingSphere()
+      return
+    }
     const placer = new Object3D()
     const color = new Color()
     trees.forEach((tree, index) => {
@@ -67,24 +94,41 @@ function TreeInstances({ geometry, trees }: { geometry: GeometryPair; trees: rea
           depthWrite
         />
       </instancedMesh>
-      <instancedMesh ref={branchRef} args={[geometry.branches, undefined, trees.length]} castShadow>
-        <meshStandardMaterial color="#A39A8C" roughness={1} metalness={0} />
-      </instancedMesh>
+      {withBranches && (
+        <instancedMesh ref={branchRef} args={[geometry.branches, undefined, trees.length]} castShadow>
+          <meshStandardMaterial color="#A39A8C" roughness={1} metalness={0} />
+        </instancedMesh>
+      )}
     </group>
   )
 }
 
 /** OSM tree points as instanced leaf clusters; size and form are illustrative only. */
-export function Trees({ sitePackage, exclude }: { sitePackage: SitePackage; exclude?: readonly (readonly Vec2[])[] }) {
+export function Trees({
+  sitePackage,
+  exclude,
+  detail = 'full',
+}: {
+  sitePackage: SitePackage
+  exclude?: readonly (readonly Vec2[])[]
+  detail?: TreeDetail
+}) {
   const { trees, terrain } = sitePackage
   const geometries = useMemo(
-    () => SHAPES.flatMap((shape) => Array.from({ length: FOLIAGE_VARIANTS }, (_, variant) => ({
-      shape,
-      variant,
-      canopy: createCanopyGeometry(shape, variant),
-      branches: createBranchGeometry(shape, variant),
-    }))),
-    [],
+    () => (detail === 'simple'
+      ? SHAPES.map((shape) => ({
+        shape,
+        variant: 0,
+        canopy: createSimpleCanopyGeometry(shape),
+        branches: createBranchGeometry(shape, 0),
+      }))
+      : SHAPES.flatMap((shape) => Array.from({ length: FOLIAGE_VARIANTS }, (_, variant) => ({
+        shape,
+        variant,
+        canopy: createCanopyGeometry(shape, variant),
+        branches: createBranchGeometry(shape, variant),
+      })))),
+    [detail],
   )
   useEffect(() => () => {
     for (const geometry of geometries) {
@@ -103,15 +147,22 @@ export function Trees({ sitePackage, exclude }: { sitePackage: SitePackage; excl
     }))
     return geometries.map((geometry) => ({
       geometry,
-      trees: placed.filter((tree) => tree.shape === geometry.shape && tree.variant === geometry.variant),
+      // The simple tier has one canopy per shape, so every tree of that shape joins it.
+      trees: placed.filter((tree) =>
+        tree.shape === geometry.shape && (detail === 'simple' || tree.variant === geometry.variant)),
     }))
-  }, [trees, terrain, geometries, exclude])
+  }, [trees, terrain, geometries, exclude, detail])
 
   if (trees.length === 0) return null
   return (
     <group>
       {groups.map(({ geometry, trees: group }) => (
-        <TreeInstances key={`${geometry.shape}-${geometry.variant}`} geometry={geometry} trees={group} />
+        <TreeInstances
+          key={`${geometry.shape}-${geometry.variant}`}
+          geometry={geometry}
+          trees={group}
+          branches={detail === 'full'}
+        />
       ))}
     </group>
   )

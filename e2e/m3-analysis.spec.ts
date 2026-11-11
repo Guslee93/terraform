@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
-import { openAnalysis } from './studio-helpers'
+import { canvasSignature, expectCanvasChanged, openAnalysis } from './studio-helpers'
 
 // D32 — M3 live-analysis e2e (docs/plans/M3-fable-plan.md §10, docs/handoffs/C8-C10-m3-ui.md).
 //
@@ -22,9 +22,6 @@ async function openStudio(page: Page) {
 }
 
 /** Clear centre clip, away from the compass, legend, presets and scale bar (smoke.spec). */
-function centreClip(box: { x: number; y: number; width: number; height: number }) {
-  return { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
-}
 
 /** Activate the Sun card: the time band in the dock, readout, date and presets in Parameters. */
 async function openSunGroup(page: Page) {
@@ -38,9 +35,6 @@ function sunReadout(page: Page) {
 
 test('D32: Sun time presets change the rendered canvas and the sun readout', async ({ page }) => {
   await openStudio(page)
-  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
-  const box = await viewport.boundingBox()
-  if (!box) throw new Error('The 3D site viewport region was not found')
 
   await openSunGroup(page)
   const readout = sunReadout(page)
@@ -48,28 +42,23 @@ test('D32: Sun time presets change the rendered canvas and the sun readout', asy
 
   // Let the scene (and the lazy AO composer) settle before the reference frame.
   await page.waitForTimeout(3500)
-  const clip = centreClip(box)
-  const atDefault = await page.screenshot({ clip })
+  const atDefault = await canvasSignature(page)
   const textDefault = await readout.textContent()
 
   // Noon on 21 June rotates the shadows (elevation 41.7° → 51.0°, azimuth 217° → 151°);
   // both the DOM readout and the canvas must follow.
   await page.getByRole('button', { name: 'Noon' }).click()
   await expect(readout).not.toHaveText(textDefault ?? '')
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(atDefault), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, atDefault)
 
   await page.waitForTimeout(500)
-  const atNoon = await page.screenshot({ clip })
+  const atNoon = await canvasSignature(page)
   const textNoon = await readout.textContent()
 
   // Evening moves to the other side: the picture and the readout change again.
   await page.getByRole('button', { name: 'Evening' }).click()
   await expect(readout).not.toHaveText(textNoon ?? '')
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(atNoon), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, atNoon)
 })
 
 test('D32: winter solstice evening shows the Sun below horizon chip and no elevation readout', async ({ page }) => {

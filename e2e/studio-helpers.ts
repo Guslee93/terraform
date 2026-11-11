@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 
 /** The studio's right panel (ADR-0016). */
 export const parameters = (page: Page) => page.getByRole('complementary', { name: 'Parameters' })
@@ -24,6 +24,38 @@ export async function openStudio(page: Page) {
   await page.goto('/studio/compact-infill')
   await page.getByRole('button', { name: 'Add a block' }).waitFor()
   await page.getByRole('button', { name: 'Add a block' }).click()
+}
+
+/**
+ * A signature of the rendered canvas, read inside the page.
+ *
+ * Chromium's screenshot path goes through the compositor, which occasionally stalls for
+ * minutes on the full city context in software rendering (headless Chromium has no GPU).
+ * The pixels are read straight from the canvas instead, inside a requestAnimationFrame
+ * callback so the buffer still holds the last rendered frame. The HUD is DOM, so it is
+ * never part of the signature.
+ */
+export async function canvasSignature(page: Page): Promise<string> {
+  return page.evaluate(async () => {
+    const canvas = document.querySelector('canvas')
+    if (!canvas) throw new Error('The studio canvas is not on screen')
+    const url = await new Promise<string>((resolve) => {
+      requestAnimationFrame(() => resolve(canvas.toDataURL('image/png')))
+    })
+    // Length plus an FNV-1a hash: two different frames give two different signatures.
+    let hash = 2166136261
+    for (let index = 0; index < url.length; index += 1) {
+      hash = Math.imul(hash ^ url.charCodeAt(index), 16777619)
+    }
+    return `${url.length}:${hash >>> 0}`
+  })
+}
+
+/** Wait until the canvas differs from `before` (a layer toggle changed the picture). */
+export async function expectCanvasChanged(page: Page, before: string, timeout = 20_000) {
+  await expect
+    .poll(async () => (await canvasSignature(page)) !== before, { timeout })
+    .toBe(true)
 }
 
 export async function drawMass(page: Page) {

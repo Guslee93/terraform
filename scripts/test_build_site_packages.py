@@ -96,8 +96,19 @@ print("parse_osm_landcover: ok")
 RAW = Path(__file__).parent.parent / "data" / "raw"
 PUBLIC = Path(__file__).parent.parent / "public" / "sites"
 EXPECTED = {
-    "compact-infill": {"roads": 137, "trees": 128, "areas": {"grass": 8, "park": 1, "water": 1}},
-    "sloped-edge": {"roads": 33, "trees": 122, "areas": {"grass": 1, "wood": 2, "park": 1}},
+    "compact-infill": {
+        "roads": 627,
+        "trees": 935,
+        "areas": {
+            "water": 7, "bare": 1, "wood": 3, "scrub": 1, "pitch": 15,
+            "field": 1, "park": 9, "grass": 21,
+        },
+    },
+    "sloped-edge": {
+        "roads": 207,
+        "trees": 251,
+        "areas": {"water": 3, "wood": 9, "pitch": 3, "field": 1, "park": 3, "grass": 5},
+    },
 }
 for site_id, expected in EXPECTED.items():
     manifest = json.loads((PUBLIC / site_id / "manifest.json").read_text())
@@ -115,4 +126,35 @@ for site_id, expected in EXPECTED.items():
     for area in areas:
         kinds[area["kind"]] = kinds.get(area["kind"], 0) + 1
     assert kinds == expected["areas"], (site_id, "areas", kinds)
+    # The context reaches beyond the study boundary, so the scene has a horizon.
+    width = terrain["maxX"] - terrain["minX"]
+    height = terrain["maxY"] - terrain["minY"]
+    assert width > manifest["statistics"]["studyAreaM2"] ** 0.5 * 2, (site_id, "width", width)
+    assert terrain["cols"] > 13 and terrain["rows"] > 13, (site_id, terrain["cols"], terrain["rows"])
 print("shipped packages match the cached extracts: ok")
+
+# A mapped tree row is a line of trees: a tree every 8 m along it, not one point per way.
+with TemporaryDirectory() as directory:
+    path = Path(directory) / 'row.osm'
+    row_nodes = []
+    for index, (x, y) in enumerate([(0.0, 0.0), (20.0, 0.0)], 1):
+        lat, lon = unproject(x, y, *origin)
+        row_nodes.append(f'<node id="{index}" lat="{lat}" lon="{lon}"/>')
+    row = ('<way id="1">' + ''.join(f'<nd ref="{ref}"/>' for ref in (1, 2))
+           + '<tag k="natural" v="tree_row"/></way>')
+    lat, lon = unproject(30.0, 5.0, *origin)
+    lone = f'<node id="3" lat="{lat}" lon="{lon}"><tag k="natural" v="tree"/></node>'
+    path.write_text('<osm>' + ''.join(row_nodes) + row + lone + '</osm>')
+    _, row_trees = parse_osm_context(path, origin, (-60.0, -60.0, 60.0, 60.0))
+row_points = [tuple(point) for point in row_trees]
+# The row becomes several trees along the line, and the lone tree stays one point.
+assert len(row_points) >= 4, row_points
+assert row_points[0] == (0.0, 0.0) and row_points[-2] == (20.0, 0.0), row_points
+gaps = [
+    ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) ** 0.5
+    for a, b in zip(row_points[:-2], row_points[1:-1])
+]
+assert all(0 < gap <= 12.0 for gap in gaps), gaps
+assert (30.0, 5.0) in row_points, row_points
+print("tree rows: ok")
+

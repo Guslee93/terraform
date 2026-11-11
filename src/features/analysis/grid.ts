@@ -37,8 +37,118 @@ export function footprintTester(buildings: readonly FootprintBuilding[]): (x: nu
   return (x, y) => boxes.some((box) => x >= box.minX && x <= box.maxX && y >= box.minY && y <= box.maxY && pointInPolygon([x, y], box.footprint))
 }
 
-export function insideAnyBuilding(x: number, y: number, buildings: readonly FootprintBuilding[]) {
-  return buildings.some((b) => pointInPolygon([x, y], b.footprint))
+export function insideAnyBuilding(
+  x: number,
+  y: number,
+  buildings: readonly FootprintBuilding[],
+  index?: BuildingIndex,
+) {
+  const candidates = index ? index.query(x, y, x, y) : buildings
+  return candidates.some((b) => pointInPolygon([x, y], b.footprint))
+}
+
+/** Bounding box of one building footprint, in local metres. */
+export type FootprintBox = {
+  readonly minX: number
+  readonly maxX: number
+  readonly minY: number
+  readonly maxY: number
+  readonly building: FootprintBuilding
+}
+
+/**
+ * Uniform-grid index over building footprints (ADR-0023). Screening one line against every
+ * building in a city block costs a point-in-polygon plus a segment test per footprint edge; with
+ * a few hundred context buildings that is seconds per edit. The index answers "which buildings can
+ * this box touch?" in a handful of candidates, so the screening result is unchanged — only the
+ * work is less. Renderer-free domain logic.
+ */
+export type BuildingIndex = {
+  /** Buildings whose bounding box overlaps the given box — the same set a linear scan finds. */
+  query(minX: number, minY: number, maxX: number, maxY: number): FootprintBuilding[]
+}
+
+/** Grid cell size in metres. Footprints are small; 20 m keeps the buckets to one or two buildings. */
+export const BUILDING_INDEX_CELL_M = 20
+
+/** Bounding boxes of the given buildings. A footprint with no vertices has no box. */
+export function footprintBoxes(buildings: readonly FootprintBuilding[]): FootprintBox[] {
+  const boxes: FootprintBox[] = []
+  for (const building of buildings) {
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    let maxY = -Infinity
+    for (const [x, y] of building.footprint) {
+      if (x < minX) minX = x
+      if (x > maxX) maxX = x
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+    }
+    if (!Number.isFinite(minX)) continue
+    boxes.push({ minX, maxX, minY, maxY, building })
+  }
+  return boxes
+}
+
+/**
+ * Index buildings by bounding box. A building is filed under every grid cell its box touches, so
+ * a query returns it whenever the queried box overlaps the building's own box — exactly the
+ * buildings a linear scan would have to test.
+ */
+export function indexBuildings(
+  buildings: readonly FootprintBuilding[],
+  cellM = BUILDING_INDEX_CELL_M,
+): BuildingIndex {
+  const boxes = footprintBoxes(buildings)
+  const cells = new Map<number, Map<number, number[]>>()
+  const size = cellM > 0 ? cellM : BUILDING_INDEX_CELL_M
+  boxes.forEach((box, index) => {
+    const gx0 = Math.floor(box.minX / size)
+    const gx1 = Math.floor(box.maxX / size)
+    const gy0 = Math.floor(box.minY / size)
+    const gy1 = Math.floor(box.maxY / size)
+    for (let gy = gy0; gy <= gy1; gy += 1) {
+      for (let gx = gx0; gx <= gx1; gx += 1) {
+        const row = cells.get(gx)
+        if (row) {
+          const bucket = row.get(gy)
+          if (bucket) bucket.push(index)
+          else row.set(gy, [index])
+        } else {
+          cells.set(gx, new Map([[gy, [index]]]))
+        }
+      }
+    }
+  })
+  // A stamp per box avoids allocating a set on every query.
+  const seen = new Int32Array(boxes.length)
+  let stamp = 0
+  return {
+    query(minX, minY, maxX, maxY) {
+      stamp += 1
+      const found: FootprintBuilding[] = []
+      const gx0 = Math.floor(minX / size)
+      const gx1 = Math.floor(maxX / size)
+      const gy0 = Math.floor(minY / size)
+      const gy1 = Math.floor(maxY / size)
+      for (let gy = gy0; gy <= gy1; gy += 1) {
+        for (let gx = gx0; gx <= gx1; gx += 1) {
+          const bucket = cells.get(gx)?.get(gy)
+          if (!bucket) continue
+          for (const index of bucket) {
+            if (seen[index] === stamp) continue
+            seen[index] = stamp
+            const box = boxes[index]!
+            // The bucket is a superset: a neighbour cell can share it without overlapping.
+            if (box.maxX < minX || box.minX > maxX || box.maxY < minY || box.minY > maxY) continue
+            found.push(box.building)
+          }
+        }
+      }
+      return found
+    },
+  }
 }
 
 /** Regular n-gon approximating a circle (counter-clockwise, local ENU metres). */

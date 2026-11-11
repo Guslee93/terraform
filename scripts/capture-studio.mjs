@@ -24,6 +24,8 @@ for (const [width, height] of SIZES) {
   await page.waitForTimeout(4000)
   if (process.env.DRAW) {
     // Draw one 4-corner mass in plan, then return to the 3D view; the new mass stays selected.
+    // "Add a block" opens the tool rail; without it the Draw building button is not on screen.
+    await page.getByRole('button', { name: 'Add a block' }).click()
     await page.getByRole('button', { name: 'Plan', exact: true }).click()
     await page.waitForTimeout(1500)
     const box = await page.getByRole('region', { name: /3D site viewport/ }).boundingBox()

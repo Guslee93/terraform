@@ -148,6 +148,18 @@ export function StudioShell({
     })
     return [...sitePackage.buildings.buildings, ...masses]
   }, [analysisDocument, sitePackage])
+  // Roof solar is a statement about the site: the study area and the masses drawn on it. The
+  // surrounding blocks still cast shadows into the site, but their own roofs are not the
+  // site's yield, and measuring every roof in a city block costs seconds of worker time.
+  const roofSolarFocus = useMemo(() => {
+    const context = sitePackage?.buildings.buildings ?? []
+    const focus: number[] = []
+    context.forEach((building, index) => {
+      if (building.withinStudyArea) focus.push(index)
+    })
+    for (let index = context.length; index < analysisBuildings.length; index += 1) focus.push(index)
+    return focus
+  }, [analysisBuildings, sitePackage])
   const studyArea = useMemo(() => (sitePackage ? normalizeRing(sitePackage.studyArea.polygon) : null), [sitePackage])
   // Sun samples are date-only (the time slider does not change a day's total); ground hours reuse them.
   const sunSamples = useMemo(
@@ -160,14 +172,14 @@ export function StudioShell({
   )
   // Roof solar depends only on the buildings and the site, so it is computed once per edit in its worker.
   const roofSolarActive = dockActive === 'sun' && sunAnalysis === 'roof-solar'
-  const roofSolarValues = useRoofSolar(analysisBuildings, sitePackage?.manifest.location ?? null, roofSolarActive)
+  const roofSolarValues = useRoofSolar(analysisBuildings, sitePackage?.manifest.location ?? null, roofSolarActive, roofSolarFocus)
   const roofSolarSummary = useMemo(() => {
     if (!roofSolarValues) return null
     let totalKwhPerYear = 0
     let roofAreaM2 = 0
     analysisBuildings.forEach((building, index) => {
       const value = roofSolarValues[index]
-      if (!value) return
+      if (!value || !value.analysed) return
       // Only the open part of a roof counts: a podium under a tower is not double-counted.
       const area = polygonArea(building.footprint) * (value.exposedShare ?? 1)
       roofAreaM2 += area

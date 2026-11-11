@@ -22,6 +22,7 @@ import math
 import ssl
 import urllib.parse
 import urllib.request
+import datetime
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -73,6 +74,32 @@ SITES = {
 }
 
 GRID_SIZE = 13
+# A mapped tree row carries a tree every 8 m, the same spacing the import path uses.
+TREE_ROW_SPACING_M = 8.0
+# The study area is small; the context around it is not. A halo of open ground and blocks makes
+# the site read as part of a city rather than a model on a table.
+CONTEXT_HALO_M = 200.0
+# Terrain sample spacing. The grid grows with the extent so the relief resolution stays put.
+TERRAIN_SPACING_M = 16.0
+# The package parser rejects a footprint with more points than this.
+MAX_FOOTPRINT_VERTICES = 200
+# The smallest building worth drawing. Below this an outline is a shed or a mapped mistake.
+MIN_BUILDING_AREA_M2 = 12.0
+# A ceiling on context buildings, so a dense extract cannot grow the package without bound.
+# The largest are kept: a dropped small building is less visible than a dropped large one.
+MAX_CONTEXT_BUILDINGS = 900
+
+
+def expanded_bbox(site: dict) -> tuple[float, float, float, float]:
+    """The data bbox: the study bbox plus the context halo, in degrees (south, west, north, east)."""
+    south, west, north, east = site["bbox"]
+    lat_m, lon_m = metres_per_degree((south + north) / 2)
+    return (
+        south - CONTEXT_HALO_M / lat_m,
+        west - CONTEXT_HALO_M / lon_m,
+        north + CONTEXT_HALO_M / lat_m,
+        east + CONTEXT_HALO_M / lon_m,
+    )
 
 
 def metres_per_degree(latitude: float) -> tuple[float, float]:
@@ -151,7 +178,10 @@ def is_simple_ring(points: list[tuple[float, float]]) -> bool:
     return True
 
 
-def repair_ring(points: list[tuple[float, float]]) -> list[tuple[float, float]] | None:
+def repair_ring(
+    points: list[tuple[float, float]], min_area: float = 25.0
+) -> list[tuple[float, float]] | None:
+    """A simple ring of at least `min_area`, or None when the outline cannot be made one."""
     original = points[:]
     candidates = [original]
     for tolerance in (1.2, 0.6, 0.3):
@@ -159,9 +189,23 @@ def repair_ring(points: list[tuple[float, float]]) -> list[tuple[float, float]] 
         if len(simplified) >= 3:
             candidates.append(simplified)
     for candidate in candidates:
-        if len(candidate) >= 3 and polygon_area(candidate) >= 25.0 and is_simple_ring(candidate):
+        if len(candidate) >= 3 and polygon_area(candidate) >= min_area and is_simple_ring(candidate):
             return candidate
     return None
+
+
+def cap_vertices(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Simplify an outline until it fits the package's vertex limit.
+
+    The package parser rejects a footprint with more than MAX_FOOTPRINT_VERTICES points, so a
+    complex outline is coarsened rather than dropped.
+    """
+    out = points
+    tolerance = 0.6
+    while len(out) > MAX_FOOTPRINT_VERTICES and tolerance <= 40:
+        out = simplify(points + [points[0]], tolerance)[:-1]
+        tolerance *= 2
+    return out if len(out) >= 3 else points
 
 
 def parse_osm(path: Path, origin: tuple[float, float]) -> list[dict]:
@@ -184,11 +228,16 @@ def parse_osm(path: Path, origin: tuple[float, float]) -> list[dict]:
             continue
         if coordinates[0] == coordinates[-1]:
             coordinates = coordinates[:-1]
-        repaired = repair_ring(coordinates)
+        repaired = repair_ring(coordinates, min_area=MIN_BUILDING_AREA_M2)
         if repaired is None:
-            print(f"  skipped self-intersecting building way {way.get('id')}")
+            reason = (
+                f"area below {MIN_BUILDING_AREA_M2:.0f} m²"
+                if is_simple_ring(coordinates)
+                else "outline crosses itself"
+            )
+            print(f"  skipped building way {way.get('id')} ({reason})")
             continue
-        coordinates = repaired
+        coordinates = cap_vertices(repaired)
         buildings.append({"id": way.get("id"), "tags": tags, "footprint": coordinates})
     return buildings
 
@@ -247,16 +296,34 @@ def clip_polyline(points, extent):
     return runs
 
 
+def resample_row(points: list[tuple[float, float]], spacing: float) -> list[tuple[float, float]]:
+    """Points every `spacing` metres along a polyline, so a mapped tree row reads as trees."""
+    out: list[tuple[float, float]] = []
+    for index in range(1, len(points)):
+        ax, ay = points[index - 1]
+        bx, by = points[index]
+        length = math.hypot(bx - ax, by - ay)
+        if length <= 0:
+            continue
+        steps = max(1, int(round(length / spacing)))
+        for step in range(steps):
+            t = step / steps
+            out.append((ax + (bx - ax) * t, ay + (by - ay) * t))
+    if points:
+        out.append(points[-1])
+    return out
+
+
 def parse_osm_context(path: Path, origin: tuple[float, float], extent) -> tuple[list[dict], list[list[float]]]:
     """Road centrelines (clipped to the extent) and tree points from the cached OSM extract."""
     root = ET.parse(path).getroot()
     nodes = {}
     trees = []
+    min_x, min_y, max_x, max_y = extent
     for node in root.findall("node"):
         point = project(float(node.get("lat")), float(node.get("lon")), origin[0], origin[1])
         nodes[node.get("id")] = point
         tags = {tag.get("k"): tag.get("v") for tag in node.findall("tag")}
-        min_x, min_y, max_x, max_y = extent
         if tags.get("natural") == "tree" and min_x <= point[0] <= max_x and min_y <= point[1] <= max_y:
             trees.append([round(point[0], 2), round(point[1], 2)])
     roads = []
@@ -294,21 +361,59 @@ def parse_osm_context(path: Path, origin: tuple[float, float], extent) -> tuple[
                     }
                 )
                 index += 1
+    # A mapped tree row is a line of trees, not a line: place a tree every TREE_ROW_SPACING_M
+    # along it, the way the import path reads `natural=tree_row`.
+    for way in root.findall("way"):
+        tags = {tag.get("k"): tag.get("v") for tag in way.findall("tag")}
+        if tags.get("natural") != "tree_row":
+            continue
+        segments: list[list[tuple[float, float]]] = [[]]
+        for ref in way.findall("nd"):
+            key = ref.get("ref")
+            if key not in nodes:
+                segments.append([])
+                continue
+            segments[-1].append(nodes[key])
+        for segment in segments:
+            if len(segment) < 2:
+                continue
+            for run in clip_polyline(segment, extent):
+                for x, y in resample_row(run, TREE_ROW_SPACING_M):
+                    trees.append([round(x, 2), round(y, 2)])
     roads.sort(key=lambda road: road["id"])
-    trees.sort()
-    return roads, trees
+    # One tree, one point: a tree that is both a node and part of a row is not two trees.
+    unique: list[list[float]] = []
+    seen: set[tuple[float, float]] = set()
+    for tree in sorted(trees):
+        key = (tree[0], tree[1])
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(tree)
+    return roads, unique
 
 
 LANDCOVER_TAGS = {
     "water": (("natural", "water"), ("waterway", "riverbank"), ("landuse", "reservoir"), ("landuse", "basin")),
+    "wetland": (("natural", "wetland"), ("landuse", "wetland")),
+    "bare": (("natural", "bare_rock"), ("natural", "sand"), ("natural", "scree"), ("natural", "shingle")),
     "wood": (("natural", "wood"), ("landuse", "forest")),
-    "park": (("leisure", "park"), ("leisure", "garden"), ("landuse", "recreation_ground"), ("leisure", "playground")),
-    "grass": (("landuse", "grass"), ("landuse", "meadow"), ("landuse", "village_green"), ("natural", "grassland"), ("landuse", "flowerbed")),
+    "scrub": (("natural", "scrub"), ("natural", "heath"), ("landuse", "scrub")),
+    "cemetery": (("landuse", "cemetery"), ("landuse", "grave_yard")),
+    "pitch": (("leisure", "pitch"), ("leisure", "playground"), ("leisure", "sports_centre"), ("leisure", "stadium")),
+    "field": (("landuse", "allotments"), ("landuse", "orchard"), ("landuse", "vineyard"), ("landuse", "farmland"), ("landuse", "farmyard")),
+    "park": (
+        ("leisure", "park"), ("leisure", "garden"), ("landuse", "recreation_ground"),
+        ("landuse", "village_green"),
+    ),
+    "grass": (("landuse", "grass"), ("landuse", "meadow"), ("natural", "grassland"), ("landuse", "flowerbed")),
 }
 
 # When one feature carries several land-cover tags the first match wins. The order is named
 # explicitly so the outcome is a stated rule and not an accident of dictionary order.
-LANDCOVER_PRIORITY: tuple[str, ...] = ("water", "wood", "park", "grass")
+LANDCOVER_PRIORITY: tuple[str, ...] = (
+    "water", "wetland", "bare", "wood", "scrub", "cemetery", "pitch", "field", "park", "grass",
+)
 
 # Waterways mapped as lines rather than as banks. Widths are illustrative, like the road widths.
 WATERWAY_WIDTHS = {"river": 10.0, "canal": 6.0, "stream": 4.0}
@@ -626,7 +731,7 @@ def fetch_elevations(points: list[tuple[float, float]], cache_path: Path, offlin
 
 
 def build_terrain(site: dict, origin: tuple[float, float], offline: bool) -> dict:
-    south, west, north, east = site["bbox"]
+    south, west, north, east = site["data_bbox"]
     corners = [
         project(south, west, *origin),
         project(south, east, *origin),
@@ -638,7 +743,9 @@ def build_terrain(site: dict, origin: tuple[float, float], offline: bool) -> dic
     min_x, max_x = min(xs), max(xs)
     min_y, max_y = min(ys), max(ys)
 
-    cols = rows = GRID_SIZE
+    # The grid grows with the extent so the sample spacing stays near TERRAIN_SPACING_M.
+    cols = max(GRID_SIZE, int(round((max_x - min_x) / TERRAIN_SPACING_M)) + 1)
+    rows = max(GRID_SIZE, int(round((max_y - min_y) / TERRAIN_SPACING_M)) + 1)
     points: list[tuple[float, float]] = []
     for row in range(rows):
         y = min_y + (max_y - min_y) * row / (rows - 1)
@@ -777,7 +884,7 @@ def process_buildings(raw: list[dict], terrain: dict, boundary: tuple[float, flo
             }
         )
     buildings.sort(key=lambda building: building["area"], reverse=True)
-    return buildings[:220]
+    return buildings[:MAX_CONTEXT_BUILDINGS]
 
 
 
@@ -859,18 +966,18 @@ def camera_presets(target_z: float, boundary: tuple[float, float], center: tuple
 
 
 def download_osm(site: dict, path: Path) -> None:
-    south, west, north, east = site["bbox"]
+    south, west, north, east = site["data_bbox"]
     url = (
         "https://api.openstreetmap.org/api/0.6/map"
         f"?bbox={west},{south},{east},{north}"
     )
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=120, context=SSL_CONTEXT) as response:
+    with urllib.request.urlopen(request, timeout=180, context=SSL_CONTEXT) as response:
         path.write_bytes(response.read())
 
 
 def write_attribution(site: dict, terrain: dict) -> str:
-    south, west, north, east = site["bbox"]
+    south, west, north, east = site["data_bbox"]
     return f"""# {site['title']} — data attribution
 
 ## Building footprints
@@ -890,24 +997,33 @@ Roads are `highway` centrelines clipped to the terrain extent; widths are illust
 values by highway class, not measured carriageways. Tunnels and area-tagged ways are
 omitted; a covered passage through a building (`tunnel=building_passage`) is kept as a
 street. Where the extract is missing a node the way is split there rather than joined
-across the gap. Trees are `natural=tree` points drawn with illustrative sizes and tints
-varied by position; no species, height or canopy data is implied.
+across the gap.
+
+Trees are mapped OSM positions: `natural=tree` nodes, and `natural=tree_row` lines with a
+tree placed every 8 m along the row. The positions are the mappers' own; the sizes and
+tints are illustrative and vary by position, so no species, height or canopy data is
+implied. Where OSM has no tree, none is drawn — the ground is left as it is mapped.
 
 ## Land cover
 
 © OpenStreetMap contributors (ODbL 1.0), from the same cached extract.
 Water: `natural=water`, `waterway=riverbank`, `landuse=reservoir|basin`, and
 `waterway=river|canal|stream` drawn as illustrative ribbons (10 m, 6 m and 4 m wide).
-Wood: `natural=wood`, `landuse=forest`. Park: `leisure=park|garden|playground`,
-`landuse=recreation_ground`. Grass: `landuse=grass|meadow|village_green|flowerbed`,
-`natural=grassland`. Closed ways and multipolygon outer rings are clipped to the
+Wood: `natural=wood`, `landuse=forest`. Scrub: `natural=scrub`, `natural=heath`,
+`landuse=scrub`. Wetland: `natural=wetland`, `landuse=wetland`. Bare ground:
+`natural=bare_rock|sand|scree|shingle`. Cemetery: `landuse=cemetery|grave_yard`.
+Pitch: `leisure=pitch|playground|sports_centre|stadium`. Field:
+`landuse=allotments|orchard|vineyard|farmland|farmyard`. Park:
+`leisure=park|garden`, `landuse=recreation_ground|village_green`. Grass:
+`landuse=grass|meadow|flowerbed`, `natural=grassland`.
+Closed ways and multipolygon outer rings are clipped to the
 terrain extent and simplified at 0.5 m; areas below 4 m² and incomplete rings are
 omitted. Outer member ways that fall outside the extract are fetched separately so a
 multipolygon ring can still be closed. Inner rings are ignored. Polygons are
 illustrative ground tints.
 
-Not included: coastline and the fjord, scrub, wetland, sports pitches, cemeteries,
-allotment gardens and other land use that OSM does not tag with the keys above.
+Not included: coastline and the fjord, and any land use OSM does not tag with the keys
+above.
 
 ## Terrain
 
@@ -937,9 +1053,31 @@ Generated by `scripts/build_site_packages.py` for the Terraform portfolio protot
 
 
 
+def ensure_osm_extract(site: dict, path: Path, offline: bool) -> str:
+    """Keep the OSM cache for the bbox the site asks for.
+
+    The cache records the bbox and the date it was downloaded for, so a wider context is
+    fetched again instead of being silently built from the old, smaller extract. Returns the
+    acquisition date, which the manifest publishes.
+    """
+    bbox_path = path.with_suffix(".bbox")
+    bbox = ",".join(f"{value:.7f}" for value in site["data_bbox"])
+    if path.exists() and bbox_path.exists():
+        recorded = bbox_path.read_text().splitlines()
+        if recorded and recorded[0].strip() == bbox:
+            return recorded[1].strip() if len(recorded) > 1 else ""
+    if offline:
+        raise RuntimeError(f"Missing or stale OSM cache: {path}")
+    download_osm(site, path)
+    acquired = datetime.date.today().isoformat()
+    bbox_path.write_text(f"{bbox}\n{acquired}\n")
+    return acquired
+
+
 def build_site(site_id: str, offline: bool) -> None:
     site = {**SITES[site_id], "id": site_id}
     south, west, north, east = site["bbox"]
+    site["data_bbox"] = expanded_bbox(site)
     # Project from the origin the manifest publishes, so the shipped geometry matches the
     # coordinates the package declares and the build does not depend on the last float bits.
     origin = (round((south + north) / 2, 6), round((west + east) / 2, 6))
@@ -948,7 +1086,7 @@ def build_site(site_id: str, offline: bool) -> None:
         if offline:
             raise RuntimeError(f"Missing OSM cache: {raw_osm}")
         raw_osm.parent.mkdir(parents=True, exist_ok=True)
-        download_osm(site, raw_osm)
+    osm_acquired_at = ensure_osm_extract(site, raw_osm, offline)
 
     raw_buildings = parse_osm(raw_osm, origin)
     terrain = build_terrain(site, origin, offline)
@@ -1019,7 +1157,7 @@ def build_site(site_id: str, offline: bool) -> None:
                 "url": "https://www.openstreetmap.org/copyright",
                 "license": "ODbL 1.0",
                 "attribution": "© OpenStreetMap contributors",
-                "acquiredAt": "2026-10-27",
+                "acquiredAt": osm_acquired_at or "2026-10-27",
             },
             {
                 "title": "Kartverket DTM1 elevation",
@@ -1032,10 +1170,10 @@ def build_site(site_id: str, offline: bool) -> None:
         "simplified": [
             "Footprints simplified with a 1.2 m tolerance; building relations omitted",
             "Heights from height, building:levels, or a typology fallback",
-            "Terrain sampled on a 13 × 13 grid and recentered to the origin",
+            f"Terrain sampled on a {terrain['cols']} × {terrain['rows']} grid and recentered to the origin",
             "Study boundary is authored, not a cadastral parcel",
             "Roads are OSM centrelines with illustrative widths by highway class; tunnels omitted",
-            "Trees are OSM natural=tree points drawn with illustrative, position-varied sizes and tints",
+            "Trees are mapped OSM positions (natural=tree nodes, natural=tree_row lines every 8 m) drawn with illustrative, position-varied sizes and tints",
             "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m² and incomplete rings omitted; multipolygon inner rings ignored",
         ],
         "statistics": {

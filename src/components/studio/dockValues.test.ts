@@ -53,9 +53,9 @@ describe('dock card values come from the analysis, not constants', () => {
     expect(sunHoursStat(cells, '2026-06-21')).toMatchObject({ value: '4.0', unit: ' h' })
     expect(text(sunHoursStat(cells, '2026-06-21').secondary)).toBe('median · 21 Jun')
 
-    expect(roofSolarStat([{ kwhPerM2: 800, sampleCount: 1 }, { kwhPerM2: 1000, sampleCount: 1 }]))
+    expect(roofSolarStat([{ kwhPerM2: 800, sampleCount: 1, analysed: true }, { kwhPerM2: 1000, sampleCount: 1, analysed: true }]))
       .toMatchObject({ value: '900', unit: ' kWh' })
-    expect(text(roofSolarStat([{ kwhPerM2: 800, sampleCount: 1 }]).secondary)).toBe('/m²·yr · clear sky')
+    expect(text(roofSolarStat([{ kwhPerM2: 800, sampleCount: 1, analysed: true }]).secondary)).toBe('/m²·yr · clear sky')
 
     const sample: FacadeSample = { p: [0, 0, 1], normal: [0, -1], massId: 'm', tierIndex: 0 }
     expect(facadeSunStat([

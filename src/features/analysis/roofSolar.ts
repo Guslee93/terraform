@@ -75,6 +75,11 @@ export type RoofSolarValue = {
   readonly sampleCount: number
   /** Share of the footprint that is open roof; the rest lies under a taller overlapping block. */
   readonly exposedShare?: number
+  /**
+   * False when the roof was not analysed: it is context outside the site. Such a roof still
+   * casts shadows, but it is not part of the site's solar story and carries no figure.
+   */
+  readonly analysed: boolean
 }
 
 /**
@@ -86,6 +91,11 @@ export function computeRoofSolar(
   buildings: readonly FootprintBuilding[],
   location: SunLocation,
   cellM = ROOF_SOLAR_CELL_M,
+  /**
+   * Indices of the roofs to analyse. Every building still casts a shadow, but only the roofs
+   * listed here are measured: the site's own roofs, not the whole neighbourhood.
+   */
+  focus?: readonly number[],
 ): RoofSolarValue[] {
   const samples = annualSunSamples(location)
   const prepared = prepareScene(buildings)
@@ -93,18 +103,32 @@ export function computeRoofSolar(
     const xs = footprint.map((p) => p[0]), ys = footprint.map((p) => p[1])
     return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] as const
   })
+  // Which buildings overhang which. Worked out once for the whole scene: a per-building scan
+  // is quadratic twice over, and a city block has hundreds of buildings.
+  const aboveIndex: number[][] = buildings.map(() => [])
+  for (let i = 0; i < buildings.length; i += 1) {
+    const box = boxes[i]!
+    for (let j = 0; j < buildings.length; j += 1) {
+      if (i === j) continue
+      const other = boxes[j]!
+      if (buildings[j]!.height <= buildings[i]!.height) continue
+      if (other[0] <= box[2] && other[2] >= box[0] && other[1] <= box[3] && other[3] >= box[1]) {
+        aboveIndex[i]!.push(j)
+      }
+    }
+  }
+  const inFocus = focus ? new Set(focus) : null
   return buildings.map((building, index) => {
+    if (inFocus && !inFocus.has(index)) {
+      return { kwhPerM2: 0, sampleCount: 0, exposedShare: 0, analysed: false }
+    }
     const area = polygonArea(building.footprint)
     let points: readonly Vec2[] = sampleGrid(building.footprint, cellM).map((cell): Vec2 => [cell.x, cell.y])
     if (points.length === 0 || area < ROOF_SOLAR_MIN_SAMPLE_AREA_M2) {
       points = [ringCentroid(building.footprint)]
     }
     // A point under a taller overlapping footprint (the tier above, a building part) is not roof.
-    const box = boxes[index]!
-    const above = buildings.filter((other, j) => {
-      const o = boxes[j]!
-      return j !== index && other.height > building.height && o[0] <= box[2] && o[2] >= box[0] && o[1] <= box[3] && o[3] >= box[1]
-    })
+    const above = aboveIndex[index]!.map((j) => buildings[j]!)
     const sampled = points.length
     if (above.length) points = points.filter((point) => !above.some((other) => pointInPolygon(point, other.footprint)))
     let totalKwh = 0
@@ -124,6 +148,7 @@ export function computeRoofSolar(
       kwhPerM2: points.length === 0 ? 0 : totalKwh / points.length,
       sampleCount: points.length,
       exposedShare: points.length / sampled,
+      analysed: true,
     }
   })
 }
@@ -156,8 +181,9 @@ export function roofSolarBand(kwhPerM2: number): RoofSolarBand {
   return '1200+'
 }
 
-/** Roofs with open area; one fully under another block has no roof to report. */
-const openRoofs = (values: readonly RoofSolarValue[]) => values.filter((value) => value.exposedShare !== 0)
+/** Analysed roofs with open area; one fully under another block has no roof to report. */
+const openRoofs = (values: readonly RoofSolarValue[]) =>
+  values.filter((value) => value.analysed && value.exposedShare !== 0)
 
 export function roofSolarLegend(all: readonly RoofSolarValue[]): LegendEntry[] {
   const values = openRoofs(all)

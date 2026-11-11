@@ -205,3 +205,39 @@ Ship Terraform v1: a credible, interactive architectural site-planning portfolio
 - [x] Fix 15 confirmed bugs with tests; `npm run lint`, `npm run test` (989 / 4 skipped), `npm run build` pass.
 - [ ] Verify the 4K export and sloped-site façade fixes in a browser.
 - [ ] Open items: stale import title, no saved-sites list, Baltic time zone, constraints outside-boundary check, trees inside footprints.
+
+## Context fidelity work order — 2026-11-11
+
+Implemented: tree placement and vegetation (ADR-0023).
+
+- [x] Establish what Hektar loads: Mapbox composite tiles, per-part building extrusion, OSM trees
+      with a size, wider scene. Evidence: `docs/research/hektar-underlay.md`.
+- [x] Measure our own gap: no building relations or parts in the curated builder, too few mapped
+      trees and no tree rows, OpenMapTiles `building` capped at z14 with no `building_part` layer.
+- [x] Find and verify Norwegian sources: Oslo Bymiljøetaten tree inventory (51 measured trees in the
+      Compact Infill bbox), Oslo park outlines, Kartverket DTM1/DOM (already in use).
+- [x] Write the phased plan with owner decisions: `docs/plans/context-fidelity-plan.md`.
+- [x] **Owner decision:** keep the tree objects as they are; improve placement and vegetation only.
+      `trees.json` stays `schemaVersion 1`.
+- [x] A — placement: 200 m context halo, `natural=tree_row` rows at 8 m, 128 → 935 trees on
+      Compact Infill; nothing invented where OSM has no tree.
+- [x] Vegetation: twelve land-cover kinds on both paths; the greenery the tiles already carried is
+      mapped instead of dropped; 10 → 58 land-cover areas on Compact Infill.
+- [x] Context: the `buildings[:220]` ceiling no longer discards real footprints (137 → 520
+      buildings); the terrain grid scales with the extent (13 × 13 → 40 × 47).
+- [x] Roof solar is scoped to the site, so the neighbourhood does not enter the site's yield.
+- [x] Low render tier draws one lump per tree, so a software rasteriser can still show the scene.
+- [x] The density cost is fixed: the road-noise screening used a linear scan over all 520 context
+      buildings for every cell and street (1021 ms per pass). A uniform-grid building index
+      (`indexBuildings`, ADR-0023 §8) returns the same candidate set in 145 ms, and the studio's
+      Undo click fell from 4976 ms to 1774 ms. Unit-tested against a linear scan.
+- [x] The D34 claim audit is consistent again: the e2e sweep expected the pre-ADR-0021 sun note and
+      banned the phrase "sun hours", which ADR-0021 deliberately introduced. It now checks the
+      ADR-0021 wording and allows only the sanctioned mode label and note.
+- [x] `npm run lint`, `npm run test` (992 / 4 skipped), `npm run build` and the builder self-checks
+      pass; the site packages were regenerated deterministically.
+- [ ] B1–B2 — building relations and `building:part` in the curated builder (Phase B, next).
+- [ ] B4 — Overpass buildings on the import path, so imports carry roof parts too.
+- [ ] A6 — tree shadows, which changes the ADR-0021 limitation wording.
+- [ ] F — visual gate and reference screenshots for the new density.
+

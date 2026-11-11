@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { canvasSignature, expectCanvasChanged } from './studio-helpers'
 
 test('landing page opens the primary studio and the package loads', async ({ page }) => {
   await page.goto('/')
@@ -41,18 +42,11 @@ test('the sloped-edge package loads its own context', async ({ page }) => {
 test('the 3D view redraws when the camera preset changes', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/studio/compact-infill')
-  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  const box = await viewport.boundingBox()
-  if (!box) throw new Error('The 3D site viewport region was not found')
-  // Centre of the canvas, clear of the compass, legend and preset overlays.
-  const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
 
   // Let the scene (and the lazy AO chunk) settle before the reference frame.
   await page.waitForTimeout(2500)
-  const iso = await page.screenshot({ clip })
+  const iso = await canvasSignature(page)
   await page.getByRole('button', { name: 'Plan', exact: true }).click()
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(iso), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, iso)
 })

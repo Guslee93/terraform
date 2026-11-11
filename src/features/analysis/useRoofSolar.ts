@@ -13,18 +13,25 @@ export function useRoofSolar(
   buildings: readonly FootprintBuilding[],
   location: SunLocation | null,
   enabled: boolean,
+  focus?: readonly number[],
 ): readonly RoofSolarValue[] | null {
   const [values, setValues] = useState<readonly RoofSolarValue[] | null>(null)
   const cache = useRef<{
     buildings: readonly FootprintBuilding[]
     location: SunLocation
+    focus?: readonly number[]
     values: readonly RoofSolarValue[]
   } | null>(null)
   const worker = useRef<Worker | null>(null)
 
   useEffect(() => {
     if (!enabled || !location) return
-    if (cache.current && cache.current.buildings === buildings && cache.current.location === location) {
+    if (
+      cache.current
+      && cache.current.buildings === buildings
+      && cache.current.location === location
+      && cache.current.focus === focus
+    ) {
       setValues(cache.current.values)
       return
     }
@@ -37,12 +44,12 @@ export function useRoofSolar(
       worker.current = active
       active.onmessage = (event: MessageEvent<RoofSolarResponse>) => {
         if (cancelled) return
-        cache.current = { buildings, location, values: event.data.values }
+        cache.current = { buildings, location, focus, values: event.data.values }
         setValues(event.data.values)
         active.terminate()
         if (worker.current === active) worker.current = null
       }
-      const request: RoofSolarRequest = { buildings, location }
+      const request: RoofSolarRequest = { buildings, location, focus }
       active.postMessage(request)
     }, 250)
     return () => {
@@ -51,7 +58,7 @@ export function useRoofSolar(
       worker.current?.terminate()
       worker.current = null
     }
-  }, [enabled, buildings, location])
+  }, [enabled, buildings, location, focus])
 
   return enabled ? values : null
 }

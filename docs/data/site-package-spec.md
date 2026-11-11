@@ -16,8 +16,8 @@ public/sites/<site-id>/
   buildings.json           # simplified footprints, heights, base elevations
   study-area.json          # authored boundary; not a cadastral parcel
   roads.json               # optional: OSM highway centrelines + illustrative widths (ADR-0005)
-  trees.json               # optional: OSM natural=tree points
-  landcover.json           # optional: OSM water/park/grass/wood/plaza/nature polygons (illustrative ground tints)
+  trees.json               # optional: OSM natural=tree points and natural=tree_row lines
+  landcover.json           # optional: OSM water/green/vegetation/paved polygons (illustrative ground tints)
   attribution.md
 ```
 
@@ -27,8 +27,9 @@ the Streets and Trees layer toggles are hidden for such packages.
 
 `landcover.json` is optional through `assetPaths.landcover`; absent paths load as
 `landcover: []` without a request. Its schema is `{ schemaVersion: 1, siteId,
-areas: [{ id, kind, ring }] }`, where kind is `water | park | grass | wood | plaza |
-nature` and ring is an open, counter-clockwise array of local `[east, north]` points.
+areas: [{ id, kind, ring }] }`, where kind is `water | park | grass | wood | scrub |
+wetland | field | pitch | cemetery | bare | plaza | nature` and ring is an open,
+counter-clockwise array of local `[east, north]` points.
 The builder clips closed ways and joined multipolygon outer rings to the terrain,
 simplifies at 0.5 m and drops areas below 4 m². Inner rings and incomplete rings are
 ignored. When a multipolygon's outer ring runs outside the bbox extract, its missing
@@ -40,7 +41,10 @@ illustrative ground tints drawn as a plan texture on the terrain, switched by th
 **Land cover** layer toggle.
 
 `plaza` is a paved pedestrian area and `nature` a protected area; both are ground
-tints, not built or surveyed surfaces.
+tints, not built or surveyed surfaces. `wood` is tree canopy, `scrub` low brush,
+`wetland` wet ground, `field` cultivated land, `pitch` a made play or sports surface,
+`cemetery` grave ground and `bare` rock or sand. Every kind is an illustrative tint
+over the terrain, never a surveyed surface.
 
 The card thumbnail lives at `public/sites/<site-id>.svg` and is referenced from
 `assetPaths.thumbnail`. Paths in the manifest are relative to the package root,
@@ -135,7 +139,8 @@ Unknown fields are rejected or ignored explicitly; required fields are validated
 
 ## 4. Preprocessing pipeline
 
-1. Select a study area; record the decision and exact bbox.
+1. Select a study area; record the decision and exact bbox. The data bbox is the study
+   bbox plus a context halo (ADR-0023), so the site reads as part of a city.
 2. Obtain data only from legally usable sources; record licence, attribution and access date.
 3. Project WGS84 lat/lon into a local tangent plane; record origin latitude, longitude, origin elevation and the NN2000 vertical datum.
 4. Simplify context buildings with topology repair, sample terrain, and align base elevations.
@@ -162,8 +167,9 @@ Unknown fields are rejected or ignored explicitly; required fields are validated
 - [ ] Attribution states that the boundary is not a cadastral parcel.
 - [ ] Deterministic load: same manifest → same scene checksum.
 - [ ] Optional roads: every run has ≥ 2 points and a width in (0, 50] m; runs are clipped to the terrain extent; tunnels and area-tagged ways omitted; a covered passage is kept as a street.
-- [ ] Optional trees: finite `[east, north]` points inside the terrain extent; no size data implied.
+- [ ] Optional trees: finite `[east, north]` points inside the terrain extent; no size data implied. A `natural=tree_row` way becomes a tree every 8 m along the row, and a tree is never counted twice.
 - [ ] Optional land cover: matching site ID, ≤ 5000 areas, known kinds, ≥ 3 finite points and positive area per ring; built rings open, counter-clockwise, ≥ 4 m² and clipped to terrain; inner rings ignored and documented.
+- [ ] Building footprints: 3–200 vertices, so an outline the parser would reject is coarsened rather than dropped; a building under 12 m² is not drawn.
 - [ ] Every multipolygon whose outer ring leaves the extract is either closed from the supplementary ways file or reported as a dropped feature by the builder.
 
 ## 6. Performance budgets (initial)

@@ -10,12 +10,23 @@ const LANDCOVER_PAINT: Record<LandCoverKind, string> = {
   grass: soften('#E4EADD'),
   park: soften('#DCE5D5'),
   wood: soften('#D2DECC'),
+  scrub: soften('#D7E0CA'),
+  wetland: soften('#D3DED3'),
+  field: soften('#E2E6D3'),
+  pitch: soften('#DFE3D1'),
+  cemetery: soften('#E1E5D9'),
+  bare: soften('#E7E4DD'),
   nature: soften('#D8E1D0'),
   plaza: soften('#D9D6CF'),
   water: soften('#CBE1EE'),
 }
-/** Draw order: broad green first, then paved areas, water last so ponds sit on top of parks. */
-const PAINT_ORDER: readonly LandCoverKind[] = ['grass', 'park', 'nature', 'wood', 'plaza', 'water']
+/**
+ * Draw order: broad ground first, then the more specific green kinds over it, then paved areas,
+ * and water last so ponds sit on top of parks.
+ */
+const PAINT_ORDER: readonly LandCoverKind[] = [
+  'bare', 'grass', 'field', 'wetland', 'pitch', 'cemetery', 'park', 'nature', 'wood', 'scrub', 'plaza', 'water',
+]
 
 /**
  * Canvas pixel for an ENU point. Matches the terrain mesh UVs (u = east, v = north) with the

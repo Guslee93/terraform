@@ -27,11 +27,43 @@ it('gives each path subclass its own width and skips transit platforms', () => {
   ],frame)
   expect(result.map(r=>[r.highway,r.width])).toEqual([['pedestrian',5],['footway',2.5],['cycleway',2.5],['steps',2]])
 })
-it('maps park, grass, wood and water and repairs their clipped rings', () => {
+it('maps park, grass, wood, water and bare ground and repairs their clipped rings', () => {
   const features: TileFeature[] = [['park',''],['landcover','grass'],['landcover','wood'],['water',''],['landcover','sand']].map(([layer,kind])=>({layer:layer!,properties:{class:kind!},geometry:{type:'Polygon',coordinates:[coords([[0,0],[10,10],[0,10],[10,0],[0,0]])]}}))
   const result = extractLandCover(features,frame)
-  expect(result.map(a=>a.kind)).toEqual(['nature','nature','grass','grass','wood','wood','water','water'])
+  expect(result.map(a=>a.kind)).toEqual(['nature','nature','grass','grass','wood','wood','water','water','bare','bare'])
   expect(result.every(a=>isSimpleRing(a.ring))).toBe(true)
+})
+it('maps the greenery the tiles already carry instead of dropping it', () => {
+  // The frame is 400 m across, so the polygons are laid out inside it.
+  const cases: [string, Record<string, string>, string][] = [
+    ['landcover',{class:'grass',subclass:'scrub'},'scrub'],
+    ['landcover',{class:'wetland'},'wetland'],
+    ['landcover',{class:'farmland'},'field'],
+    ['landcover',{class:'grass',subclass:'allotments'},'field'],
+    ['landcover',{class:'grass',subclass:'garden'},'park'],
+    ['landcover',{class:'grass',subclass:'flowerbed'},'park'],
+    ['landcover',{class:'grass',subclass:'village_green'},'park'],
+    ['landcover',{class:'rock',subclass:'bare_rock'},'bare'],
+    ['landcover',{class:'sand',subclass:'beach'},'bare'],
+    ['landuse',{class:'pitch'},'pitch'],
+    ['landuse',{class:'playground'},'pitch'],
+    ['landuse',{class:'cemetery'},'cemetery'],
+  ]
+  const features: TileFeature[] = cases.map(([layer,properties],index)=>{
+    const x = -180 + (index % 6) * 60
+    const y = -180 + Math.floor(index / 6) * 60
+    return polygon(layer!,properties!,[[x,y],[x+30,y],[x+30,y+30],[x,y+30],[x,y]])
+  })
+  const result = extractLandCover(features,frame)
+  expect(result.map(a=>a.kind)).toEqual(cases.map(([, , kind])=>kind))
+})
+it('does not paint institutional land use as green space', () => {
+  const features: TileFeature[] = [
+    polygon('landuse',{class:'school'},[[-180,-180],[-150,-180],[-150,-150],[-180,-150],[-180,-180]]),
+    polygon('landuse',{class:'hospital'},[[-120,-180],[-90,-180],[-90,-150],[-120,-150],[-120,-180]]),
+    polygon('landuse',{class:'residential'},[[-60,-180],[-30,-180],[-30,-150],[-60,-150],[-60,-180]]),
+  ]
+  expect(extractLandCover(features,frame)).toEqual([])
 })
 it('reads an urban park from the land cover subclass and a protected area from the park layer', () => {
   const features: TileFeature[] = [

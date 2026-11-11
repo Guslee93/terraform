@@ -26,8 +26,8 @@ const missing = (): TerrainSample[] => Array.from({length:169},()=>({height:null
 const stockholm: ImportFrame = {...grunerlokka,latitude:59.316,longitude:18.071}
 
 it.each([
-  {frame:grunerlokka,record:grunerlokkaTerrain,count:202,roads:135,areas:11,kinds:{park:3,grass:7,water:1}},
-  {frame:bjorvika,record:bjorvikaTerrain,count:52,roads:162,areas:46,kinds:{park:3,grass:33,water:10}},
+  {frame:grunerlokka,record:grunerlokkaTerrain,count:202,roads:135,areas:12,kinds:{park:8,grass:2,water:1,pitch:1}},
+  {frame:bjorvika,record:bjorvikaTerrain,count:52,roads:162,areas:50,kinds:{park:3,grass:33,water:10,bare:4}},
 ])('imports $frame.title completely offline with validated assets', async ({frame,record,count,roads:roadCount,areas:areaCount,kinds}) => {
   const network=vi.fn(()=>{throw new Error('Tests must not use the network')});vi.stubGlobal('fetch',network)
   const events: string[]=[]

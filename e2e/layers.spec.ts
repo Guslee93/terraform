@@ -1,9 +1,16 @@
-import { expect, test } from '@playwright/test'
-import { openAnalysis, openGroup } from './studio-helpers'
+import { expect, test, type Page } from '@playwright/test'
+import { canvasSignature, expectCanvasChanged, openAnalysis, openGroup } from './studio-helpers'
 
 test.describe.configure({ mode: 'serial' })
 
 test.use({ viewport: { width: 1440, height: 900 } })
+
+/** Wait for the studio canvas and let the first frames render. */
+async function openStudioCanvas(page: Page) {
+  await page.goto('/studio/compact-infill')
+  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
+  await page.waitForTimeout(2500)
+}
 
 test('Streets and Trees checkboxes exist on compact-infill', async ({ page }) => {
   await page.goto('/studio/compact-infill')
@@ -30,85 +37,49 @@ test('Streets and Trees checkboxes exist on sloped-edge', async ({ page }) => {
 })
 
 test('the 3D view changes when Trees is toggled off then on', async ({ page }) => {
-  await page.goto('/studio/compact-infill')
-  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
-  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  const box = await viewport.boundingBox()
-  if (!box) throw new Error('The 3D site viewport region was not found')
-  const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
-
-  // Let the scene settle.
-  await page.waitForTimeout(2500)
-  const withTrees = await page.screenshot({ clip })
+  await openStudioCanvas(page)
+  const withTrees = await canvasSignature(page)
 
   // Uncheck Trees and wait for the canvas to change.
   await page.getByRole('checkbox', { name: 'Trees' }).uncheck()
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(withTrees), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, withTrees)
 
-  const withoutTrees = await page.screenshot({ clip })
+  const withoutTrees = await canvasSignature(page)
 
   // Re-check Trees and wait for the canvas to change back.
   await page.getByRole('checkbox', { name: 'Trees' }).check()
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(withoutTrees), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, withoutTrees)
 })
 
 test('the 3D view changes when Streets is toggled off then on', async ({ page }) => {
-  await page.goto('/studio/compact-infill')
-  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
-  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
-  const box = await viewport.boundingBox()
-  if (!box) throw new Error('The 3D site viewport region was not found')
-  const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
-
-  // Let the scene settle.
-  await page.waitForTimeout(2500)
-  const withStreets = await page.screenshot({ clip })
+  await openStudioCanvas(page)
+  const withStreets = await canvasSignature(page)
 
   // Uncheck Streets and wait for the canvas to change.
   await page.getByRole('checkbox', { name: 'Streets' }).uncheck()
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(withStreets), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, withStreets)
 
-  const withoutStreets = await page.screenshot({ clip })
+  const withoutStreets = await canvasSignature(page)
 
   // Re-check Streets and wait for the canvas to change back.
   await page.getByRole('checkbox', { name: 'Streets' }).check()
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(withoutStreets), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, withoutStreets)
 })
 
 test('the 3D view changes when Land cover is toggled off then on', async ({ page }) => {
-  await page.goto('/studio/compact-infill')
-  const viewport = page.getByRole('region', { name: /3D site viewport for Compact Infill/i })
-  await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   // The default noise overlay covers the ground; Sun leaves the park tint in view.
+  await openStudioCanvas(page)
   await openAnalysis(page, 'Sun')
   await openGroup(page, 'Layers')
-  const box = await viewport.boundingBox()
-  if (!box) throw new Error('The 3D site viewport region was not found')
-  // Centre of the canvas only: the "Green space" legend in the HUD must not satisfy the check.
-  const clip = { x: box.x + box.width / 2 - 150, y: box.y + box.height / 2 - 100, width: 300, height: 200 }
-
-  await page.waitForTimeout(2500)
-  const withTint = await page.screenshot({ clip })
+  const withTint = await canvasSignature(page)
 
   await page.getByRole('checkbox', { name: 'Land cover' }).uncheck()
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(withTint), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, withTint)
 
-  const withoutTint = await page.screenshot({ clip })
+  const withoutTint = await canvasSignature(page)
 
   await page.getByRole('checkbox', { name: 'Land cover' }).check()
-  await expect
-    .poll(async () => (await page.screenshot({ clip })).equals(withoutTint), { timeout: 10_000 })
-    .toBe(false)
+  await expectCanvasChanged(page, withoutTint)
 })
 
 test('the viewport HUD items never overlap and the page never scrolls sideways', async ({ page }) => {

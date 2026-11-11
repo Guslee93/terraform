@@ -87,25 +87,41 @@ describe('clear-sky annual roof irradiation', () => {
     expect(roofSolarBand(900)).toBe('900-1200')
     expect(roofSolarBand(1200)).toBe('1200+')
     const values = [
-      { kwhPerM2: 100, sampleCount: 1 },
-      { kwhPerM2: 1300, sampleCount: 1 },
+      { kwhPerM2: 100, sampleCount: 1, analysed: true },
+      { kwhPerM2: 1300, sampleCount: 1, analysed: true },
     ]
     expect(medianRoofSolar(values)).toBe(700)
     expect(roofSolarLegend(values).find((entry) => entry.label.startsWith('1200'))?.share).toBe(0.5)
   })
 
-  it('computes every roof on the compact site within the worker budget', () => {
-    const buildings = parseBuildings(compactBuildings).buildings.map((building) => ({
+  it('measures the site roofs within the worker budget and leaves the context unmeasured', () => {
+    const context = parseBuildings(compactBuildings).buildings
+    const buildings = context.map((building) => ({
       height: building.height,
       footprint: building.footprint,
     }))
+    // The studio measures the site's roofs; the surrounding blocks only cast shadows.
+    const focus = context.flatMap((building, index) => (building.withinStudyArea ? [index] : []))
     const start = performance.now()
-    const values = computeRoofSolar(buildings, OSLO)
+    const values = computeRoofSolar(buildings, OSLO, undefined, focus)
     const elapsed = performance.now() - start
-    console.info(`[roof-solar] ${elapsed.toFixed(1)} ms · ${values.length} roofs`)
+    console.info(`[roof-solar] ${elapsed.toFixed(1)} ms · ${values.length} roofs · ${focus.length} measured`)
     expect(values).toHaveLength(buildings.length)
+    expect(values.filter((value) => value.analysed)).toHaveLength(focus.length)
+    expect(values.every((value, index) => value.analysed === focus.includes(index))).toBe(true)
     // Exact 2 m sampling is well over 150 ms in the main thread, so the studio runs it in
     // roofSolarWorker.ts. This bound only catches an order-of-magnitude regression in the model.
     expect(elapsed).toBeLessThan(4000)
+  })
+  it('keeps an unmeasured roof out of the median and the legend', () => {
+    const values = computeRoofSolar(
+      [{ height: 8, footprint: [[0, 0], [10, 0], [10, 10], [0, 10]] }],
+      OSLO,
+      undefined,
+      [],
+    )
+    expect(values[0]?.analysed).toBe(false)
+    expect(medianRoofSolar(values)).toBeNull()
+    expect(roofSolarLegend(values).every((entry) => entry.count === 0)).toBe(true)
   })
 })
