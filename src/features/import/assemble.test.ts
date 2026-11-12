@@ -50,6 +50,9 @@ it.each([
   const trees=parseTrees(wrap({trees:pkg.trees})).trees
   expect(trees.length).toBeGreaterThan(0)
   expect(trees.some(t=>pkg.buildings.buildings.some(b=>pointInPolygon(t,b.footprint)))).toBe(false)
+  // A tree stands on ground: none may stand where the package paints water (ADR-0024).
+  const water=areas.filter(area=>area.kind==='water')
+  expect(trees.some(t=>water.some(area=>pointInPolygon(t,area.ring)))).toBe(false)
   expect(result.warnings.find(w=>w.code==='trees-unavailable')?.message).toMatch(/^Trees are illustrative, not mapped positions \(no tree source configured\)/)
   expect(pkg.manifest.statistics).toMatchObject({buildingCount:pkg.buildings.buildings.length,terrainSamples:169,studyAreaM2:78400})
   expect(pkg.manifest.statistics.sourceChecksum).toMatch(/^[a-f0-9]{64}$/)

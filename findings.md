@@ -200,3 +200,27 @@
 - The 1440 hero holds three lines; the first site section enters the viewport.
 - Context is merged into one mesh; terrain uses a subtle mesh grid and solid edge skirt.
 - Remaining polish: mobile aspect framing, compass behaviour near eye level, hover/focus state captures.
+
+## Trees on water: the cause, and where it hides (2026-11-12)
+
+- **The water is a texture, not a surface.** `src/scene/landCoverTexture.ts` fills every land-cover
+  polygon of kind `water` onto a 2048 px canvas and multiplies it over the terrain mesh. There is no
+  water geometry to sit under. So "a tree on water" is exactly "a tree whose plan position falls
+  inside a water polygon" — a data problem, and it can be tested without a renderer.
+- **The park polygon and the water polygon do not agree.** The tile's landcover and water layers are
+  simplified independently, so a park that runs into a lake keeps its ground over the water. Measured
+  on the recorded Oslo Bjørvika fixture: the park polygon `landcover-5456992072` has **3 of its 12
+  vertices inside a water area**. The import path fills that polygon with a 16 m grid, and the grid
+  lands on the water. This is the screenshot the owner reported.
+- **The grid was laid on the raw clipped ring, the ground was painted from the repaired ring.**
+  `extractLandCover` runs `repairRing`; `illustrativeTrees` did not. Where the two differ, the canopy
+  stands on a colour the studio never paints. The grid now uses the repaired ring.
+- **The curated path had it too, in small numbers.** 9 of the 935 mapped Compact Infill trees fell
+  inside a water polygon — a `natural=tree_row` way that reached into the river. Sloped Edge had none.
+- **An on-edge point reads as outside.** The shared ray-casting helper (`pointInPolygon`) reports a
+  point exactly on a polygon edge as outside, so a tree exactly on the water's edge survives the rule.
+  The painted texture resolves about a pixel of the edge, so the visual gap is under 0.4 m.
+- **Street trees and courtyard trees are real and stay.** A tree inside a building footprint on the
+  curated path is usually in a courtyard (OSM draws the building as a ring around the yard); a tree
+  in a street is a mapped street tree. Only water is excluded — the rule stays narrow enough to be
+  honest.

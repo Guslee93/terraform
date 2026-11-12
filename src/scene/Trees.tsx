@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Color, Object3D, type BufferGeometry, type InstancedMesh } from 'three'
 import { sampleTerrainHeight } from '../features/sites/geometry'
 import type { SitePackage } from '../features/sites/package'
+import { dropTreesOnWater } from '../features/sites/treePlacement'
 import { createBranchGeometry, createCanopyGeometry, createSimpleCanopyGeometry, FOLIAGE_VARIANTS } from './foliage'
 import { TREE_TINTS, treeVariant, type TreeShape, type TreeVariant } from './treeVariants'
 import { pointsOutsideRings } from '../lib/cullPoints'
@@ -113,7 +114,7 @@ export function Trees({
   exclude?: readonly (readonly Vec2[])[]
   detail?: TreeDetail
 }) {
-  const { trees, terrain } = sitePackage
+  const { trees, terrain, landcover } = sitePackage
   const geometries = useMemo(
     () => (detail === 'simple'
       ? SHAPES.map((shape) => ({
@@ -138,7 +139,11 @@ export function Trees({
   }, [geometries])
 
   const groups = useMemo(() => {
-    const visible = exclude ? pointsOutsideRings(trees, exclude) : trees
+    // A tree stands on ground: one may not stand where the studio paints water (ADR-0024).
+    // The package holds the rule for new imports; this also covers a package imported before
+    // the rule existed and still saved in the browser.
+    const onGround = dropTreesOnWater(trees, landcover)
+    const visible = exclude ? pointsOutsideRings(onGround, exclude) : onGround
     const placed: Placed[] = visible.map(([east, north]) => ({
       east,
       north,
@@ -151,7 +156,7 @@ export function Trees({
       trees: placed.filter((tree) =>
         tree.shape === geometry.shape && (detail === 'simple' || tree.variant === geometry.variant)),
     }))
-  }, [trees, terrain, geometries, exclude, detail])
+  }, [trees, terrain, landcover, geometries, exclude, detail])
 
   if (trees.length === 0) return null
   return (

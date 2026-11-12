@@ -20,7 +20,7 @@ Measured, not guessed:
 
 1. **Too few trees, and no rows.** The 128 trees in Compact Infill were real `natural=tree` nodes,
    but a 190 × 210 m extract holds little else and `natural=tree_row` ways were never read.
-   Hektar's streets carry rows of trees. **Now: 935 trees, rows included.**
+   Hektar's streets carry rows of trees. **Now: 926 trees, rows included, none on water.**
 2. **Our import path cannot receive building parts.** OpenMapTiles caps the `building` layer at
    z14 and publishes no `building_part` layer, so penthouses, roof boxes and stepped parts never
    arrive. Hektar's Mapbox `building` layer extrudes every part with its own `height` and
@@ -55,7 +55,7 @@ Sizes: S ≈ half a day, M ≈ one to two days, L ≈ three to five days.
 | A6 | Let trees cast shadows and shade the ground | M | ADR-0021 currently states "terrain and trees do not shade". Adding tree shadows improves the picture and changes that claim — update the note and the limitation line in the same change |
 | A7 | Import path: keep Overpass trees | — | Already done: the import path reads `natural=tree` and `natural=tree_row`. No municipal source added |
 
-**Done when:** the Compact Infill package holds the mapped tree positions at full coverage (935 trees
+**Done when:** the Compact Infill package holds the mapped tree positions at full coverage (926 trees
 including rows); the canopy reads as a canopy rather than a lattice; the attribution states where the
 tree positions came from.
 
@@ -131,7 +131,7 @@ These change the outcome and are not mine to take.
 | | Before | After |
 |---|---|---|
 | Compact Infill context buildings | 137 | 520 |
-| Compact Infill trees | 128 | 935 |
+| Compact Infill trees | 128 | 926 |
 | Compact Infill land-cover areas | 10 | 58 (ten kinds) |
 | Compact Infill terrain grid | 13 × 13 | 40 × 47 |
 | Sloped Edge context buildings | 33 | 230 |

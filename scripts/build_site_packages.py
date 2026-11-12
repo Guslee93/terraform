@@ -127,6 +127,47 @@ def polygon_area(points: list[tuple[float, float]]) -> float:
     return abs(total) / 2.0
 
 
+def point_in_ring(point: tuple[float, float], ring: list[tuple[float, float]]) -> bool:
+    """Ray casting against a closed ring, matching `pointInPolygon` in `src/lib/polygon.ts`.
+
+    A point exactly on an edge is reported as outside, the same as the TypeScript helper.
+    """
+    x, y = point
+    inside = False
+    count = len(ring)
+    for index in range(count):
+        ax, ay = ring[index]
+        bx, by = ring[(index + 1) % count]
+        if (ay > y) != (by > y):
+            crossing_x = (bx - ax) * (y - ay) / (by - ay) + ax
+            if x < crossing_x:
+                inside = not inside
+    return inside
+
+
+def drop_trees_on_water(
+    trees: list[list[float]], areas: list[dict]
+) -> tuple[list[list[float]], int]:
+    """Trees that stand on painted water, removed (ADR-0024).
+
+    A tree stands on ground. The studio paints water from the land-cover polygons, so a mapped
+    tree that falls inside one of them stands on the water it is drawn over: a tree row along a
+    quay can reach into the river. The import path applies the same rule to its grid trees.
+    """
+    water = [area["ring"] for area in areas if area["kind"] == "water"]
+    if not water:
+        return trees, 0
+    kept: list[list[float]] = []
+    dropped = 0
+    for tree in trees:
+        point = (tree[0], tree[1])
+        if any(point_in_ring(point, ring) for ring in water):
+            dropped += 1
+            continue
+        kept.append(tree)
+    return kept, dropped
+
+
 def perpendicular_distance(point, start, end) -> float:
     px, py = point
     ax, ay = start
@@ -1106,6 +1147,9 @@ def build_site(site_id: str, offline: bool) -> None:
     landcover = parse_osm_landcover(
         raw_osm, origin, extent, extra_osm if extra_osm.exists() else None, drops
     )
+    # A tree stands on ground: a mapped tree inside a painted water polygon is dropped
+    # (ADR-0024), the same rule the import path applies to its grid trees.
+    trees, trees_on_water = drop_trees_on_water(trees, landcover)
 
     output = PUBLIC / site_id
     output.mkdir(parents=True, exist_ok=True)
@@ -1212,6 +1256,8 @@ def build_site(site_id: str, offline: bool) -> None:
     )
     if missing_ways:
         print(f"  completed {len(missing_ways)} outer member way(s): {', '.join(missing_ways)}")
+    if trees_on_water:
+        print(f"  dropped {trees_on_water} tree(s) standing on water (ADR-0024)")
     for drop in drops:
         print(f"  dropped land cover {drop['id']} ({drop['kind']}): {drop['reason']}")
 

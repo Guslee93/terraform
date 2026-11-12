@@ -2,6 +2,7 @@ import { ringCentroid } from '../../lib/polygon'
 import { sampleTerrainHeight } from '../sites/geometry'
 import { parseSiteManifest, type CameraPreset, type SiteSource, type Vec3Tuple } from '../sites/manifest'
 import { parseBuildings, parseLandCover, parseRoads, parseStudyArea, parseTerrain, parseTrees, type SitePackage } from '../sites/package'
+import { dropTreesOnWater } from '../sites/treePlacement'
 import { extractBuildings } from './buildings'
 import { extractLandCover, extractRoads } from './context'
 import { frameBounds, validateFrame, type ImportFrame } from './frame'
@@ -90,14 +91,18 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
   checkAbort(signal)
   const context = await step('context',deps.tiles.name,async()=>{
     let failure = deps.trees ? '' : 'no tree source configured'
+    const areas = extractLandCover(features,frame)
     let mapped: [number,number][] = []
     if (deps.trees) {
-      try { mapped = placeTrees(mappedTrees(await abortable(()=>deps.trees!.fetchTrees(frameBounds(frame).lonLat,signal),signal),frame),drafts,frame) }
+      try { mapped = placeTrees(dropTreesOnWater(mappedTrees(await abortable(()=>deps.trees!.fetchTrees(frameBounds(frame).lonLat,signal),signal),frame),areas),drafts,frame) }
       catch (error) { checkAbort(signal); failure = messageOf(error) }
       if (!failure && !mapped.length) failure = 'OpenStreetMap has no mapped trees in this frame'
     }
-    return {roads:extractRoads(features,frame),areas:extractLandCover(features,frame),
-      trees: mapped.length ? mapped : placeTrees(illustrativeTrees(features,frame),drafts,frame),treesMapped:mapped.length>0,treeFailure:failure}
+    // A tree stands on ground: neither a mapped tree nor a grid tree may stand where the studio
+    // paints water (ADR-0024). The park and water polygons are simplified independently, so a
+    // park that runs into a lake keeps its grid over the water without this rule.
+    return {roads:extractRoads(features,frame),areas,
+      trees: mapped.length ? mapped : placeTrees(dropTreesOnWater(illustrativeTrees(features,frame),areas),drafts,frame),treesMapped:mapped.length>0,treeFailure:failure}
   })
   if (!context.treesMapped) warnings.push({code:'trees-unavailable',message:context.trees.length
     ? `Trees are illustrative, not mapped positions (${context.treeFailure}): ${context.trees.length} placed on a grid in mapped woods (9 m), gardens (14 m), parks (16 m) and cemeteries (18 m).`

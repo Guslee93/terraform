@@ -1,12 +1,17 @@
 // @vitest-environment node
 import { afterEach, expect, it, vi } from 'vitest'
+import type { Position } from 'geojson'
 import grunerlokkaTerrain from './__fixtures__/terrain/grunerlokka.json'
 import { importSite } from './assemble'
+import { extractLandCover } from './context'
 import { frameBounds } from './frame'
 import { kartverketProvider, parseKartverketSamples, type TerrainProvider } from './terrain'
 import { fixtureTiles, grunerlokka } from './testFixtures'
-import { overpassTrees, parseOverpassTrees, placeTrees, resampleRow, type TreeSource } from './trees'
+import { illustrativeTrees, overpassTrees, parseOverpassTrees, placeTrees, resampleRow, type TreeSource } from './trees'
+import { dropTreesOnWater } from '../sites/treePlacement'
+import { pointInPolygon } from '../../lib/polygon'
 import { unproject } from './projection'
+import type { TileFeature } from './tiles'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -97,4 +102,33 @@ it('thins evenly across the frame when more trees than the cap are available', (
   expect(placed).toHaveLength(3000)
   expect(Math.min(...placed.map((p) => p[0]))).toBeLessThan(-180)
   expect(Math.max(...placed.map((p) => p[0]))).toBeGreaterThan(180)
+})
+
+it('drops the grid trees that a park polygon puts on the water (ADR-0024)', () => {
+  // A park polygon that runs into a lake: the tile's park and water polygons are simplified
+  // independently, so the park keeps its ground over the water and the grid lands on it.
+  const square = (east: number, north: number, size: number): Position[] => {
+    const corners: [number, number][] = [[east, north], [east + size, north], [east + size, north + size], [east, north + size], [east, north]]
+    return corners.map(([x, y]) => {
+      const [lat, lon] = unproject(x, y, grunerlokka.latitude, grunerlokka.longitude)
+      return [lon, lat]
+    })
+  }
+  const features: TileFeature[] = [
+    { layer: 'landcover', properties: { class: 'grass', subclass: 'park' }, geometry: { type: 'Polygon', coordinates: [square(-150, -150, 300)] } },
+    { layer: 'water', properties: { class: 'water' }, geometry: { type: 'Polygon', coordinates: [square(-50, -50, 100)] } },
+  ]
+  const areas = extractLandCover(features, grunerlokka)
+  const water = areas.filter((area) => area.kind === 'water')
+  expect(water).toHaveLength(1)
+
+  const grid = illustrativeTrees(features, grunerlokka)
+  // The grid really does fall on the water: the park polygon covers the lake.
+  expect(grid.some((tree) => water.some((area) => pointInPolygon(tree, area.ring)))).toBe(true)
+
+  const kept = dropTreesOnWater(grid, areas)
+  expect(kept.some((tree) => water.some((area) => pointInPolygon(tree, area.ring)))).toBe(false)
+  // The park outside the lake keeps its canopy.
+  expect(kept.length).toBeGreaterThan(0)
+  expect(kept.length).toBeLessThan(grid.length)
 })

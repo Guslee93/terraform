@@ -15,6 +15,7 @@ import slopedTerrain from '../../../public/sites/sloped-edge/terrain.json'
 import slopedTrees from '../../../public/sites/sloped-edge/trees.json'
 import { SitePackageError, parseSiteManifest } from './manifest'
 import { parseBuildings, parseLandCover, parseRoads, parseStudyArea, parseTerrain, parseTrees } from './package'
+import { pointInPolygon } from '../../lib/polygon'
 
 const PACKAGES = [
   {
@@ -222,6 +223,22 @@ describe('optional land cover', () => {
     for (const broken of [null, { ...data, schemaVersion: 2 }, { ...data, siteId: '' },
       { ...data, areas: null }, { ...data, areas: [{ ...area, ring: [[1], [10, 0], [0, 10]] }] }]) {
       expect(() => parseLandCover(broken)).toThrow(SitePackageError)
+    }
+  })
+})
+
+describe('shipped packages place no tree on water (ADR-0024)', () => {
+  it('keeps every tree of both curated sites off the painted water', () => {
+    for (const [trees, landcover, id] of [
+      [compactTrees, compactLandcover, 'compact-infill'],
+      [slopedTrees, slopedLandcover, 'sloped-edge'],
+    ] as const) {
+      const water = parseLandCover(landcover).areas.filter((area) => area.kind === 'water')
+      expect(water.length).toBeGreaterThan(0)
+      const points = parseTrees(trees).trees
+      expect(points.length).toBeGreaterThan(0)
+      const onWater = points.filter((point) => water.some((area) => pointInPolygon(point, area.ring)))
+      expect({ id, onWater: onWater.length }).toEqual({ id, onWater: 0 })
     }
   })
 })

@@ -1,7 +1,7 @@
 import { pointInPolygon } from '../../lib/polygon'
 import type { BuildingDraft } from './buildings'
 import { frameBounds, type ImportFrame } from './frame'
-import { clipRing, outerRings, toLocal, type Point2, type Ring } from './geometry'
+import { clipRing, outerRings, repairRing, toLocal, type Point2, type Ring } from './geometry'
 import { requestBytes, checkAbort } from './request'
 import type { TileFeature } from './tiles'
 
@@ -130,6 +130,9 @@ function jitter(x: number, y: number, salt: number): number {
 /**
  * Illustrative trees on a jittered grid inside mapped woods, gardens, parks and cemeteries.
  * Not tree positions: used only when no mapped trees are available.
+ *
+ * The grid is laid on the repaired ring, the same ring the studio paints the ground from, so a
+ * canopy always stands on the green it was placed for (ADR-0024).
  */
 export function illustrativeTrees(features: readonly TileFeature[], frame: ImportFrame): Point2[] {
   const extent = frameBounds(frame).enu
@@ -142,14 +145,15 @@ export function illustrativeTrees(features: readonly TileFeature[], frame: Impor
     if (!key) continue
     const spacing = ILLUSTRATIVE_SPACING[key]!
     for (const outer of outerRings(f.geometry)) {
-      const ring = clipRing(toLocal(outer, frame), extent)
-      if (ring.length < 3) continue
-      const xs = ring.map((p) => p[0]), ys = ring.map((p) => p[1])
-      // Grid anchored to whole multiples so overlapping areas share points instead of doubling them.
-      for (let x = Math.ceil(Math.min(...xs) / spacing) * spacing; x <= Math.max(...xs); x += spacing) {
-        for (let y = Math.ceil(Math.min(...ys) / spacing) * spacing; y <= Math.max(...ys); y += spacing) {
-          const point: Point2 = [x + (jitter(x, y, 1) - 0.5) * spacing * 0.7, y + (jitter(x, y, 2) - 0.5) * spacing * 0.7]
-          if (pointInPolygon(point, ring)) points.push(point)
+      for (const ring of repairRing(clipRing(toLocal(outer, frame), extent))) {
+        if (ring.length < 3) continue
+        const xs = ring.map((p) => p[0]), ys = ring.map((p) => p[1])
+        // Grid anchored to whole multiples so overlapping areas share points instead of doubling them.
+        for (let x = Math.ceil(Math.min(...xs) / spacing) * spacing; x <= Math.max(...xs); x += spacing) {
+          for (let y = Math.ceil(Math.min(...ys) / spacing) * spacing; y <= Math.max(...ys); y += spacing) {
+            const point: Point2 = [x + (jitter(x, y, 1) - 0.5) * spacing * 0.7, y + (jitter(x, y, 2) - 0.5) * spacing * 0.7]
+            if (pointInPolygon(point, ring)) points.push(point)
+          }
         }
       }
     }

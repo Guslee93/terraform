@@ -6,8 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from build_site_packages import (  # noqa: E402
-    LANDCOVER_TAGS, clip_polyline, clip_ring, join_outer_rings, parse_osm_context,
-    parse_osm_landcover, polygon_area, unproject,
+    LANDCOVER_TAGS, clip_polyline, clip_ring, drop_trees_on_water, join_outer_rings,
+    parse_osm_context, parse_osm_landcover, point_in_ring, polygon_area, unproject,
 )
 
 EXTENT = (0.0, 0.0, 10.0, 10.0)
@@ -158,3 +158,36 @@ assert all(0 < gap <= 12.0 for gap in gaps), gaps
 assert (30.0, 5.0) in row_points, row_points
 print("tree rows: ok")
 
+
+# A tree stands on ground: a mapped tree inside a painted water polygon is dropped (ADR-0024).
+water_ring = [(-50.0, -50.0), (50.0, -50.0), (50.0, 50.0), (-50.0, 50.0)]
+areas = [
+    {"id": "water-1", "kind": "water", "ring": water_ring},
+    {"id": "park-1", "kind": "park", "ring": [(-150.0, -150.0), (150.0, -150.0),
+                                             (150.0, 150.0), (-150.0, 150.0)]},
+]
+kept, dropped = drop_trees_on_water([[0.0, 0.0], [80.0, 80.0], [-120.0, 0.0]], areas)
+assert dropped == 1, (kept, dropped)
+assert kept == [[80.0, 80.0], [-120.0, 0.0]], kept
+# No water in the package: every tree stays.
+assert drop_trees_on_water([[0.0, 0.0]], []) == ([[0.0, 0.0]], 0)
+# A tree on land is never dropped, whatever the land cover says.
+assert drop_trees_on_water([[80.0, 80.0]], areas) == ([[80.0, 80.0]], 0)
+assert drop_trees_on_water([[80.0, 80.0]], areas[:1]) == ([[80.0, 80.0]], 0)
+assert point_in_ring((0.0, 0.0), water_ring) is True
+assert point_in_ring((80.0, 80.0), water_ring) is False
+print("trees on water: ok")
+
+# The shipped packages hold no tree on the painted water.
+for site_id in ("compact-infill", "sloped-edge"):
+    package = Path(__file__).parent.parent / "public" / "sites" / site_id
+    shipped_trees = json.loads((package / "trees.json").read_text())["trees"]
+    shipped_areas = json.loads((package / "landcover.json").read_text())["areas"]
+    water_areas = [area["ring"] for area in shipped_areas if area["kind"] == "water"]
+    assert water_areas, (site_id, "no water area")
+    on_water = [
+        tree for tree in shipped_trees
+        if any(point_in_ring((tree[0], tree[1]), ring) for ring in water_areas)
+    ]
+    assert not on_water, (site_id, on_water[:5])
+print("shipped packages place no tree on water: ok")

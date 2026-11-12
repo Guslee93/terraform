@@ -167,7 +167,7 @@ Unknown fields are rejected or ignored explicitly; required fields are validated
 - [ ] Attribution states that the boundary is not a cadastral parcel.
 - [ ] Deterministic load: same manifest → same scene checksum.
 - [ ] Optional roads: every run has ≥ 2 points and a width in (0, 50] m; runs are clipped to the terrain extent; tunnels and area-tagged ways omitted; a covered passage is kept as a street.
-- [ ] Optional trees: finite `[east, north]` points inside the terrain extent; no size data implied. A `natural=tree_row` way becomes a tree every 8 m along the row, and a tree is never counted twice.
+- [ ] Optional trees: finite `[east, north]` points inside the terrain extent; no size data implied. A `natural=tree_row` way becomes a tree every 8 m along the row, and a tree is never counted twice. A tree stands on ground: no tree lies inside a land-cover area of kind `water` (ADR-0024).
 - [ ] Optional land cover: matching site ID, ≤ 5000 areas, known kinds, ≥ 3 finite points and positive area per ring; built rings open, counter-clockwise, ≥ 4 m² and clipped to terrain; inner rings ignored and documented.
 - [ ] Building footprints: 3–200 vertices, so an outline the parser would reject is coarsened rather than dropped; a building under 12 m² is not drawn.
 - [ ] Every multipolygon whose outer ring leaves the extract is either closed from the supplementary ways file or reported as a dropped feature by the builder.

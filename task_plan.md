@@ -219,7 +219,7 @@ Implemented: tree placement and vegetation (ADR-0023).
 - [x] Write the phased plan with owner decisions: `docs/plans/context-fidelity-plan.md`.
 - [x] **Owner decision:** keep the tree objects as they are; improve placement and vegetation only.
       `trees.json` stays `schemaVersion 1`.
-- [x] A — placement: 200 m context halo, `natural=tree_row` rows at 8 m, 128 → 935 trees on
+- [x] A — placement: 200 m context halo, `natural=tree_row` rows at 8 m, 128 → 926 trees on
       Compact Infill; nothing invented where OSM has no tree.
 - [x] Vegetation: twelve land-cover kinds on both paths; the greenery the tiles already carried is
       mapped instead of dropped; 10 → 58 land-cover areas on Compact Infill.
