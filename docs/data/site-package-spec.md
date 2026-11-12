@@ -46,6 +46,17 @@ tints, not built or surveyed surfaces. `wood` is tree canopy, `scrub` low brush,
 `cemetery` grave ground and `bare` rock or sand. Every kind is an illustrative tint
 over the terrain, never a surveyed surface.
 
+`water` is the one exception to "a tint on the terrain" (ADR-0025). A tint takes
+the terrain's relief and can never be flat, so a `water` area is drawn as its own
+surface: the studio computes a water level from the ground along the mapped ring
+(smoothed over a plan window that reaches across the body as well as along it), lifts
+the polygon to that level, and cuts the terrain inside the outline down to it. The
+surface therefore lies in the landscape rather than on it, and where the ground
+inside the outline stands above the water level that ground stays dry — the water is
+narrower than the mapped polygon. The rule is applied when the studio loads a
+package, so the package itself carries no level and stays immutable. It follows the
+mapped outline, not a survey of the river bed.
+
 The card thumbnail lives at `public/sites/<site-id>.svg` and is referenced from
 `assetPaths.thumbnail`. Paths in the manifest are relative to the package root,
 except the thumbnail; no remote URLs. `assetPaths.thumbnail` and `assetPaths.attribution`
@@ -169,6 +180,7 @@ Unknown fields are rejected or ignored explicitly; required fields are validated
 - [ ] Optional roads: every run has ≥ 2 points and a width in (0, 50] m; runs are clipped to the terrain extent; tunnels and area-tagged ways omitted; a covered passage is kept as a street.
 - [ ] Optional trees: finite `[east, north]` points inside the terrain extent; no size data implied. A `natural=tree_row` way becomes a tree every 8 m along the row, and a tree is never counted twice. A tree stands on ground: no tree lies inside a land-cover area of kind `water` (ADR-0024).
 - [ ] Optional land cover: matching site ID, ≤ 5000 areas, known kinds, ≥ 3 finite points and positive area per ring; built rings open, counter-clockwise, ≥ 4 m² and clipped to terrain; inner rings ignored and documented.
+- [ ] Water areas: a `water` ring is drawn as a flat surface at the level of the ground along the ring, and the terrain inside the outline is cut down to that level (ADR-0025). The package carries no level of its own, so the rule is applied at load time and the package stays immutable.
 - [ ] Building footprints: 3–200 vertices, so an outline the parser would reject is coarsened rather than dropped; a building under 12 m² is not drawn.
 - [ ] Every multipolygon whose outer ring leaves the extract is either closed from the supplementary ways file or reported as a dropped feature by the builder.
 

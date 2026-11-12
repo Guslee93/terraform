@@ -20,12 +20,20 @@ const LANDCOVER_PAINT: Record<LandCoverKind, string> = {
   plaza: soften('#D9D6CF'),
   water: soften('#CBE1EE'),
 }
+
 /**
- * Draw order: broad ground first, then the more specific green kinds over it, then paved areas,
- * and water last so ponds sit on top of parks.
+ * The colour of the water surface (ADR-0025). Water is no longer a tint on the terrain, but it
+ * keeps the colour it had, so the studio looks the same where the ground is not modelled.
+ */
+export const WATER_COLOR = LANDCOVER_PAINT.water
+
+/**
+ * Draw order: broad ground first, then the more specific green kinds over it, then paved areas.
+ * Water is not painted: it is a surface of its own, so it cannot take the relief of the ground
+ * it covers (ADR-0025).
  */
 const PAINT_ORDER: readonly LandCoverKind[] = [
-  'bare', 'grass', 'field', 'wetland', 'pitch', 'cemetery', 'park', 'nature', 'wood', 'scrub', 'plaza', 'water',
+  'bare', 'grass', 'field', 'wetland', 'pitch', 'cemetery', 'park', 'nature', 'wood', 'scrub', 'plaza',
 ]
 
 /**

@@ -170,6 +170,11 @@ export function AboutPage() {
                 OpenStreetMap extract as the building footprints, are simplified, and are drawn at
                 illustrative widths and sizes.
               </p>
+              <p className="mt-3 text-body leading-relaxed text-ink-secondary">
+                Water is drawn as a surface that follows the mapped outline and the ground along
+                it, flat across its width. It is a simplified water level read from the
+                elevation model, not a surveyed water level or a river bed.
+              </p>
             </section>
 
             <section className="border-t border-line pt-6">

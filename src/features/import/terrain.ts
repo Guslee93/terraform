@@ -2,7 +2,17 @@ import type { ImportFrame } from './frame'
 import { unproject } from './projection'
 import { abortable, checkAbort, requestBytes } from './request'
 
-export type TerrainSample = { height: number | null; kind: 'land' | 'water' }
+/**
+ * A terrain sample.
+ *
+ * - `land` is ground: its height is the ground elevation.
+ * - `water` is the sea surface: modelled at 0 m (mean sea level), no bathymetry.
+ * - `river` is a river surface taken from Kartverket's elevation curves. Those heights are
+ *   referenced to the curve's own datum, not to mean sea level, so they cannot be used as
+ *   ground: a river read from them raised the ground by up to 20 m and the water bulged on top
+ *   of it. The cell is water and its height is taken from the banks instead (ADR-0025).
+ */
+export type TerrainSample = { height: number | null; kind: 'land' | 'water' | 'river' }
 export interface TerrainProvider {
   name: string
   attribution: string
@@ -45,8 +55,10 @@ export function parseKartverketSamples(value: unknown, points: readonly [number,
     if (typeof entry !== 'object' || entry === null || !('z' in entry) || (entry.z !== null && (typeof entry.z !== 'number' || !Number.isFinite(entry.z)))) throw new Error('Kartverket: invalid elevation value')
     const point = points[index]!
     if (!('x' in entry) || !('y' in entry) || typeof entry.x !== 'number' || typeof entry.y !== 'number' || Math.abs(entry.x - point[0]) > 1e-7 || Math.abs(entry.y - point[1]) > 1e-7 || !Number.isFinite(entry.x) || !Number.isFinite(entry.y)) throw new Error('Kartverket: elevation response coordinates/order mismatch')
-    const water = ('terreng' in entry && entry.terreng === 'Havflate') || ('datakilde' in entry && entry.datakilde === 'dybdekurver')
-    return { height: entry.z, kind: water ? 'water' : 'land' }
+    const sea = ('terreng' in entry && entry.terreng === 'Havflate') || ('datakilde' in entry && entry.datakilde === 'dybdekurver')
+    // Elevation curves are referenced to the curve datum: the height is not a ground elevation.
+    const curve = 'datakilde' in entry && entry.datakilde === 'høydekurver'
+    return { height: entry.z, kind: curve ? 'river' : sea ? 'water' : 'land' }
   })
 }
 export function kartverketProvider(): TerrainProvider {
@@ -70,8 +82,8 @@ export function kartverketProvider(): TerrainProvider {
 }
 export type TerrainGrid = {
   absolute: number[]
-  flags: ('measured' | 'water-surface' | 'estimated')[]
-  counts: { measured: number; water: number; estimated: number }
+  flags: ('measured' | 'water-surface' | 'river-surface' | 'estimated')[]
+  counts: { measured: number; water: number; river: number; estimated: number }
 }
 export class TerrainPolicyError extends Error {
   constructor(message: string, readonly reason: 'all-null' | 'too-many-estimates' | 'invalid') { super(message); this.name = 'TerrainPolicyError' }
@@ -84,14 +96,16 @@ export function buildTerrainGrid(samples: readonly TerrainSample[], policy: { ro
   const fail = (message: string, reason: TerrainPolicyError['reason']): never => { throw new TerrainPolicyError(`${source}: ${message}`, reason) }
   if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows < 2 || cols < 2 || samples.length !== rows * cols) fail('grid dimensions/count mismatch','invalid')
   for (const sample of samples) {
-    if (!sample || !['land','water'].includes(sample.kind) || (sample.height !== null && (typeof sample.height !== 'number' || !Number.isFinite(sample.height)))) fail('invalid terrain sample','invalid')
+    if (!sample || !['land','water','river'].includes(sample.kind) || (sample.height !== null && (typeof sample.height !== 'number' || !Number.isFinite(sample.height)))) fail('invalid terrain sample','invalid')
   }
-  const values = samples.map(s => s.kind === 'water' ? 0 : s.height)
+  // The sea is modelled at mean sea level; a river cell has no usable height, so it is filled
+  // from the banks like a gap and is not counted as an estimate of ground.
+  const values = samples.map(s => s.kind === 'water' ? 0 : s.kind === 'river' ? null : s.height)
   const donors = values.flatMap((height,index) => height === null ? [] : [{height,index}])
   if (!donors.length) fail('all terrain samples are null','all-null')
-  const missing = values.length - donors.length
+  const missing = samples.filter(s => s.kind === 'land' && s.height === null).length
   if (missing / samples.length > 0.05) fail(`${missing} of ${samples.length} terrain samples need estimation (exceeds 5%)`,'too-many-estimates')
-  const flags: TerrainGrid['flags'] = samples.map(s => s.kind === 'water' ? 'water-surface' : s.height === null ? 'estimated' : 'measured')
+  const flags: TerrainGrid['flags'] = samples.map(s => s.kind === 'water' ? 'water-surface' : s.kind === 'river' ? 'river-surface' : s.height === null ? 'estimated' : 'measured')
   const absolute = values.map((height,index) => {
     if (height !== null) return height
     let best = donors[0]!, bestDistance = Infinity
@@ -101,7 +115,7 @@ export function buildTerrainGrid(samples: readonly TerrainSample[], policy: { ro
     }
     return best.height
   })
-  return { absolute, flags, counts: { measured: flags.filter(f=>f==='measured').length, water: flags.filter(f=>f==='water-surface').length, estimated: missing } }
+  return { absolute, flags, counts: { measured: flags.filter(f=>f==='measured').length, water: flags.filter(f=>f==='water-surface').length, river: flags.filter(f=>f==='river-surface').length, estimated: missing } }
 }
 export type TerrariumRaster = { width: number; height: number; heights: Float64Array }
 export function decodeTerrarium(rgba: Uint8ClampedArray, width: number, height: number): TerrariumRaster {

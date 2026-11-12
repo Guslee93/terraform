@@ -16,7 +16,7 @@ import { illustrativeTrees, mappedTrees, placeTrees, type TreeSource } from './t
 
 export type ImportStep = 'tiles' | 'buildings' | 'context' | 'terrain' | 'roofs' | 'assemble'
 export type ImportWarning = {
-  code: 'terrain-estimated' | 'terrain-water' | 'terrain-flat' | 'heights-estimated' | 'trees-unavailable' | 'roofs-flat'
+  code: 'terrain-estimated' | 'terrain-water' | 'terrain-river' | 'terrain-flat' | 'heights-estimated' | 'trees-unavailable' | 'roofs-flat'
   message: string
 }
 export type ImportResult = { sitePackage: SitePackage; warnings: ImportWarning[]; timings: Record<ImportStep, number> }
@@ -153,14 +153,15 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     const {grid,provider} = sampled
     const absolute = grid?.absolute ?? Array<number>(GRID_SIZE*GRID_SIZE).fill(0)
     const originElevation = absolute[6*GRID_SIZE+6]!
-    const counts: TerrainGrid['counts'] = grid?.counts ?? {measured:0,water:0,estimated:0}
+    const counts: TerrainGrid['counts'] = grid?.counts ?? {measured:0,water:0,river:0,estimated:0}
     if (counts.estimated) warnings.push({code:'terrain-estimated',message:`${counts.estimated} of 169 terrain samples estimated from nearest original valid neighbours (maximum 5%; ties: lowest row, then column).`})
     if (counts.water) warnings.push({code:'terrain-water',message:`${counts.water} of 169 terrain samples modelled at 0 m mean sea level before recentring; sea-floor depth is not modelled.`})
+    if (counts.river) warnings.push({code:'terrain-river',message:`${counts.river} of 169 terrain samples are river surfaces from elevation curves; their heights are relative to the curve datum, so the ground under them is taken from the banks and the river bed is not modelled.`})
     const wrap = <T extends object>(body: T) => ({schemaVersion:1,siteId:frame.id,...body})
     const h = frame.sizeMetres/2, studyHalf = frame.sizeMetres*0.35
     const terrain = parseTerrain(wrap({cols:GRID_SIZE,rows:GRID_SIZE,minX:-h,maxX:h,minY:-h,maxY:h,originElevation:round(originElevation),
       heights:Array.from({length:GRID_SIZE},(_,row)=>absolute.slice(row*GRID_SIZE,(row+1)*GRID_SIZE).map(height=>round(height-originElevation))),
-      source: provider ? `${provider.name}; ${counts.measured} measured / ${counts.water} water-surface / ${counts.estimated} estimated samples` : 'Flat zero grid — all providers unavailable; not measured terrain',
+      source: provider ? `${provider.name}; ${counts.measured} measured / ${counts.water} water-surface / ${counts.river} river-surface / ${counts.estimated} estimated samples` : 'Flat zero grid — all providers unavailable; not measured terrain',
     }))
     const roofCounts = {gabled:0,flat:0,complex:0}
     const buildings = parseBuildings(wrap({buildings:drafts.map(({id,height,footprint})=>{
@@ -215,6 +216,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
         'Buildings seated at minimum bilinear terrain height over vertices and vertex-average centroid, minus 0.3 m; raised parts are grounded.',
         `${terrain.source}; 13 × 13 grid (${round(frame.sizeMetres/12)} m spacing), recentered to origin elevation.`,
         'Sea cells use a modelled 0 m water surface before recentring (NN2000 for Kartverket); no bathymetry.',
+        'River cells come from elevation curves whose heights are relative to the curve datum; the ground under them is interpolated from the banks and the bed is not modelled.',
         'Study area is the frame inset 15% on every side. Constraints 18 m / 4 m are illustrative defaults, not regulations; absent-constraint schema deferred.',
         'Road widths are illustrative; tunnels omitted; buffered road runs deduplicated within 0.5 m by class. Land-cover fragments may overlap; holes omitted.',
         'Time zone uses approximate country bounding boxes; border regions may be misclassified.',

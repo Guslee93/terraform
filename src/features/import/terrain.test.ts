@@ -11,11 +11,11 @@ function batchSamples(record: typeof bjorvika) {
 }
 it('preserves the recorded Grünerløkka elevations without estimates', () => {
   expect(terrainPoints(frame)).toEqual(grunerlokka.points)
-  expect(buildTerrainGrid(batchSamples(grunerlokka)).counts).toEqual({measured:169,water:0,estimated:0})
+  expect(buildTerrainGrid(batchSamples(grunerlokka)).counts).toEqual({measured:169,water:0,river:0,estimated:0})
 })
 it('reproduces Bjørvika water, estimate counts and donor heights', () => {
   const grid = buildTerrainGrid(batchSamples(bjorvika))
-  expect(grid.counts).toEqual({measured:113,water:54,estimated:2})
+  expect(grid.counts).toEqual({measured:113,water:54,river:0,estimated:2})
   expect(grid.absolute[11]).toBe(0.89)
   expect(grid.absolute[9*13+3]).toBe(2.54)
   expect(grid.absolute[6*13+6]).toBe(2.33)
@@ -26,6 +26,29 @@ it('classifies each sea indicator independently, even with null height', () => {
   expect(samples.map(s=>s.kind)).toEqual(['water','water'])
   const values = measured(); values[0]=samples[0]!; values[1]=samples[1]!
   expect(buildTerrainGrid(values).absolute.slice(0,2)).toEqual([0,0])
+})
+it('treats a river surface from elevation curves as water, and leaves its height out of the ground', () => {
+  // The height of an elevation curve is referenced to the curve datum, not to mean sea level:
+  // a river read from it sat 20 m above the ground on either side of it (ADR-0025).
+  const samples = parseKartverketSamples({punkter:[
+    {x:10,y:60,z:20,datakilde:'høydekurver',terreng:'Elv'},
+    {x:11,y:60,z:3.5,datakilde:'dtm1',terreng:'ÅpentOmråde'},
+  ]},[[10,60],[11,60]])
+  expect(samples.map(s=>s.kind)).toEqual(['river','land'])
+  const values = measured(); values[0]=samples[0]!; values[1]=samples[1]!
+  const grid = buildTerrainGrid(values)
+  expect(grid.counts.river).toBe(1)
+  expect(grid.counts.estimated).toBe(0)
+  expect(grid.flags[0]).toBe('river-surface')
+  // The ground under the river comes from the banks, not from the curve.
+  expect(grid.absolute[0]).toBe(3.5)
+})
+it('does not count river cells against the estimate limit', () => {
+  const samples = measured()
+  for (let index = 0; index < 20; index += 1) samples[index]={height:20,kind:'river'}
+  const grid = buildTerrainGrid(samples)
+  expect(grid.counts.river).toBe(20)
+  expect(grid.counts.estimated).toBe(0)
 })
 it('breaks nearest-donor ties by row, then column, and never uses estimates as donors', () => {
   const samples = measured()

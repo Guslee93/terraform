@@ -39,7 +39,9 @@ import { detectWebGL } from './webglSupport'
 import { PassExporter } from './PassExporter'
 import { ANALYSIS_OVERLAY_NAME, type PassImages } from './exportPasses'
 import { CameraHud } from './CameraHud'
-import { createLandCoverTexture } from './landCoverTexture'
+import { createLandCoverTexture, WATER_COLOR } from './landCoverTexture'
+import { createWaterGeometry } from './waterGeometry'
+import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
 import { SceneErrorBoundary, SceneUnavailable } from './SceneErrorBoundary'
 import {
   createContextGeometry,
@@ -241,10 +243,10 @@ function ContextBuildings({ buildings }: { buildings: SitePackage['buildings']['
  */
 const ROAD_COLOR = '#C1BEB7'
 
-function Streets({ sitePackage }: { sitePackage: SitePackage }) {
+function Streets({ roads, terrain }: { roads: SitePackage['roads']; terrain: SitePackage['terrain'] }) {
   const geometry = useMemo(
-    () => createRoadGeometry(sitePackage.roads, sitePackage.terrain),
-    [sitePackage],
+    () => createRoadGeometry(roads, terrain),
+    [roads, terrain],
   )
   useEffect(() => () => geometry.dispose(), [geometry])
 
@@ -258,6 +260,24 @@ function Streets({ sitePackage }: { sitePackage: SitePackage }) {
         polygonOffsetFactor={-2}
         polygonOffsetUnits={-2}
       />
+    </mesh>
+  )
+}
+
+/**
+ * The water of the site, as a surface (ADR-0025).
+ *
+ * It is drawn as its own flat mesh rather than painted onto the terrain, so it cannot take the
+ * relief of the ground underneath it. The ground inside a mapped water body is cut down to the
+ * water surface, so the water lies in the landscape instead of on top of it.
+ */
+function Water({ surfaces }: { surfaces: readonly WaterSurface[] }) {
+  const geometry = useMemo(() => createWaterGeometry(surfaces), [surfaces])
+  useEffect(() => () => geometry.dispose(), [geometry])
+  if (!surfaces.length) return null
+  return (
+    <mesh geometry={geometry} receiveShadow>
+      <meshStandardMaterial color={WATER_COLOR} roughness={0.55} metalness={0} />
     </mesh>
   )
 }
@@ -488,7 +508,17 @@ export function ViewportCanvas({
   const steps = renderPreference === 'auto' && slow.preference === 'auto' ? slow.steps : 0
   const profile = downgrade(resolveProfile(renderPreference, rendererName ?? ''), steps)
   const onSlow = useCallback(() => setSlow((current) => ({ preference: 'auto', steps: current.preference === 'auto' ? current.steps + 1 : 1 })), [])
-  const { manifest, terrain, buildings } = sitePackage
+  const { manifest, buildings } = sitePackage
+  // Water is a surface of its own (ADR-0025): the ground inside a mapped water body is cut down
+  // to the water surface, and the water is then drawn flat on top of it.
+  const waterSurfaces = useMemo(
+    () => computeWaterSurfaces(sitePackage.terrain, sitePackage.landcover),
+    [sitePackage],
+  )
+  const terrain = useMemo(
+    () => carveTerrainForWater(sitePackage.terrain, waterSurfaces),
+    [sitePackage, waterSurfaces],
+  )
   const initialPreset = manifest.cameraPresets.isometric
   // Fog, orbit limit and far plane were tuned for the curated sites (farthest preset ≈ 870 m).
   // Large imports put presets farther out: scale up so they stay reachable and out of the fog.
@@ -562,8 +592,13 @@ export function ViewportCanvas({
                 }
               />
             )}
+            {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} />}
             {layers.context && <ContextBuildings buildings={buildings.buildings} />}
-            {layers.streets && layers.terrain && <Streets sitePackage={sitePackage} />}
+            {/* The streets keep the ground the package was built on, so they bridge the cut the
+                water makes in the ground beneath them (ADR-0025). */}
+            {layers.streets && layers.terrain && (
+              <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} />
+            )}
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
             {climate && layers.terrain && (windCircle

@@ -241,3 +241,25 @@ Implemented: tree placement and vegetation (ADR-0023).
 - [ ] A6 — tree shadows, which changes the ADR-0021 limitation wording.
 - [ ] F — visual gate and reference screenshots for the new density.
 
+
+## Water as a surface — 2026-11-12
+
+Implemented: water is a surface, not a tint on the terrain (ADR-0025).
+
+- [x] Diagnose the report against live data, not from the screenshot: the terrain-tint renderer and
+      the import path's river-surface samples were both confirmed to be causes.
+- [x] Water level per outline vertex, smoothed over a plan window that reaches across the body and
+      along it; the estimator was chosen by measuring four candidates on real data.
+- [x] The ground inside the mapped outline is cut down to the water surface; the ground outside is
+      untouched, and the streets keep the package terrain so a crossing street bridges the cut.
+- [x] Import path: `høydekurver` samples are `river`, their height is not used, their cells are
+      filled from the banks, and they no longer count against the 5 % land-estimate cap.
+- [x] The curated packages stay byte-identical — the rule is applied when the studio loads a package.
+- [x] Unit tests: `src/features/sites/waterSurface.test.ts` (11),
+      `src/features/sites/waterSurfaceShipped.test.ts` (3, over the shipped package),
+      `src/scene/waterGeometry.test.ts` (3), plus the import-path cases.
+- [x] `npm run lint`, `npm run test` (1026 / 4 skipped), `npm run build` pass.
+- [x] Evidence screenshots at a fixed camera: `docs/screenshots/water-*.png`, captured by
+      `scripts/capture-water.mjs`.
+- [ ] The `engineering-code-reviewer` pass over the change.
+- [ ] The `design-ui-finish-gate-reviewer` pass over the water screenshots.

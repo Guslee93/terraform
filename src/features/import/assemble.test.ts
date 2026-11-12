@@ -64,7 +64,7 @@ it.each([
   expect(Object.values(result.timings).every(n=>Number.isFinite(n)&&n>=0)).toBe(true)
   if(frame===bjorvika) {
     const samples=await fixtureTerrain(record).sample(terrainPoints(frame))
-    expect(buildTerrainGrid(samples).counts).toEqual({measured:113,water:54,estimated:2})
+    expect(buildTerrainGrid(samples).counts).toEqual({measured:113,water:54,river:0,estimated:2})
     expect(result.warnings.find(w=>w.code==='terrain-water')?.message).toMatch(/^54 of 169/)
     expect(result.warnings.find(w=>w.code==='terrain-estimated')?.message).toMatch(/^2 of 169/)
     expect(pkg.terrain.heights[0]![11]).toBe(-1.44)
