@@ -1,0 +1,91 @@
+# Plan — Lift the wind analysis through its height slices
+
+**Status:** proposal, awaiting owner go-ahead · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (proposed) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
+
+## 1. What the owner asked for
+
+- The wind disc lies on the terrain as today. A **red lift handle** on the disc raises it.
+- The disc stops only at **solved heights above terrain**: **2, 5, 10, 15, 20, 25, 30 m**, plus the existing **extra top slice** just above the tallest building when it is taller than 30 m.
+- Heights are measured **from the terrain**, so on a slope the disc keeps its shape relative to the ground instead of staying flat.
+- While the disc is lifted, the other heights show as dashed rings; buildings lower than the disc fade, because at that height they no longer block the wind.
+
+Concept sketch shown to the owner on 2026-11-13 (conversation widget `wind_slice_lift_terrain_following`).
+
+## 2. What already exists (read before building)
+
+| Piece | Where | State today |
+|---|---|---|
+| Slice heights | `src/features/analysis/windProfile.ts` | `SLICE_HEIGHTS_M = [2, 10, 20, 35]`; `sliceHeightsFor` adds a top slice above 35 m (cap 120 m) |
+| Obstacles per slice | `sliceObstacles(buildings, z)` | building blocks the slice if `height > z`. Height is already above the building's own ground, so the rule is terrain-relative already |
+| Solving the stack | `src/features/analysis/flowRunner.ts` | 2 m solved live on the full grid; upper slices solved afterwards on a coarser grid (`UPPER_SLICE_RESOLUTION = 80`), warm-started from the slice below, cached (8 entries) |
+| Heatmap | `src/scene/WindHeatmap.tsx` + `buildClimateView` in `climateView.ts` | always draws `flow.velocity` (the 2 m field), draped at `heightAt(x, y) + 0.5` |
+| Streamlines at one height | `src/scene/WindStreamlines.tsx` + "Streamline height" select in `ClimatePanel.tsx` | already drawn at `heightAt(x, y) + slice.z` — terrain-following already |
+| Roof wind | `src/scene/RoofWind.tsx` | picks the first slice at or above each roof (`roofSlice`) |
+| Progress | `ClimatePanel.tsx` | "Upper heights computing… n/m ready" |
+
+So the solver side and terrain-following drawing exist. The new work is: more heights, the heatmap at a chosen height, the handle, and the fading.
+
+## 3. Phases
+
+### Phase 1 — Seven heights plus the top slice (domain, renderer-free)
+
+- `SLICE_HEIGHTS_M = [2, 5, 10, 15, 20, 25, 30]`; `sliceHeightsFor` adds the top slice when the tallest building is over **30 m** (same rounding and 120 m cap).
+- Update the pinned tests: `windProfile.test.ts`, `flowRunner.test.ts` (lines 73, 177, 205), `flowWorker.test.ts` (lines 23, 42).
+- `RoofWind` needs no change; more slices make its roof colours closer to the real roof height.
+- **Measure the cost** (ADR-0023 §8): upper work goes from 3 (or 4) slices to 6 (or 7). Time the full stack on both curated packages and one dense import, cold and cached, and record it in `findings.md`. Budget: the full stack ready in ≤ 2× today's time; if not, solve upper slices nearest the requested height first (see §5).
+
+**Done when:** tests pass with the new heights; timings recorded.
+
+### Phase 2 — The wind map at a chosen height (domain + scene)
+
+- Add `heightM` (default 2) to `WindSettings`. One height drives the heatmap, the flat streamlines and the particles, replacing the separate "Streamline height" select. The 3D streamlines stay a separate on/off option.
+- `buildClimateView` samples the slice whose `z === heightM` instead of `flow.velocity`. At 2 m the field keeps the downwash boost; upper slices are unboosted (as today).
+- **Legend by height:** the activity/comfort classes are pedestrian criteria, valid only at 2 m. Above 2 m the map shows **speed in m/s** with the same ramp, and the legend says so. Delta (compare) works at any height where both runs have that slice.
+- `heatmapGeometry` takes a lift: `heightAt(x, y) + heightM` (plus the existing 0.5 m clearance at 2 m). Do the same in `AnalysisCircle` for the disc rim.
+- Cells inside buildings that are **lower** than the slice now carry values (the slice has no obstacle there), so the disc passes over low roofs; taller buildings still cut holes.
+
+**Done when:** unit tests cover slice selection, the legend switch above 2 m and the lift offset; the panel shows the right legend at each height.
+
+### Phase 3 — Lift handle and height control (scene + UI)
+
+- **Panel control:** a stepped slider "Height above terrain" with one stop per available slice, `aria-valuetext` "20 metres above terrain", stops still computing disabled and labelled. This is the keyboard path and is required.
+- **Scene handle:** red arrow handle at the disc edge (the edge point nearest the camera when the circle is placed). Vertical pointer drag moves the disc continuously; the disc shows the nearest solved slice and **snaps on release**. `Esc` returns to the height at drag start. Height is a view setting, not a model edit, so it does not create an undo entry (ADR-0026 treats the analysis card state the same way).
+- **Ghost rings:** while the disc is above 2 m or being dragged, draw each other solved height as a dashed rim draped at `heightAt + z`.
+- **Fading:** buildings in the analysed set whose height is ≤ the current slice are drawn at reduced opacity. Spike first: find how the analysed buildings are rendered (merged vs individual meshes) and pick the cheapest way — a per-building opacity attribute or a second material. Context buildings outside the circle are not faded.
+- Reduced motion: no eased glide; the disc jumps to the snapped height.
+
+**Done when:** the handle and the slider move the same state; Esc cancels; keyboard reaches every height; screenshots at 2, 10, 30 m and the top slice on both curated sites.
+
+### Phase 4 — Claims and labels
+
+- The caption names the height: "Wind at 20 m above terrain — 2D flow, not engineering".
+- The note that the model ignores slope stays visible whenever terrain relief inside the circle is non-trivial (existing `terrainReliefM`). Following the terrain is a drawing choice; the solver still treats each slice as flat.
+- No comfort or "safe/unsafe" wording above 2 m.
+
+### Phase 5 — Evidence and gates
+
+- `npm run lint && npm run test && npm run build`.
+- Playwright: place circle → lift to 20 m via the slider → legend switches to m/s → back to 2 m.
+- Fixed-view screenshots into `docs/screenshots/wind-lift-*.png`, including one sloped import site.
+- G1 code review record in `docs/reviews/`; G3 visual pass on the handle and ghost rings.
+- `docs/agent-log.md`, `progress.md`, AGENTS.md §10 updated.
+
+## 4. Order and size
+
+| Phase | Owner role | Size |
+|---|---|---|
+| 1 Heights + measurement | senior-developer | ½ day |
+| 2 Map at height | senior-developer + gis-3d-scene-developer | 1 day |
+| 3 Handle, rings, fading | gis-3d-scene-developer + frontend-developer | 1–1½ days |
+| 4 Labels | technical-writer | ½ hour |
+| 5 Evidence + gates | code-reviewer, ui-finish-gate-reviewer | ½ day |
+
+Phases run in order; 2 depends on 1, 3 depends on 2.
+
+## 5. Risks and open questions
+
+1. **Solve time.** Twice as many upper slices. If the measurement in Phase 1 misses the budget, reorder the upper queue so the height the user asked for is solved next (the runner already solves one slice at a time).
+2. **Coarse upper grid.** Upper slices are solved at ≤ 80 cells across and upsampled. Lifted to 20 m they may look blockier than the 2 m map. Check in the Phase 3 screenshots; smoothing is a display fix, not a solver change.
+3. **Building fading cost** depends on how buildings are drawn — Phase 3 spike.
+4. **Slope.** A building on a slope has one height, though its downhill wall is taller. Accepted approximation; documented in ADR-0028.
+5. **Worst-direction sweep** stays at 2 m only (it is a pedestrian comfort screen). The height control is hidden or disabled while the sweep is shown.
