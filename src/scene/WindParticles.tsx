@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, DynamicDrawUsage, MeshBasicMaterial, type Camera, type OrthographicCamera, type PerspectiveCamera } from 'three'
 import { particleColour, type WindSettings } from '../features/analysis/climateView'
 import type { FlowResult } from '../features/analysis/flowRunner'
@@ -61,8 +61,14 @@ export function metresPerPixel(camera: Camera, distance: number, viewportHeightP
  * fading tail of its last positions, so the lines curve with the wind round the buildings. Under
  * reduced motion the trails are traced once and stay still.
  */
-export function WindParticles({ flow, circle, heightAt, wind }: {
+export function WindParticles({ flow, circle, heightAt, lift = 0, wind }: {
   flow: FlowResult
+  /**
+   * Height (m) above the terrain the trails are drawn at — the lifted wind disc (ADR-0028). A
+   * change moves every stored trail point by the same amount, so trails glide with the disc
+   * instead of stretching between the old height and the new one.
+   */
+  lift?: number
   /** Display settings: particles use the same colour scale as the map. */
   wind: WindSettings
   circle: { readonly centre: Vec2; readonly radius: number }
@@ -137,10 +143,13 @@ export function WindParticles({ flow, circle, heightAt, wind }: {
   const positions = position.array as Float32Array
   const colours = colour.array as Float32Array
 
+  // The lift already applied to the buffer. Heads are written with it, not with the prop, so a frame
+  // between a new prop and the shift below cannot write a point that then gets shifted twice.
+  const drawnLift = useRef(lift)
   /** Ribbon edges and colour of particle `i`'s head from its ENU position, velocity and speed ratio. */
   const setHead = (i: number, vx: number, vy: number, ratio: number) => {
     const x = state.pos[2 * i]!, y = state.pos[2 * i + 1]!
-    const up = heightAt(x, y) + PARTICLE_LIFT_M
+    const up = heightAt(x, y) + PARTICLE_LIFT_M + drawnLift.current
     // Half the ribbon width across the wind: ENU (−vy, vx), scene x = east, z = −north.
     const speed = Math.hypot(vx, vy) || 1
     const ax = (-vy / speed) * state.halfWidth, ay = (vx / speed) * state.halfWidth
@@ -227,6 +236,16 @@ export function WindParticles({ flow, circle, heightAt, wind }: {
     show(Math.floor(state.limit * (still ? 1 : trailDensity(state.halfWidth * 2))))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  // A new lift moves the whole trail buffer with the disc (only the scene-y components change).
+  useEffect(() => {
+    const delta = lift - drawnLift.current
+    drawnLift.current = lift
+    if (delta === 0) return
+    for (let at = 1; at < positions.length; at += 3) positions[at] = positions[at]! + delta
+    for (let at = 1; at < state.head.length; at += 3) state.head[at] = state.head[at]! + delta
+    position.needsUpdate = true
+  }, [lift, positions, position, state])
+
   useEffect(() => {
     if (still) trace()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -235,7 +254,7 @@ export function WindParticles({ flow, circle, heightAt, wind }: {
   useFrame(({ camera, size }, delta) => {
     if (still) return
     // Constant width on screen: sized for the distance to the circle, baked into each new trail point.
-    const distance = Math.hypot(camera.position.x - centre[0], camera.position.y - heightAt(centre[0], centre[1]), camera.position.z + centre[1])
+    const distance = Math.hypot(camera.position.x - centre[0], camera.position.y - heightAt(centre[0], centre[1]) - drawnLift.current, camera.position.z + centre[1])
     state.halfWidth = Math.min(1.5, Math.max(0.03, (metresPerPixel(camera, distance, size.height) * WIDTH_PX) / 2))
     const started = performance.now()
     animate(Math.min(delta, 0.05))

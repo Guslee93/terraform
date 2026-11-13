@@ -288,6 +288,19 @@ it('on a steep site the lifted map says it follows the ground but is solved flat
   expect(screen.getByText(/Steep site/)).toHaveTextContent('each height is still solved as a flat slice')
 })
 
+it('above 2 m the streamline controls are off and say the flow shows as particles (owner, 2026-11-13)', () => {
+  const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view: null, availableHeights: [2, 5, 10, 15, 20, 25, 30], slicesComplete: true }
+  const { rerender } = render(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, heightM: 20 }} />)
+  const toggle = screen.getByRole('checkbox', { name: 'Streamlines' })
+  expect(toggle).toBeDisabled()
+  expect(toggle).toHaveAccessibleDescription(/particles at the chosen height/)
+  expect(screen.getByLabelText('Follow buildings in 3D')).toBeDisabled()
+  expect(screen.getByLabelText('Streamline opacity')).toBeDisabled()
+  rerender(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, heightM: 2 }} />)
+  expect(screen.getByRole('checkbox', { name: 'Streamlines' })).toBeEnabled()
+  expect(screen.getByLabelText('Follow buildings in 3D')).toBeEnabled()
+})
+
 it('the worst case is a 2 m screen: choosing it returns to 2 m and locks the height', () => {
   const onWindChange = vi.fn()
   const sweep = { sectors: [{ from: 0, meanRatio: 0.6, shareAbove: 0.1 }], worstFrom: 0, total: 8 }

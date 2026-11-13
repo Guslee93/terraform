@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampLift, fadedBuildings, footprintTouchesCircle, ghostHeights, heightText, liftAnchor, nearestHeight, stepHeight } from './windLift'
+import { windFlowStyle, clampLift, fadedBuildings, footprintTouchesCircle, ghostHeights, heightText, liftAnchor, nearestHeight, stepHeight } from './windLift'
 
 const HEIGHTS = [2, 5, 10, 15, 20, 25, 30]
 
@@ -85,5 +85,17 @@ describe('footprint and circle (code review 2026-11-13, finding 7)', () => {
     const big: [number, number][] = [[-500, -500], [500, -500], [500, 500], [-500, 500]]
     expect(footprintTouchesCircle(big, centre, 100)).toBe(true)
     expect(footprintTouchesCircle([[200, 200], [210, 200], [210, 210], [200, 210]], centre, 100)).toBe(false)
+  })
+})
+
+describe('how the moving air is drawn', () => {
+  it('is always the particle animation once the map is lifted (owner, 2026-11-13)', () => {
+    expect(windFlowStyle({ lifted: true, streamlinesOn: true, reducedMotion: false })).toBe('particles')
+    expect(windFlowStyle({ lifted: true, streamlinesOn: false, reducedMotion: true })).toBe('particles')
+  })
+  it('keeps the 2 m choice: streamlines when on or under reduced motion, otherwise particles', () => {
+    expect(windFlowStyle({ lifted: false, streamlinesOn: false, reducedMotion: false })).toBe('particles')
+    expect(windFlowStyle({ lifted: false, streamlinesOn: true, reducedMotion: false })).toBe('streamlines')
+    expect(windFlowStyle({ lifted: false, streamlinesOn: false, reducedMotion: true })).toBe('streamlines')
   })
 })

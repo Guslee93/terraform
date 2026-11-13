@@ -292,20 +292,22 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
 
         <Section title="Streamlines" action={
           <label className="grid size-8 cursor-pointer place-items-center">
-            <input type="checkbox" aria-label="Streamlines" checked={streamlines} onChange={(event) => { const on = event.currentTarget.checked; if (demoPlaying) onDemoEdit?.({}); onStreamlinesChange?.(on) }} className="size-4 accent-[var(--accent)]" />
+            <input type="checkbox" aria-label="Streamlines" checked={streamlines} disabled={wind.heightM > PEDESTRIAN_HEIGHT_M} aria-describedby={wind.heightM > PEDESTRIAN_HEIGHT_M ? 'streamlines-lifted' : undefined} onChange={(event) => { const on = event.currentTarget.checked; if (demoPlaying) onDemoEdit?.({}); onStreamlinesChange?.(on) }} className="size-4 accent-[var(--accent)]" />
           </label>
         }>
           <label className="flex items-center justify-between gap-3">
             <span className={labelClass}>Follow buildings in 3D</span>
-            <input type="checkbox" checked={wind.streamlines3d} disabled={!slicesReady}
+            <input type="checkbox" checked={wind.streamlines3d} disabled={!slicesReady || wind.heightM > PEDESTRIAN_HEIGHT_M}
               aria-describedby={!slicesReady ? 'upper-heights-status' : undefined}
               onChange={(event) => set({ streamlines3d: event.currentTarget.checked })}
               className="size-4 accent-[var(--accent)]" />
           </label>
-          {!wind.streamlines3d && <p className="text-caption text-ink-secondary">Flat at {wind.heightM} m above terrain, the height chosen above.</p>}
+          {wind.heightM > PEDESTRIAN_HEIGHT_M
+            ? <p id="streamlines-lifted" className="text-caption text-ink-secondary">Above 2 m the moving air shows as particles at the chosen height, like the ground view. Streamlines are a 2 m view.</p>
+            : !wind.streamlines3d && <p className="text-caption text-ink-secondary">Flat at 2 m above terrain.</p>}
           <label htmlFor="streamline-opacity" className={labelClass}>Streamline opacity</label>
           <input id="streamline-opacity" type="range" min={0.2} max={1} step={0.05}
-            value={wind.streamlineOpacity} disabled={!slicesReady}
+            value={wind.streamlineOpacity} disabled={!slicesReady || wind.heightM > PEDESTRIAN_HEIGHT_M}
             aria-valuetext={`${Math.round(wind.streamlineOpacity * 100)} percent`}
             aria-describedby={!slicesReady ? 'upper-heights-status' : undefined}
             onChange={(event) => set({ streamlineOpacity: Number(event.currentTarget.value) })}
