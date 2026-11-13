@@ -1,6 +1,6 @@
 # Plan — Lift the wind analysis through its height slices
 
-**Status:** proposal, awaiting owner go-ahead · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (proposed) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
+**Status:** accepted; Phase 1 done (2026-11-13), Phases 2–5 open · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
 
 ## 1. What the owner asked for
 
@@ -35,6 +35,15 @@ So the solver side and terrain-following drawing exist. The new work is: more he
 - **Measure the cost** (ADR-0023 §8): upper work goes from 3 (or 4) slices to 6 (or 7). Time the full stack on both curated packages and one dense import, cold and cached, and record it in `findings.md`. Budget: the full stack ready in ≤ 2× today's time; if not, solve upper slices nearest the requested height first (see §5).
 
 **Done when:** tests pass with the new heights; timings recorded.
+
+**Done (2026-11-13).** Heights and the 30 m top-slice threshold are in `windProfile.ts`; the pinned tests now read `SLICE_HEIGHTS_M` or look slices up by height instead of by position. Benchmark (`WIND_BENCHMARK=1`, Node 22, 4-core container, two runs each):
+
+| Site | Stack before (4 slices) | Stack after (7 slices) | Ratio | Upper slices before → after |
+|---|---|---|---|---|
+| Compact Infill | 11.2–11.4 s | 13.1–13.3 s | 1.17× | 3.3 s → 5.8 s (1.75×) |
+| Sloped Edge | 5.8 s | 6.5 s | 1.11× | 1.2 s → 2.2 s (1.8×) |
+
+Within the 2× budget, so the requested-height-first reordering (§5.1) is not needed. A cached direction returns all seven slices without stepping (`flowRunner.test.ts`). Not measured: a dense import site — no offline import fixture with buildings over 30 m; measure on the first live one.
 
 ### Phase 2 — The wind map at a chosen height (domain + scene)
 

@@ -3,7 +3,7 @@ import type { Vec2 } from '../../lib/coordinates'
 import type { FootprintBuilding } from './grid'
 import { createFlowRunner, type FlowSlice } from './flowRunner'
 import { circlePolygon } from './grid'
-import { profileFactor } from './windProfile'
+import { profileFactor, SLICE_HEIGHTS_M } from './windProfile'
 import { createLbm, flowFrame, gridToWorld, rasterize, sampleRatio, sampleVelocity, speedRatio, stepLbm, type FlowFrame } from './lbm'
 
 /**
@@ -264,9 +264,9 @@ describe('wind validation — height slices (W5)', { timeout: 60_000 }, () => {
     expect(above).toBeGreaterThan(ground * 1.5)
   })
 
-  it('S2: a 40 m tower blocks every slice up to 35 m and leaves a wake in each', () => {
+  it('S2: a 40 m tower blocks every standard slice (up to 30 m) and leaves a wake in each', () => {
     const slices = stack([{ height: 40, footprint: rect(-10, 10, -10, 10) }])
-    for (const z of [2, 10, 20, 35]) {
+    for (const z of SLICE_HEIGHTS_M) {
       expect(at(slices, z, [0, 0])).toBeNull()
       const free = at(slices, z, [-45, 30])!
       expect(at(slices, z, [18, 0])!).toBeLessThan(free * 0.6)
@@ -276,7 +276,7 @@ describe('wind validation — height slices (W5)', { timeout: 60_000 }, () => {
   it('S3: undisturbed wind follows the indicative profile with height (±10 %)', () => {
     const slices = stack([])
     const ground = at(slices, 2, [-30, 20])!
-    for (const z of [10, 20, 35]) {
+    for (const z of SLICE_HEIGHTS_M.filter((h) => h > 2)) {
       const expected = ground * profileFactor(z) / profileFactor(2)
       expect(Math.abs(at(slices, z, [-30, 20])! - expected) / expected).toBeLessThan(0.1)
     }

@@ -68,11 +68,12 @@ describe('height slice stack', () => {
     expect(runner.hasPendingWork()).toBe(true)
     expect(create).toHaveBeenCalledTimes(1)
     const result = finish(runner)
-    expect(create).toHaveBeenCalledTimes(4)
-    expect(step.mock.calls.reduce((sum, call) => sum + call[1]!, 0)).toBeLessThan(MAX_STEPS * 4)
-    expect(result.slices?.map((s) => s.z)).toEqual([2, 10, 20, 35])
+    expect(create).toHaveBeenCalledTimes(SLICE_HEIGHTS_M.length)
+    expect(step.mock.calls.reduce((sum, call) => sum + call[1]!, 0)).toBeLessThan(MAX_STEPS * SLICE_HEIGHTS_M.length)
+    expect(result.slices?.map((s) => s.z)).toEqual([2, 5, 10, 15, 20, 25, 30])
     expect(result.frame).toEqual(frame)
-    const [pedestrian, ten, twenty] = result.slices!
+    const byZ = (z: number) => result.slices!.find((s) => s.z === z)
+    const pedestrian = byZ(2), ten = byZ(10), twenty = byZ(20)
     expect(pedestrian!.velocity).toEqual(result.velocity)
     expect(ten!.solid[12 * 24 + 12]).toBe(1)
     expect(twenty!.solid[12 * 24 + 12]).toBe(0)
@@ -115,7 +116,7 @@ describe('height slice stack', () => {
     expect(step).not.toHaveBeenCalled()
     expect(cached.id).toBe(3)
     expect(cached.velocity).toEqual(expected)
-    expect(cached.slices).toHaveLength(4)
+    expect(cached.slices).toHaveLength(SLICE_HEIGHTS_M.length)
     expect(runner.hasPendingWork()).toBe(false)
   })
 
@@ -180,7 +181,7 @@ it.skipIf(!process.env.WIND_BENCHMARK)('benchmark Compact Infill 160², r=100 m,
       lbm.velocityField(solver)
     } else runner.tick(Infinity)
     times.push(performance.now() - before)
-    if (times.length === 4) break
+    if (times.length === SLICE_HEIGHTS_M.length) break
   }
   process.stdout.write(JSON.stringify({ slicesMs: times, totalMs: performance.now() - start }) + "\n")
 }, 120_000)
@@ -200,10 +201,11 @@ it('returns progressive fine-grid slices in z order with a faster 10 m field abo
   const runner = createFlowRunner()
   runner.request({ id: 1, frame, buildings: [{ height: 8, footprint: square(-10, 10, -10, 10) }], reset: true, slices: true })
   let result: FlowResult | null = null
-  for (let i = 0; i < 4; i++) {
+  const last = SLICE_HEIGHTS_M.length - 1
+  for (let i = 0; i <= last; i++) {
     result = runner.tick(Infinity)!
-    expect(result.slices?.map((s) => s.z)).toEqual([2, 10, 20, 35].slice(0, i + 1))
-    expect(result.slicesComplete).toBe(i === 3)
+    expect(result.slices?.map((s) => s.z)).toEqual(SLICE_HEIGHTS_M.slice(0, i + 1))
+    expect(result.slicesComplete).toBe(i === last)
     for (const slice of result.slices!) {
       expect(slice.velocity.length).toBe(160 * 160 * 2)
       expect(slice.solid.length).toBe(160 * 160)
@@ -213,8 +215,8 @@ it('returns progressive fine-grid slices in z order with a faster 10 m field abo
       }
     }
   }
-  expect(create.mock.calls.map(([nx, ny]) => [nx, ny])).toEqual([[160, 160], [80, 80], [80, 80], [80, 80]])
-  const ground = result!.slices![0]!, ten = result!.slices![1]!
+  expect(create.mock.calls.map(([nx, ny]) => [nx, ny])).toEqual([[160, 160], ...Array.from({ length: last }, () => [80, 80])])
+  const ground = result!.slices!.find((s) => s.z === 2)!, ten = result!.slices!.find((s) => s.z === 10)!
   expect(Math.hypot(...sampleVelocity(frame, ten.velocity, ten.solid, [25, 0])!))
     .toBeGreaterThan(Math.hypot(...sampleVelocity(frame, ground.velocity, ground.solid, [25, 0])!))
 }, 20_000)

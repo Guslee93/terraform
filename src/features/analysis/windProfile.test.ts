@@ -7,7 +7,7 @@ const block = { height: 15, footprint: [[-4, -4], [4, -4], [4, 4], [-4, 4]] as c
 
 describe('indicative urban height profile', () => {
   it('uses the specified heights and power law', () => {
-    expect(SLICE_HEIGHTS_M).toEqual([2, 10, 20, 35])
+    expect(SLICE_HEIGHTS_M).toEqual([2, 5, 10, 15, 20, 25, 30])
     expect(ALPHA).toBe(0.22)
     expect(profileFactor(10)).toBe(1)
     expect(profileFactor(20)).toBeCloseTo(1.165, 3)
@@ -22,13 +22,15 @@ describe('indicative urban height profile', () => {
 
 describe('sliceHeightsFor (tall roofs)', () => {
   const b = (height: number) => ({ height, footprint: [[0, 0], [10, 0], [10, 10], [0, 10]] as [number, number][] })
-  it('keeps the standard four heights when nothing is taller than 35 m', () => {
-    expect(sliceHeightsFor([])).toEqual([2, 10, 20, 35])
-    expect(sliceHeightsFor([b(12), b(35)])).toEqual([2, 10, 20, 35])
+  it('keeps the standard seven heights when nothing is taller than 30 m', () => {
+    expect(sliceHeightsFor([])).toEqual([2, 5, 10, 15, 20, 25, 30])
+    expect(sliceHeightsFor([b(12), b(30)])).toEqual([2, 5, 10, 15, 20, 25, 30])
   })
   it('adds one top slice just above the tallest building, capped at 120 m', () => {
-    expect(sliceHeightsFor([b(12), b(60)])).toEqual([2, 10, 20, 35, 65])
-    expect(sliceHeightsFor([b(61)])).toEqual([2, 10, 20, 35, 70])
-    expect(sliceHeightsFor([b(300)])).toEqual([2, 10, 20, 35, 120])
+    expect(sliceHeightsFor([b(12), b(60)])).toEqual([2, 5, 10, 15, 20, 25, 30, 65])
+    expect(sliceHeightsFor([b(61)])).toEqual([2, 5, 10, 15, 20, 25, 30, 70])
+    expect(sliceHeightsFor([b(300)])).toEqual([2, 5, 10, 15, 20, 25, 30, 120])
+    // The threshold moved from 35 m to 30 m (ADR-0028): a 31–35 m roof now gets its own slice.
+    expect(sliceHeightsFor([b(31)])).toEqual([2, 5, 10, 15, 20, 25, 30, 40])
   })
 })
