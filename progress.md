@@ -879,3 +879,12 @@ zoom in because the quads are small at the default site camera.
   All fixed by reading `SLICE_HEIGHTS_M` or looking slices up by `z`.
 - Benchmark (`WIND_BENCHMARK=1`, main vs branch in a worktree, two runs): Compact Infill 11.2–11.4 s → 13.1–13.3 s;
   Sloped Edge 5.8 → 6.5 s. Recorded in the plan and `findings.md`.
+
+## 2026-11-13 — Wind lift, Phase 2 (ADR-0028)
+
+- Stacked on Phase 1 (`feat/wind-lift-phase1-sap5ec`, PR #7). Added `heightM`/`streamlines3d` and the three helpers;
+  8 new unit tests; panel tests rewritten for the new controls.
+- Local e2e on the production build: wind, wind-a11y and simplified-studio specs 5/6 at first. The new lift test
+  failed on a strict-mode duplicate: the height note was shown both under the control and in the legend
+  disclaimer. Kept once; then 6/6. Also fixed: the legend's accessible name read the stored display (Comfort) at 20 m.
+- Screenshots at 2 m and 20 m on Compact Infill checked by eye: the 20 m disc floats above the low roofs, legend in m/s.

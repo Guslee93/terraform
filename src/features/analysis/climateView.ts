@@ -28,10 +28,47 @@ export type WindSettings = {
   /** Analysis circle: the flow is solved only around it, at finer resolution. Centre null = study-area centre. */
   readonly centre: Vec2 | null
   readonly radius: number
-  readonly streamlineHeight: number | null
+  /** Height above terrain of the slice the map, flat streamlines and particles show (m, ADR-0028). */
+  readonly heightM: number
+  /** Streamlines rise over roofs in 3D (true) or stay flat at `heightM` (false). */
+  readonly streamlines3d: boolean
   readonly streamlineOpacity: number
 }
-export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refSpeed: 6, downwash: true, centre: null, radius: 100, streamlineHeight: null, streamlineOpacity: 0.65 }
+export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refSpeed: 6, downwash: true, centre: null, radius: 100, heightM: 2, streamlines3d: true, streamlineOpacity: 0.65 }
+
+/** Pedestrian height (m): the solved ground field, where comfort classes apply. */
+export const PEDESTRIAN_HEIGHT_M = 2
+
+/**
+ * The flow at `heightM` above terrain. At pedestrian height it is the solved ground field as is
+ * (the downwash rule included); above, the matching slice's field on the same grid (slices are
+ * upsampled to the fine frame), unboosted. Null while that slice is still computing: no value is
+ * interpolated between heights (ADR-0028 §3).
+ */
+export function flowAtHeight(flow: FlowResult, heightM: number): FlowResult | null {
+  if (heightM <= PEDESTRIAN_HEIGHT_M) return flow
+  const slice = flow.slices?.find((s) => s.z === heightM)
+  return slice ? { ...flow, velocity: slice.velocity, solid: slice.solid } : null
+}
+
+/**
+ * What the map shows at the chosen height. Comfort (activity) classes are pedestrian criteria, so
+ * above 2 m the map shows speed in m/s on the same ramp instead (ADR-0028 §5).
+ */
+export function displayAt(wind: WindSettings): WindDisplay {
+  return wind.display === 'activity' && wind.heightM > PEDESTRIAN_HEIGHT_M ? 'ratio' : wind.display
+}
+
+/**
+ * Extra height (m) the wind map, circle and particles are drawn at, on top of the terrain. At 2 m
+ * the map stays draped on the ground as before; above, it is drawn at terrain + slice height.
+ */
+export function windDrawLift(heightM: number): number {
+  return heightM > PEDESTRIAN_HEIGHT_M ? heightM : 0
+}
+
+/** The caption for a map above pedestrian height. */
+export const heightNote = (heightM: number) => `Wind speed at ${heightM} m above terrain, in m/s. Comfort classes apply at 2 m only.`
 export type WindBaseline = { readonly flow: FlowResult; readonly circle: { readonly centre: Vec2; readonly radius: number }; readonly from: number; readonly downwash: boolean }
 export function captureBaseline(flow: FlowResult, circle: WindBaseline['circle'], from: number, downwash = false): WindBaseline {
   return { flow: { ...flow, frame: { ...flow.frame, centre: [...flow.frame.centre], flow: [...flow.frame.flow] }, velocity: flow.velocity.slice(), solid: flow.solid.slice(), ...(flow.slices ? { slices: flow.slices.map((slice) => ({ ...slice, velocity: slice.velocity.slice(), solid: slice.solid.slice() })) } : {}) }, circle: { centre: [...circle.centre], radius: circle.radius }, from, downwash }
@@ -227,30 +264,35 @@ export function buildClimateView(
     }
   }
   if (mode === 'wind') {
-    const bands = wind.display === 'delta' ? DELTA_BANDS : wind.display === 'activity' ? ACTIVITY_BANDS : DIRECTION_BANDS
-    const scale = wind.display === 'delta' ? 1 : localSpeedMs(1, wind.refSpeed)
-    const compatible = baseline && baselineMatches(baseline, { centre: wind.centre ?? baseline.circle.centre, radius: wind.radius }, wind.from, wind.downwash)
-    const cells = flow && (wind.display !== 'delta' || compatible)
+    // The field and the display at the chosen height; a baseline compares at the same height.
+    const display = displayAt(wind)
+    const shown: WindSettings = { ...wind, display }
+    const field = flow && flowAtHeight(flow, wind.heightM)
+    const baseField = baseline && flowAtHeight(baseline.flow, wind.heightM)
+    const bands = display === 'delta' ? DELTA_BANDS : display === 'activity' ? ACTIVITY_BANDS : DIRECTION_BANDS
+    const scale = display === 'delta' ? 1 : localSpeedMs(1, wind.refSpeed)
+    const compatible = baseline && baseField && baselineMatches(baseline, { centre: wind.centre ?? baseline.circle.centre, radius: wind.radius }, wind.from, wind.downwash)
+    const cells = field && (display !== 'delta' || compatible)
       ? sampleGrid(studyArea, WIND_CELL_M).flatMap((c) => {
-          const v = sampleVelocity(flow.frame, flow.velocity, flow.solid, [c.x, c.y])
+          const v = sampleVelocity(field.frame, field.velocity, field.solid, [c.x, c.y])
           if (!v) return []
-          if (wind.display === 'delta' && baseline) {
-            const before = sampleVelocity(baseline.flow.frame, baseline.flow.velocity, baseline.flow.solid, [c.x, c.y])
+          if (display === 'delta' && baseField) {
+            const before = sampleVelocity(baseField.frame, baseField.velocity, baseField.solid, [c.x, c.y])
             return before ? [{ ...c, b: deltaBand(Math.hypot(...v) - Math.hypot(...before)) }] : []
           }
-          return [{ ...c, b: { ...pick(bands, Math.hypot(...v) * scale), colour: windColour(Math.hypot(...v), wind)! } }]
+          return [{ ...c, b: { ...pick(bands, Math.hypot(...v) * scale), colour: windColour(Math.hypot(...v), shown)! } }]
         })
       : []
     // A one-cell halo lets the mesh reach the exact circular shader clip boundary.
     const xs = studyArea.map((p) => p[0]), ys = studyArea.map((p) => p[1])
     const minX = Math.min(...xs) - WIND_CELL_M, maxX = Math.max(...xs) + WIND_CELL_M
     const minY = Math.min(...ys) - WIND_CELL_M, maxY = Math.max(...ys) + WIND_CELL_M
-    const lattice = flow && (wind.display !== 'delta' || compatible)
+    const lattice = field && (display !== 'delta' || compatible)
       ? sampleGrid([[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]], WIND_CELL_M).flatMap((c) => {
-          const v = sampleVelocity(flow.frame, flow.velocity, flow.solid, [c.x, c.y])
+          const v = sampleVelocity(field.frame, field.velocity, field.solid, [c.x, c.y])
           if (!v) return []
-          const before = baseline && wind.display === 'delta' ? sampleVelocity(baseline.flow.frame, baseline.flow.velocity, baseline.flow.solid, [c.x, c.y]) : null
-          const colour = windColour(Math.hypot(...v), wind, before ? Math.hypot(...before) : undefined)
+          const before = baseField && display === 'delta' ? sampleVelocity(baseField.frame, baseField.velocity, baseField.solid, [c.x, c.y]) : null
+          const colour = windColour(Math.hypot(...v), shown, before ? Math.hypot(...before) : undefined)
           return colour ? [{ ...c, colour }] : []
         }) : []
     return {
@@ -259,7 +301,8 @@ export function buildClimateView(
         const count = cells.filter((c) => c.b.band === b.band).length
         return { label: b.label, colour: b.colour, count, share: cells.length ? count / cells.length : 0 }
       }),
-      disclaimer: wind.display === 'activity' ? `${ACTIVITY_NOTE} ${FLOW_DISCLAIMER}` : FLOW_DISCLAIMER,
+      // Above 2 m the panel states the height and the m/s scale once, beside the height control.
+      disclaimer: display === 'activity' ? `${ACTIVITY_NOTE} ${FLOW_DISCLAIMER}` : FLOW_DISCLAIMER,
       assessed: cells.length,
     }
   }

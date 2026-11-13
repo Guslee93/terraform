@@ -138,7 +138,7 @@ test('W5: 3D streamlines and roof wind on Compact Infill (Direction, m/s)', asyn
   await page.getByRole('checkbox', { name: 'Streamlines' }).check()
   await page.getByRole('button', { name: '3D', exact: true }).click()
   // The upper height slices solve in the background (~10 s each); the height select unlocks then.
-  await expect(page.getByLabel(/Streamline height/i)).toBeEnabled({ timeout: budget(150_000) })
+  await expect(page.getByLabel('Follow buildings in 3D')).toBeEnabled({ timeout: budget(150_000) })
   await page.waitForTimeout(2000)
   await page.screenshot({ path: `${OUT_DIR}/wind-3d-streamlines.png` })
 })

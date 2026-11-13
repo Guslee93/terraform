@@ -237,24 +237,53 @@ it('disables upper controls until slices exist and exposes Direction reference s
   const onWindChange = vi.fn()
   const props = { mode: 'wind' as const, onModeChange: vi.fn(), wind: { ...DEFAULT_WIND, display: 'ratio' as const }, onWindChange, view: null }
   const { rerender } = render(<ClimatePanel {...props} />)
-  expect(screen.getByLabelText('Streamline height')).toBeDisabled()
+  expect(screen.getByLabelText('Follow buildings in 3D')).toBeDisabled()
   expect(screen.getByLabelText('Streamline opacity')).toBeDisabled()
   expect(screen.getByText(/Upper heights computing… 0\/7 ready/)).toBeInTheDocument()
   expect(screen.getByLabelText('Wind at 10 m height')).toBeEnabled()
+  // The pedestrian height is always there; upper heights unlock as their slices arrive.
+  expect(screen.getByLabelText('Height above terrain')).toBeEnabled()
+  expect(screen.getByRole('option', { name: '2 m (pedestrian)' })).toBeEnabled()
+  expect(screen.getByRole('option', { name: '10 m (computing)' })).toBeDisabled()
   // Progressive: with the ground and 10 m slices the controls unlock; 20 m is still computing.
   rerender(<ClimatePanel {...props} availableHeights={[2, 10]} />)
   expect(screen.getByText(/2\/7 ready/)).toBeInTheDocument()
+  expect(screen.getByRole('option', { name: '10 m' })).toBeEnabled()
   expect(screen.getByRole('option', { name: '20 m (computing)' })).toBeDisabled()
   rerender(<ClimatePanel {...props} availableHeights={[2, 5, 10, 15, 20, 25, 30]} slicesComplete />)
   expect(screen.queryByText(/Upper heights computing/)).toBeNull()
-  expect(screen.getByLabelText('Streamline height')).toBeEnabled()
+  expect(screen.getByLabelText('Follow buildings in 3D')).toBeEnabled()
   expect(screen.getByLabelText('Streamline opacity')).toBeEnabled()
-  fireEvent.change(screen.getByLabelText('Streamline height'), { target: { value: '20' } })
-  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineHeight: 20 })
+  fireEvent.change(screen.getByLabelText('Height above terrain'), { target: { value: '20' } })
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 20 })
   fireEvent.change(screen.getByLabelText('Streamline opacity'), { target: { value: '0.5' } })
   expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineOpacity: 0.5 })
-  fireEvent.change(screen.getByLabelText('Streamline height'), { target: { value: '3d' } })
-  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineHeight: null })
+  fireEvent.click(screen.getByLabelText('Follow buildings in 3D'))
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlines3d: false })
+})
+
+it('above 2 m the map shows m/s: Comfort is disabled and says why (ADR-0028)', () => {
+  const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view: null, availableHeights: [2, 5, 10, 15, 20, 25, 30], slicesComplete: true }
+  const { rerender } = render(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, display: 'activity', heightM: 20 }} />)
+  const comfort = screen.getByRole('button', { name: 'Comfort' })
+  expect(comfort).toBeDisabled()
+  expect(comfort).toHaveAccessibleDescription(/Comfort classes apply at 2 m only/)
+  expect(screen.getByRole('button', { name: 'Direction' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByText(/Wind speed at 20 m above terrain, in m\/s/)).toBeInTheDocument()
+  rerender(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, display: 'activity', heightM: 2 }} />)
+  expect(screen.getByRole('button', { name: 'Comfort' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.queryByText(/above terrain, in m\/s/)).toBeNull()
+})
+
+it('the worst case is a 2 m screen: choosing it returns to 2 m and locks the height', () => {
+  const onWindChange = vi.fn()
+  const sweep = { sectors: [{ from: 0, meanRatio: 0.6, shareAbove: 0.1 }], worstFrom: 0, total: 8 }
+  const { rerender } = render(<ClimatePanel mode="wind" onModeChange={vi.fn()} onWindChange={onWindChange} view={null} sweepOn sweep={sweep} wind={{ ...DEFAULT_WIND, display: 'ratio', heightM: 20 }} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Worst case' }))
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...DEFAULT_WIND, display: 'worst', heightM: 2 })
+  rerender(<ClimatePanel mode="wind" onModeChange={vi.fn()} onWindChange={onWindChange} view={null} sweepOn sweep={sweep} wind={{ ...DEFAULT_WIND, display: 'worst', heightM: 2 }} />)
+  expect(screen.getByLabelText('Height above terrain')).toBeDisabled()
 })
 
 it('#8 an edit during Play demo stops it, restores the saved settings and keeps the edit', () => {

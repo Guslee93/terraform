@@ -1,6 +1,6 @@
 # Plan — Lift the wind analysis through its height slices
 
-**Status:** accepted; Phase 1 done (2026-11-13), Phases 2–5 open · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
+**Status:** accepted; Phases 1–2 done (2026-11-13), Phases 3–5 open · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
 
 ## 1. What the owner asked for
 
@@ -54,6 +54,8 @@ Within the 2× budget, so the requested-height-first reordering (§5.1) is not n
 - Cells inside buildings that are **lower** than the slice now carry values (the slice has no obstacle there), so the disc passes over low roofs; taller buildings still cut holes.
 
 **Done when:** unit tests cover slice selection, the legend switch above 2 m and the lift offset; the panel shows the right legend at each height.
+
+**Done (2026-11-13).** `WindSettings.heightM` (default 2) and `streamlines3d` replace `streamlineHeight`. `flowAtHeight` gives the 2 m field as solved (downwash included) or the slice at that height, and null while it is still computing: nothing is interpolated. `displayAt` turns Comfort into m/s above 2 m, and `windDrawLift` draws the map, circle and particles at terrain + height (2 m stays draped on the ground). Delta compares the baseline's slice at the same height. The panel has a "Height above terrain" select, the stepped slider and scene handle being Phase 3. Comfort is disabled above 2 m, with the reason given, and the worst case returns to 2 m and locks the height. The old streamline height select is now a "Follow buildings in 3D" checkbox. The card's comfort figure stays at 2 m. Screenshots: `docs/screenshots/wind-lift-2m-1440x900.png`, `docs/screenshots/wind-lift-20m-1440x900.png`.
 
 ### Phase 3 — Lift handle and height control (scene + UI)
 

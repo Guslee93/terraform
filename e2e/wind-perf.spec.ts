@@ -31,7 +31,7 @@ for (const mode of ['off', 'particles', '3d-streamlines'] as const) {
     if (mode !== 'off') {
       await openAnalysis(page, 'Wind')
       if (mode === '3d-streamlines') await page.getByRole('checkbox', { name: 'Streamlines' }).check()
-      await expect(page.getByLabel(/Streamline height/i)).toBeEnabled({ timeout: budget(120_000) })
+      await expect(page.getByLabel('Follow buildings in 3D')).toBeEnabled({ timeout: budget(120_000) })
     }
     await page.waitForTimeout(1500)
     const result = await page.evaluate(probe)
