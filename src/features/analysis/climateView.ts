@@ -71,8 +71,10 @@ export function windDrawLift(heightM: number): number {
  * The wind claim on the map (ADR-0028 phase 4): the same claim, naming the height when the map is
  * lifted, so a 20 m map is never read as the pedestrian one.
  */
-export function windCaption(heightM: number): string {
-  return heightM > PEDESTRIAN_HEIGHT_M ? `Indicative wind screening at ${heightM} m above terrain — 2D flow, not engineering` : FLOW_DISCLAIMER
+export function windCaption(heightM: number, computing = false): string {
+  if (heightM <= PEDESTRIAN_HEIGHT_M) return FLOW_DISCLAIMER
+  // No field yet at that height: say so, rather than name a height the map does not show.
+  return computing ? `Computing the wind at ${heightM} m above terrain…` : `Indicative wind screening at ${heightM} m above terrain — 2D flow, not engineering`
 }
 
 /** Lifted slices are drawn along the ground, but each one is solved as a flat plane. */

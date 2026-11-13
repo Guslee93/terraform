@@ -903,3 +903,14 @@ zoom in because the quads are small at the default site camera.
   First run: 1 panel test failed (the steep note renders with the legend, so the test needed a view); fixed in the test.
 - Local e2e: wind, wind-a11y and m3-disclaimers 7/7. The re-captured lifted screenshots changed; the 2 m ones are
   byte-identical, confirming there is no effect at pedestrian height.
+
+## 2026-11-13 — Wind lift, Phase 5 (ADR-0028)
+
+- `code-review` (medium) over `d57010c..feat/wind-lift-phase4-sap5ec`: 10 findings. 9 confirmed and fixed, 1 kept by design.
+- Measured before fixing finding 6: `createContextGeometry` + `EdgesGeometry` for 520 buildings took 63–104 ms per call
+  (6 runs). Replaced by a per-vertex `faded` attribute and two discard materials; screenshots at 2 m and 10 m are
+  unchanged by eye.
+- First run of the new vertex-range test failed typecheck (fixture used a building kind that does not exist); fixed.
+- e2e on the production build: wind, wind-a11y and layers 11/11.
+- A sloped import capture was not possible: ws.geonorge.no, api.openstreetmap.org, tiles.openfreemap.org and
+  photon.komoot.io are all unreachable from this environment (curl: no connection).

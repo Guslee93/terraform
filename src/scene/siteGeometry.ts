@@ -146,10 +146,18 @@ function pushVertex(positions: number[], east: number, up: number, north: number
   positions.push(east, up, -north)
 }
 
+/**
+ * The context buildings as one merged, non-indexed mesh. `userData.buildingStarts[i]` is the first
+ * vertex of building `i` (its vertices run to `buildingStarts[i + 1]`), so per-building state such
+ * as the wind lift's fading (ADR-0028) can be written into an attribute without rebuilding.
+ */
 export function createContextGeometry(buildings: readonly ContextBuilding[]): BufferGeometry {
   const positions: number[] = []
+  const starts = new Int32Array(buildings.length + 1)
 
-  for (const building of buildings) {
+  for (let buildingIndex = 0; buildingIndex < buildings.length; buildingIndex += 1) {
+    const building = buildings[buildingIndex]!
+    starts[buildingIndex] = positions.length / 3
     if (building.footprint.length < 3) continue
     const base = building.baseElevation
     const top = base + building.height
@@ -224,10 +232,12 @@ export function createContextGeometry(buildings: readonly ContextBuilding[]): Bu
     }
   }
 
+  starts[buildings.length] = positions.length / 3
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
+  geometry.userData.buildingStarts = starts
   return geometry
 }
 

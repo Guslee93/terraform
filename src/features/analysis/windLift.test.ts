@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampLift, fadedBuildings, ghostHeights, heightText, liftAnchor, nearestHeight, stepHeight } from './windLift'
+import { clampLift, fadedBuildings, footprintTouchesCircle, ghostHeights, heightText, liftAnchor, nearestHeight, stepHeight } from './windLift'
 
 const HEIGHTS = [2, 5, 10, 15, 20, 25, 30]
 
@@ -69,5 +69,21 @@ describe('buildings that fade below the disc', () => {
   })
   it('fades nothing at pedestrian height', () => {
     expect(fadedBuildings(buildings, circle, 2).size).toBe(0)
+  })
+})
+
+describe('footprint and circle (code review 2026-11-13, finding 7)', () => {
+  const centre: [number, number] = [0, 0]
+  it('counts a long building crossing the rim with no corner inside', () => {
+    // 300 m long, 4 m wide, passing 90 m from the centre of a 100 m circle: both ends outside.
+    const bar: [number, number][] = [[-150, 88], [150, 88], [150, 92], [-150, 92]]
+    expect(bar.some(([x, y]) => x * x + y * y <= 100 * 100)).toBe(false)
+    expect(footprintTouchesCircle(bar, centre, 100)).toBe(true)
+    expect(fadedBuildings([{ height: 6, footprint: bar }], { centre, radius: 100 }, 10).has(0)).toBe(true)
+  })
+  it('counts a footprint that contains the whole circle, and not one that misses it', () => {
+    const big: [number, number][] = [[-500, -500], [500, -500], [500, 500], [-500, 500]]
+    expect(footprintTouchesCircle(big, centre, 100)).toBe(true)
+    expect(footprintTouchesCircle([[200, 200], [210, 200], [210, 210], [200, 210]], centre, 100)).toBe(false)
   })
 })

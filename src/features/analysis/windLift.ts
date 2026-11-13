@@ -48,17 +48,34 @@ export function ghostHeights(heights: readonly number[], current: number, draggi
 type Footprinted = { readonly height: number; readonly footprint: readonly (readonly [number, number])[] }
 
 /**
- * Buildings that fade while the disc is lifted: inside the analysis circle (any footprint corner
- * within it) and no taller than the shown slice, because at that height they no longer block
- * the wind (`sliceObstacles` keeps only buildings taller than the slice). Nothing fades at 2 m.
+ * Whether a footprint touches the circle: a corner inside it, an edge passing within the radius
+ * (a long building crossing the rim with no corner inside), or the circle centre inside the footprint.
+ */
+export function footprintTouchesCircle(footprint: readonly (readonly [number, number])[], centre: Vec2, radius: number): boolean {
+  const [cx, cy] = centre, r2 = radius * radius
+  let inside = false
+  for (let i = 0, j = footprint.length - 1; i < footprint.length; j = i++) {
+    const [ax, ay] = footprint[j]!, [bx, by] = footprint[i]!
+    // Closest point of edge a→b to the centre.
+    const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((cx - ax) * dx + (cy - ay) * dy) / len2))
+    if ((ax + t * dx - cx) ** 2 + (ay + t * dy - cy) ** 2 <= r2) return true
+    // Even-odd ray cast for the centre inside the footprint.
+    if ((ay > cy) !== (by > cy) && cx < ax + ((cy - ay) / (by - ay)) * dx) inside = !inside
+  }
+  return inside
+}
+
+/**
+ * Buildings that fade while the disc is lifted: touching the analysis circle and no taller than
+ * the shown slice, because at that height they no longer block the wind (`sliceObstacles` keeps
+ * only buildings taller than the slice). Nothing fades at 2 m.
  */
 export function fadedBuildings(buildings: readonly Footprinted[], circle: { readonly centre: Vec2; readonly radius: number }, heightM: number): Set<number> {
   const faded = new Set<number>()
   if (heightM <= PEDESTRIAN_HEIGHT_M) return faded
-  const [cx, cy] = circle.centre, r2 = circle.radius * circle.radius
   buildings.forEach((building, index) => {
-    if (building.height > heightM) return
-    if (building.footprint.some(([x, y]) => (x - cx) ** 2 + (y - cy) ** 2 <= r2)) faded.add(index)
+    if (building.height <= heightM && footprintTouchesCircle(building.footprint, circle.centre, circle.radius)) faded.add(index)
   })
   return faded
 }
