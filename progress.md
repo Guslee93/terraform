@@ -813,3 +813,11 @@ zoom in because the quads are small at the default site camera.
   banks. The curated screenshots are unchanged.
 - **Open:** the `engineering-code-reviewer` pass over this change, and the
   `design-ui-finish-gate-reviewer` pass over the import screenshots.
+- **Deployed (2026-11-13):** Vercel production from main (`be72f58`, after `38d0567`) via
+  `vercel deploy --prod` — the water's geometry on the import path (ADR-0027): a river is
+  recognised as a river, and the frame's water outlines and mapped trees come from one
+  OpenStreetMap answer. Live: https://terraform-studio-murex.vercel.app — the root answers 200,
+  the curated studio loads, and a live Trondheim import draws the Nidelva as a meandering channel
+  between its banks with the mapped trees placed; the import reports "29 of 169 terrain samples are
+  river surfaces from elevation curves", and the app raised **no console errors**. Screenshot:
+  `docs/screenshots/live-water-import-1440x900.png`.
