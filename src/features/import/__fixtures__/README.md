@@ -16,4 +16,9 @@ the User-Agent `TerraformPortfolio/0.1 (D22 site-import fixture recorder; archit
   Licence (ODbL 1.0); attribution for derived work: "© OpenStreetMap contributors".
 - Kartverket høydedata and Adresse-API are CC BY 4.0; attribution: "© Kartverket".
 - `kartverket-dom-48.tif` was recorded on **2026-11-10 UTC**: a 48 × 48 px surface-model (DOM) raster over a Grünerløkka block, uncompressed float32 GeoTIFF.
+- `osm/frame.xml` is **hand-written**, not recorded: a small OpenStreetMap API answer in the
+  same XML shape, holding a river surface, a centre line, a canal, a lake relation, a building,
+  one single tree and one tree row, laid out over the Grünerløkka frame. It lets the import's
+  OpenStreetMap reader be tested offline and without depending on a live endpoint
+  (ADR-0027). Its coordinates follow the ODbL-derived geometry of OpenStreetMap.
 - Do not re-record except when these endpoints change; keep the date column honest.

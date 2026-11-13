@@ -4,7 +4,7 @@ import { parseSiteManifest, type CameraPreset, type SiteSource, type Vec3Tuple }
 import { parseBuildings, parseLandCover, parseRoads, parseStudyArea, parseTerrain, parseTrees, type SitePackage } from '../sites/package'
 import { dropTreesOnWater } from '../sites/treePlacement'
 import { extractBuildings } from './buildings'
-import { extractLandCover, extractRoads } from './context'
+import { extractLandCover, extractRoads, extractTileWater } from './context'
 import { frameBounds, validateFrame, type ImportFrame } from './frame'
 import { ringArea } from './geometry'
 import { abortable, checkAbort } from './request'
@@ -12,11 +12,13 @@ import { fitRoof, roofSamplePoints } from './roofFit'
 import { sampleSurface, type SurfaceRaster, type SurfaceSource } from './surface'
 import { buildTerrainGrid, GRID_SIZE, terrainPoints, TerrainPolicyError, timeZoneFor, type TerrainGrid, type TerrainProvider, type TerrainSample } from './terrain'
 import { decodeTile, tileCover, type TileFeature, type TileSource } from './tiles'
-import { illustrativeTrees, mappedTrees, placeTrees, type TreeSource } from './trees'
+import { illustrativeTrees, mappedTrees, parseOsmTrees, placeTrees } from './trees'
+import { parseOsmWater, waterAreas } from './water'
+import type { OsmAreaSource } from './osm'
 
-export type ImportStep = 'tiles' | 'buildings' | 'context' | 'terrain' | 'roofs' | 'assemble'
+export type ImportStep = 'tiles' | 'buildings' | 'water' | 'context' | 'terrain' | 'roofs' | 'assemble'
 export type ImportWarning = {
-  code: 'terrain-estimated' | 'terrain-water' | 'terrain-river' | 'terrain-flat' | 'heights-estimated' | 'trees-unavailable' | 'roofs-flat'
+  code: 'terrain-estimated' | 'terrain-water' | 'terrain-river' | 'terrain-flat' | 'heights-estimated' | 'trees-unavailable' | 'roofs-flat' | 'water-coarse'
   message: string
 }
 export type ImportResult = { sitePackage: SitePackage; warnings: ImportWarning[]; timings: Record<ImportStep, number> }
@@ -38,11 +40,11 @@ async function sourceChecksum(parts: Uint8Array[], samples: TerrainSample[], sig
 
 /** No writes or app integration. A package becomes visible only after all parsers
  * and cross-asset checks pass. Timings are elapsed seconds, matching the C3 report. */
-export async function importSite(input: ImportFrame, deps: { tiles: TileSource; terrain: TerrainProvider[]; trees?: TreeSource; roofs?: SurfaceSource }, options: ImportOptions = {}): Promise<ImportResult> {
+export async function importSite(input: ImportFrame, deps: { tiles: TileSource; terrain: TerrainProvider[]; osm?: OsmAreaSource; roofs?: SurfaceSource }, options: ImportOptions = {}): Promise<ImportResult> {
   const {signal,onProgress} = options
   checkAbort(signal)
   const frame = validateFrame(input)
-  const timings: ImportResult['timings'] = {tiles:0,buildings:0,context:0,terrain:0,roofs:0,assemble:0}
+  const timings: ImportResult['timings'] = {tiles:0,buildings:0,water:0,context:0,terrain:0,roofs:0,assemble:0}
   const warnings: ImportWarning[] = [
     {code:'heights-estimated',message:'OpenMapTiles render_height values are partly estimated; heights are not survey data.'},
     {code:'roofs-flat',message:'Roofs are modelled as flat extrusions; sloped and stepped roof shapes are not represented.'},
@@ -89,20 +91,48 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     return buildings
   })
   checkAbort(signal)
+  // The water and the mapped trees come from OpenStreetMap's own geometry: the tiles generalise
+  // a 30 m river into a shape with stair-stepped edges along the tile grid, and draw the same
+  // water again as a ribbon on top of it (ADR-0027). One request per frame answers for both; the
+  // generalised tile outline is the fallback when the geometry cannot be fetched.
+  const water = await step('water',deps.osm?.name ?? 'Map tiles',async()=>{
+    const tileWater = extractTileWater(features,frame)
+    if (!deps.osm) {
+      warnings.push({code:'water-coarse',message:`Water is drawn from the map tiles, which generalise it to the tile grid; the outline is approximate.`})
+      return {areas:tileWater,source:null,data:null,failure:'no OpenStreetMap source configured'}
+    }
+    try {
+      const data = await abortable(()=>deps.osm!.fetchArea(frameBounds(frame).lonLat,signal),signal)
+      checkAbort(signal)
+      const areas = waterAreas(parseOsmWater(data),frame)
+      if (!areas.length) {
+        if (!tileWater.length) return {areas,source:deps.osm,data,failure:null}
+        throw new Error('OpenStreetMap maps no water where the map tiles do')
+      }
+      return {areas,source:deps.osm,data,failure:null}
+    } catch (error) {
+      checkAbort(signal)
+      const failure = messageOf(error)
+      warnings.push({code:'water-coarse',message:`OpenStreetMap geometry was unavailable (${failure}); the generalised map-tile outline is used instead, so the water's shape is approximate.`})
+      return {areas:tileWater,source:null,data:null,failure}
+    }
+  })
+  checkAbort(signal)
   const context = await step('context',deps.tiles.name,async()=>{
-    let failure = deps.trees ? '' : 'no tree source configured'
     const areas = extractLandCover(features,frame)
+    // A tree stands on ground: neither a mapped tree nor a grid tree may stand where the studio
+    // draws water (ADR-0024). The park and water outlines are simplified independently, so a
+    // park that runs into a lake keeps its grid over the water without this rule.
+    const ground = [...areas,...water.areas]
+    let failure = water.failure ?? ''
     let mapped: [number,number][] = []
-    if (deps.trees) {
-      try { mapped = placeTrees(dropTreesOnWater(mappedTrees(await abortable(()=>deps.trees!.fetchTrees(frameBounds(frame).lonLat,signal),signal),frame),areas),drafts,frame) }
+    if (water.data) {
+      try { mapped = placeTrees(dropTreesOnWater(mappedTrees(parseOsmTrees(water.data),frame),ground),drafts,frame) }
       catch (error) { checkAbort(signal); failure = messageOf(error) }
       if (!failure && !mapped.length) failure = 'OpenStreetMap has no mapped trees in this frame'
     }
-    // A tree stands on ground: neither a mapped tree nor a grid tree may stand where the studio
-    // paints water (ADR-0024). The park and water polygons are simplified independently, so a
-    // park that runs into a lake keeps its grid over the water without this rule.
-    return {roads:extractRoads(features,frame),areas,
-      trees: mapped.length ? mapped : placeTrees(dropTreesOnWater(illustrativeTrees(features,frame),areas),drafts,frame),treesMapped:mapped.length>0,treeFailure:failure}
+    return {roads:extractRoads(features,frame),areas: ground,
+      trees: mapped.length ? mapped : placeTrees(dropTreesOnWater(illustrativeTrees(features,frame),ground),drafts,frame),treesMapped:mapped.length>0,treeFailure:failure}
   })
   if (!context.treesMapped) warnings.push({code:'trees-unavailable',message:context.trees.length
     ? `Trees are illustrative, not mapped positions (${context.treeFailure}): ${context.trees.length} placed on a grid in mapped woods (9 m), gardens (14 m), parks (16 m) and cemeteries (18 m).`
@@ -190,7 +220,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     const preset = (position: Vec3Tuple,target: Vec3Tuple = [0,0,8],fov = 32): CameraPreset => ({position,target,projection:'perspective',fov})
     const acquiredAt = new Date().toISOString()
     const sources: SiteSource[] = [{title:deps.tiles.name,attribution:deps.tiles.attribution,acquiredAt,...(deps.tiles.url ? {url:deps.tiles.url} : {}),...(deps.tiles.license ? {license:deps.tiles.license} : {})}]
-    if (context.treesMapped && deps.trees) sources.push({title:deps.trees.name,attribution:deps.trees.attribution,acquiredAt,...(deps.trees.url ? {url:deps.trees.url} : {}),...(deps.trees.license ? {license:deps.trees.license} : {})})
+    if (water.source) sources.push({title:water.source.name,attribution:water.source.attribution,acquiredAt,...(water.source.url ? {url:water.source.url} : {}),...(water.source.license ? {license:water.source.license} : {})})
     if (provider) sources.push({title:provider.name,attribution:provider.attribution,acquiredAt,...(provider.url ? {url:provider.url} : {}),...(provider.license ? {license:provider.license} : {})})
     if (measured && roofs) sources.push({title:roofs.name,attribution:roofs.attribution,acquiredAt,url:roofs.url,license:roofs.license})
     const checksum = await sourceChecksum(tileBuffers,sampled.samples,signal)
@@ -217,6 +247,12 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
         `${terrain.source}; 13 × 13 grid (${round(frame.sizeMetres/12)} m spacing), recentered to origin elevation.`,
         'Sea cells use a modelled 0 m water surface before recentring (NN2000 for Kartverket); no bathymetry.',
         'River cells come from elevation curves whose heights are relative to the curve datum; the ground under them is interpolated from the banks and the bed is not modelled.',
+        water.source
+          ? 'Water outlines are the OpenStreetMap geometry for the frame, clipped to it; a watercourse mapped as a line is drawn as a ribbon of an illustrative width and the water bed is not modelled.'
+          : 'Water outlines are the generalised map-tile geometry, not the mapped outline; the water bed is not modelled.',
+        context.treesMapped
+          ? 'Trees are the OpenStreetMap positions of the frame.'
+          : 'Trees are placed on a grid in the mapped woods, gardens, parks and cemeteries; they are not mapped positions.',
         'Study area is the frame inset 15% on every side. Constraints 18 m / 4 m are illustrative defaults, not regulations; absent-constraint schema deferred.',
         'Road widths are illustrative; tunnels omitted; buffered road runs deduplicated within 0.5 m by class. Land-cover fragments may overlap; holes omitted.',
         'Time zone uses approximate country bounding boxes; border regions may be misclassified.',

@@ -173,7 +173,9 @@ export function AboutPage() {
               <p className="mt-3 text-body leading-relaxed text-ink-secondary">
                 Water is drawn as a surface that follows the mapped outline and the ground along
                 it, flat across its width. It is a simplified water level read from the
-                elevation model, not a surveyed water level or a river bed.
+                elevation model, not a surveyed water level or a river bed. An imported site
+                reads its water outlines from OpenStreetMap's own geometry; if that answer is
+                unavailable, the generalised map-tile outline is used and the import says so.
               </p>
             </section>
 

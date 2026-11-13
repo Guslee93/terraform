@@ -1,8 +1,10 @@
 // @vitest-environment node
+import { readFileSync } from 'node:fs'
 import { afterEach, expect, it, vi } from 'vitest'
 import grunerlokkaTerrain from './__fixtures__/terrain/grunerlokka.json'
 import bjorvikaTerrain from './__fixtures__/terrain/bjorvika.json'
 import { importSite, type ImportStep } from './assemble'
+import { parseOsmXml, type OsmAreaSource } from './osm'
 import { kartverketSurface, type SurfaceSource } from './surface'
 import { bjorvika, fixtureTiles, grunerlokka } from './testFixtures'
 import { buildTerrainGrid, kartverketProvider, parseKartverketSamples, terrainPoints, type TerrainProvider, type TerrainSample } from './terrain'
@@ -53,14 +55,14 @@ it.each([
   // A tree stands on ground: none may stand where the package paints water (ADR-0024).
   const water=areas.filter(area=>area.kind==='water')
   expect(trees.some(t=>water.some(area=>pointInPolygon(t,area.ring)))).toBe(false)
-  expect(result.warnings.find(w=>w.code==='trees-unavailable')?.message).toMatch(/^Trees are illustrative, not mapped positions \(no tree source configured\)/)
+  expect(result.warnings.find(w=>w.code==='trees-unavailable')?.message).toMatch(/^Trees are illustrative, not mapped positions \(no OpenStreetMap source configured\)/)
   expect(pkg.manifest.statistics).toMatchObject({buildingCount:pkg.buildings.buildings.length,terrainSamples:169,studyAreaM2:78400})
   expect(pkg.manifest.statistics.sourceChecksum).toMatch(/^[a-f0-9]{64}$/)
   expect(pkg.buildings.buildings.every(b=>isSimpleRing(b.footprint))).toBe(true)
   expect(pkg.manifest.constraints.label).toMatch(/Illustrative design constraint/)
   expect(result.warnings.map(w=>w.code)).toEqual(expect.arrayContaining(['heights-estimated','roofs-flat','trees-unavailable']))
-  expect(events).toEqual(['tiles:start','tiles:done','buildings:start','buildings:done','context:start','context:done','terrain:start','terrain:done','roofs:skipped','assemble:start','assemble:done'])
-  expect(Object.keys(result.timings)).toEqual(['tiles','buildings','context','terrain','roofs','assemble'])
+  expect(events).toEqual(['tiles:start','tiles:done','buildings:start','buildings:done','water:start','water:done','context:start','context:done','terrain:start','terrain:done','roofs:skipped','assemble:start','assemble:done'])
+  expect(Object.keys(result.timings)).toEqual(['tiles','buildings','water','context','terrain','roofs','assemble'])
   expect(Object.values(result.timings).every(n=>Number.isFinite(n)&&n>=0)).toBe(true)
   if(frame===bjorvika) {
     const samples=await fixtureTerrain(record).sample(terrainPoints(frame))
@@ -75,6 +77,28 @@ it.each([
 const levelSurface = (absolute: number): SurfaceSource => ({...kartverketSurface(),async fetchSurface(_bounds,pixels){
   return {width:pixels,height:pixels,heights:new Float32Array(pixels*pixels).fill(absolute)}
 }})
+const osmXml = readFileSync(new URL('./__fixtures__/osm/frame.xml', import.meta.url),'utf8')
+const osmSource = (): OsmAreaSource => ({name:'OpenStreetMap API',attribution:'© OpenStreetMap contributors · ODbL 1.0',url:'https://api.openstreetmap.org/api/0.6',license:'ODbL 1.0',fetchArea:vi.fn(async()=>parseOsmXml(osmXml))})
+it('draws the water from the OpenStreetMap geometry, not from the tiles (ADR-0027)', async () => {
+  vi.stubGlobal('fetch',vi.fn(()=>{throw new Error('Tests must not use the network')}))
+  const result=await importSite(grunerlokka,{tiles:fixtureTiles,terrain:[fixtureTerrain(grunerlokkaTerrain)],osm:osmSource()})
+  const water=result.sitePackage.landcover.filter(area=>area.kind==='water')
+  // The mapped river and lake, plus the canal that has no area of its own.
+  expect(water.map(area=>area.id)).toEqual(['way/100','relation/200','way/106'])
+  expect(result.warnings.map(w=>w.code)).not.toContain('water-coarse')
+  expect(result.sitePackage.manifest.sources.map(s=>s.title)).toContain('OpenStreetMap API')
+  expect(result.sitePackage.manifest.simplified.some(line=>/Water outlines are the OpenStreetMap geometry/.test(line))).toBe(true)
+})
+it('falls back to the tile outline and says why when the OpenStreetMap geometry is unavailable', async () => {
+  vi.stubGlobal('fetch',vi.fn(()=>{throw new Error('Tests must not use the network')}))
+  const failing:OsmAreaSource={...osmSource(),fetchArea:async()=>{throw new Error('OpenStreetMap API: HTTP 429')}}
+  const result=await importSite(grunerlokka,{tiles:fixtureTiles,terrain:[fixtureTerrain(grunerlokkaTerrain)],osm:failing})
+  expect(result.warnings.find(w=>w.code==='water-coarse')?.message).toMatch(/OpenStreetMap geometry was unavailable \(OpenStreetMap API: HTTP 429\)/)
+  // The generalised tile outline is the fallback, and it says so in the manifest.
+  expect(result.sitePackage.landcover.some(area=>area.id.startsWith('waterway-')||area.id.startsWith('water-'))).toBe(true)
+  expect(result.sitePackage.manifest.simplified.some(line=>/generalised map-tile geometry/.test(line))).toBe(true)
+  expect(result.sitePackage.manifest.sources.map(s=>s.title)).not.toContain('OpenStreetMap API')
+})
 it('measures roofs from a surface model on matching terrain and says so (ADR-0022)', async () => {
   vi.stubGlobal('fetch',vi.fn(()=>{throw new Error('Tests must not use the network')}))
   const events: string[]=[]

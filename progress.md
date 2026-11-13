@@ -759,3 +759,57 @@ zoom in because the quads are small at the default site camera.
 - **Open.** The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.
 - Deployed (2026-11-13): Vercel production from main (d1bc021) via `vercel deploy --prod` — one card per analysis in the Parameters panel (ADR-0026): Sun · Wind · Noise, the bottom dock removed, Back to the frame step, and the import progress bar. Live: https://terraform-studio-murex.vercel.app — the studio shows the three cards and **no** analysis dock (the `section[aria-label="Analysis"]` region count is 0), the noise card opens with its bands (61 dB peak, 34 % / 66 %), the curated site's Back link is `/#sites`, `/new` loads the map and the import progress bar reached 42 % while the tiles and buildings loaded, and the app itself raised no console errors. The browser still CORS-blocks the Overpass tree query on the import path (pre-existing and unchanged): the import falls back to illustrative trees and says so in its notices. Screenshots: `docs/screenshots/live-panel-1440x900.png`, `docs/screenshots/live-import-1440x900.png`.
 
+
+## 2026-11-13 — Project-wide bug review
+
+- **Fixed (6):** imported river sites unsaveable (`terrain-river` warning rejected by `import/store.ts` `migrate`);
+  scenario write resurrected after reset/import (`scenarios/repository.ts` `enqueueSite`); misleading closed Sun
+  card hints; sun playback running with its card closed; draw/deselect/Move circle and overlays dead with Terrain
+  off (`ViewportCanvas.tsx`); flow-worker request coalescing dropped `reset`.
+- **Tests:** two new (river warning round-trip, reset waits for a queued save). Browser-checked on
+  `/studio/compact-infill`: Terrain off still draws a block and shows the noise overlay; closing the Sun card
+  shows "Select to compute" and stops playback; no console errors.
+- **Suite:** lint passes. Unit: every file I touched passes; 7 failures remain in `NewSitePage`, `import/assemble`,
+  `import/context`, `import/trees` — files another session was editing at the same time (water work, new
+  `import/water.ts`). Typecheck fails only in that session's untracked `import/_probe.test.ts`.
+- **Flaky:** `analysis/sunHours.test.ts` and `analysis/microclimate.test.ts` timing budgets fail under full
+  parallel load and pass alone.
+- **Not fixed:** `lib/coordinates.ts` `parseMetres` accepts `0x10`/`0b101` (no live caller).
+
+
+## 2026-11-13 — Water geometry on the import path (ADR-0027)
+
+- **The report.** The owner sent a screenshot of the Trondheim (Bakklandet) import and wrote that
+  the water is still completely wrong: a large pale-blue sheet rather than a river channel.
+- **Cause 1 — the river rule never ran.** ADR-0025 classifies a river by the source name
+  `høydekurver`; Kartverket's answers spell it `hoydekurver`. No sample was ever a river, so the
+  29 river surfaces in the frame kept their curve heights (16–26 m) as ground: a 16–20 m wall
+  along the river, with the water drawn on it and cut back to the plain's level. The test that
+  covered the rule used the same wrong spelling. The rule now matches the terrain type `Elv` and
+  either spelling.
+- **Cause 2 — the tile outline is not the mapped outline.** The z14 tiles generalise the water to
+  the tile grid (stair-stepped edges) and draw the river's centre line again as a ribbon:
+  35 273 m² against the mapped 31 026 m². Measured against OpenStreetMap's own map tiles, the
+  river is 58–61 m wide in the northern half of the frame and 78–106 m in the southern half,
+  which is what the mapped polygons carry.
+- **Cause 3 — the trees came from a dead endpoint.** Overpass answered 502, 429 and "fetch
+  failed", so the import fell back to illustrative trees.
+- **Fix.** One OpenStreetMap request per frame (`api/0.6/map?bbox=…`) now answers for the water
+  outlines and the mapped trees; the Overpass source is removed. The generalised tile outline
+  stays as the fallback with the `water-coarse` warning, and a rate-limited answer is repeated
+  once after a pause.
+- **Measured after the fix (live import, 400 m frame):** 29 of 169 samples reported as
+  river-surface; the ground along the river −4.2 m to 3.5 m relative to the origin beside land at
+  3.5 m to 8.2 m; the water level −2.45 m to 0.23 m; the cut inside the mapped outline 2.9–5.2 m,
+  a 4–5 m channel; 31 026 m² of mapped water against 35 273 m² of tile water; 12 mapped trees
+  placed. The OpenStreetMap answer: HTTP 200 in 0.47 s, 497 524 bytes, 1 926 nodes, 122 ways,
+  17 relations.
+- **Tests:** 18 new (the OSM reader 5, the water 6, the trees 7, the river classification 1, the
+  import wiring 2, the step count and the progress bar). Suite: lint passes, 1044 unit tests pass
+  (4 skipped), the build passes.
+- **Screenshots:** `docs/screenshots/water-import-bakklandet-1440x900.png` and
+  `docs/screenshots/water-import-bakklandet-low-1440x900.png` (the live import, captured by
+  `scripts/capture-water.mjs` with `IMPORT=1`) — the river now reads as a meandering channel with
+  banks. The curated screenshots are unchanged.
+- **Open:** the `engineering-code-reviewer` pass over this change, and the
+  `design-ui-finish-gate-reviewer` pass over the import screenshots.

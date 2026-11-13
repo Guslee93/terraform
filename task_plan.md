@@ -288,3 +288,29 @@ Implemented: the analysis cards moved from the bottom dock into the Parameters p
 - [x] Evidence screenshots: `docs/screenshots/panel-*.png`, captured by `scripts/capture-panel.mjs`.
 - [ ] The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.
 
+
+## The water's geometry on the import path — 2026-11-13
+
+Implemented: the import reads the water outlines and the mapped trees from OpenStreetMap's own
+geometry, and a river is recognised as a river (ADR-0027).
+
+- [x] The river rule ADR-0025 introduced now runs: a sample is a river when the answer says
+      `terreng: "Elv"` or when the source is an elevation curve under either spelling
+      (`høydekurver`, `hoydekurver` — Kartverket's answers use the ASCII one, so the ø spelling
+      never matched and every imported river was a 16–20 m wall of ground).
+- [x] One OpenStreetMap request per frame (`api/0.6/map?bbox=…`) answers for the water outlines
+      and the mapped trees; the Overpass tree source is removed.
+- [x] The mapped water: closed ways that map a surface, relations that map a body, and the centre
+      lines of the watercourses that have no area. A centre line that runs inside a mapped area
+      is not drawn a second time.
+- [x] The generalised map-tile outline stays as the fallback, with the `water-coarse` warning; a
+      rate-limited answer is repeated once after a pause.
+- [x] Unit tests: the OSM reader (5), the water (6), the trees (7), the river classification, the
+      import wiring and the tile fallback.
+- [x] `npm run lint`, `npm run test` (1044 passed / 4 skipped) and `npm run build` pass.
+- [x] Evidence: `docs/screenshots/water-import-bakklandet-1440x900.png` and
+      `docs/screenshots/water-import-bakklandet-low-1440x900.png` — the river reads as a
+      meandering channel with banks; `docs/decisions/ADR-0027-osm-water-geometry.md`;
+      `docs/reviews/water-geometry-review.md`.
+- [x] The curated packages are byte-identical: the rule is applied when the studio loads a package.
+- [ ] The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.

@@ -30,18 +30,25 @@ it('classifies each sea indicator independently, even with null height', () => {
 it('treats a river surface from elevation curves as water, and leaves its height out of the ground', () => {
   // The height of an elevation curve is referenced to the curve datum, not to mean sea level:
   // a river read from it sat 20 m above the ground on either side of it (ADR-0025).
+  //
+  // Kartverket's own name for the source is 'høydekurver', but the answers spell it 'hoydekurver',
+  // and only that spelling appears in the data. Reading the ø spelling alone left every river a
+  // 20 m wall of ground, which is what the studio drew (ADR-0027).
   const samples = parseKartverketSamples({punkter:[
-    {x:10,y:60,z:20,datakilde:'høydekurver',terreng:'Elv'},
-    {x:11,y:60,z:3.5,datakilde:'dtm1',terreng:'ÅpentOmråde'},
-  ]},[[10,60],[11,60]])
-  expect(samples.map(s=>s.kind)).toEqual(['river','land'])
-  const values = measured(); values[0]=samples[0]!; values[1]=samples[1]!
+    {x:10,y:60,z:20,datakilde:'hoydekurver',terreng:'Elv'},
+    {x:11,y:60,z:20,datakilde:'høydekurver',terreng:'Elv'},
+    {x:12,y:60,z:20,terreng:'Elv'},
+    {x:13,y:60,z:3.5,datakilde:'dtm1',terreng:'ÅpentOmråde'},
+  ]},[[10,60],[11,60],[12,60],[13,60]])
+  expect(samples.map(s=>s.kind)).toEqual(['river','river','river','land'])
+  const values = measured(); values[0]=samples[0]!; values[1]=samples[1]!; values[2]=samples[2]!; values[3]=samples[3]!
   const grid = buildTerrainGrid(values)
-  expect(grid.counts.river).toBe(1)
+  expect(grid.counts.river).toBe(3)
   expect(grid.counts.estimated).toBe(0)
   expect(grid.flags[0]).toBe('river-surface')
   // The ground under the river comes from the banks, not from the curve.
-  expect(grid.absolute[0]).toBe(3.5)
+  expect(grid.absolute.slice(0,3).every(height=>height!==20)).toBe(true)
+  expect(grid.absolute[3]).toBe(3.5)
 })
 it('does not count river cells against the estimate limit', () => {
   const samples = measured()

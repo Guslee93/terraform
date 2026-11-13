@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="hand-written-fixture">
+ <bounds minlat="59.9211" minlon="10.7568" maxlat="59.9239" maxlon="10.7624"/>
+ <node id="1" visible="true" version="1" lat="59.921602" lon="10.758428"/>
+ <node id="2" visible="true" version="1" lat="59.921602" lon="10.760573"/>
+ <node id="3" visible="true" version="1" lat="59.923398" lon="10.760573"/>
+ <node id="4" visible="true" version="1" lat="59.923398" lon="10.758428"/>
+ <node id="5" visible="true" version="1" lat="59.921602" lon="10.759500"/>
+ <node id="6" visible="true" version="1" lat="59.923398" lon="10.759500"/>
+ <node id="7" visible="true" version="1" lat="59.923848" lon="10.756819">
+  <tag k="natural" v="tree"/>
+ </node>
+ <node id="8" visible="true" version="1" lat="59.922949" lon="10.756283"/>
+ <node id="9" visible="true" version="1" lat="59.923129" lon="10.756283"/>
+ <node id="10" visible="true" version="1" lat="59.922680" lon="10.761288"/>
+ <node id="11" visible="true" version="1" lat="59.922680" lon="10.762361"/>
+ <node id="12" visible="true" version="1" lat="59.923219" lon="10.762361"/>
+ <node id="13" visible="true" version="1" lat="59.923219" lon="10.761288"/>
+ <node id="14" visible="true" version="1" lat="59.922500" lon="10.760900"/>
+ <node id="15" visible="true" version="1" lat="59.922800" lon="10.760900"/>
+ <node id="16" visible="true" version="1" lat="59.922800" lon="10.761200"/>
+ <node id="17" visible="true" version="1" lat="59.922500" lon="10.761200"/>
+ <node id="18" visible="true" version="1" lat="59.921153" lon="10.757712"/>
+ <node id="19" visible="true" version="1" lat="59.921332" lon="10.757712"/>
+ <way id="100" visible="true" version="1">
+  <nd ref="1"/>
+  <nd ref="2"/>
+  <nd ref="3"/>
+  <nd ref="4"/>
+  <nd ref="1"/>
+  <tag k="natural" v="water"/>
+  <tag k="water" v="river"/>
+  <tag k="name" v="Akerselva"/>
+ </way>
+ <way id="101" visible="true" version="1">
+  <nd ref="5"/>
+  <nd ref="6"/>
+  <tag k="waterway" v="river"/>
+  <tag k="name" v="Akerselva"/>
+ </way>
+ <way id="102" visible="true" version="1">
+  <nd ref="8"/>
+  <nd ref="9"/>
+  <tag k="natural" v="tree_row"/>
+ </way>
+ <way id="103" visible="true" version="1">
+  <nd ref="10"/>
+  <nd ref="11"/>
+  <nd ref="12"/>
+  <nd ref="13"/>
+  <tag k="natural" v="water"/>
+  <tag k="water" v="lake"/>
+ </way>
+ <way id="104" visible="true" version="1">
+  <nd ref="13"/>
+  <nd ref="10"/>
+ </way>
+ <way id="105" visible="true" version="1">
+  <nd ref="14"/>
+  <nd ref="15"/>
+  <nd ref="16"/>
+  <nd ref="17"/>
+  <nd ref="14"/>
+  <tag k="building" v="yes"/>
+ </way>
+ <way id="106" visible="true" version="1">
+  <nd ref="18"/>
+  <nd ref="19"/>
+  <tag k="waterway" v="canal"/>
+  <tag k="width" v="4.5"/>
+ </way>
+ <relation id="200" visible="true" version="1">
+  <member type="way" ref="103" role="outer"/>
+  <member type="way" ref="104" role="outer"/>
+  <tag k="type" v="multipolygon"/>
+  <tag k="natural" v="water"/>
+  <tag k="water" v="lake"/>
+ </relation>
+</osm>

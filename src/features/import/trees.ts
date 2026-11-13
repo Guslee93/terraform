@@ -2,14 +2,8 @@ import { pointInPolygon } from '../../lib/polygon'
 import type { BuildingDraft } from './buildings'
 import { frameBounds, type ImportFrame } from './frame'
 import { clipRing, outerRings, repairRing, toLocal, type Point2, type Ring } from './geometry'
-import { requestBytes, checkAbort } from './request'
+import { wayPoints, type OsmData } from './osm'
 import type { TileFeature } from './tiles'
-
-export type TreeSource = {
-  name: string; attribution: string; url?: string; license?: string
-  /** Mapped trees as [lon, lat] lines: one point per tree, several for a tree row. Throws when unavailable. */
-  fetchTrees(bounds: readonly [number, number, number, number], signal?: AbortSignal): Promise<[number, number][][]>
-}
 
 const ROW_SPACING = 8
 /** Grid spacing (m) of illustrative trees per mapped area; anything else gets none. */
@@ -17,85 +11,21 @@ const ILLUSTRATIVE_SPACING: Record<string, number> = { wood: 9, garden: 14, park
 const MAX_TREES = 3000
 
 /**
- * Planet Overpass endpoints, tried in order. The public instances are donation-funded and
- * rate limited, so a failure moves on to the next one instead of failing the import.
+ * The mapped trees of an OpenStreetMap response, as [lon, lat] lines.
+ *
+ * A tree is a node (`natural=tree`); a tree row is a way (`natural=tree_row`) whose nodes are the
+ * trees along it. The response is the same one the water outlines are read from, so a frame
+ * costs one request for both (ADR-0027).
  */
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.osm.rwth-aachen.de/api/interpreter',
-] as const
-/** Wall-clock budget for the whole tree step, across every endpoint and attempt. */
-const OVERPASS_BUDGET_MS = 15_000
-/** Delay before the next endpoint, so a throttled instance is not hammered. */
-const OVERPASS_BACKOFF_MS = 500
-
-function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort)
-      resolve()
-    }, ms)
-    const onAbort = () => {
-      clearTimeout(timer)
-      reject(new DOMException('Import cancelled', 'AbortError'))
-    }
-    signal?.addEventListener('abort', onAbort, { once: true })
-  })
-}
-
-/** OSM natural=tree nodes plus natural=tree_row ways, resampled every 8 m along the row. */
-export function overpassTrees(endpoint: string = OVERPASS_ENDPOINTS[0], timeoutMs = 5000): TreeSource {
-  const endpoints = [endpoint, ...OVERPASS_ENDPOINTS.filter((url) => url !== endpoint)]
-  return {
-    name: 'Overpass API', attribution: '© OpenStreetMap contributors · ODbL 1.0', url: endpoint, license: 'ODbL 1.0',
-    async fetchTrees([west, south, east, north], signal) {
-      const box = `${south},${west},${north},${east}`
-      const query = `[out:json][timeout:25];(node["natural"="tree"](${box});way["natural"="tree_row"](${box}););out geom;`
-      // POST rather than a query string: the body stays a simple request, so no preflight is
-      // needed and the query cannot outgrow a URL limit.
-      const body = new URLSearchParams({ data: query })
-      const deadline = Date.now() + OVERPASS_BUDGET_MS
-      const failures: string[] = []
-      // A throttled instance is better answered by the next mirror than by an immediate retry,
-      // so every endpoint is tried once before any endpoint is tried again.
-      for (let pass = 0; pass < 2; pass++) {
-        for (const [index, url] of endpoints.entries()) {
-          if (index > 0 && deadline - Date.now() > OVERPASS_BACKOFF_MS) await sleep(OVERPASS_BACKOFF_MS, signal)
-          const remaining = deadline - Date.now()
-          if (remaining <= 0) break
-          try {
-            const buffer = await requestBytes(url, 'Overpass API', signal, Math.min(timeoutMs, remaining), {
-              method: 'POST',
-              body,
-            })
-            return parseOverpassTrees(JSON.parse(new TextDecoder().decode(buffer)))
-          } catch (error) {
-            checkAbort(signal)
-            failures.push(`${url}: ${error instanceof Error ? error.message : String(error)}`)
-          }
-        }
-      }
-      throw new Error(`Overpass API: ${failures.join('; ')}`)
-    },
-  }
-}
-
-const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)
-
-export function parseOverpassTrees(raw: unknown): [number, number][][] {
-  if (typeof raw !== 'object' || raw === null || !('elements' in raw) || !Array.isArray(raw.elements)) throw new Error('Overpass API: missing elements')
-  // Overpass answers a timed-out query with HTTP 200, no elements and a remark: not "no trees".
-  if (!raw.elements.length && 'remark' in raw && typeof raw.remark === 'string') throw new Error(`Overpass API: ${raw.remark}`)
+export function parseOsmTrees(data: OsmData): [number, number][][] {
   const lines: [number, number][][] = []
-  for (const element of raw.elements as unknown[]) {
-    if (typeof element !== 'object' || element === null) continue
-    const item = element as { type?: unknown; lat?: unknown; lon?: unknown; geometry?: unknown }
-    if (item.type === 'node' && finite(item.lon) && finite(item.lat)) lines.push([[item.lon, item.lat]])
-    if (item.type === 'way' && Array.isArray(item.geometry)) {
-      const line = (item.geometry as { lat?: unknown; lon?: unknown }[]).flatMap((p) => finite(p.lon) && finite(p.lat) ? [[p.lon, p.lat] as [number, number]] : [])
-      if (line.length) lines.push(line)
-    }
+  for (const node of data.nodes) {
+    if (node.tags.natural === 'tree') lines.push([[node.lon, node.lat]])
+  }
+  for (const way of data.ways) {
+    if (way.tags.natural !== 'tree_row') continue
+    const points = wayPoints(data, way)
+    if (points.length) lines.push(points)
   }
   return lines
 }

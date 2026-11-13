@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { extractLandCover, extractRoads } from './context'
+import { extractLandCover, extractRoads, extractTileWater } from './context'
 import { unproject } from './projection'
 import type { TileFeature } from './tiles'
 import { isSimpleRing } from '../../lib/polygon'
@@ -27,11 +27,17 @@ it('gives each path subclass its own width and skips transit platforms', () => {
   ],frame)
   expect(result.map(r=>[r.highway,r.width])).toEqual([['pedestrian',5],['footway',2.5],['cycleway',2.5],['steps',2]])
 })
-it('maps park, grass, wood, water and bare ground and repairs their clipped rings', () => {
+it('maps park, grass, wood and bare ground, and repairs their clipped rings', () => {
   const features: TileFeature[] = [['park',''],['landcover','grass'],['landcover','wood'],['water',''],['landcover','sand']].map(([layer,kind])=>({layer:layer!,properties:{class:kind!},geometry:{type:'Polygon',coordinates:[coords([[0,0],[10,10],[0,10],[10,0],[0,0]])]}}))
   const result = extractLandCover(features,frame)
-  expect(result.map(a=>a.kind)).toEqual(['nature','nature','grass','grass','wood','wood','water','water','bare','bare'])
+  expect(result.map(a=>a.kind)).toEqual(['nature','nature','grass','grass','wood','wood','bare','bare'])
   expect(result.every(a=>isSimpleRing(a.ring))).toBe(true)
+})
+it('keeps the water out of the land cover and in the tile water, which is the fallback', () => {
+  // The tiles generalise the water to the tile grid, so the mapped outline replaces it (ADR-0027).
+  const features: TileFeature[] = [polygon('water',{class:'water'},[[0,0],[10,10],[0,10],[10,0],[0,0]])]
+  expect(extractLandCover(features,frame)).toEqual([])
+  expect(extractTileWater(features,frame).map(a=>a.kind)).toEqual(['water','water'])
 })
 it('maps the greenery the tiles already carry instead of dropping it', () => {
   // The frame is 400 m across, so the polygons are laid out inside it.
@@ -85,7 +91,7 @@ it('draws a pedestrian area as a paved ground tint', () => {
 it('draws a waterway mapped as a line as a water surface', () => {
   const line: TileFeature = {layer:'waterway',properties:{class:'river'},geometry:{type:'LineString',coordinates:coords([[-200,0],[200,0]])}}
   const drain: TileFeature = {layer:'waterway',properties:{class:'drain'},geometry:{type:'LineString',coordinates:coords([[-200,10],[200,10]])}}
-  const result = extractLandCover([line,drain],frame)
+  const result = extractTileWater([line,drain],frame)
   expect(result.map(a=>a.kind)).toEqual(['water'])
   expect(result[0]!.ring.length).toBeGreaterThanOrEqual(3)
 })
@@ -93,4 +99,5 @@ it('ignores a class that names an Object.prototype member', () => {
   const stream: TileFeature = {layer:'waterway',properties:{class:'constructor'},geometry:{type:'LineString',coordinates:coords([[-50,0],[50,0]])}}
   expect(extractRoads([road([[0,0],[100,0]],'constructor'),road([[0,10],[100,10]],'path','','toString')],frame)).toEqual([])
   expect(extractLandCover([stream],frame)).toEqual([])
+  expect(extractTileWater([stream],frame)).toEqual([])
 })

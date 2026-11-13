@@ -57,6 +57,12 @@ narrower than the mapped polygon. The rule is applied when the studio loads a
 package, so the package itself carries no level and stays immutable. It follows the
 mapped outline, not a survey of the river bed.
 
+An imported package's water comes from OpenStreetMap's own geometry, read in one
+request per frame; a watercourse mapped as a line is drawn as a ribbon of an
+illustrative width, and a centre line that runs inside a mapped water area is not
+drawn a second time (ADR-0027). When that answer is unavailable the generalised
+map-tile outline is used instead, and the import reports `water-coarse`.
+
 The card thumbnail lives at `public/sites/<site-id>.svg` and is referenced from
 `assetPaths.thumbnail`. Paths in the manifest are relative to the package root,
 except the thumbnail; no remote URLs. `assetPaths.thumbnail` and `assetPaths.attribution`

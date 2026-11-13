@@ -1,13 +1,15 @@
 // @vitest-environment node
+import { readFileSync } from 'node:fs'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { Position } from 'geojson'
 import grunerlokkaTerrain from './__fixtures__/terrain/grunerlokka.json'
 import { importSite } from './assemble'
-import { extractLandCover } from './context'
+import { extractLandCover, extractTileWater } from './context'
 import { frameBounds } from './frame'
+import { parseOsmXml, type OsmAreaSource } from './osm'
 import { kartverketProvider, parseKartverketSamples, type TerrainProvider } from './terrain'
 import { fixtureTiles, grunerlokka } from './testFixtures'
-import { illustrativeTrees, overpassTrees, parseOverpassTrees, placeTrees, resampleRow, type TreeSource } from './trees'
+import { illustrativeTrees, mappedTrees, parseOsmTrees, placeTrees, resampleRow } from './trees'
 import { dropTreesOnWater } from '../sites/treePlacement'
 import { pointInPolygon } from '../../lib/polygon'
 import { unproject } from './projection'
@@ -20,14 +22,24 @@ const terrain: TerrainProvider = {
   sample: async () => grunerlokkaTerrain.batches.flatMap((batch) => parseKartverketSamples(batch.response, batch.response.punkter.map((p) => [p.x, p.y]))),
 }
 
-it('parses Overpass nodes and tree rows, ignoring malformed elements', () => {
-  expect(parseOverpassTrees({ elements: [
-    { type: 'node', lat: 59.92, lon: 10.75 },
-    { type: 'node', lat: 'x', lon: 10.75 },
-    { type: 'way', geometry: [{ lat: 59.921, lon: 10.751 }, { lat: 59.922, lon: 10.752 }] },
-    null,
-  ] })).toEqual([[[10.75, 59.92]], [[10.751, 59.921], [10.752, 59.922]]])
-  expect(() => parseOverpassTrees({})).toThrow(/missing elements/)
+const osmFixtureXml = readFileSync(new URL('./__fixtures__/osm/frame.xml', import.meta.url), 'utf8')
+
+/** The OpenStreetMap source of the fixture answer. */
+function osmSource(answer = osmFixtureXml): OsmAreaSource {
+  return {
+    name: 'OpenStreetMap API',
+    attribution: '© OpenStreetMap contributors · ODbL 1.0',
+    url: 'https://api.openstreetmap.org/api/0.6',
+    license: 'ODbL 1.0',
+    fetchArea: vi.fn(async () => parseOsmXml(answer)),
+  }
+}
+
+it('reads the mapped trees of the answer: single trees and tree rows', () => {
+  const lines = parseOsmTrees(parseOsmXml(osmFixtureXml))
+  expect(lines).toHaveLength(2)
+  expect(lines[0]).toHaveLength(1)
+  expect(lines[1]).toHaveLength(2)
 })
 
 it('resamples a tree row every 8 m including both ends', () => {
@@ -40,58 +52,26 @@ it('drops trees outside the frame, inside buildings and within 1 m of another', 
   expect(placed).toEqual([[20, 20]])
 })
 
-it('uses mapped trees when the source answers and credits it', async () => {
+it('uses the mapped trees of the answer and credits the source', async () => {
   vi.stubGlobal('fetch', vi.fn(() => { throw new Error('Tests must not use the network') }))
-  const [lat, lon] = unproject(-150, 120, grunerlokka.latitude, grunerlokka.longitude)
-  const source: TreeSource = { name: 'Overpass API', attribution: '© OpenStreetMap contributors', fetchTrees: vi.fn(async (): Promise<[number, number][][]> => [[[lon, lat]]]) }
-  const result = await importSite(grunerlokka, { tiles: fixtureTiles, terrain: [terrain], trees: source })
-  expect(source.fetchTrees).toHaveBeenCalledWith(frameBounds(grunerlokka).lonLat, undefined)
-  expect(result.sitePackage.trees).toHaveLength(1)
-  expect(result.sitePackage.trees[0]![0]).toBeCloseTo(-150, 0)
-  expect(result.sitePackage.trees[0]![1]).toBeCloseTo(120, 0)
+  const source = osmSource()
+  const result = await importSite(grunerlokka, { tiles: fixtureTiles, terrain: [terrain], osm: source })
+  expect(source.fetchArea).toHaveBeenCalledWith(frameBounds(grunerlokka).lonLat, undefined)
+  // The fixture holds one single tree and one tree row of two trees, resampled every 8 m.
+  expect(result.sitePackage.trees).toHaveLength(4)
   expect(result.warnings.some((w) => w.code === 'trees-unavailable')).toBe(false)
-  expect(result.sitePackage.manifest.sources.map((s) => s.title)).toContain('Overpass API')
+  expect(result.sitePackage.manifest.sources.map((s) => s.title)).toContain('OpenStreetMap API')
 })
 
 it('falls back to illustrative trees and says why when the source fails', async () => {
-  const source: TreeSource = { name: 'Overpass API', attribution: '©', fetchTrees: async () => { throw new Error('Overpass API: HTTP 504') } }
-  const result = await importSite(grunerlokka, { tiles: fixtureTiles, terrain: [terrain], trees: source })
+  const source: OsmAreaSource = {
+    name: 'OpenStreetMap API', attribution: '©',
+    fetchArea: async () => { throw new Error('OpenStreetMap API: HTTP 429') },
+  }
+  const result = await importSite(grunerlokka, { tiles: fixtureTiles, terrain: [terrain], osm: source })
   expect(result.sitePackage.trees.length).toBeGreaterThan(0)
-  expect(result.warnings.find((w) => w.code === 'trees-unavailable')?.message).toMatch(/illustrative.*HTTP 504/)
-  expect(result.sitePackage.manifest.sources.map((s) => s.title)).not.toContain('Overpass API')
-})
-
-it('posts the tree query and fails over to the next endpoint when one is throttled', async () => {
-  const calls: { url: string; method?: string }[] = []
-  vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
-    calls.push({ url: String(url), method: init?.method })
-    if (calls.length === 1) return new Response('', { status: 429 })
-    return new Response(JSON.stringify({ elements: [{ type: 'node', lat: 59.92, lon: 10.75 }] }))
-  }))
-  const source = overpassTrees()
-  const lines = await source.fetchTrees([10.75, 59.92, 10.76, 59.93])
-  expect(lines).toEqual([[[10.75, 59.92]]])
-  expect(calls[0]!.method).toBe('POST')
-  expect(calls[0]!.url).toContain('overpass-api.de')
-  expect(calls.length).toBeGreaterThan(1)
-  expect(calls[1]!.url).not.toBe(calls[0]!.url)
-})
-
-it('gives up on the tree step inside its budget and names every endpoint it tried', async () => {
-  const calls: string[] = []
-  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-    calls.push(String(url))
-    return new Response('', { status: 503 })
-  }))
-  const source = overpassTrees()
-  await expect(source.fetchTrees([10.75, 59.92, 10.76, 59.93])).rejects.toThrow(/Overpass API:.*503.*503/s)
-  expect(calls.length).toBeGreaterThan(0)
-  expect(calls.length).toBeLessThanOrEqual(6)
-})
-
-it('treats an Overpass timeout remark as a failure, not as an area without trees', () => {
-  expect(() => parseOverpassTrees({ elements: [], remark: 'runtime error: Query timed out' })).toThrow(/timed out/)
-  expect(parseOverpassTrees({ elements: [] })).toEqual([])
+  expect(result.warnings.find((w) => w.code === 'trees-unavailable')?.message).toMatch(/illustrative.*HTTP 429/)
+  expect(result.sitePackage.manifest.sources.map((s) => s.title)).not.toContain('OpenStreetMap API')
 })
 
 it('thins evenly across the frame when more trees than the cap are available', () => {
@@ -119,16 +99,23 @@ it('drops the grid trees that a park polygon puts on the water (ADR-0024)', () =
     { layer: 'water', properties: { class: 'water' }, geometry: { type: 'Polygon', coordinates: [square(-50, -50, 100)] } },
   ]
   const areas = extractLandCover(features, grunerlokka)
-  const water = areas.filter((area) => area.kind === 'water')
+  const water = extractTileWater(features, grunerlokka)
   expect(water).toHaveLength(1)
 
   const grid = illustrativeTrees(features, grunerlokka)
   // The grid really does fall on the water: the park polygon covers the lake.
   expect(grid.some((tree) => water.some((area) => pointInPolygon(tree, area.ring)))).toBe(true)
 
-  const kept = dropTreesOnWater(grid, areas)
+  const kept = dropTreesOnWater(grid, [...areas, ...water])
   expect(kept.some((tree) => water.some((area) => pointInPolygon(tree, area.ring)))).toBe(false)
   // The park outside the lake keeps its canopy.
   expect(kept.length).toBeGreaterThan(0)
   expect(kept.length).toBeLessThan(grid.length)
+})
+
+it('places the mapped trees in local metres', () => {
+  const [lat, lon] = unproject(-150, 120, grunerlokka.latitude, grunerlokka.longitude)
+  const placed = mappedTrees([[[lon, lat]]], grunerlokka)
+  expect(placed[0]![0]).toBeCloseTo(-150, 0)
+  expect(placed[0]![1]).toBeCloseTo(120, 0)
 })

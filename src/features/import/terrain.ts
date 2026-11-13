@@ -49,6 +49,15 @@ export function terrainPoints(frame: ImportFrame): [number, number][] {
     return [Number(lon.toFixed(8)), Number(lat.toFixed(8))]
   })
 }
+/**
+ * The elevation curves Kartverket holds for a river.
+ *
+ * Kartverket's own name for the source is `høydekurver`, but the answers spell it `hoydekurver`;
+ * only the ASCII spelling appears in the data. The terrain type is the reliable signal: `Elv` is
+ * a river, whatever the source is called.
+ */
+const CURVE_SOURCES: ReadonlySet<string> = new Set(['høydekurver', 'hoydekurver'])
+
 export function parseKartverketSamples(value: unknown, points: readonly [number, number][]): TerrainSample[] {
   if (typeof value !== 'object' || value === null || !('punkter' in value) || !Array.isArray(value.punkter) || value.punkter.length !== points.length) throw new Error('Kartverket: elevation response count mismatch')
   return value.punkter.map((entry: unknown, index) => {
@@ -57,8 +66,9 @@ export function parseKartverketSamples(value: unknown, points: readonly [number,
     if (!('x' in entry) || !('y' in entry) || typeof entry.x !== 'number' || typeof entry.y !== 'number' || Math.abs(entry.x - point[0]) > 1e-7 || Math.abs(entry.y - point[1]) > 1e-7 || !Number.isFinite(entry.x) || !Number.isFinite(entry.y)) throw new Error('Kartverket: elevation response coordinates/order mismatch')
     const sea = ('terreng' in entry && entry.terreng === 'Havflate') || ('datakilde' in entry && entry.datakilde === 'dybdekurver')
     // Elevation curves are referenced to the curve datum: the height is not a ground elevation.
-    const curve = 'datakilde' in entry && entry.datakilde === 'høydekurver'
-    return { height: entry.z, kind: curve ? 'river' : sea ? 'water' : 'land' }
+    const curve = ('datakilde' in entry && typeof entry.datakilde === 'string' && CURVE_SOURCES.has(entry.datakilde))
+      || ('terreng' in entry && entry.terreng === 'Elv')
+    return { height: entry.z, kind: sea ? 'water' : curve ? 'river' : 'land' }
   })
 }
 export function kartverketProvider(): TerrainProvider {

@@ -13,7 +13,7 @@ import { StoreError, toStoreError } from '../features/scenarios/store'
 import { kartverketSurface } from '../features/import/surface'
 import { kartverketProvider, terrariumProvider } from '../features/import/terrain'
 import { openFreeMapSource } from '../features/import/tiles'
-import { overpassTrees } from '../features/import/trees'
+import { osmApiArea } from '../features/import/osm'
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron'
 const START = QUICK_PICKS[0] ?? { label: 'Custom area', latitude: 59.9239, longitude: 10.7579 }
@@ -24,6 +24,7 @@ const PANEL_OFFSET = 400
 const STEPS: readonly { id: ImportStep; label: string; source: string }[] = [
   { id: 'tiles', label: 'Map tiles', source: 'OpenFreeMap' },
   { id: 'buildings', label: 'Buildings', source: 'OpenStreetMap' },
+  { id: 'water', label: 'Water outlines', source: 'OpenStreetMap' },
   { id: 'context', label: 'Streets and green space', source: 'OpenStreetMap' },
   { id: 'terrain', label: 'Terrain', source: 'Kartverket or AWS Terrain Tiles' },
   { id: 'roofs', label: 'Roof shapes', source: 'Kartverket surface model (Norway only)' },
@@ -32,7 +33,7 @@ const STEPS: readonly { id: ImportStep; label: string; source: string }[] = [
 type StepState = 'waiting' | 'start' | 'done' | 'skipped' | 'failed'
 const STATUS_WORD: Record<StepState, string> = { waiting: 'Waiting', start: 'Loading', done: 'Done', skipped: 'Skipped', failed: 'Failed' }
 const WAITING: Record<ImportStep, { state: StepState; detail?: string }> = {
-  tiles: { state: 'waiting' }, buildings: { state: 'waiting' }, context: { state: 'waiting' }, terrain: { state: 'waiting' }, roofs: { state: 'waiting' }, assemble: { state: 'waiting' },
+  tiles: { state: 'waiting' }, buildings: { state: 'waiting' }, water: { state: 'waiting' }, context: { state: 'waiting' }, terrain: { state: 'waiting' }, roofs: { state: 'waiting' }, assemble: { state: 'waiting' },
 }
 
 type Phase = 'idle' | 'loading' | 'cancelled' | 'error'
@@ -125,7 +126,7 @@ export function NewSitePage() {
     try {
       const result = await importSite(
         framed.frame,
-        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], trees: overpassTrees(), roofs: kartverketSurface() },
+        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], osm: osmApiArea(), roofs: kartverketSurface() },
         {
           signal: current.signal,
           onProgress: (step, state, detail) => setSteps((previous) => ({ ...previous, [step]: { state, detail } })),

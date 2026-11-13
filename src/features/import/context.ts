@@ -77,6 +77,11 @@ export function extractRoads(features: readonly TileFeature[], frame: ImportFram
  * The tiles carry far more greenery than the studio used to show: gardens, allotments, scrub,
  * pitches, cemeteries, beaches and bare rock all arrive in the vector tiles and are mapped here
  * so the ground reads as a real place rather than a green wash.
+ *
+ * Water is not drawn here. The tiles generalise it to the z14 grid — a 30 m river arrives as a
+ * blob twice its real size — so the water comes from OpenStreetMap's own geometry instead
+ * (ADR-0026). `extractTileWater` holds the generalised outline, used only when that geometry
+ * cannot be fetched.
  */
 function landCoverKind(feature: TileFeature): LandCoverKind | null {
   if (feature.layer === 'park') return 'nature'
@@ -106,6 +111,36 @@ export function extractLandCover(features: readonly TileFeature[], frame: Import
   const areas: LandCoverArea[] = []
   const extent = frameBounds(frame, origin).enu
   for (const f of features) {
+    if (f.layer === 'transportation') {
+      // Plazas and pedestrian areas are polygons in the transportation layer, not centrelines.
+      const subclass = typeof f.properties.subclass === 'string' ? f.properties.subclass : undefined
+      if (!subclass || !PLAZA_SUBCLASSES.has(subclass)) continue
+      for (const outer of outerRings(f.geometry)) {
+        for (const ring of repairRing(clipRing(toLocal(outer, origin), extent))) {
+          areas.push({ id: `plaza-${f.id ?? 'anonymous'}-${areas.length}`, kind: 'plaza', ring })
+        }
+      }
+      continue
+    }
+    const kind = landCoverKind(f)
+    if (!kind || kind === 'water') continue
+    for (const outer of outerRings(f.geometry)) for (const ring of repairRing(clipRing(toLocal(outer, origin), extent))) {
+      areas.push({ id: `${f.layer}-${f.id ?? 'anonymous'}-${areas.length}`, kind, ring })
+    }
+  }
+  return areas
+}
+
+/**
+ * The water of the tiles: the generalised water polygons and the watercourse ribbons.
+ *
+ * This is the fallback for a frame whose OpenStreetMap geometry could not be fetched. The
+ * polygons are generalised to the tile grid and are the reason the water is fetched at all.
+ */
+export function extractTileWater(features: readonly TileFeature[], frame: ImportFrame, origin: Origin = frame): LandCoverArea[] {
+  const areas: LandCoverArea[] = []
+  const extent = frameBounds(frame, origin).enu
+  for (const f of features) {
     if (f.layer === 'waterway') {
       // Rivers and streams mapped as lines become illustrative ribbons of water.
       const className = f.properties.class
@@ -120,21 +155,9 @@ export function extractLandCover(features: readonly TileFeature[], frame: Import
       }
       continue
     }
-    if (f.layer === 'transportation') {
-      // Plazas and pedestrian areas are polygons in the transportation layer, not centrelines.
-      const subclass = typeof f.properties.subclass === 'string' ? f.properties.subclass : undefined
-      if (!subclass || !PLAZA_SUBCLASSES.has(subclass)) continue
-      for (const outer of outerRings(f.geometry)) {
-        for (const ring of repairRing(clipRing(toLocal(outer, origin), extent))) {
-          areas.push({ id: `plaza-${f.id ?? 'anonymous'}-${areas.length}`, kind: 'plaza', ring })
-        }
-      }
-      continue
-    }
-    const kind = landCoverKind(f)
-    if (!kind) continue
+    if (f.layer !== 'water') continue
     for (const outer of outerRings(f.geometry)) for (const ring of repairRing(clipRing(toLocal(outer, origin), extent))) {
-      areas.push({ id: `${f.layer}-${f.id ?? 'anonymous'}-${areas.length}`, kind, ring })
+      areas.push({ id: `water-${f.id ?? 'anonymous'}-${areas.length}`, kind: 'water', ring })
     }
   }
   return areas
