@@ -121,6 +121,8 @@ test('a committed roof drag is one undo entry', async ({ page }) => {
   await expect(storeys).toHaveValue('3')
 })
 test('storeys, delete, undo and reload use session-only blocks', async ({ page }) => {
+  // Opens the studio twice (draw, then reload), so it gets the same budget as the drag tests.
+  test.slow()
   await createMass(page)
   const storeys = page.getByRole('spinbutton', { name: 'Storeys' })
   await storeys.fill('8')

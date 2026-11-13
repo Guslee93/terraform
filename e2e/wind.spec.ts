@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
 import { openAnalysis, parameters } from './studio-helpers'
+import { budget } from './budget'
 
 // X4 — wind flow e2e (docs/handoffs/X4-minimax-wind-e2e-casestudy.md).
 //
@@ -12,7 +13,7 @@ import { openAnalysis, parameters } from './studio-helpers'
 // name changes. The baseline can only be captured from a settled field, so the wait for
 // "Set baseline" is the solver catching up, not a flake.
 test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
-test.setTimeout(120_000)
+test.setTimeout(budget(120_000))
 
 const DISCLAIMER = 'Indicative wind screening — 2D flow, not engineering'
 
@@ -34,10 +35,10 @@ test('X4: the wind layer shows its disclaimer and legend, and the baseline/delta
 
   // Wind on: the claim shows on the viewport (C23 review finding 3) and in the wind card of the
   // Parameters panel with the legend once the flow is solved.
-  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(DISCLAIMER)).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(DISCLAIMER)).toBeVisible({ timeout: budget(15_000) })
   await expect(page.getByRole('region', { name: 'Wind card' }).getByText(DISCLAIMER)).toBeVisible()
-  await expect(parameters(page).getByText(DISCLAIMER)).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: 15_000 })
+  await expect(parameters(page).getByText(DISCLAIMER)).toBeVisible({ timeout: budget(15_000) })
+  await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: budget(15_000) })
 
   // Comfort is the default map; Direction shows the speed ratio against open ground.
   const displays = page.getByRole('group', { name: 'Wind map shows' })
@@ -61,7 +62,7 @@ test('X4: the wind layer shows its disclaimer and legend, and the baseline/delta
 
   // A baseline may only be taken from a settled field: wait for the solver to finish.
   const setBaseline = page.getByRole('button', { name: 'Set baseline', exact: true })
-  await expect(setBaseline).toBeEnabled({ timeout: 30_000 })
+  await expect(setBaseline).toBeEnabled({ timeout: budget(30_000) })
   await setBaseline.click()
 
   // Delta appears once there is a baseline; nothing has changed, so it reads "No change".
@@ -81,8 +82,8 @@ test('ADR-0015: the all-directions sweep fills the rose, opens Worst case, and a
   await openClimateGroup(page)
   const section = page.getByRole('region', { name: 'All wind directions' })
   await section.getByRole('button', { name: 'Analyse 8 directions' }).click()
-  await expect(section.getByText(/Worst direction:/)).toBeVisible({ timeout: 60_000 })
-  await expect(section.getByText(/directions solved/)).toHaveCount(0, { timeout: 60_000 })
+  await expect(section.getByText(/Worst direction:/)).toBeVisible({ timeout: budget(60_000) })
+  await expect(section.getByText(/directions solved/)).toHaveCount(0, { timeout: budget(60_000) })
   await expect(section.getByRole('button', { name: /^Wind from/ })).toHaveCount(8)
   await expect(section.getByText(/weighted equally — not measured climate frequency/)).toBeVisible()
 

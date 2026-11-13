@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import { expect, test } from '@playwright/test'
 import { openAnalysis } from './studio-helpers'
+import { budget } from './budget'
 
 // D33 — M3 fixed-camera evidence screenshots (docs/plans/M3-fable-plan.md §10, §11).
 //
@@ -13,7 +14,7 @@ import { openAnalysis } from './studio-helpers'
 // Capture is opt-in so the regular suite stays fast and file-system quiet:
 //   SHOT_EVIDENCE=1 npx playwright test e2e/m3-evidence.spec.ts
 test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
-test.setTimeout(180_000)
+test.setTimeout(budget(180_000))
 
 const OUT_DIR = 'docs/screenshots'
 const SHOT_SUFFIX = '1440x900'
