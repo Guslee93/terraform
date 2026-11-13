@@ -245,3 +245,18 @@
   `skipped`, `failed`); the bar is the share of settled steps plus half for the step in flight. The
   step list was never missing information — it was missing a shape you could read at a glance.
 
+
+## 2026-11-13 — Wind lift, Phase 1: seven slice heights (ADR-0028)
+
+- **The cost is in the ground slice, not the upper ones.** The 2 m slice is solved on the full grid and
+  dominates the stack (Compact Infill ≈ 7.5 s of 11–13 s). Upper slices run on the ≤ 80-cell grid,
+  warm-started from the slice below, so adding three of them costs ≈ 0.4–0.8 s each on the dense site
+  and ≈ 0.1 s each where the buildings below have already dropped out (Sloped Edge 20–30 m).
+- **Measured** (`WIND_BENCHMARK=1`, two runs each): Compact Infill full stack 11.2–11.4 s → 13.1–13.3 s
+  (1.17×), Sloped Edge 5.8 s → 6.5 s (1.11×). Inside the plan's 2× budget.
+- **Index-based tests were the fragile part.** Three tests picked slices by array position
+  (`[pedestrian, ten, twenty] = slices`); with seven heights position 1 is 5 m, not 10 m. They now look
+  slices up by `z`, so a future change of heights only touches `SLICE_HEIGHTS_M`.
+- **The top-slice threshold followed the list.** `sliceHeightsFor` read the threshold as
+  `SLICE_HEIGHTS_M[3]`; it now takes the highest standard slice, so a 31–35 m roof gets a top slice
+  (31 m → 40 m) instead of falling under the old 35 m slice.

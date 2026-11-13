@@ -2,6 +2,7 @@ import { STREAMLINE_3D_NOTE } from '../../features/analysis/streamlines3d'
 import { DirectionRose, ShareBar, type RoseSector } from './DirectionRose'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { demoFrame } from '../../features/analysis/windDemo'
+import { SLICE_HEIGHTS_M } from '../../features/analysis/windProfile'
 import { CIRCLE_RADIUS, DELTA_NOTE, localSpeedMs, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { eyebrowClass, labelClass, pillButtonClass, rangeClass, segmentClass, segmentGroupClass } from '../ui/controls'
@@ -164,7 +165,7 @@ function Section({ title, children, action, regionLabel }: { title: string; chil
   )
 }
 
-export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes = true, availableHeights = [], slicesComplete = false, sliceHeights = [2, 10, 20, 35], demoPlaying = false, onToggleDemo, onDemoEdit, sweepOn = false, onSweepChange, sweep = null, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
+export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes = true, availableHeights = [], slicesComplete = false, sliceHeights = SLICE_HEIGHTS_M, demoPlaying = false, onToggleDemo, onDemoEdit, sweepOn = false, onSweepChange, sweep = null, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
   const slicesReady = availableHeights.length >= 2
   // While the demo plays, an edit stops it (restoring the user's settings) and keeps the edit.
   const set = (patch: Partial<WindSettings>) => (demoPlaying && onDemoEdit ? onDemoEdit(patch) : onWindChange({ ...wind, ...patch }))

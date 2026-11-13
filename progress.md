@@ -870,3 +870,12 @@ zoom in because the quads are small at the default site camera.
   `.github/`, `package.json` and a nested `.env.local` are caught; the check gate is green only for exactly
   `lint=0 test=0 build=0`.
 - Not run end to end: needs `MINIMAX_API_KEY`, an Opus credential and (recommended) `AGENT_PR_TOKEN`.
+
+## 2026-11-13 — Wind lift, Phase 1 (ADR-0028)
+
+- Merged #4 (plan + ADR-0028) and #6 (agent pipeline) on the owner's go-ahead; closed #2 and issue #3 as superseded.
+- Heights: `SLICE_HEIGHTS_M` 2, 5, 10, 15, 20, 25, 30 m; top slice above 30 m. First run: 8 wind tests failed, all
+  pinning the old four heights or picking slices by position; then 2 more (cached slice count, panel "0/4 ready").
+  All fixed by reading `SLICE_HEIGHTS_M` or looking slices up by `z`.
+- Benchmark (`WIND_BENCHMARK=1`, main vs branch in a worktree, two runs): Compact Infill 11.2–11.4 s → 13.1–13.3 s;
+  Sloped Edge 5.8 → 6.5 s. Recorded in the plan and `findings.md`.
