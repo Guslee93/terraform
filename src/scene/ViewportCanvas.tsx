@@ -26,7 +26,7 @@ import { WindStreamlines } from './WindStreamlines'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
 import { GhostRings, WindLiftHandle } from './WindLiftHandle'
-import { fadedBuildings, ghostHeights } from '../features/analysis/windLift'
+import { fadedBuildings, ghostHeights, windFlowStyle } from '../features/analysis/windLift'
 import { WorstArrows } from './WorstArrows'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import type { RoofSolarValue } from '../features/analysis/roofSolar'
@@ -656,9 +656,9 @@ export function ViewportCanvas({
             {facade && <FacadeSun overlay={facade} heightAt={heightAt} />}
             {windWorst && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
             {!windWorst && windFlow?.slices && windCircle && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windShown} baseline={windBaseline} />}
-            {!windWorst && windFlow && windCircle && ((windStreamlines || reducedMotion)
+            {!windWorst && windFlow && windCircle && (windFlowStyle({ lifted: windLift > 0 || liftDrag !== null, streamlinesOn: windStreamlines, reducedMotion }) === 'streamlines'
               ? windFlow.settled && (windSettings.streamlines3d || windField) && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlines3d ? null : windSettings.heightM} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
-              : windField && <WindParticles flow={windField} circle={windCircle} heightAt={windHeightAt} wind={windShown} />)}
+              : windField && <WindParticles flow={windField} circle={windCircle} heightAt={heightAt} lift={windLift} wind={windShown} />)}
             {windCircle && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={windHeightAt} />}
             {windCircle && ghostRings.length > 0 && <GhostRings centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} heights={ghostRings} />}
             {windCircle && liftable && onWindHeightChange && (

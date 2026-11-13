@@ -914,3 +914,10 @@ zoom in because the quads are small at the default site camera.
 - e2e on the production build: wind, wind-a11y and layers 11/11.
 - A sloped import capture was not possible: ws.geonorge.no, api.openstreetmap.org, tiles.openfreemap.org and
   photon.komoot.io are all unreachable from this environment (curl: no connection).
+
+## 2026-11-13 — Wind lift: particles at height (owner request)
+
+- With normal motion, a lifted map's particle trails were vertical streaks: the trail buffer kept the old height.
+  Reproduced in a 10 m capture, then fixed: the lift is a `WindParticles` prop and a change shifts the stored points.
+- Above 2 m the flow is always particles (`windFlowStyle`); 3 new unit tests. Lint, 1072 unit tests and the build
+  pass; e2e wind, wind-a11y and simplified-studio 6/6. 10 m captures with normal and reduced motion checked by eye.

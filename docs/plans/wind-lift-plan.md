@@ -75,6 +75,12 @@ Within the 2× budget, so the requested-height-first reordering (§5.1) is not n
 
 The e2e test lifts to 20 m with the slider, steps to 25 m with the keyboard on the handle, drags, cancels with Esc and returns home. Screenshots: `docs/screenshots/wind-lift-{compact-infill,sloped-edge}-{2m,10m,30m}-1440x900.png` and `docs/screenshots/wind-lift-compact-infill-top-1440x900.png` (65 m: Compact Infill has a tower over 30 m).
 
+**Changed on the owner's request (2026-11-13): the flow above 2 m is the ground's particle animation.** The lifted map showed long lines, for two reasons:
+- Trails kept their older points at the previous height, so every particle became a vertical streak while the disc moved.
+- The 3D streamlines took over when switched on or under reduced motion.
+
+Now `WindParticles` takes the lift and shifts every stored trail point by the same amount, so trails glide with the disc. `windFlowStyle` always picks particles above 2 m, or while the disc is dragged; under reduced motion they are traced once and left in place. The streamline controls are disabled above 2 m and say why.
+
 Not done:
 - **Drawn masses are not faded,** only context buildings. The user's own blocks stay solid while being designed.
 - **The handle's edge point is fixed** when the circle is placed; it does not follow the camera as it orbits.

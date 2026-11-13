@@ -80,5 +80,16 @@ export function fadedBuildings(buildings: readonly Footprinted[], circle: { read
   return faded
 }
 
+/**
+ * How the moving air is drawn. Above 2 m — or while the disc is being lifted — it is always the
+ * particle animation the ground shows, at the disc's height: the owner's call (2026-11-13), and the
+ * long 3D streamlines are a pedestrian-height view. At rest on 2 m the existing choice stands:
+ * streamlines when switched on or under reduced motion, particles otherwise.
+ */
+export function windFlowStyle({ lifted, streamlinesOn, reducedMotion }: { lifted: boolean; streamlinesOn: boolean; reducedMotion: boolean }): 'particles' | 'streamlines' {
+  if (lifted) return 'particles'
+  return streamlinesOn || reducedMotion ? 'streamlines' : 'particles'
+}
+
 /** The spoken value of a height stop. */
 export const heightText = (z: number) => `${z} metres above terrain`
