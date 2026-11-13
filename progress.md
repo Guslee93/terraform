@@ -825,3 +825,7 @@ zoom in because the quads are small at the default site camera.
   `1e3` as 1000, because `Number` accepts every notation. A metres field accepts only a plain
   decimal number now; the parser has no live caller, so the change is a latent trap closed rather
   than a visible defect corrected.
+- **Deployed (2026-11-13):** Vercel production from main (`987f55e`) via `vercel deploy --prod` — adds the
+  metre-field parse fix on top of the bug-review fixes already live in `be72f58`. Lint, 1046 unit tests and the
+  build passed first. Live: https://terraform-studio-murex.vercel.app — the studio loads Compact Infill with the
+  noise card (61 dB), no console errors, and with Terrain off the noise overlay stays on the map.
