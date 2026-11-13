@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
 import { drawMass, openAnalysis } from './studio-helpers'
 import type { FlowRequest, FlowResult } from '../src/features/analysis/flowRunner'
+import { budget } from './budget'
 
 test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 
 test('Wind → Add a block updates the real worker field → Export image and clip actions', async ({ page }) => {
-  test.setTimeout(120_000)
+  test.setTimeout(budget(120_000))
   // Observe the actual worker, without replacing its solver or adding a product test hook.
   await page.addInitScript(() => {
     const NativeWorker = window.Worker
@@ -30,13 +31,13 @@ test('Wind → Add a block updates the real worker field → Export image and cl
   await page.goto('/studio/compact-infill')
   await openAnalysis(page, 'Wind')
   const root = page.locator('html')
-  await expect(root).toHaveAttribute('data-flow-result', /\d+/, { timeout: 45_000 })
+  await expect(root).toHaveAttribute('data-flow-result', /\d+/, { timeout: budget(45_000) })
   const count = Number(await root.getAttribute('data-flow-buildings'))
   const solids = await root.getAttribute('data-flow-solid')
   await page.getByRole('button', { name: 'Add a block' }).click()
   await drawMass(page)
   await expect(root).toHaveAttribute('data-flow-buildings', String(count + 1))
-  await expect.poll(async () => (await root.getAttribute('data-flow-result')) === (await root.getAttribute('data-flow-request')), { timeout: 45_000 }).toBe(true)
+  await expect.poll(async () => (await root.getAttribute('data-flow-result')) === (await root.getAttribute('data-flow-request')), { timeout: budget(45_000) }).toBe(true)
   await expect(root).not.toHaveAttribute('data-flow-solid', solids ?? '')
   await expect(page.getByTestId('analysis-card-wind')).toHaveAttribute('aria-expanded', 'true')
   await page.getByRole('button', { name: 'Export', exact: true }).click()

@@ -840,3 +840,12 @@ zoom in because the quads are small at the default site camera.
 - Changes: CI tests the verify job's `dist/` via `vite preview`; CI test/expect budgets 60 s / 10 s; e2e job timeout
   45 min; the demo test fast-forwards a fake clock; the reload test is `test.slow()`.
 - After: lint, typecheck and 1046 unit tests pass; full e2e against the build 47 passed, 12 skipped, 0 retries (11.9 min).
+- **CI run on PR #5 (cfe8d6e):** 43 passed, 2 failed, 2 flaky, 33.8 min. Two causes. (1) Specs that set their own
+  budget (`test.setTimeout(60_000)`, `{ timeout: 30_000 }`) override the config, so they never got the CI
+  multiplier; the runner is ~2.2× slower than the 4-core container (Trees toggle 19 s → 41 s, keyboard 21 s → 48 s),
+  so the HUD test (43 s locally) could not fit 60 s. (2) `page.clock.install()` keeps the fake clock running in real
+  time, so the slow page played the demo on by itself (the dial reached 180°, then the restored 270°).
+- Fix: `e2e/budget.ts` — one CI multiplier (2.5×) for the config's defaults and every explicit spec budget; the demo
+  test pauses the clock (`pauseAt`) before playing; CI runs the suite in three shards.
+- Local, pinned to two cores (`taskset -c 0,1`), `CI=1`, no retries: `layers`, `wind-a11y` and `wind` specs 10/10
+  passed (HUD 72 s, X4 1.9 min). Lint and typecheck pass.

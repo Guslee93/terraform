@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { budget } from './e2e/budget'
 
 const CI = Boolean(process.env.CI)
 
@@ -7,10 +8,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: CI,
   retries: CI ? 2 : 0,
-  // A GitHub-hosted runner for a private repository has two cores and no GPU, so it draws the
-  // studio far slower than a workstation. CI doubles the time budgets; the assertions are the same.
-  timeout: CI ? 60_000 : 30_000,
-  expect: { timeout: CI ? 10_000 : 5_000 },
+  // Scaled to the machine (e2e/budget.ts): the CI runner draws the studio far slower than a
+  // workstation. Specs route their own budgets through budget() too. Assertions never scale.
+  timeout: budget(30_000),
+  expect: { timeout: budget(5_000) },
   reporter: 'list',
   // One browser at a time. The studio draws the full city context (520 buildings, 935 trees on
   // Compact Infill), and headless Chromium has no GPU, so Chromium rasterises it in software at a

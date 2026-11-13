@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { drawMass, openStudio } from './studio-helpers'
+import { budget } from './budget'
 
 // D40 — M5 accessibility checks (docs/plans/M5-plan.md, docs/handoffs/D39-D40-m5-perf-a11y.md).
 //
@@ -614,7 +615,7 @@ for (const route of MOTION_PAGES) {
 }
 
 test('studio with a mass selected: reduced motion leaves no running animation', async ({ page }) => {
-  test.setTimeout(90_000)
+  test.setTimeout(budget(90_000))
   await openStudio(page)
   // Let the canvas mount and the initial layout settle before the first toolbar
   // click (the toolbar is absolutely positioned inside the resizing viewport).

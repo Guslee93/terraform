@@ -35,10 +35,16 @@ jobs:
           retention-days: 1
 
   e2e:
-    name: Playwright (Chromium)
+    name: Playwright (Chromium, ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 40
     needs: verify
+    # The suite takes about 30 minutes on one runner; three shards keep each well inside the
+    # job limit and let one red shard finish without stopping the others.
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -52,10 +58,10 @@ jobs:
           name: dist
           path: dist/
       # CI=true makes playwright.config.ts serve dist/ with `vite preview`.
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/3
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-results
+          name: playwright-results-${{ matrix.shard }}
           path: test-results/
           retention-days: 7

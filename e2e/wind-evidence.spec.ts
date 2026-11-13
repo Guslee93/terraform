@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
 import { openAnalysis } from './studio-helpers'
+import { budget } from './budget'
 
 // X5 — wind evidence screenshots (docs/handoffs/X5-minimax-wind-evidence.md).
 //
@@ -15,7 +16,7 @@ import { openAnalysis } from './studio-helpers'
 // Capture is opt-in so the regular suite stays fast and the file system quiet:
 //   SHOT_EVIDENCE=1 npx playwright test e2e/wind-evidence.spec.ts
 test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' })
-test.setTimeout(240_000)
+test.setTimeout(budget(240_000))
 
 const OUT_DIR = 'docs/screenshots'
 
@@ -35,12 +36,12 @@ async function openWind(page: Page, site: string) {
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   await openAnalysis(page, 'Wind')
   // The claim shows in the panel and on the viewport (C23 finding 3); check the viewport copy.
-  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText('Indicative wind screening — 2D flow, not engineering')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText('Indicative wind screening — 2D flow, not engineering')).toBeVisible({ timeout: budget(15_000) })
 }
 
 /** The flow must have settled before a shot: "Set baseline" is only enabled then. */
 async function waitForSettled(page: Page) {
-  await expect(page.getByRole('button', { name: 'Set baseline', exact: true })).toBeEnabled({ timeout: 30_000 })
+  await expect(page.getByRole('button', { name: 'Set baseline', exact: true })).toBeEnabled({ timeout: budget(30_000) })
   await page.waitForTimeout(1500) // let the particles move
 }
 
@@ -113,7 +114,7 @@ test.describe('delta against a baseline', () => {
     // The edit invalidates the settled field; wait for the solver to settle again.
     const setBaseline = page.getByRole('button', { name: 'Set baseline', exact: true })
     await expect(setBaseline).toBeDisabled()
-    await expect(setBaseline).toBeEnabled({ timeout: 30_000 })
+    await expect(setBaseline).toBeEnabled({ timeout: budget(30_000) })
     await page.waitForTimeout(1500)
 
     await page.getByRole('button', { name: '3D', exact: true }).click()
@@ -137,7 +138,7 @@ test('W5: 3D streamlines and roof wind on Compact Infill (Direction, m/s)', asyn
   await page.getByRole('checkbox', { name: 'Streamlines' }).check()
   await page.getByRole('button', { name: '3D', exact: true }).click()
   // The upper height slices solve in the background (~10 s each); the height select unlocks then.
-  await expect(page.getByLabel(/Streamline height/i)).toBeEnabled({ timeout: 150_000 })
+  await expect(page.getByLabel(/Streamline height/i)).toBeEnabled({ timeout: budget(150_000) })
   await page.waitForTimeout(2000)
   await page.screenshot({ path: `${OUT_DIR}/wind-3d-streamlines.png` })
 })
@@ -147,7 +148,7 @@ test('Sweep: worst-case map and direction rose on Compact Infill', async ({ page
   await openWind(page, 'compact-infill')
   const section = page.getByRole('region', { name: 'All wind directions' })
   await section.getByRole('button', { name: 'Analyse 8 directions' }).click()
-  await expect(section.getByText(/directions solved/)).toHaveCount(0, { timeout: 120_000 })
+  await expect(section.getByText(/directions solved/)).toHaveCount(0, { timeout: budget(120_000) })
   await expect(section.getByText(/Worst direction:/)).toBeVisible()
   await page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Worst case' }).click()
   await page.getByRole('button', { name: '3D', exact: true }).click()

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { openAnalysis } from './studio-helpers'
+import { budget } from './budget'
 
 // Wind panel accessibility (docs/plans/wind-finish-plan.md D1/D2). No axe dependency: the same
 // DOM-level checks as e2e/m5-a11y.spec.ts — every control named, WCAG 2.2 target size ≥ 24 px —
@@ -11,7 +12,7 @@ async function openWind(page: Page) {
   await expect(page.getByRole('button', { name: 'Add a block' })).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('region', { name: /3D site viewport/ })).toBeVisible()
   const inspector = await openAnalysis(page, 'Wind')
-  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(/Indicative wind screening/)).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(/Indicative wind screening/)).toBeVisible({ timeout: budget(15_000) })
   return inspector
 }
 
@@ -42,8 +43,11 @@ test('Play demo under reduced motion steps through fixed directions without orbi
   const dial = page.getByLabel('Wind blows from')
   // The demo follows performance.now() through requestAnimationFrame. On a runner that rasterises
   // in software, frames can land more than 3 s apart and a whole step is never drawn, so the test
-  // owns the clock: each fast-forward fires one frame at a known time in the script.
+  // owns the clock: each fast-forward fires one frame at a known time in the script. An installed
+  // clock still runs in real time, so it is paused first; otherwise a slow page plays on by itself.
   await page.clock.install()
+  const now = await page.evaluate(() => Date.now())
+  await page.clock.pauseAt(now + 1_000)
   await page.getByRole('button', { name: 'Play demo' }).click()
   await expect(page.getByRole('button', { name: 'Stop demo' })).toBeVisible()
   // Reduced script: 270° for 0–3 s, then 0°, 90°, 180°, 3 s each.
