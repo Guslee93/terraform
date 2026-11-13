@@ -94,3 +94,24 @@ test('ADR-0015: the all-directions sweep fills the rose, opens Worst case, and a
   await expect(page.getByLabel('Wind blows from')).toHaveValue('90')
   await expect(page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and returns to comfort at 2 m', async ({ page }) => {
+  await openStudio(page)
+  await openClimateGroup(page)
+  await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: budget(15_000) })
+
+  // Upper slices arrive after the ground field; 20 m becomes selectable once it is solved.
+  const height = page.getByLabel('Height above terrain')
+  await expect(height.getByRole('option', { name: '20 m', exact: true })).toBeEnabled({ timeout: budget(60_000) })
+  await height.selectOption('20')
+
+  // Comfort classes are pedestrian criteria: above 2 m the legend is speed in m/s and says why.
+  const displays = page.getByRole('group', { name: 'Wind map shows' })
+  await expect(page.getByRole('list', { name: 'Wind direction legend' })).toBeVisible()
+  await expect(page.getByText('Wind speed at 20 m above terrain, in m/s. Comfort classes apply at 2 m only.')).toBeVisible()
+  await expect(displays.getByRole('button', { name: 'Comfort', exact: true })).toBeDisabled()
+
+  await height.selectOption('2')
+  await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible()
+  await expect(displays.getByRole('button', { name: 'Comfort', exact: true })).toHaveAttribute('aria-pressed', 'true')
+})

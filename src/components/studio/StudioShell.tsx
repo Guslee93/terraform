@@ -4,7 +4,7 @@ import { formatMetres } from './format'
 import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { sunState } from '../../features/analysis/sun'
-import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, localSpeedMs, ROSE_THRESHOLD_MS, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
+import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
 import { ClimatePanel, useWindDemo } from './ClimatePanel'
 import { ShareBar } from './DirectionRose'
 import { pillButtonClass } from '../ui/controls'
@@ -294,8 +294,9 @@ export function StudioShell({
   const noiseCells = useMemo(() => (sitePackage && studyArea ? computeNoise(studyArea, sitePackage.roads, analysisBuildings, 10) : []), [sitePackage, studyArea, analysisBuildings])
   const windComfortView = useMemo(() => {
     if (!sitePackage || !windArea || climateMode !== 'wind' || !windFlow) return null
-    if (wind.display === 'activity' && climateView) return climateView
-    return buildClimateView('wind', windArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, display: 'activity', centre: windCentre })
+    // A comfort figure is a pedestrian figure: always at 2 m, whatever height the map shows.
+    if (wind.display === 'activity' && wind.heightM === PEDESTRIAN_HEIGHT_M && climateView) return climateView
+    return buildClimateView('wind', windArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, display: 'activity', heightM: PEDESTRIAN_HEIGHT_M, centre: windCentre })
   }, [sitePackage, windArea, climateMode, windFlow, wind, climateView, analysisBuildings, windCentre])
   const selectedVolume = shown.volumes.find(
     (volume) => volume.id === editor.history.selection.volumeId,

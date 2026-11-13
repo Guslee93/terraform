@@ -3,7 +3,7 @@ import { DirectionRose, ShareBar, type RoseSector } from './DirectionRose'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { demoFrame } from '../../features/analysis/windDemo'
 import { SLICE_HEIGHTS_M } from '../../features/analysis/windProfile'
-import { CIRCLE_RADIUS, DELTA_NOTE, localSpeedMs, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
+import { CIRCLE_RADIUS, DELTA_NOTE, displayAt, heightNote, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { eyebrowClass, labelClass, pillButtonClass, rangeClass, segmentClass, segmentGroupClass } from '../ui/controls'
 
@@ -178,7 +178,7 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
       ) : (
         <>
           <ShareBar entries={view.legend} label={mode === 'wind' ? 'Share of open ground by band' : 'Share of the study area by band'} />
-          <ul className="mt-2" aria-label={mode === 'wind' ? (wind.display === 'delta' ? DELTA_NOTE : wind.display === 'activity' ? 'Wind comfort legend' : wind.display === 'worst' ? 'Worst-case comfort legend' : 'Wind direction legend') : 'Noise legend'}>
+          <ul className="mt-2" aria-label={mode === 'wind' ? (displayAt(wind) === 'delta' ? DELTA_NOTE : displayAt(wind) === 'activity' ? 'Wind comfort legend' : displayAt(wind) === 'worst' ? 'Worst-case comfort legend' : 'Wind direction legend') : 'Noise legend'}>
             {view.legend.map((entry) => (
               <li key={entry.label} className="flex min-h-7 items-center justify-between gap-3 text-body-sm text-ink">
                 <span className="flex items-center gap-2">
@@ -216,11 +216,29 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
       {mode === 'wind' && <>
         <div role="group" aria-label="Wind map shows" className={segmentGroupClass}>
           {[...DISPLAYS, ...(sweep && sweep.sectors.length > 0 ? [{ id: 'worst' as const, label: 'Worst case' }] : []), ...(baseline ? [{ id: 'delta' as const, label: 'Delta' }] : [])].map((option) => (
-            <button key={option.id} type="button" aria-pressed={wind.display === option.id} onClick={() => set({ display: option.id })} className={segmentClass}>
+            <button key={option.id} type="button" aria-pressed={displayAt(wind) === option.id}
+              // Comfort classes are pedestrian criteria (2 m); the worst case is a 2 m screen.
+              disabled={option.id === 'activity' && wind.heightM > PEDESTRIAN_HEIGHT_M}
+              aria-describedby={option.id === 'activity' && wind.heightM > PEDESTRIAN_HEIGHT_M ? 'wind-height-note' : undefined}
+              onClick={() => set({ display: option.id, ...(option.id === 'worst' ? { heightM: PEDESTRIAN_HEIGHT_M } : {}) })} className={segmentClass}>
               {option.label}
             </button>
           ))}
         </div>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="wind-height" className={labelClass}>Height above terrain</label>
+          <select id="wind-height" value={wind.heightM} disabled={wind.display === 'worst'}
+            aria-describedby={wind.heightM > PEDESTRIAN_HEIGHT_M ? 'wind-height-note' : !slicesComplete ? 'upper-heights-status' : undefined}
+            onChange={(event) => set({ heightM: Number(event.currentTarget.value) })}
+            className="h-8 w-40 rounded-control border border-card-line bg-card px-2 text-body-sm disabled:opacity-50">
+            {sliceHeights.map((z) => {
+              const ready = z <= PEDESTRIAN_HEIGHT_M || availableHeights.includes(z)
+              return <option key={z} value={z} disabled={!ready}>{z} m{z <= PEDESTRIAN_HEIGHT_M ? ' (pedestrian)' : ''}{ready ? '' : ' (computing)'}</option>
+            })}
+          </select>
+        </div>
+        {wind.heightM > PEDESTRIAN_HEIGHT_M && <p id="wind-height-note" className="text-caption text-ink-secondary">{heightNote(wind.heightM)}</p>}
+        {wind.display === 'worst' && <p className="text-caption text-ink-secondary">The worst case is a pedestrian screen at 2 m.</p>}
         {showQuick && <WindQuick wind={wind} onChange={set} />}
         {showQuick && <p className="text-caption text-ink-secondary">Direction is your choice, not a measured climate value. The flow updates as you drag.</p>}
         {legend}
@@ -256,16 +274,14 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
             <input type="checkbox" aria-label="Streamlines" checked={streamlines} onChange={(event) => { const on = event.currentTarget.checked; if (demoPlaying) onDemoEdit?.({}); onStreamlinesChange?.(on) }} className="size-4 accent-[var(--accent)]" />
           </label>
         }>
-          <div className="flex items-center justify-between gap-3">
-            <label htmlFor="streamline-height" className={labelClass}>Streamline height</label>
-            <select id="streamline-height" value={wind.streamlineHeight ?? '3d'} disabled={!slicesReady}
+          <label className="flex items-center justify-between gap-3">
+            <span className={labelClass}>Follow buildings in 3D</span>
+            <input type="checkbox" checked={wind.streamlines3d} disabled={!slicesReady}
               aria-describedby={!slicesReady ? 'upper-heights-status' : undefined}
-              onChange={(event) => set({ streamlineHeight: event.currentTarget.value === '3d' ? null : Number(event.currentTarget.value) })}
-              className="h-8 w-40 rounded-control border border-card-line bg-card px-2 text-body-sm disabled:opacity-50">
-              <option value="3d">3D (follows buildings)</option>
-              {sliceHeights.map((z) => <option key={z} value={z} disabled={!availableHeights.includes(z)}>{z} m{availableHeights.includes(z) ? '' : ' (computing)'}</option>)}
-            </select>
-          </div>
+              onChange={(event) => set({ streamlines3d: event.currentTarget.checked })}
+              className="size-4 accent-[var(--accent)]" />
+          </label>
+          {!wind.streamlines3d && <p className="text-caption text-ink-secondary">Flat at {wind.heightM} m above terrain, the height chosen above.</p>}
           <label htmlFor="streamline-opacity" className={labelClass}>Streamline opacity</label>
           <input id="streamline-opacity" type="range" min={0.2} max={1} step={0.05}
             value={wind.streamlineOpacity} disabled={!slicesReady}
@@ -274,7 +290,7 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
             onChange={(event) => set({ streamlineOpacity: Number(event.currentTarget.value) })}
             className={rangeClass} />
           {!slicesComplete && <p id="upper-heights-status" className="text-caption text-ink-secondary">Upper heights computing… {availableHeights.length}/{sliceHeights.length} ready</p>}
-          {slicesReady && wind.streamlineHeight === null && <p className="text-caption text-ink-secondary">{STREAMLINE_3D_NOTE}</p>}
+          {slicesReady && wind.streamlines3d && <p className="text-caption text-ink-secondary">{STREAMLINE_3D_NOTE}</p>}
         </Section>
 
         <Section title="Compare">

@@ -51,7 +51,7 @@ export type FlowResult = {
   readonly settled: boolean
   readonly slices?: FlowSlice[]
   readonly slicesComplete?: boolean
-  /** Every slice height this stack will have (the standard four, plus a top slice for tall buildings). */
+  /** Every slice height this stack will have (the standard seven, plus a top slice for tall buildings). */
   readonly sliceHeights?: readonly number[]
 }
 

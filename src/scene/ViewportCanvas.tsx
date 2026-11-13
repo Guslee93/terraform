@@ -29,7 +29,7 @@ import { AnalysisCircle } from './AnalysisCircle'
 import { WorstArrows } from './WorstArrows'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import type { RoofSolarValue } from '../features/analysis/roofSolar'
-import { DEFAULT_WIND, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
+import { DEFAULT_WIND, displayAt, flowAtHeight, windDrawLift, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
@@ -527,6 +527,11 @@ export function ViewportCanvas({
   const initialPosition = enuToThreeXyz(initialPreset.position)
   const initialTarget = enuToThreeXyz(initialPreset.target)
   const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
+  // The wind map, circle and particles follow the terrain at the chosen slice height (ADR-0028).
+  const windLift = windDrawLift(windSettings.heightM)
+  const windHeightAt = useMemo(() => windLift === 0 ? heightAt : (east: number, north: number) => heightAt(east, north) + windLift, [heightAt, windLift])
+  const windShown = useMemo(() => ({ ...windSettings, display: displayAt(windSettings) }), [windSettings])
+  const windField = useMemo(() => windFlow ? flowAtHeight(windFlow, windSettings.heightM) : null, [windFlow, windSettings.heightM])
   const drawing = editable && editor.tool === 'draw'
   const treeExclude = useMemo(
     () => visibleTierFootprints(displayedDocument(editor)),
@@ -549,7 +554,7 @@ export function ViewportCanvas({
       {windCircle && (
         // The wind claim stays visible with the wind layer even when the inspector group is closed (PRD R8).
         <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
-          {windSettings.display === 'ratio' && <WindRampBar />}
+          {windShown.display === 'ratio' && <WindRampBar />}
           <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{FLOW_DISCLAIMER}</p>
         </div>
       )}
@@ -604,16 +609,16 @@ export function ViewportCanvas({
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
             {climate && (windCircle
-              ? <WindHeatmap overlay={climate} heightAt={heightAt} circle={windCircle} />
+              ? <WindHeatmap overlay={climate} heightAt={windHeightAt} circle={windCircle} />
               : <ClimateLayer overlay={climate} heightAt={heightAt} buildings={windBuildings} />)}
             {roofSolar && <RoofSolar buildings={windBuildings} values={roofSolar} heightAt={heightAt} />}
             {facade && <FacadeSun overlay={facade} heightAt={heightAt} />}
             {windWorst && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
             {!windWorst && windFlow?.slices && windCircle && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
             {!windWorst && windFlow && windCircle && ((windStreamlines || reducedMotion)
-              ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlineHeight} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
-              : <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} />)}
-            {windCircle && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}
+              ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlines3d ? null : windSettings.heightM} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
+              : windField && <WindParticles flow={windField} circle={windCircle} heightAt={windHeightAt} wind={windShown} />)}
+            {windCircle && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={windHeightAt} />}
             </group>
 
             <group name="live-scenario">
