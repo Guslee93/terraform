@@ -37,7 +37,7 @@ jobs:
   e2e:
     name: Playwright (Chromium, ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     needs: verify
     # The suite takes about 30 minutes on one runner; three shards keep each well inside the
     # job limit and let one red shard finish without stopping the others.

@@ -849,3 +849,9 @@ zoom in because the quads are small at the default site camera.
   test pauses the clock (`pauseAt`) before playing; CI runs the suite in three shards.
 - Local, pinned to two cores (`taskset -c 0,1`), `CI=1`, no retries: `layers`, `wind-a11y` and `wind` specs 10/10
   passed (HUD 72 s, X4 1.9 min). Lint and typecheck pass.
+- **CI run on a431c5b:** shard 2 passed; shard 1 failed (Trees toggle over its 75 s budget twice; Sloped Edge
+  checkboxes flaky). That runner was ~2× slower again than the previous run: Tab order 21 s locally, 49 s, then
+  108 s. The studio renders continuously (R3F's default loop), so every step waits on software-rendered frames.
+  Fix: CI multiplier 2.5× → 4× to cover the measured spread, `expectCanvasChanged`'s default budget scaled too,
+  e2e job limit 60 min. Pushed while shard 3 was still running, so that run was cancelled.
+- If CI is still unreliable: a 4-core runner (paid plan) or on-demand rendering (a product change, needs an ADR).

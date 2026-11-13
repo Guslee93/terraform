@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { budget } from './budget'
 
 /** The studio's right panel (ADR-0016). */
 export const parameters = (page: Page) => page.getByRole('complementary', { name: 'Parameters' })
@@ -52,7 +53,7 @@ export async function canvasSignature(page: Page): Promise<string> {
 }
 
 /** Wait until the canvas differs from `before` (a layer toggle changed the picture). */
-export async function expectCanvasChanged(page: Page, before: string, timeout = 20_000) {
+export async function expectCanvasChanged(page: Page, before: string, timeout = budget(20_000)) {
   await expect
     .poll(async () => (await canvasSignature(page)) !== before, { timeout })
     .toBe(true)
