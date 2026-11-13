@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
 import { canvasSignature, expectCanvasChanged, openAnalysis } from './studio-helpers'
+import { budget } from './budget'
 
 // D32 — M3 live-analysis e2e (docs/plans/M3-fable-plan.md §10, docs/handoffs/C8-C10-m3-ui.md).
 //
@@ -11,7 +12,7 @@ import { canvasSignature, expectCanvasChanged, openAnalysis } from './studio-hel
 // tests stay at Auto so the fully-parallel suite does not stack several 4096-shadow-map + AO
 // scenes on SwiftShader; the compare itself needs a long timeout for the same reason.
 test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
-test.setTimeout(120_000)
+test.setTimeout(budget(120_000))
 
 async function openStudio(page: Page) {
   await page.goto('/studio/compact-infill')

@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import { expect, test, type Page } from '@playwright/test'
 import { openAnalysis } from './studio-helpers'
+import { budget } from './budget'
 
 // D34 — claim and disclaimer audit (docs/plans/M3-fable-plan.md §10, AGENTS.md §7).
 //
@@ -13,7 +14,7 @@ import { openAnalysis } from './studio-helpers'
 // analysis after this audit was written, so the studio may name that mode and repeat its
 // qualified note, but no other wording may use the words.
 test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
-test.setTimeout(120_000)
+test.setTimeout(budget(120_000))
 
 const FORBIDDEN_CLAIMS = ['compliant', 'verified', 'bim-ready', 'bim ready', 'official parcel'] as const
 

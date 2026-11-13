@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { canvasSignature, expectCanvasChanged, openAnalysis, openGroup } from './studio-helpers'
+import { budget } from './budget'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -85,7 +86,7 @@ test('the 3D view changes when Land cover is toggled off then on', async ({ page
 test('the viewport HUD items never overlap and the page never scrolls sideways', async ({ page }) => {
   // The WebGL scene (with postprocessing) makes resize-based checks slow on some
   // machines; the default 30 s per-test budget is too tight for five viewports.
-  test.setTimeout(60_000)
+  test.setTimeout(budget(60_000))
 
   const viewports = [
     { width: 1024, height: 800 },

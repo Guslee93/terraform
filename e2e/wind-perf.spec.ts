@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { openAnalysis } from './studio-helpers'
+import { budget } from './budget'
 
 // Wind performance probe (docs/plans/wind-finish-plan.md E1/E2). Opt-in:
 //   WIND_PERF=1 npx playwright test e2e/wind-perf.spec.ts
@@ -7,7 +8,7 @@ import { openAnalysis } from './studio-helpers'
 // laptop GPU. Reports frames per second and main-thread long tasks (> 50 ms) over 5 s.
 test.skip(process.env.WIND_PERF !== '1', 'Opt-in: WIND_PERF=1')
 test.use({ viewport: { width: 1440, height: 900 } })
-test.setTimeout(180_000)
+test.setTimeout(budget(180_000))
 
 const probe = () => new Promise<{ fps: number; longTasks: number; worstMs: number }>((resolve) => {
   let frames = 0
@@ -30,7 +31,7 @@ for (const mode of ['off', 'particles', '3d-streamlines'] as const) {
     if (mode !== 'off') {
       await openAnalysis(page, 'Wind')
       if (mode === '3d-streamlines') await page.getByRole('checkbox', { name: 'Streamlines' }).check()
-      await expect(page.getByLabel(/Streamline height/i)).toBeEnabled({ timeout: 120_000 })
+      await expect(page.getByLabel(/Streamline height/i)).toBeEnabled({ timeout: budget(120_000) })
     }
     await page.waitForTimeout(1500)
     const result = await page.evaluate(probe)
