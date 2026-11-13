@@ -55,6 +55,15 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
     return next
   }
 
+  /** Site-wide writes also wait for every write already queued, so a pending scenario save can't land after a reset or import. */
+  function enqueueSite(siteId: string, write: () => Promise<void>): Promise<void> {
+    const pending = [...queues.values()]
+    return enqueue(`project:${siteId}`, async () => {
+      await Promise.allSettled(pending)
+      await write()
+    })
+  }
+
   async function readSite(siteId: string) {
     const [projectRow, rows] = await Promise.all([store.getProject(siteId), store.listScenarios(siteId)])
     return { projectRow, rows }
@@ -178,7 +187,7 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
       return enqueue(`scenario:${id}`, () => store.deleteScenario(id))
     },
     resetSite(siteId) {
-      return enqueue(`project:${siteId}`, () => store.clearSite(siteId))
+      return enqueueSite(siteId, () => store.clearSite(siteId))
     },
     async exportProject(siteId) {
       const result = await load(siteId)
@@ -206,7 +215,7 @@ export function createScenarioRepository(store: ScenarioStore, { now, appVersion
         ...scenarios.map((document) => ({ id: document.id, siteId: document.siteId, json: serializeScenario(document) })),
         ...unreadable.map(({ id, json: raw }) => ({ id, siteId: project.siteId, json: raw })),
       ]
-      await enqueue(`project:${project.siteId}`, () => store.replaceSite({ siteId: project.siteId, json: JSON.stringify(project) }, rows))
+      await enqueueSite(project.siteId, () => store.replaceSite({ siteId: project.siteId, json: JSON.stringify(project) }, rows))
       return load(project.siteId)
     },
   }

@@ -25,6 +25,13 @@ function date(value: unknown, field: string): string {
   return result
 }
 
+/** Exhaustive over the union, so a new warning code fails to compile until it is listed here. */
+const WARNING_CODES = {
+  'terrain-estimated': true, 'terrain-water': true, 'terrain-river': true, 'terrain-flat': true,
+  'heights-estimated': true, 'trees-unavailable': true, 'roofs-flat': true, 'water-coarse': true,
+} satisfies Record<ImportWarning['code'], true>
+const isWarningCode = (code: unknown): code is ImportWarning['code'] => typeof code === 'string' && Object.hasOwn(WARNING_CODES, code)
+
 /** The single migration entry point; future versions must migrate before parsing. */
 export function migrate(raw: unknown): ImportedSite {
   if (!isRecord(raw)) throw new Error('Invalid imported site')
@@ -39,7 +46,7 @@ export function migrate(raw: unknown): ImportedSite {
   const warnings = raw.warnings.map((warning: unknown): ImportWarning => {
     if (!isRecord(warning)) throw new Error('Invalid warning')
     const code = warning.code
-    if (code !== 'terrain-estimated' && code !== 'terrain-water' && code !== 'terrain-flat' && code !== 'heights-estimated' && code !== 'trees-unavailable' && code !== 'roofs-flat') throw new Error('Invalid warning code')
+    if (!isWarningCode(code)) throw new Error('Invalid warning code')
     return { code, message: string(warning.message, 'warning.message') }
   })
   if (summary.notices !== undefined && !Array.isArray(summary.notices)) throw new Error('Invalid notices')

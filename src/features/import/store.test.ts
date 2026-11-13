@@ -31,6 +31,12 @@ describe('imported site storage', () => {
     expect(await store.get('import-test')).toEqual({ id: 'import-test', status: 'unreadable' })
     expect(await store.list()).toEqual([{ id: 'import-test', status: 'unreadable' }])
   })
+  it('saves a site that crosses a river (terrain-river warning)', async () => {
+    const store = createMemoryImportedSiteStore()
+    const site = { ...importedFixture(), warnings: [{ code: 'terrain-river' as const, message: 'River cells flattened.' }] }
+    await store.put(site)
+    expect(await store.get(site.summary.id)).toEqual(site)
+  })
   it('rejects unknown versions clearly', () => {
     expect(() => migrate({ schemaVersion: 2 })).toThrow('Unsupported imported site schema version: 2')
   })

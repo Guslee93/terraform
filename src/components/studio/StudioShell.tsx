@@ -125,6 +125,9 @@ export function StudioShell({
   })
   // The open analysis card is the analysis on the map (ADR-0026): Wind, Noise and Sun hours colour the ground.
   const [activeCard, setActiveCard] = useState<AnalysisId | null>('noise')
+  // The play/pause control lives in the open Sun card, so closing the card stops playback.
+  const { setPlaying: setSunPlaying } = playback
+  useEffect(() => { if (activeCard !== 'sun') setSunPlaying(false) }, [activeCard, setSunPlaying])
   const climateMode: ClimateMode =
     activeCard === 'wind'
       ? 'wind'
@@ -397,7 +400,10 @@ export function StudioShell({
       label: 'Sun',
       icon: 'sun',
       stat: solar
-        ? sunAnalysis === 'sun-hours'
+        // Sun hours, roof solar, façade sun and VSC are computed only while the card is open.
+        ? activeCard !== 'sun' && sunAnalysis !== 'shadows'
+          ? { value: null, unit: '', hint: 'Select to compute', secondary: [] }
+          : sunAnalysis === 'sun-hours'
           ? sunHoursStat(sunHoursCells, sunTime.date)
           : sunAnalysis === 'roof-solar'
             ? roofSolarStat(roofSolarValues)

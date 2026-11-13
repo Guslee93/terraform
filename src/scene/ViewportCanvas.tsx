@@ -578,7 +578,9 @@ export function ViewportCanvas({
             <SiteLights sitePackage={sitePackage} sun={sun} profile={profile} />
             {grid && <FloorGrid terrain={terrain} viewScale={viewScale} />}
 
-            {layers.terrain && (
+            {/* Hidden, not unmounted, when the Terrain layer is off: it is the ground the draw tool,
+                deselect and Move circle click on (three's raycaster ignores visibility). */}
+            <group visible={layers.terrain}>
               <TerrainMesh
                 terrain={terrain}
                 landcover={sitePackage.landcover}
@@ -591,7 +593,7 @@ export function ViewportCanvas({
                     : undefined
                 }
               />
-            )}
+            </group>
             {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} />}
             {layers.context && <ContextBuildings buildings={buildings.buildings} />}
             {/* The streets keep the ground the package was built on, so they bridge the cut the
@@ -601,17 +603,17 @@ export function ViewportCanvas({
             )}
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
-            {climate && layers.terrain && (windCircle
+            {climate && (windCircle
               ? <WindHeatmap overlay={climate} heightAt={heightAt} circle={windCircle} />
               : <ClimateLayer overlay={climate} heightAt={heightAt} buildings={windBuildings} />)}
-            {roofSolar && layers.terrain && <RoofSolar buildings={windBuildings} values={roofSolar} heightAt={heightAt} />}
-            {facade && layers.terrain && <FacadeSun overlay={facade} heightAt={heightAt} />}
-            {windWorst && layers.terrain && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
-            {!windWorst && windFlow?.slices && windCircle && layers.terrain && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
-            {!windWorst && windFlow && windCircle && layers.terrain && ((windStreamlines || reducedMotion)
+            {roofSolar && <RoofSolar buildings={windBuildings} values={roofSolar} heightAt={heightAt} />}
+            {facade && <FacadeSun overlay={facade} heightAt={heightAt} />}
+            {windWorst && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
+            {!windWorst && windFlow?.slices && windCircle && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
+            {!windWorst && windFlow && windCircle && ((windStreamlines || reducedMotion)
               ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlineHeight} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
               : <WindParticles flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} />)}
-            {windCircle && layers.terrain && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}
+            {windCircle && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} />}
             </group>
 
             <group name="live-scenario">

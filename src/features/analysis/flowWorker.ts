@@ -30,6 +30,7 @@ function loop() {
 
 if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) self.onmessage = (event: MessageEvent<FlowRequest>) => {
   clearTimeout(timer)
-  pending = event.data
+  // A newer request replaces an unconsumed one, but must keep its reset: the frame still changed.
+  pending = pending?.reset ? { ...event.data, reset: true } : event.data
   timer = setTimeout(loop, 0)
 }

@@ -68,6 +68,25 @@ describe('scenario repository', () => {
     expect(row && JSON.parse(row.json).volumes[0].tiers[0].storeys).toBe(9)
   })
 
+  it('a reset waits for scenario writes already queued, so nothing comes back afterwards', async () => {
+    const memory = createMemoryStore()
+    let release: () => void = () => undefined
+    const slow: ScenarioStore = {
+      ...memory,
+      async putScenario(row) {
+        await new Promise<void>((resolve) => (release = resolve))
+        return memory.putScenario(row)
+      },
+    }
+    const repository = createScenarioRepository(slow, options)
+    const pending = repository.saveScenario(createScenario({ id: 's1', siteId: SITE, now: NOW }))
+    const reset = repository.resetSite(SITE)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    release()
+    await Promise.all([pending, reset])
+    expect(await memory.listScenarios(SITE)).toEqual([])
+  })
+
   it('skips damaged, newer and missing records, keeps the rest and repairs the index', async () => {
     const { store, project, a } = await seeded()
     const [, bId] = project.scenarioIds
