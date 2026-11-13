@@ -40,11 +40,18 @@ test('Play demo under reduced motion steps through fixed directions without orbi
   page.on('console', (m) => { if (m.type() === 'error' && /render error/.test(m.text())) errors.push(m.text()) })
   await openWind(page)
   const dial = page.getByLabel('Wind blows from')
+  // The demo follows performance.now() through requestAnimationFrame. On a runner that rasterises
+  // in software, frames can land more than 3 s apart and a whole step is never drawn, so the test
+  // owns the clock: each fast-forward fires one frame at a known time in the script.
+  await page.clock.install()
   await page.getByRole('button', { name: 'Play demo' }).click()
   await expect(page.getByRole('button', { name: 'Stop demo' })).toBeVisible()
   // Reduced script: 270° for 0–3 s, then 0°, 90°, 180°, 3 s each.
-  await expect(dial).toHaveValue('0', { timeout: 6_000 })
-  await expect(dial).toHaveValue('90', { timeout: 6_000 })
+  await expect(dial).toHaveValue('270')
+  await page.clock.fastForward(3_500)
+  await expect(dial).toHaveValue('0')
+  await page.clock.fastForward(3_000)
+  await expect(dial).toHaveValue('90')
   await page.getByRole('button', { name: 'Stop demo' }).click()
   await expect(dial).toHaveValue('270') // settings restored
   expect(errors).toEqual([])

@@ -829,3 +829,14 @@ zoom in because the quads are small at the default site camera.
   metre-field parse fix on top of the bug-review fixes already live in `be72f58`. Lint, 1046 unit tests and the
   build passed first. Live: https://terraform-studio-murex.vercel.app — the studio loads Compact Infill with the
   noise card (61 dB), no console errors, and with Terrain off the noise overlay stays on the map.
+
+## 2026-11-13 — CI: Playwright on GitHub runners
+
+- PR #1 merged; CI run 2 on main failed in Playwright: 3 failed (`layers` Trees toggle, `massing` roof drag undo,
+  `wind-a11y` Play demo), 2 flaky, 38 passed in 21.7 min. All timeouts on a 2-core, GPU-less runner on the dev server.
+- Locally (4 cores) the three specs on the dev server: 10 passed, 1 failed. Full suite against the production build:
+  46 passed, 1 failed on every try (`storeys, delete, undo and reload` — the studio is still preparing after the
+  reload when the 30 s default budget runs out).
+- Changes: CI tests the verify job's `dist/` via `vite preview`; CI test/expect budgets 60 s / 10 s; e2e job timeout
+  45 min; the demo test fast-forwards a fake clock; the reload test is `test.slow()`.
+- After: lint, typecheck and 1046 unit tests pass; full e2e against the build 47 passed, 12 skipped, 0 retries (11.9 min).
