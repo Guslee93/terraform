@@ -6,7 +6,7 @@ import type { MassTier, MassVolume } from '../../features/massing/types'
 import { Icon } from '../ui/Icon'
 import { MassFields } from './MassFields'
 
-export type PanelGroup = 'analysis' | 'selected' | 'layers' | 'export' | 'site'
+export type PanelGroup = 'selected' | 'layers' | 'export' | 'site'
 
 /** A collapsible group: uppercase eyebrow and chevron, content below. */
 function Group({ id, title, meta, open, onToggle, children }: {
@@ -32,8 +32,9 @@ function Group({ id, title, meta, open, onToggle, children }: {
 }
 
 
-export function Inspector({ analysis, analysisOnly, layers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand }: {
-  analysis?: { title: string; body: ReactNode } | null
+export function Inspector({ analysisCards, analysisOnly, layers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
+  /** The analysis cards: one per screening analysis, above the panel groups (ADR-0026). */
+  analysisCards?: ReactNode
   analysisOnly: boolean
   layers: ReactNode
   site: SiteSummary
@@ -45,8 +46,12 @@ export function Inspector({ analysis, analysisOnly, layers, site, manifest, pack
   canEdit: boolean
   editingEnabled: boolean
   onCommand: (command: MassingCommand) => string | null
+  /** Right-hand note on the Selected block group, such as the number of blocks. */
+  selectionMeta?: string
+  /** Extra control under the block fields, such as the draw button. */
+  selectionExtra?: ReactNode
 }) {
-  const [openGroups, setOpenGroups] = useState<ReadonlySet<PanelGroup>>(() => new Set(['analysis', 'selected', 'layers', 'site']))
+  const [openGroups, setOpenGroups] = useState<ReadonlySet<PanelGroup>>(() => new Set(['selected', 'layers', 'site']))
   const group = (id: PanelGroup) => ({ id, open: openGroups.has(id), onToggle: (open: boolean) => setOpenGroups((current) => {
     if (current.has(id) === open) return current
     const next = new Set(current)
@@ -56,10 +61,11 @@ export function Inspector({ analysis, analysisOnly, layers, site, manifest, pack
   }) })
   return <aside aria-label="Parameters" className="tf-rise @container flex min-h-0 flex-col overflow-y-auto rounded-panel border border-card-line bg-card shadow-card [animation-delay:80ms]">
     <h2 className="px-5 pb-2 pt-5 text-title text-ink">Parameters</h2>
-    {analysis && <Group {...group('analysis')} title={analysis.title}>{analysis.body}</Group>}
-    {!analysisOnly && <Group {...group('selected')} title="Selected block">
+    {analysisCards}
+    {!analysisOnly && <Group {...group('selected')} title="Selected block" meta={selectionMeta}>
       {selected ? <MassFields key={selected.tier.id} {...selected} disabled={!editingEnabled} onCommand={onCommand} />
         : <p className="text-body-sm text-ink-secondary">{packageStatus !== 'ready' ? 'Block tools appear when the site package is ready.' : canEdit ? 'Draw a footprint, or click a block to select it.' : 'Blocks are read-only on small screens.'}</p>}
+      {selectionExtra}
     </Group>}
     <Group {...group('layers')} title="Layers">{layers}{views}</Group>
     <Group {...group('export')} title="Export">{visuals}</Group>

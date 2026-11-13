@@ -43,7 +43,7 @@ for (const [width, height] of SIZES) {
   console.log(`${OUT}/${PREFIX}-${width}x${height}.png`)
   if (process.env.WIND && width === 1440) {
     const card = process.env.CARD ?? 'Wind'
-    await page.getByRole('group', { name: 'Analysis cards' }).getByRole('button', { name: new RegExp(`^${card}`) }).click()
+    await page.getByTestId(`analysis-card-${card.toLowerCase()}`).click()
     await page.waitForTimeout(8000)
     await page.screenshot({ path: `${OUT}/${PREFIX}-${(process.env.CARD ?? 'Wind').toLowerCase()}-${width}x${height}.png` })
     console.log(`${OUT}/${PREFIX}-${(process.env.CARD ?? 'Wind').toLowerCase()}-${width}x${height}.png`)

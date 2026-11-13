@@ -4,12 +4,12 @@ import { computeNoise } from '../../features/analysis/noise'
 import { DEMO_SUN_INSTANT, sunState } from '../../features/analysis/sun'
 import type { FacadeSample } from '../../features/analysis/facadeSamples'
 import type { Vec2 } from '../../lib/coordinates'
-import { facadeSunStat, noiseStat, roofSolarStat, sunHoursStat, sunStat, vscStat, windStat } from './dockValues'
+import { facadeSunStat, noiseStat, roofSolarStat, sunHoursStat, sunStat, vscStat, windStat } from './analysisValues'
 
 const parcel: Vec2[] = [[-50, -50], [50, -50], [50, 50], [-50, 50], [-50, -50]]
 const text = (parts: readonly (readonly [string, string])[]) => parts.map(([value, unit]) => value + unit).join('')
 
-describe('dock card values come from the analysis, not constants', () => {
+describe('analysis card values come from the analysis, not constants', () => {
   it('Sun uses the geometric sun state and hides the figure below the horizon', () => {
     const day = sunState(DEMO_SUN_INSTANT, 59.91, 10.75)
     const stat = sunStat(day, '15:00')

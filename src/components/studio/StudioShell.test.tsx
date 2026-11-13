@@ -8,6 +8,7 @@ import compactTerrain from '../../../public/sites/compact-infill/terrain.json'
 import compactBuildings from '../../../public/sites/compact-infill/buildings.json'
 import compactStudyArea from '../../../public/sites/compact-infill/study-area.json'
 import { parseSiteManifest } from '../../features/sites/manifest'
+import type { SitePackage } from '../../features/sites/package'
 import { parseBuildings, parseStudyArea, parseTerrain } from '../../features/sites/package'
 import { SITES } from '../../features/sites/siteCatalog'
 import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
@@ -49,20 +50,22 @@ afterEach(() => vi.unstubAllGlobals())
 
 it('starts with only Sun/Wind/Noise and automatic rendering; block tools are opt-in', async () => {
   mount()
-  const cards = within(screen.getByRole('group', { name: 'Analysis cards' }))
-  expect(cards.getAllByRole('button')).toHaveLength(3)
+  // One card per analysis, in the Parameters panel (ADR-0026); no bottom dock.
+  for (const id of ['sun', 'wind', 'noise']) expect(screen.getByTestId(`analysis-card-${id}`)).toBeVisible()
+  expect(screen.queryByRole('region', { name: 'Analysis' })).not.toBeInTheDocument()
   expect(scene().renderPreference).toBe('auto')
   expect(screen.queryByRole('navigation', { name: 'Studio tools' })).not.toBeInTheDocument()
   await userEvent.setup().click(screen.getByRole('button', { name: 'Add a block' }))
   expect(screen.getByRole('button', { name: 'Draw building' })).toBeVisible()
-  expect(cards.getByRole('button', { name: /^Blocks/ })).toHaveTextContent('0')
+  // The block count is on the Selected block group, not on a card of its own.
+  expect(screen.getByText('0 blocks')).toBeVisible()
   for (const label of ['Compare', 'Guide', 'Saved', 'Design check', 'Study area', 'Data notes', 'Render quality']) expect(screen.queryByText(label)).not.toBeInTheDocument()
 })
 
 it('draws ground sun hours, recomputes when a block is added and returns to shadows', async () => {
   mount()
   const user = userEvent.setup()
-  await user.click(screen.getByRole('button', { name: /^Sun/ }))
+  await user.click(screen.getByTestId('analysis-card-sun'))
   const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
   if (!control) throw new Error('Missing sun analysis control')
   await user.click(within(control).getByRole('button', { name: 'Sun hours' }))
@@ -91,14 +94,13 @@ it('draws ground sun hours, recomputes when a block is added and returns to shad
 it('offers roof solar with its upper-bound disclaimer and no invented value while computing', async () => {
   mount()
   const user = userEvent.setup()
-  await user.click(screen.getByRole('button', { name: /^Sun/ }))
+  await user.click(screen.getByTestId('analysis-card-sun'))
   const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
   if (!control) throw new Error('Missing sun analysis control')
   await user.click(within(control).getByRole('button', { name: 'Roof solar' }))
   expect(screen.getAllByText(ROOF_SOLAR_DISCLAIMER).length).toBeGreaterThan(0)
   // jsdom has no Worker: the card says it is computing rather than showing a placeholder number.
-  const cards = within(screen.getByRole('group', { name: 'Analysis cards' }))
-  expect(cards.getByRole('button', { name: /^Sun/ })).toHaveTextContent('Computing roof solar')
+  expect(within(screen.getByRole('region', { name: 'Sun card' })).getByText(/Computing roof solar/)).toBeVisible()
 })
 
 it('colours the façades of a user block and removes the layer in Shadows', async () => {
@@ -106,7 +108,7 @@ it('colours the façades of a user block and removes the layer in Shadows', asyn
   const user = userEvent.setup()
   await user.click(screen.getByRole('button', { name: 'Add a block' }))
   draw()
-  await user.click(screen.getByRole('button', { name: /^Sun/ }))
+  await user.click(screen.getByTestId('analysis-card-sun'))
   const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
   if (!control) throw new Error('Missing sun analysis control')
   await user.click(within(control).getByRole('button', { name: 'Façade' }))
@@ -130,7 +132,7 @@ it('colours the same façades with VSC and shows the daylight disclaimer', async
   const user = userEvent.setup()
   await user.click(screen.getByRole('button', { name: 'Add a block' }))
   draw()
-  await user.click(screen.getByRole('button', { name: /^Sun/ }))
+  await user.click(screen.getByTestId('analysis-card-sun'))
   const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
   if (!control) throw new Error('Missing sun analysis control')
   await user.click(within(control).getByRole('button', { name: 'VSC' }))
@@ -174,6 +176,27 @@ it('keeps blocks when tools are hidden but clears them on a fresh studio session
   first.unmount()
   mount()
   expect(scene().editor.history.document.volumes).toHaveLength(0)
+})
+
+it('sends Back to the frame step for an imported site and to the site list for a curated one', () => {
+  const curated = mount()
+  expect(screen.getByRole('link', { name: 'Back' })).toHaveAttribute('href', '/#sites')
+  curated.unmount()
+
+  const imported = { ...props.site, id: 'import-test', title: 'Nypevegen 8', dataStatus: 'user-import' as const }
+  // The study area of an import is the frame inset 15 % on every side: 280 m for a 400 m frame.
+  const importedPackage = {
+    ...sitePackage,
+    studyArea: { ...sitePackage.studyArea, polygon: [[-140, -140], [140, -140], [140, 140], [-140, 140], [-140, -140]] as SitePackage['studyArea']['polygon'] },
+  }
+  render(<MemoryRouter><StudioShell {...props} site={imported} sitePackage={importedPackage} /></MemoryRouter>)
+  const href = screen.getByRole('link', { name: 'Back' }).getAttribute('href') ?? ''
+  expect(href.startsWith('/new?')).toBe(true)
+  const params = new URLSearchParams(href.split('?')[1] ?? '')
+  expect(params.get('lat')).toBe(String(sitePackage.manifest.location.latitude))
+  expect(params.get('lon')).toBe(String(sitePackage.manifest.location.longitude))
+  expect(params.get('label')).toBe('Nypevegen 8')
+  expect(params.get('size')).toBe('400')
 })
 
 it('keeps loading and retry states', () => {

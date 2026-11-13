@@ -263,3 +263,28 @@ Implemented: water is a surface, not a tint on the terrain (ADR-0025).
       `scripts/capture-water.mjs`.
 - [ ] The `engineering-code-reviewer` pass over the change.
 - [ ] The `design-ui-finish-gate-reviewer` pass over the water screenshots.
+
+## One card per analysis in the panel — 2026-11-13
+
+Implemented: the analysis cards moved from the bottom dock into the Parameters panel (ADR-0026).
+
+- [x] One card per analysis in the Parameters panel: Sun, Wind, Noise (`AnalysisCards.tsx`), each with
+      its figure, its claim and its controls.
+- [x] The open card is the analysis on the map: opening a card turns its layer on, closing it turns
+      the layer off. One climate layer at a time, as ADR-0016 had it.
+- [x] The bottom dock is gone; the viewport takes the height. The dock's "Blocks" card became the
+      Selected block group (count in the header, draw hint and button in the body).
+- [x] The dock's claim ("Indicative screening — not planning advice") moved above the cards; a closed
+      card states its claim, an open card states it in its controls, so no claim is printed twice.
+- [x] Back in the studio: an imported site returns to `/new?lat&lon&label&size` — the same place, the
+      same frame size (recovered from the study area), the same title. A curated site still returns to
+      the site list.
+- [x] "Open in 3D" shows a determinate progress bar above the six import steps.
+- [x] `dockValues.ts` → `analysisValues.ts`, `DockStat` → `AnalysisStat`.
+- [x] Unit tests: `AnalysisCards.test.tsx` (3), `StudioShell.test.tsx` (back link, cards), `framing.test.ts`
+      (frame size), `NewSitePage.test.tsx` (progress bar, frame size).
+- [x] e2e and capture scripts updated to the card layout.
+- [x] `npm run lint`, `npm run test` (1031 / 4 skipped) and `npm run build` pass.
+- [x] Evidence screenshots: `docs/screenshots/panel-*.png`, captured by `scripts/capture-panel.mjs`.
+- [ ] The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.
+

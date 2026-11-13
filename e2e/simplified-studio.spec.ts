@@ -38,7 +38,7 @@ test('Wind → Add a block updates the real worker field → Export image and cl
   await expect(root).toHaveAttribute('data-flow-buildings', String(count + 1))
   await expect.poll(async () => (await root.getAttribute('data-flow-result')) === (await root.getAttribute('data-flow-request')), { timeout: 45_000 }).toBe(true)
   await expect(root).not.toHaveAttribute('data-flow-solid', solids ?? '')
-  await expect(page.getByRole('group', { name: 'Analysis cards' }).getByRole('button', { name: /^Wind/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('analysis-card-wind')).toHaveAttribute('aria-expanded', 'true')
   await page.getByRole('button', { name: 'Export', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Image passes' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Record 6 s clip' })).toBeVisible()

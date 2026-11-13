@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { frameAt, framePixels, frameReadout } from './framing'
+import { frameAt, framePixels, frameReadout, frameSizeFromStudyArea } from './framing'
 
 describe('framing', () => {
   it('sizes the frame from metres per pixel at latitude and zoom', () => {
@@ -19,6 +19,14 @@ describe('framing', () => {
   it('builds a validated frame, defaulting the title', () => {
     const result = frameAt(59.9239, 10.7579, 400, '  ', 36 ** 3)
     expect(result).toEqual({ frame: { latitude: 59.9239, longitude: 10.7579, sizeMetres: 400, id: 'import-1000', title: 'Custom area' } })
+  })
+
+  it('recovers the frame size from a study area, which is the frame inset 15 % on every side', () => {
+    const studyArea: readonly (readonly [number, number])[] = [[-140, -140], [140, -140], [140, 140], [-140, 140], [-140, -140]]
+    expect(frameSizeFromStudyArea(studyArea)).toBe(400)
+    expect(frameSizeFromStudyArea([[-70, -70], [70, -70], [70, 70], [-70, 70]] as readonly (readonly [number, number])[])).toBe(200)
+    // Not a frame size: no frame.
+    expect(frameSizeFromStudyArea([[-123, -45], [10, -45], [10, 90]] as readonly (readonly [number, number])[])).toBeNull()
   })
 
   it('rejects centres outside import coverage', () => {

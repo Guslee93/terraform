@@ -132,5 +132,5 @@ test('storeys, delete, undo and reload use session-only blocks', async ({ page }
   await expect(storeys).toHaveValue('8')
   await page.reload()
   await page.getByRole('button', { name: 'Add a block' }).click()
-  await expect(page.getByRole('group', { name: 'Analysis cards' }).getByRole('button', { name: /^Blocks/ })).toContainText('0')
+  await expect(page.locator('#panel-group-selected')).toContainText('0 blocks')
 })

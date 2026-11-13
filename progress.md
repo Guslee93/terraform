@@ -728,3 +728,33 @@ zoom in because the quads are small at the default site camera.
 - **Evidence.** `npm run lint`, `npm run test` (**1026 passed / 4 skipped**), `npm run build` pass. New tests: `src/features/sites/waterSurface.test.ts` (11), `src/features/sites/waterSurfaceShipped.test.ts` (3, over the shipped package: the cross-slope, the descent, the cut and the untouched ground outside), `src/scene/waterGeometry.test.ts` (3), plus the river classification and the estimate-cap cases in `src/features/import/terrain.test.ts` and the `counts.river` shape in `src/features/import/assemble.test.ts`. Screenshots: `docs/screenshots/water-*.png`, captured by `scripts/capture-water.mjs`.
 - **Open.** The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over this change are still outstanding. A surveyed water level would need a datum-shifted elevation source; the current level is a simplification of the elevation model and is disclosed as one.
 - Deployed (2026-11-12): Vercel production from main (1c404d1) via `vercel deploy --prod` — water as a surface (ADR-0025): the water is flat across its width and lies in the ground on both data paths. Live: https://terraform-studio-murex.vercel.app — the served Compact Infill package is byte-identical to the local build (520 buildings, 1880 terrain samples, checksum 417e1241ba91a643; `terrain.json`, `landcover.json`, `roads.json`, `trees.json`, `buildings.json` and `study-area.json` all hash the same as the local files), `/sites/compact-infill/attribution.md` returns 200, and the studio renders the Akerselva as a flat ribbon with no console errors.
+
+## 2026-11-13 — One card per analysis in the Parameters panel (ADR-0026)
+- **The brief.** The owner sent two annotated screenshots of the studio and the frame step. Four asks:
+  Back in the studio should return to *Frame the site*; all the information belongs in the right panel;
+  there should be one card per analysis (Wind, Sun, Noise); and the bottom analysis bar should go. On
+  the map step, pressing *Open in 3D* should load tiles, buildings and streets with a progress bar.
+- **What changed.** The dock (ADR-0016 rev 2) is gone. `AnalysisCards.tsx` puts one card per analysis at
+  the top of the Parameters panel: the figure and the claim in the header, the full controls inside
+  the open card. The open card is the analysis on the map, so ADR-0016's "one climate layer at a time"
+  rule survives unchanged. The wind quick controls (direction, speed) and the sun time band, which
+  lived in the dock, moved into their cards. The dock's claim moved above the cards; the dock's
+  "Blocks" card became the Selected block group.
+- **Back.** An imported site came from a frame, so Back returns to `/new?lat=…&lon=…&label=…&size=…`.
+  The frame size is recovered from the imported study area, which is the frame inset 15 % on every
+  side. A curated site was never framed, so its Back still goes to the site list (the owner's choice).
+- **The progress bar.** The six import steps stay listed; above them a determinate bar shows the
+  share of settled steps, plus half for the step in flight.
+- **Renames.** `dockValues.ts` → `analysisValues.ts` and `DockStat` → `AnalysisStat`: with the dock gone,
+  the name was wrong, and the values never belonged to it.
+- **Records.** `docs/decisions/ADR-0026-panel-analysis-cards.md` (new), ADR-0016 §4 marked superseded,
+  `docs/design/design-contract.md` §0a, `task_plan.md`, `findings.md`, `AGENTS.md`.
+- **Evidence.** `npm run lint`, `npm run test` (1031 passed / 4 skipped) and `npm run build` pass.
+  New tests: `AnalysisCards.test.tsx` (3), the back-link and frame-size cases, the progress bar and
+  the restored frame size. Screenshots: `docs/screenshots/panel-{noise,wind,sun,frame,import}-1440x900.png`
+  and `panel-back-roundtrip-1440x900.png`, captured by `scripts/capture-panel.mjs`.
+- **Browser suite.** The full Playwright run is green (46 passed, 12 skipped) after one real failure:
+  the card figure was 22 px, and the unit beside it (`--ink-unit`, 3.32:1 on the card) needs large
+  text to pass AA. The figure is 30 px again, as in the dock card, so the unit counts as large text.
+- **Open.** The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.
+

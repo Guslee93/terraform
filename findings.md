@@ -224,3 +224,24 @@
   curated path is usually in a courtyard (OSM draws the building as a ring around the yard); a tree
   in a street is a mapped street tree. Only water is excluded — the rule stays narrow enough to be
   honest.
+
+## The studio had two homes for one figure (2026-11-13)
+
+- **The dock and the panel were one feature split in two.** The bottom dock carried the Sun, Wind and
+  Noise figures with one quick control each; the Parameters panel carried the *active* card's full
+  controls. Reading one number meant looking in one place and understanding it in another, and the
+  claim under the figure sat apart from the controls that produced it.
+- **One card per analysis keeps ADR-0016's real rule.** The rule that mattered was never "a dock" but
+  "exactly one analysis colours the ground". Moving the cards into the panel keeps that rule as "the
+  open card is the analysis on the map", and the panel becomes the only place a figure appears.
+- **The claim must not be printed twice.** A closed card states its claim under the figure; an open
+  card states it in its controls (the legend, the sun method note). The figure that needs a claim is
+  only on screen while its card is open — except the sun elevation and the noise peak, whose cards
+  keep their claim while closed.
+- **An imported site knows the frame it came from.** The import writes a study area that is the frame
+  inset 15 % on every side, so the frame side is the study side ÷ 0.7 and the frame size can be
+  recovered from the saved package. Back can therefore restore the frame, not just the coordinates.
+- **The import progress was already known.** `importSite` reports every step (`start`, `done`,
+  `skipped`, `failed`); the bar is the share of settled steps plus half for the step in flight. The
+  step list was never missing information — it was missing a shape you could read at a glance.
+

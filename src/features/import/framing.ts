@@ -15,6 +15,19 @@ export function frameReadout(sizeMetres: number): string {
   return `${sizeMetres} × ${sizeMetres} m · ${Number.isInteger(hectares) ? hectares : hectares.toFixed(1)} ha`
 }
 
+/**
+ * The frame size that produced this study area, or null when it is not one of the frame sizes.
+ * The imported study area is the frame inset 15 % on every side, so it is 70 % of the frame side.
+ */
+export function frameSizeFromStudyArea(polygon: readonly (readonly [number, number])[]): number | null {
+  if (polygon.length < 3) return null
+  const xs = polygon.map(([x]) => x)
+  const ys = polygon.map(([, y]) => y)
+  const side = (Math.max(...xs) - Math.min(...xs) + (Math.max(...ys) - Math.min(...ys))) / 2
+  const size = side / 0.7
+  return FRAME_SIZES.find((option) => Math.abs(option - size) < 1) ?? null
+}
+
 /** A validated frame for the map centre, or the reason it cannot be imported. */
 export function frameAt(latitude: number, longitude: number, sizeMetres: number, title: string, now = Date.now()): { frame: ImportFrame } | { error: string } {
   try {

@@ -10,7 +10,7 @@ This document is the written contract the visual gate reviews against. It is int
 
 ## 0a. Studio v3 (ADR-0016) — current for the studio screen
 
-Card layout on a warm grey canvas with soft shadows, pill toolbar, 300 px Parameters panel, bottom analysis dock (S/M/L), ENU floor grid, outline selection. Where ADR-0016 and §0 disagree for the studio, ADR-0016 wins; tokens `--canvas`, `--card`, `--card-line`, `--ink-unit`, `--shadow-card`, `--shadow-float`, `--frost`, `rounded-panel`. Evidence: `docs/screenshots/studio-v3-*`.
+Card layout on a warm grey canvas with soft shadows, pill toolbar, 340 px Parameters panel, ENU floor grid, outline selection. The analysis cards (Sun · Wind · Noise) live in the Parameters panel, one per analysis, and the card that is open is the analysis on the map (ADR-0026). Where ADR-0016 and §0 disagree for the studio, ADR-0016 wins, and where ADR-0026 disagrees with ADR-0016, ADR-0026 wins; tokens `--canvas`, `--card`, `--card-line`, `--ink-unit`, `--shadow-card`, `--shadow-float`, `--frost`, `rounded-panel`. Evidence: `docs/screenshots/studio-v3-*`, `docs/screenshots/panel-*`.
 
 ## 0. Draft 4 editor layout (ADR-0010) — superseded for the studio by ADR-0016
 

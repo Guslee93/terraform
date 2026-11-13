@@ -11,17 +11,17 @@ import { formatNumber } from './format'
 /** A value with its unit: the value reads dark, the unit grey (ADR-0016 card style). */
 export type Part = readonly [value: string, unit: string]
 
-/** What one dock card shows. `value: null` renders "—" with `hint`; never a made-up number. */
-export type DockStat = {
+/** What one analysis card shows. `value: null` renders "—" with `hint`; never a made-up number. */
+export type AnalysisStat = {
   readonly value: string | null
   readonly unit: string
   readonly hint?: string
   readonly secondary: readonly Part[]
 }
 
-const empty = (hint: string): DockStat => ({ value: null, unit: '', hint, secondary: [] })
+const empty = (hint: string): AnalysisStat => ({ value: null, unit: '', hint, secondary: [] })
 
-export function sunStat(state: SunState, clock: string): DockStat {
+export function sunStat(state: SunState, clock: string): AnalysisStat {
   if (state.belowHorizon) return { ...empty('Sun below horizon'), secondary: [[clock, ' local']] }
   return {
     value: formatNumber(state.elevationDeg),
@@ -35,7 +35,7 @@ export function sunStat(state: SunState, clock: string): DockStat {
 }
 
 /** Median assessed ground hours for the selected date; the date names the result. */
-export function sunHoursStat(cells: readonly SunHoursCell[], date: string): DockStat {
+export function sunHoursStat(cells: readonly SunHoursCell[], date: string): AnalysisStat {
   const median = medianSunHours(cells)
   if (median === null) return { ...empty('No assessed ground'), secondary: [[shortDate(date), '']] }
   return {
@@ -46,7 +46,7 @@ export function sunHoursStat(cells: readonly SunHoursCell[], date: string): Dock
 }
 
 /** Median direct-sun hours on the user's façades for the selected date. */
-export function facadeSunStat(values: readonly FacadeSunValue[], date: string): DockStat {
+export function facadeSunStat(values: readonly FacadeSunValue[], date: string): AnalysisStat {
   const median = medianFacadeSun(values)
   if (median === null) {
     return { ...empty('Draw a block to see façades'), secondary: [[shortDate(date), '']] }
@@ -59,7 +59,7 @@ export function facadeSunStat(values: readonly FacadeSunValue[], date: string): 
 }
 
 /** Median VSC on the user's façades under the CIE overcast sky. */
-export function vscStat(values: readonly VscValue[]): DockStat {
+export function vscStat(values: readonly VscValue[]): AnalysisStat {
   const median = medianVsc(values)
   if (median === null) return empty('Draw a block to see façades')
   return {
@@ -70,7 +70,7 @@ export function vscStat(values: readonly VscValue[]): DockStat {
 }
 
 /** Median clear-sky annual irradiation across roofs; an upper bound, not a yield estimate. */
-export function roofSolarStat(values: readonly RoofSolarValue[] | null): DockStat {
+export function roofSolarStat(values: readonly RoofSolarValue[] | null): AnalysisStat {
   if (!values || values.length === 0) return empty('Computing roof solar…')
   const median = medianRoofSolar(values)
   if (median === null) return empty('No roofs to assess')
@@ -82,7 +82,7 @@ export function roofSolarStat(values: readonly RoofSolarValue[] | null): DockSta
 }
 
 /** Peak ground level in the study grid and the loudest mapped road class. */
-export function noiseStat(cells: readonly NoiseCell[], roads: readonly NoiseRoad[]): DockStat {
+export function noiseStat(cells: readonly NoiseCell[], roads: readonly NoiseRoad[]): AnalysisStat {
   const levels = cells.flatMap((cell) => (cell.db === null ? [] : [cell.db]))
   if (levels.length === 0) return empty('No mapped roads in the study area')
   const loudest = roads.reduce<string | null>((best, road) => {
@@ -101,12 +101,12 @@ export function noiseStat(cells: readonly NoiseCell[], roads: readonly NoiseRoad
  * Share of open ground at or above the stand threshold (4 m/s), from a Comfort (activity) view,
  * and the windiest class present. `view` must be built with display 'activity'.
  */
-export function windStat(view: ClimateView | null, from: number, refSpeed: number, solving: boolean): DockStat {
+export function windStat(view: ClimateView | null, from: number, refSpeed: number, solving: boolean): AnalysisStat {
   if (!view) return empty(solving ? 'Solving the flow…' : 'Select to solve the flow')
   if (view.assessed === 0) return empty('Solving the flow…')
   const above = view.legend.reduce((sum, entry, index) => sum + ((ACTIVITY_BANDS[index]?.below ?? 0) > ROSE_THRESHOLD_MS ? entry.share : 0), 0)
   const worst = [...view.legend].reverse().find((entry) => entry.count > 0)
-  // Direction and speed sit beside the cards (quick controls); the card names the windiest class.
+  // Direction and speed are the card's own controls; the card names the windiest class.
   const secondary: Part[] = worst
     ? [['', 'worst '], [worst.label.split(' (')[0] ?? worst.label, '']]
     : [['', `${compassPoint(from)} ${from}° at ${refSpeed} m/s`]]

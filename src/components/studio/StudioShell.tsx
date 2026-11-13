@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { sunState } from '../../features/analysis/sun'
 import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, localSpeedMs, ROSE_THRESHOLD_MS, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
-import { ClimatePanel, WindQuick, useWindDemo } from './ClimatePanel'
+import { ClimatePanel, useWindDemo } from './ClimatePanel'
 import { ShareBar } from './DirectionRose'
 import { pillButtonClass } from '../ui/controls'
 import { useWindFlow } from '../../features/analysis/useWindFlow'
@@ -20,6 +20,7 @@ import type { MassingCommand } from '../../features/editor/history'
 import { commandError, displayedDocument, createEditorState, reduceEditor } from '../../features/editor/interaction'
 import { matchHistoryShortcut } from '../../features/editor/shortcuts'
 import { sampleTerrainHeight, terrainRelief } from '../../features/sites/geometry'
+import { frameSizeFromStudyArea } from '../../features/import/framing'
 import { normalizeRing, polygonArea, ringCentroid } from '../../lib/polygon'
 import type { CameraPresetId } from '../../features/sites/manifest'
 import type { SitePackage } from '../../features/sites/package'
@@ -36,9 +37,9 @@ import { Inspector } from './Inspector'
 import { StudioTopBar } from './StudioTopBar'
 import { SunBand, SunDetails, clockLabel, useSunPlayback, type SunAnalysis } from './SunPanel'
 import { ToolRail, type ToolId } from './ToolRail'
-import { AnalysisDock, type DockCard, type DockCardId } from './AnalysisDock'
+import { AnalysisCards, type AnalysisCard, type AnalysisId } from './AnalysisCards'
 import { LayersCard } from './LayersCard'
-import { noiseStat, facadeSunStat, roofSolarStat, sunHoursStat, sunStat, vscStat, windStat } from './dockValues'
+import { noiseStat, facadeSunStat, roofSolarStat, sunHoursStat, sunStat, vscStat, windStat } from './analysisValues'
 import { computeNoise, NOISE_DISCLAIMER } from '../../features/analysis/noise'
 import { daySunSamples } from '../../features/analysis/shadowRay'
 import { computeSunHours, SUN_HOURS_COLOUR, SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
@@ -100,6 +101,21 @@ export function StudioShell({
   const [testBuilding, setTestBuilding] = useState(false)
   const analysisOnly = !testBuilding
   const editable = wide && packageStatus === 'ready' && testBuilding
+  // An imported site came from the frame step, so Back returns there: the same place, the same
+  // frame size. A curated site never was framed, so Back returns to the site list.
+  const backTo = useMemo(() => {
+    if (site.dataStatus !== 'user-import') return '/#sites'
+    const location = sitePackage?.manifest.location
+    if (!location) return '/new'
+    const params = new URLSearchParams({
+      lat: String(location.latitude),
+      lon: String(location.longitude),
+      label: site.title,
+    })
+    const size = frameSizeFromStudyArea(sitePackage?.studyArea.polygon ?? [])
+    if (size) params.set('size', String(size))
+    return `/new?${params.toString()}`
+  }, [site, sitePackage])
   const [layers, setLayers] = useState<SceneLayers>({
     terrain: true,
     ground: true,
@@ -107,23 +123,23 @@ export function StudioShell({
     streets: true,
     trees: true,
   })
-  // The active dock card drives the one climate layer (ADR-0016): Wind, Noise and Sun hours colour the ground.
-  const [dockActive, setDockActive] = useState<DockCardId>('noise')
+  // The open analysis card is the analysis on the map (ADR-0026): Wind, Noise and Sun hours colour the ground.
+  const [activeCard, setActiveCard] = useState<AnalysisId | null>('noise')
   const climateMode: ClimateMode =
-    dockActive === 'wind'
+    activeCard === 'wind'
       ? 'wind'
-      : dockActive === 'noise'
+      : activeCard === 'noise'
         ? 'noise'
-        : dockActive === 'sun' && sunAnalysis === 'sun-hours'
+        : activeCard === 'sun' && sunAnalysis === 'sun-hours'
           ? 'sun-hours'
           : 'off'
   const setClimateMode = (mode: ClimateMode) => {
     if (mode === 'sun-hours') {
-      setDockActive('sun')
+      setActiveCard('sun')
       setSunAnalysis('sun-hours')
       return
     }
-    setDockActive(mode === 'wind' ? 'wind' : mode === 'noise' ? 'noise' : 'sun')
+    setActiveCard(mode === 'wind' ? 'wind' : mode === 'noise' ? 'noise' : null)
   }
   const [wind, setWind] = useState<WindSettings>(DEFAULT_WIND)
   const [streamlines, setStreamlines] = useState(false)
@@ -171,7 +187,7 @@ export function StudioShell({
     [studyArea, analysisBuildings, sunSamples, climateMode],
   )
   // Roof solar depends only on the buildings and the site, so it is computed once per edit in its worker.
-  const roofSolarActive = dockActive === 'sun' && sunAnalysis === 'roof-solar'
+  const roofSolarActive = activeCard === 'sun' && sunAnalysis === 'roof-solar'
   const roofSolarValues = useRoofSolar(analysisBuildings, sitePackage?.manifest.location ?? null, roofSolarActive, roofSolarFocus)
   const roofSolarSummary = useMemo(() => {
     if (!roofSolarValues) return null
@@ -205,12 +221,12 @@ export function StudioShell({
     })
   }, [analysisDocument, sitePackage])
   const facadeSampleList = useMemo(() => facadeSamples(facadeMasses), [facadeMasses])
-  const facadeActive = dockActive === 'sun' && sunAnalysis === 'facade'
+  const facadeActive = activeCard === 'sun' && sunAnalysis === 'facade'
   const facadeSunValues = useMemo(
     () => (facadeActive ? computeFacadeSun(facadeSampleList, analysisBuildings, sunSamples) : []),
     [facadeActive, facadeSampleList, analysisBuildings, sunSamples],
   )
-  const vscActive = dockActive === 'sun' && sunAnalysis === 'vsc'
+  const vscActive = activeCard === 'sun' && sunAnalysis === 'vsc'
   const vscValues = useMemo(
     () => (vscActive ? computeVsc(facadeSampleList, analysisBuildings) : []),
     [vscActive, facadeSampleList, analysisBuildings],
@@ -306,10 +322,7 @@ export function StudioShell({
   const toggleTestBuilding = () => {
     const next = !testBuilding
     setTestBuilding(next)
-    if (!next) {
-      dispatch({ type: 'setTool', tool: 'select' })
-      setDockActive((current) => (current === 'draw' ? 'noise' : current))
-    }
+    if (!next) dispatch({ type: 'setTool', tool: 'select' })
   }
 
   const toggleLayer = (layer: keyof SceneLayers) => {
@@ -370,27 +383,15 @@ export function StudioShell({
   }])), [analysisDocument])
   const selectedDeletable = !!selectedVolume && !selectedVolume.locked
   const climatePanel = (only: 'wind' | 'noise') => sitePackage ? (
-    <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick={false} availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
+    <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
       streamlines={streamlines} onStreamlinesChange={setStreamlines}
       baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
       onSetBaseline={() => { if (windFlow?.settled && windFlow.slicesComplete && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}
       onClearBaseline={() => { setBaseline(null); setWind((w) => ({ ...w, display: w.display === 'delta' ? 'activity' : w.display })) }} />
   ) : null
   const drawHint = 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'
-  const dockCards: DockCard[] = [
-    ...(testBuilding ? [{
-      id: 'draw' as const,
-      label: 'Blocks',
-      icon: 'pen' as const,
-      stat: { value: String(shown.volumes.length), unit: '', secondary: [] },
-      note: 'Session-only blocks · reload clears them',
-      quick: (
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-          <p className="text-body-sm text-ink">{editor.tool === 'draw' ? drawHint : 'Draw a footprint, then set storeys in Parameters.'}</p>
-          {editable && editor.tool !== 'draw' && <button type="button" onClick={() => selectTool('draw')} className={pillButtonClass}>Draw another <Icon name="plus" size={12} /></button>}
-        </div>
-      ),
-    }] : []),
+  // One card per analysis, in the Parameters panel (ADR-0026). The open card is the analysis on the map.
+  const analysisCards: AnalysisCard[] = [
     {
       id: 'sun',
       label: 'Sun',
@@ -407,9 +408,10 @@ export function StudioShell({
                 : sunStat(solar.state, clockLabel(sunTime.minuteOfDay))
         : { value: null, unit: '', hint: 'Site loading', secondary: [] },
       note: sunAnalysis === 'sun-hours' ? SUN_HOURS_DISCLAIMER : sunAnalysis === 'roof-solar' ? ROOF_SOLAR_DISCLAIMER : sunAnalysis === 'facade' ? FACADE_SUN_DISCLAIMER : sunAnalysis === 'vsc' ? VSC_DISCLAIMER : 'Geometric sun direction — not a daylight assessment',
-      quick: solar && sitePackage ? (
-        <div className="space-y-3">
-          <SunBand time={sunTime} onChange={setSunTime} state={solar.state} location={sitePackage.manifest.location} playback={playback} analysis={sunAnalysis} onAnalysisChange={setSunAnalysis} />
+      body: solar && sitePackage ? (
+        <div className="space-y-4">
+          {/* The time band: the day profile, the time slider and playback. The analysis switch lives in SunDetails. */}
+          <SunBand time={sunTime} onChange={setSunTime} state={solar.state} location={sitePackage.manifest.location} playback={playback} />
           {climateMode === 'sun-hours' && climateView && climateView.assessed > 0 && (
             <ShareBar entries={climateView.legend} label="Share of the study area by band" />
           )}
@@ -422,8 +424,9 @@ export function StudioShell({
           {vscActive && vscValues.length > 0 && (
             <ShareBar entries={vscLegend(vscValues)} label="Share of your façades by band" />
           )}
+          <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} analysis={sunAnalysis} onAnalysisChange={setSunAnalysis} roofSolar={sunAnalysis === 'roof-solar' ? roofSolarSummary : null} />
         </div>
-      ) : undefined,
+      ) : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },
     {
       id: 'wind',
@@ -431,7 +434,7 @@ export function StudioShell({
       icon: 'wind',
       stat: windStat(windComfortView, wind.from, wind.refSpeed, climateMode === 'wind'),
       note: `${FLOW_DISCLAIMER} · figure = share of open ground ≥ ${ROSE_THRESHOLD_MS} m/s`,
-      quick: <WindQuick wind={wind} idPrefix="dock-wind" onChange={(patch) => (windDemo.playing ? windDemo.stopWith(patch) : setWind((w) => ({ ...w, ...patch })))} />,
+      body: climatePanel('wind') ?? <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },
     {
       id: 'noise',
@@ -439,29 +442,28 @@ export function StudioShell({
       icon: 'noise',
       stat: noiseStat(noiseCells, sitePackage?.roads ?? []),
       note: NOISE_DISCLAIMER,
-      quick: climateMode === 'noise' && climateView && climateView.assessed > 0
-        ? <ShareBar entries={climateView.legend} label="Share of the study area by band" />
-        : undefined,
+      body: climatePanel('noise') ?? <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },
   ]
-  const activeCard = dockCards.find((card) => card.id === dockActive)
-  const panelAnalysis = activeCard ? {
-    title: activeCard.label,
-    body: dockActive === 'sun' ? (solar && sitePackage ? <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} analysis={sunAnalysis} onAnalysisChange={setSunAnalysis} roofSolar={sunAnalysis === 'roof-solar' ? roofSolarSummary : null} /> : null)
-      : dockActive === 'wind' ? climatePanel('wind')
-      : dockActive === 'noise' ? climatePanel('noise')
-
-      : <p className="text-body-sm text-ink-secondary">{drawHint}. Drag a selected mass's roof handle to change storeys.</p>,
-  } : null
+  // The open card is the analysis on the map; closing it turns the layer off.
+  const selectAnalysisCard = (id: AnalysisId) => setActiveCard((current) => (current === id ? null : id))
+  const blockCount = shown.volumes.length
+  // While drawing, the panel says what the next click does; otherwise it offers another footprint.
+  const drawAction = !testBuilding ? null : editor.tool === 'draw'
+    ? <p className="mt-3 text-caption text-ink-secondary">{drawHint}</p>
+    : editable
+      ? <button type="button" onClick={() => selectTool('draw')} className={cn(pillButtonClass, 'mt-3')}>Draw another <Icon name="plus" size={12} /></button>
+      : null
   const ready = packageStatus === 'ready'
   return (
     <div ref={studioRoot} data-demo={windDemo.playing ? 'playing' : undefined} className="flex min-h-dvh flex-col gap-3 bg-canvas p-3 text-ink lg:h-dvh">
       <style>{`[data-demo="playing"] aside[aria-label="Parameters"] { scrollbar-width: none; }
         [data-demo="playing"] aside[aria-label="Parameters"]::-webkit-scrollbar { display: none; }`}</style>
 
-      <main className="grid flex-1 gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[auto_minmax(0,1fr)_auto] lg:[&>aside]:col-start-2 lg:[&>aside]:row-span-2 lg:[&>aside]:row-start-2">
+      <main className="grid flex-1 gap-3 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[auto_minmax(0,1fr)] lg:[&>aside]:col-start-2 lg:[&>aside]:row-start-2">
         <StudioTopBar
           site={site}
+          backTo={backTo}
           canFit={ready}
           onFitSite={() => requestCamera('isometric')}
           toolbar={testBuilding && wide ? (
@@ -558,7 +560,7 @@ export function StudioShell({
                 )}
               >
                 {editor.error && <Icon name="warn" size={12} className="mr-1.5 inline text-danger" />}
-                {editor.error ?? 'Click the ground to place corners · Enter to finish · Backspace removes a point · Esc cancels'}
+                {editor.error ?? drawHint}
               </p>
             </div>
           )}
@@ -574,7 +576,7 @@ export function StudioShell({
             </div>
           </div>
         ) : <Inspector
-          analysis={panelAnalysis}
+          analysisCards={<AnalysisCards cards={analysisCards} active={activeCard} onSelect={selectAnalysisCard} />}
           analysisOnly={analysisOnly}
           layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} />}
           site={site}
@@ -592,13 +594,9 @@ export function StudioShell({
           canEdit={editable}
           editingEnabled={editable && idle}
           onCommand={runCommand}
+          selectionMeta={`${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`}
+          selectionExtra={drawAction}
         />}
-
-        {ready && (
-          <div className="min-w-0 lg:col-start-1 lg:row-start-3">
-            <AnalysisDock cards={dockCards} active={dockActive} onActivate={setDockActive} />
-          </div>
-        )}
       </main>
     </div>
   )

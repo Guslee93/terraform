@@ -26,7 +26,7 @@ try {
     await page.waitForTimeout(1500)
     await page.screenshot({ path: `${OUT}/roofs-${site.key}-close-1440x900.png` })
     // Roof overlays must follow the gables, not cut through them.
-    await page.getByRole('group', { name: 'Analysis cards' }).getByRole('button', { name: /^Sun/ }).click()
+    await page.getByTestId('analysis-card-sun').click()
     await page.getByRole('button', { name: 'Roof solar', exact: true }).first().click()
     await page.waitForTimeout(8000)
     await page.screenshot({ path: `${OUT}/roofs-${site.key}-solar-1440x900.png` })

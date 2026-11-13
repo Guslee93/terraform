@@ -47,6 +47,12 @@ function startFrom(params: URLSearchParams) {
   return valid ? { latitude, longitude, label: params.get('label')?.slice(0, 120) || 'Custom area' } : START
 }
 
+/** The frame size in `?size=`, if it is one of the three; otherwise the default. */
+function sizeFrom(params: URLSearchParams): FrameSize {
+  const value = Number(params.get('size'))
+  return FRAME_SIZES.find((option) => option === value) ?? 400
+}
+
 export function NewSitePage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -55,7 +61,7 @@ export function NewSitePage() {
   const map = useRef<maplibregl.Map | null>(null)
   const controller = useRef<AbortController | null>(null)
   const [view, setView] = useState({ latitude: start.latitude, longitude: start.longitude, zoom: START_ZOOM })
-  const [size, setSize] = useState<FrameSize>(400)
+  const [size, setSize] = useState<FrameSize>(() => sizeFrom(params))
   const [title, setTitle] = useState(start.label)
   const [phase, setPhase] = useState<Phase>('idle')
   const [steps, setSteps] = useState(WAITING)
@@ -169,6 +175,13 @@ export function NewSitePage() {
   }
 
   const pixels = framePixels(size, view.latitude, view.zoom)
+  // The bar is the share of the six steps that are settled, plus half for the one in flight.
+  const settled = STEPS.filter((step) => {
+    const state = steps[step.id].state
+    return state === 'done' || state === 'skipped' || state === 'failed'
+  }).length
+  const running = STEPS.some((step) => steps[step.id].state === 'start') ? 1 : 0
+  const progress = Math.round(((settled + running * 0.5) / STEPS.length) * 100)
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-app lg:block lg:h-dvh lg:overflow-hidden">
@@ -229,24 +242,42 @@ export function NewSitePage() {
         </div>
 
         {phase !== 'idle' && (
-          <ol aria-label="Import progress" aria-live="polite" className="border-t border-line pt-4">
-            {STEPS.map((step) => {
-              const { state, detail } = steps[step.id]
-              return (
-                <li key={step.id} className="flex items-baseline justify-between gap-3 border-b border-line py-2 last:border-b-0">
-                  <span className="min-w-0">
-                    <span className="block text-body-sm text-ink">{step.label}</span>
-                    <span className="block text-caption text-ink-secondary">
-                      {(state === 'failed' || state === 'skipped') && detail ? detail : step.source}
+          <>
+            <div className="border-t border-line pt-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-caption text-ink-secondary">Loading tiles, buildings and streets</p>
+                <p className="text-caption tabular-nums text-ink-secondary">{progress}%</p>
+              </div>
+              <div
+                role="progressbar"
+                aria-label="Import progress"
+                aria-valuenow={progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="mt-2 h-1.5 w-full overflow-hidden rounded-pill bg-muted-fill"
+              >
+                <div className="h-full rounded-pill bg-accent transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+            <ol aria-label="Import progress" aria-live="polite" className="border-t border-line pt-4">
+              {STEPS.map((step) => {
+                const { state, detail } = steps[step.id]
+                return (
+                  <li key={step.id} className="flex items-baseline justify-between gap-3 border-b border-line py-2 last:border-b-0">
+                    <span className="min-w-0">
+                      <span className="block text-body-sm text-ink">{step.label}</span>
+                      <span className="block text-caption text-ink-secondary">
+                        {(state === 'failed' || state === 'skipped') && detail ? detail : step.source}
+                      </span>
                     </span>
-                  </span>
-                  <span className={cn('shrink-0 text-caption', state === 'failed' ? 'text-danger' : state === 'done' ? 'text-ink' : 'text-ink-secondary')}>
-                    {STATUS_WORD[state]}
-                  </span>
-                </li>
-              )
-            })}
-          </ol>
+                    <span className={cn('shrink-0 text-caption', state === 'failed' ? 'text-danger' : state === 'done' ? 'text-ink' : 'text-ink-secondary')}>
+                      {STATUS_WORD[state]}
+                    </span>
+                  </li>
+                )
+              })}
+            </ol>
+          </>
         )}
 
         {phase === 'cancelled' && <p role="status" className="text-body-sm text-ink-secondary">Import cancelled</p>}

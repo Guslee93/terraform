@@ -68,7 +68,7 @@ try {
         await page.waitForTimeout(2500)
       }
 
-      await page.getByRole('group', { name: 'Analysis cards' }).getByRole('button', { name: /^Sun/ }).click()
+      await page.getByTestId('analysis-card-sun').click()
       await page.getByRole('button', { name: mode.label, exact: true }).first().click()
       await page.waitForTimeout(mode.key === 'roof-solar' ? 4500 : 1500)
       if (mode.draw) {

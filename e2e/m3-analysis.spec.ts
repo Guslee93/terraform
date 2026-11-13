@@ -23,7 +23,7 @@ async function openStudio(page: Page) {
 
 /** Clear centre clip, away from the compass, legend, presets and scale bar (smoke.spec). */
 
-/** Activate the Sun card: the time band in the dock, readout, date and presets in Parameters. */
+/** Activate the Sun card: the time band, readout, date and presets in the Parameters panel. */
 async function openSunGroup(page: Page) {
   await openAnalysis(page, 'Sun')
 }

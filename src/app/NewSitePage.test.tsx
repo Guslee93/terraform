@@ -157,6 +157,26 @@ describe('NewSitePage', () => {
     expect(screen.getByRole('button', { name: 'Open in 3D' })).toBeEnabled()
   })
 
+  it('shows a progress bar that advances with the steps', async () => {
+    const user = userEvent.setup()
+    const pending = pendingImport()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: 'Open in 3D' }))
+    const bar = screen.getByRole('progressbar', { name: 'Import progress' })
+    expect(bar).toHaveAttribute('aria-valuenow', '0')
+    pending.options().onProgress?.('tiles', 'start')
+    await waitFor(() => expect(bar).toHaveAttribute('aria-valuenow', '8'))
+    pending.options().onProgress?.('tiles', 'done')
+    await waitFor(() => expect(bar).toHaveAttribute('aria-valuenow', '17'))
+  })
+
+  it('restores the frame size from the link', async () => {
+    renderPage('/new?lat=59.9225&lon=10.7595&label=Nypevegen%208&size=600')
+    expect(screen.getByText('600 × 600 m · 36 ha')).toBeInTheDocument()
+    expect(within(screen.getByRole('radiogroup', { name: 'Frame size' })).getByRole('radio', { name: '600 m' })).toBeChecked()
+  })
+
   it('shows failures in an alert with a retry', async () => {
     const user = userEvent.setup()
     importSite.mockRejectedValueOnce(new Error('OpenFreeMap tile 14/1/1: HTTP 503'))

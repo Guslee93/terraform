@@ -4,12 +4,12 @@ import { expect, type Page } from '@playwright/test'
 export const parameters = (page: Page) => page.getByRole('complementary', { name: 'Parameters' })
 
 /**
- * Make a dock card active (ADR-0016 rev 2). Its quick controls appear in the dock and its full
- * controls open as the first group of Parameters. No-op when the card is already active.
+ * Open an analysis card in the Parameters panel (ADR-0026). The open card is the analysis on the
+ * map, and its controls live in the card. No-op when the card is already open.
  */
-export async function openAnalysis(page: Page, label: 'Blocks' | 'Sun' | 'Wind' | 'Noise') {
-  const card = page.getByRole('group', { name: 'Analysis cards' }).getByRole('button', { name: new RegExp(`^${label}`) })
-  if ((await card.getAttribute('aria-pressed')) !== 'true') await card.click()
+export async function openAnalysis(page: Page, label: 'Sun' | 'Wind' | 'Noise') {
+  const card = page.getByTestId(`analysis-card-${label.toLowerCase()}`)
+  if ((await card.getAttribute('aria-expanded')) !== 'true') await card.click()
   return parameters(page)
 }
 

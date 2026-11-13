@@ -22,7 +22,7 @@ async function openStudio(page: Page) {
   await expect(page.getByRole('region', { name: /3D site viewport for Compact Infill/i })).toBeVisible()
 }
 
-/** Activate the Wind dock card: the wind layer turns on and its controls open in Parameters. */
+/** Open the wind card: the wind layer turns on and its controls open in the panel. */
 async function openClimateGroup(page: Page) {
   await openAnalysis(page, 'Wind')
   await expect(page.getByRole('group', { name: 'Wind map shows' })).toBeVisible()
@@ -32,10 +32,10 @@ test('X4: the wind layer shows its disclaimer and legend, and the baseline/delta
   await openStudio(page)
   await openClimateGroup(page)
 
-  // Wind on: the claim shows on the viewport (C23 review finding 3), under the dock's quick
-  // controls, and in Parameters with the legend once the flow is solved.
+  // Wind on: the claim shows on the viewport (C23 review finding 3) and in the wind card of the
+  // Parameters panel with the legend once the flow is solved.
   await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(DISCLAIMER)).toBeVisible({ timeout: 15_000 })
-  await expect(page.getByRole('region', { name: 'Wind quick controls' }).getByText(DISCLAIMER)).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Wind card' }).getByText(DISCLAIMER)).toBeVisible()
   await expect(parameters(page).getByText(DISCLAIMER)).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: 15_000 })
 

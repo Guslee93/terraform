@@ -17,8 +17,8 @@ async function openWind(page: Page) {
 
 test('every Wind panel control has an accessible name and a 24 px target', async ({ page }) => {
   await openWind(page)
-  // Both homes of the wind controls: the dock's quick controls and the Parameters group.
-  const climate = page.locator('#panel-group-analysis, [role="region"][aria-label="Wind quick controls"]')
+  // The wind controls live in the wind card of the Parameters panel.
+  const climate = page.getByRole('region', { name: 'Wind card' })
   const problems = await climate.locator('button, input, select').evaluateAll((els) => els.flatMap((el) => {
     const e = el as HTMLInputElement
     const r = e.getBoundingClientRect()
