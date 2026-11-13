@@ -859,3 +859,14 @@ zoom in because the quads are small at the default site camera.
   failed on `clock.pauseAt: Cannot fast-forward to the past` — on a slow runner more than the 1 s margin passed
   between reading the page's time and pausing. The 4× budgets held everywhere else (X4 3.1 min, sweep 2.4 min).
   Fix: pause 60 s ahead. Two-core local run, `--repeat-each 2`: 2/2 passed.
+## 2026-11-13 — Background agent pipeline (rebuild of PR #2)
+
+- Reviewed PR #2 (posted on the PR); rebuilt it on `ci/agent-pipeline-sap5ec`.
+- Checked against the sources: claude-code-action v1.0.275 reads `ANTHROPIC_BASE_URL` from the step's env (so a
+  workflow-level value reaches every Opus step), exports `GH_TOKEN` and configures git credentials in agent mode,
+  and installs Claude Code 2.1.323 (`--permission-mode dontAsk` and `--json-schema` exist). All action tags PR #2
+  pinned exist.
+- actionlint 1.7.11: clean on every workflow. Local simulation of the push job: a clean commit passes and pushes;
+  `.github/`, `package.json` and a nested `.env.local` are caught; the check gate is green only for exactly
+  `lint=0 test=0 build=0`.
+- Not run end to end: needs `MINIMAX_API_KEY`, an Opus credential and (recommended) `AGENT_PR_TOKEN`.

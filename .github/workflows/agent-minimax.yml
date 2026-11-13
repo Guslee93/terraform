@@ -1,0 +1,249 @@
+name: agent:minimax
+
+# Background agent pipeline. Label an issue `agent:minimax` to hand it over.
+#
+#   BRIEF    Claude Opus, as `terraform-lead`, writes the brief.
+#   ROUND 1  MiniMax builds → the pipeline checks and pushes → lint/test/build →
+#            Opus reviews (agent-round.yml).
+#   ROUND 2  Only if round 1 was not approved: MiniMax addresses the findings, same steps.
+#   PUBLISH  The pull request is opened only after an approving round.
+#   REPORT   The outcome is posted on the issue.
+#
+# Only the repository owner can start a run. Nothing is merged: the owner reviews and
+# merges the pull request. See AGENTS.md §5.5.
+#
+# Secrets: MINIMAX_API_KEY; ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN for Opus;
+# AGENT_PR_TOKEN (recommended) so ci.yml runs on the pull request.
+
+on:
+  issues:
+    types: [labeled]
+
+# Other labels on the same issue get their own group, so labelling an issue `bug`
+# does not cancel an agent run. Re-applying `agent:minimax` supersedes the old run.
+concurrency:
+  group: agent-minimax-${{ github.event.issue.number }}-${{ github.event.label.name }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  OPUS_MODEL: claude-opus-5-5
+  AGENT_BRANCH: minimax/issue-${{ github.event.issue.number }}
+  HANDOFF: docs/handoffs/agent-issue-${{ github.event.issue.number }}.md
+
+jobs:
+  # ------------------------------------------------------------------- BRIEF
+  brief:
+    name: Brief (Opus, terraform-lead)
+    if: github.event.label.name == 'agent:minimax' && github.event.sender.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Opus writes the brief
+        uses: anthropics/claude-code-action@v1.0.275
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          claude_args: |
+            --model ${{ env.OPUS_MODEL }}
+            --max-turns 20
+            --permission-mode dontAsk
+            --allowedTools "Read,Glob,Grep,Write,Bash(gh issue view:*)"
+          prompt: |
+            You are **Terraform Lead** for ${{ github.repository }}, acting as the brief
+            step of a background pipeline. MiniMax will implement what you write, and
+            Claude Opus will review its work against your brief. Write the brief.
+
+            ## Read, in order
+
+            1. `AGENTS.md` in full. It is the operating guide and it wins.
+            2. `task_plan.md`, `findings.md`, `progress.md`.
+            3. The issue: `gh issue view ${{ github.event.issue.number }} --json title,body,labels`.
+            4. The milestone brief for the active milestone, `docs/milestones/M<N>-*.md`,
+               and only the PRD sections it names.
+            5. The ADRs, `docs/design/design-contract.md` (UI work only) and
+               `docs/qa/fixtures.md` that the issue touches.
+            6. The code the issue is about, so the brief names real paths.
+
+            If the request conflicts with the PRD or AGENTS.md, say so in the brief and
+            cite the section. Do not silently reinterpret scope.
+
+            ## Write the brief
+
+            Write it to `${{ env.HANDOFF }}`, in the standard agent brief format of
+            AGENTS.md §6, filled in for this issue. Add one line at the end:
+
+                PR title: <type>: <summary>
+
+            `<type>` is one of `feat`, `fix`, `test`, `docs`, `refactor`, `perf`,
+            `build`, `ci`, `chore`. The summary names the change, not the issue.
+
+            The implementer may not change `.github/`, `.claude/`, `.mcp.json`, `.env*`,
+            `vercel.json`, `package.json`, `package-lock.json` or `.npmrc`; a change
+            there fails the pipeline. If the issue needs one of them, say so in the
+            brief and scope the work so the owner can make that change by hand.
+
+            Keep the brief under 150 lines. Do not modify any other file. The pipeline
+            posts the brief on the issue.
+
+      - name: Check the brief
+        run: |
+          set -euo pipefail
+          if [ ! -s "$HANDOFF" ]; then
+            echo "::error::the lead did not write $HANDOFF"; exit 1
+          fi
+          grep -q '^PR title: ' "$HANDOFF" || { echo "::error::the brief has no 'PR title:' line"; exit 1; }
+
+      - name: Upload the brief
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: agent-brief
+          path: ${{ env.HANDOFF }}
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Post the brief on the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          { echo "### Brief"; echo; cat "$HANDOFF"; } > "$RUNNER_TEMP/brief.md"
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/brief.md"
+
+  # ------------------------------------------------------------------ ROUNDS
+  round1:
+    name: Round 1
+    needs: brief
+    uses: ./.github/workflows/agent-round.yml
+    with:
+      round: 1
+    secrets: inherit
+    permissions:
+      contents: write
+      issues: write
+
+  round2:
+    name: Round 2
+    needs: round1
+    if: needs.round1.outputs.verdict == 'request_changes'
+    uses: ./.github/workflows/agent-round.yml
+    with:
+      round: 2
+    secrets: inherit
+    permissions:
+      contents: write
+      issues: write
+
+  # ----------------------------------------------------------------- PUBLISH
+  publish:
+    name: Open the pull request
+    needs: [round1, round2]
+    if: always() && (needs.round1.outputs.verdict == 'approve' || needs.round2.outputs.verdict == 'approve')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    outputs:
+      url: ${{ steps.pr.outputs.url }}
+    steps:
+      - name: Download the brief
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: agent-brief
+          path: _agent/brief
+
+      - name: Download the approving review
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: agent-review-${{ needs.round1.outputs.verdict == 'approve' && '1' || '2' }}
+          path: _agent
+
+      - name: Open the pull request
+        id: pr
+        env:
+          # A pull request opened with GITHUB_TOKEN starts no workflow, so ci.yml would
+          # not run on it. AGENT_PR_TOKEN (a fine-grained token with Contents: read and
+          # Pull requests: write on this repository) avoids that.
+          PR_TOKEN: ${{ secrets.AGENT_PR_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          ROUND: ${{ needs.round1.outputs.verdict == 'approve' && '1' || '2' }}
+        run: |
+          set -euo pipefail
+          brief="_agent/brief/agent-issue-$ISSUE.md"
+          title=$(grep -m1 '^PR title: ' "$brief" | sed 's/^PR title: *//' | tr -d '\r' | cut -c1-200)
+          [ -n "$title" ] || title="chore: agent work for issue #$ISSUE"
+
+          {
+            echo "Background agent pipeline for #$ISSUE: brief by Opus, implementation by MiniMax, approved by Opus in round $ROUND."
+            echo
+            echo "## Review summary"
+            echo
+            jq -r .summary _agent/review.json
+            echo
+            echo "## Checks on the pushed commit"
+            echo
+            grep '^## npm run' _agent/checks.md | sed 's/^## /- /'
+            echo
+            echo "The brief is in \`docs/handoffs/agent-issue-$ISSUE.md\`; the reviews are on #$ISSUE."
+            if [ -z "$PR_TOKEN" ]; then
+              echo
+              echo "> **CI has not run on this pull request**: it was opened with the workflow token."
+              echo "> Close and reopen it to start CI, or set the \`AGENT_PR_TOKEN\` secret."
+            fi
+            echo
+            echo "Closes #$ISSUE"
+          } > "$RUNNER_TEMP/body.md"
+
+          token="${PR_TOKEN:-$GH_TOKEN}"
+          url=$(GH_TOKEN="$token" gh pr list --repo "$GITHUB_REPOSITORY" --head "$AGENT_BRANCH" --state open --json url --jq '.[0].url // empty')
+          if [ -z "$url" ]; then
+            url=$(GH_TOKEN="$token" gh pr create --repo "$GITHUB_REPOSITORY" \
+              --base main --head "$AGENT_BRANCH" --title "$title" --body-file "$RUNNER_TEMP/body.md")
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+  # ------------------------------------------------------------------ REPORT
+  report:
+    name: Report the outcome
+    needs: [brief, round1, round2, publish]
+    if: always() && needs.brief.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Comment on the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          BRIEF: ${{ needs.brief.result }}
+          FIRST: ${{ needs.round1.outputs.verdict || needs.round1.result }}
+          SECOND: ${{ needs.round2.outputs.verdict || needs.round2.result }}
+          URL: ${{ needs.publish.outputs.url || 'not opened' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' \
+            "The agent pipeline finished." \
+            "" \
+            "- Brief: $BRIEF" \
+            "- Round 1: $FIRST" \
+            "- Round 2: $SECOND" \
+            "- Pull request: $URL" \
+            "- Run log: $RUN_URL" > "$RUNNER_TEMP/report.md"
+          gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/report.md"
