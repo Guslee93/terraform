@@ -1,0 +1,725 @@
+name: agent:minimax
+
+# Background agent pipeline.
+#
+#   BRIEF   Claude Opus 5.5   as `terraform-lead`: writes the brief
+#   BUILD   MiniMax           implements it on minimax/issue-<n>
+#   VERIFY  Claude Opus 5.5   as `engineering-code-reviewer`: verifies and gates
+#   FIX     MiniMax           addresses the findings, once
+#   RECORD  both              docs/agent-log.md and progress.md
+#
+# This mirrors the operating loop in .agents/skills/terraform-lead/SKILL.md:
+# BRIEF -> DESIGN -> BUILD -> VERIFY -> GATE -> RECORD.
+#
+# Work is handed over by labelling an issue `agent:minimax`. Only the repository
+# owner may start a run. The pull request is opened only after the reviewer has
+# approved the change, so nothing reaches `main` without a review.
+
+on:
+  issues:
+    types: [labeled]
+
+env:
+  # The MiniMax coding model, behind the Anthropic-compatible endpoint.
+  # Source: https://platform.minimax.io/docs/faq/models.md
+  MINIMAX_MODEL: MiniMax-M3.1-Flash
+  # The Anthropic-compatible gateway for MiniMax.
+  ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
+  # The Claude Opus model used to brief and to review.
+  # Source: https://platform.claude.com/docs/en/about-claude/model-deprecations
+  OPUS_MODEL: claude-opus-5-5
+  AGENT_BRANCH: minimax/issue-${{ github.event.issue.number }}
+  HANDOFF: docs/handoffs/agent-issue-${{ github.event.issue.number }}.md
+
+concurrency:
+  # One run per issue; a newer run supersedes an older one.
+  group: agent-minimax-issue-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ------------------------------------------------------------------- BRIEF
+  brief:
+    name: Brief (Opus, terraform-lead)
+    if: github.event.label.name == 'agent:minimax' && github.event.sender.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      brief: ${{ steps.capture.outputs.brief }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ github.token }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Opus writes the brief
+        id: write
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ env.OPUS_MODEL }}
+          GH_TOKEN: ${{ github.token }}
+        with:
+          github_token: ${{ github.token }}
+          settings: '{"permissions":{"defaultMode":"acceptEdits"}}'
+          claude_args: |
+            --model ${{ env.OPUS_MODEL }}
+            --max-turns 20
+            --permission-mode acceptEdits
+            --allowedTools 'Read,Grep,Glob,LS,Bash(gh issue view:*),Bash(gh issue comment:*)'
+          prompt: |
+            You are **Terraform Lead** for ${{ github.repository }}, acting as the brief
+            step of a background pipeline. A second agent, MiniMax, will implement
+            what you write, and you will later review its work. Write the brief.
+
+            ## Read, in order
+
+            1. `AGENTS.md` in full. It is the operating guide and it wins.
+            2. `task_plan.md`, `findings.md`, `progress.md`.
+            3. The issue: `gh issue view ${{ github.event.issue.number }} --json title,body,labels`.
+            4. The milestone brief for the active milestone, `docs/milestones/M<N>-*.md`,
+               and only the PRD sections it names.
+            5. The ADRs, `docs/design/design-contract.md` (UI work only) and
+               `docs/qa/fixtures.md` that the issue touches.
+            6. The code the issue is about, so the brief names real paths.
+
+            If the request conflicts with the PRD, say so in the brief and cite the
+            section. Do not silently reinterpret scope.
+
+            ## Write the brief
+
+            Write it to `${{ env.HANDOFF }}` (create the file; `docs/handoffs/` already
+            exists). Use exactly the standard agent brief format from AGENTS.md §6:
+
+            ```markdown
+            Role: <skill directory>
+            Project: Terraform v1 — architectural portfolio prototype.
+
+            Read first, in order:
+            1. AGENTS.md
+            2. docs/milestones/M<N>-<name>.md
+            3. PRD §<only relevant sections>
+            4. docs/design/design-contract.md (UI work only)
+            5. Relevant ADRs and docs/qa/fixtures.md
+
+            Milestone: M<N> only. Do not work ahead.
+            Goal: <one paragraph>
+            In scope: <3–6 bullets>
+            Out of scope: auth, payments, AI, backend, live GIS, MapLibre, new dependencies without an ADR.
+
+            Constraints:
+            - TypeScript strict; no `any` in domain schemas.
+            - Local East/North/Up metres; no lat/lon mesh vertices.
+            - Domain logic testable without React or Three.js.
+            - Preserve immutable site packages and provenance.
+            - No fabricated regulations or compliance claims.
+
+            Deliverable:
+            - <files to create/modify>
+            - <doc or ADR>
+            - <tests>
+
+            Done when:
+            - <acceptance criteria>
+            - npm run lint && npm run test && npm run build pass
+            - fixed-camera screenshots supplied when UI changed
+
+            Report: files changed, tests run, failures, known limitations, open questions.
+            ```
+
+            Two things the implementer needs that the template does not carry, so add
+            them at the end of the brief:
+
+            ```
+            PR title: <type>: <summary>
+            ```
+
+            `<type>` is one of `feat`, `fix`, `test`, `docs`, `refactor`, `perf`,
+            `build`, `ci`, `chore`. The summary names the change, not the issue.
+
+            Keep the whole brief under 150 lines. Do not implement anything and do not
+            modify any file other than the brief itself.
+
+            Afterwards, post the brief on the issue so the owner can read it:
+
+                gh issue comment ${{ github.event.issue.number }} --body "Brief written: ${{ env.HANDOFF }}"
+
+      - name: Capture the brief
+        id: capture
+        run: |
+          set -euo pipefail
+          if [ ! -f "$HANDOFF" ]; then
+            echo "::error::the lead did not write $HANDOFF"
+            exit 1
+          fi
+          echo "brief=$(cat "$HANDOFF")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the brief
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: agent-brief
+          path: ${{ env.HANDOFF }}
+          if-no-files-found: error
+
+  # ------------------------------------------------------------------- BUILD
+  build:
+    name: Build (MiniMax)
+    needs: brief
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the brief
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: agent-brief
+
+      - name: Prepare the agent branch
+        run: |
+          set -euo pipefail
+          git config user.name "minimax-agent[bot]"
+          git config user.email "minimax-agent[bot]@users.noreply.github.com"
+          # A re-run starts from a clean, auditable state: drop any branch left by a
+          # previous attempt, then recreate it from main. No force-push is involved.
+          if git ls-remote --exit-code --heads origin "$AGENT_BRANCH" >/dev/null 2>&1; then
+            git push origin --delete "$AGENT_BRANCH"
+          fi
+          git checkout -B "$AGENT_BRANCH" origin/main
+          # Pin the default push target: a bare `git push` can then only ever update
+          # the agent branch, never main.
+          git config remote.origin.push "+refs/heads/$AGENT_BRANCH:refs/heads/$AGENT_BRANCH"
+          git config push.default current
+
+      - name: MiniMax builds it
+        id: build
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+          ANTHROPIC_MODEL: ${{ env.MINIMAX_MODEL }}
+          GH_TOKEN: ${{ github.token }}
+        with:
+          github_token: ${{ github.token }}
+          settings: '{"permissions":{"defaultMode":"acceptEdits"}}'
+          claude_args: |
+            --model ${{ env.MINIMAX_MODEL }}
+            --max-turns 40
+            --permission-mode acceptEdits
+            --allowedTools 'Read,Edit,Write,MultiEdit,Glob,Grep,LS,Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(gh issue view:*)'
+          prompt: |
+            You are the implementer in a background pipeline on ${{ github.repository }}.
+            Terraform Lead has briefed the work and Claude Opus will review it.
+
+            ## Read first, in order
+
+            1. `AGENTS.md` in full. It holds the operating rules, the definition of
+               done and the claim policy.
+            2. `${{ env.HANDOFF }}` — the brief. Implement exactly this.
+            3. The issue for context: `gh issue view ${{ github.event.issue.number }} --json title,body,labels`.
+            4. The milestone brief and the ADRs the brief names.
+
+            Do only what the brief asks. No extra features, no opportunistic
+            refactors, no unrelated cleanup. If the brief and the issue disagree,
+            follow the brief and note the difference.
+
+            ## Rules
+
+            - Work only on the branch `${{ env.AGENT_BRANCH }}`. It is already created
+              and checked out for you. Never switch to `main`.
+            - Never push to `main`. Never force-push.
+            - Never modify anything under `.github/`, any `.env*` file, or `vercel.json`.
+            - Do not add npm dependencies and do not run `npm install <package>`. Only `npm ci`.
+            - Never print, echo, log or commit secrets, and never read a `.env*` file.
+            - TypeScript strict. No `any` in domain schemas, no unchecked `as`.
+            - Domain logic stays testable without React or Three.js.
+            - Preserve immutable site packages and provenance.
+            - No fabricated regulations, compliance claims or metrics.
+            - Commit and push with git only. Do not use the GitHub file-operation
+              tools: they commit to a different branch than the one you are on.
+
+            ## Record the work
+
+            AGENTS.md §7 is not optional. Before you finish:
+
+            - Add one row to `docs/agent-log.md`, following the existing table:
+              `| Date | Milestone | Agent | Goal | Artifact | Outcome | Notes |`
+              Use today's date, the milestone from the brief, the skill directory the
+              brief names, the files you touched, and an honest outcome.
+            - Append what you did to `progress.md`: the commands you ran and their
+              results. Log the failed attempts, not just the successes.
+
+            ## Verify
+
+            Run all three from the repository root and fix whatever you broke:
+
+                npm run lint
+                npm run test
+                npm run build
+
+            If a check still fails and you cannot fix it within scope, say exactly which
+            check fails and why in your final message and in `docs/agent-log.md`.
+
+            ## Commit and push
+
+                git add -A
+                git commit -m "<type>: <summary>"
+                git push -u origin ${{ env.AGENT_BRANCH }}
+
+            Do NOT open a pull request. The pipeline opens it only after Opus approves.
+            In your final message, list the files you changed and the result of each
+            check, so the reviewer has your own account of the work.
+
+  # ------------------------------------------------------- VERIFY and GATE
+  review:
+    name: Verify and gate (Opus, code-reviewer)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
+      summary: ${{ steps.verdict.outputs.summary }}
+    steps:
+      - name: Check out the agent branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ env.AGENT_BRANCH }}
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the brief
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: agent-brief
+
+      - name: Opus verifies the change
+        id: opus
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ env.OPUS_MODEL }}
+          GH_TOKEN: ${{ github.token }}
+        with:
+          github_token: ${{ github.token }}
+          settings: '{"permissions":{"defaultMode":"acceptEdits"}}'
+          claude_args: |
+            --model ${{ env.OPUS_MODEL }}
+            --max-turns 30
+            --permission-mode acceptEdits
+            --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["approve","request_changes"]},"summary":{"type":"string"},"findings":{"type":"array","items":{"type":"string"}}},"required":["verdict","summary","findings"]}'
+            --allowedTools 'Read,Grep,Glob,LS,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(npm run:*),Bash(gh issue view:*),Bash(gh issue comment:*)'
+          prompt: |
+            You are `engineering-code-reviewer`, the review gate for a background
+            pipeline on ${{ github.repository }}. Your verdict decides whether the
+            change is allowed to become a pull request, so review it properly and do
+            not rubber-stamp it.
+
+            ## Read first, in order
+
+            1. `AGENTS.md` in full, especially §1 guardrails, §6 the standard agent
+               brief, §7 the definition of done, and the claim policy.
+            2. `${{ env.HANDOFF }}` — the brief the implementation was meant to follow.
+            3. The issue: `gh issue view ${{ github.event.issue.number }} --json title,body,labels`.
+            4. The change:
+
+                   git diff origin/main...HEAD
+                   git log origin/main..HEAD --stat
+
+            ## Verify
+
+            Run the checks yourself and read the output:
+
+                npm run lint
+                npm run test
+                npm run build
+
+            ## Judge against AGENTS.md §7
+
+            Approve only if every applicable item holds:
+
+            - The change matches the brief and the milestone scope; nothing unrelated changed.
+            - Domain behaviour has unit tests with known fixtures.
+            - `npm run lint`, `npm run test` and `npm run build` pass.
+            - No new `any`, no unchecked `as`, no unvalidated persisted data.
+            - Every visible control works, or is marked as a later milestone and hidden.
+            - Numbers shown in the UI derive from geometry and tests, not constants.
+            - Disclaimers and provenance remain visible.
+            - `docs/agent-log.md` and `progress.md` record the work.
+            - Screenshots were captured for visual changes.
+            - Nothing under `.github/`, no `.env*` file and no `vercel.json` was touched.
+            - No new npm dependency was added.
+            - No secret, token or credential is in the diff or in any log output.
+            - The claim policy is respected: no `planning compliant`, `verified daylight`,
+              `official parcel`, `BIM-ready` or `IFC deliverable`.
+
+            Set `verdict` to `approve` when all of that holds. Otherwise set it to
+            `request_changes` and put every problem in `findings`, each one a single
+            actionable sentence naming the file and the change to make. Be specific:
+            the implementer will act on your findings without asking you anything.
+
+            Write `summary` as a short paragraph for the owner: what the change does,
+            how it was verified, and anything you would still want a human to look at.
+
+            Post your review on the issue — the pull request does not exist yet:
+
+                gh issue comment ${{ github.event.issue.number }} --body "<your review>"
+
+            Do not modify any file, do not commit, do not push, and do not merge.
+
+      - name: Record the verdict
+        id: verdict
+        env:
+          # Passed through the environment, never interpolated into the script.
+          STRUCTURED: ${{ steps.opus.outputs.structured_output }}
+        run: |
+          set -euo pipefail
+          if [ -z "$STRUCTURED" ]; then
+            echo "::error::the reviewer returned no structured output"
+            exit 1
+          fi
+          verdict=$(printf '%s' "$STRUCTURED" | jq -r '.verdict // empty')
+          if [ "$verdict" != "approve" ] && [ "$verdict" != "request_changes" ]; then
+            echo "::error::unexpected verdict: '$verdict'"
+            exit 1
+          fi
+          summary=$(printf '%s' "$STRUCTURED" | jq -r '.summary // empty')
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          echo "summary=$summary" >> "$GITHUB_OUTPUT"
+
+  # -------------------------------------------------------------------- FIX
+  fix:
+    name: Fix (MiniMax)
+    needs: review
+    if: needs.review.outputs.verdict == 'request_changes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the agent branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ env.AGENT_BRANCH }}
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the brief
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: agent-brief
+
+      - name: MiniMax addresses the findings
+        id: fix
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+          ANTHROPIC_MODEL: ${{ env.MINIMAX_MODEL }}
+          GH_TOKEN: ${{ github.token }}
+        with:
+          github_token: ${{ github.token }}
+          settings: '{"permissions":{"defaultMode":"acceptEdits"}}'
+          claude_args: |
+            --model ${{ env.MINIMAX_MODEL }}
+            --max-turns 30
+            --permission-mode acceptEdits
+            --allowedTools 'Read,Edit,Write,MultiEdit,Glob,Grep,LS,Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(gh issue view:*)'
+          prompt: |
+            You are the implementer in a background pipeline on ${{ github.repository }}.
+            Claude Opus, as `engineering-code-reviewer`, reviewed your previous change and
+            asked for changes.
+
+            ## Read first
+
+            1. `AGENTS.md` in full.
+            2. `${{ env.HANDOFF }}` — the brief you were building to.
+            3. The reviewer's findings, on the issue:
+
+                   gh issue view ${{ github.event.issue.number }} --json comments
+
+               The most recent review comment is the one that matters.
+            4. Your previous change:
+
+                   git diff origin/main...HEAD
+
+            ## Fix
+
+            Address every finding. Each finding names a file and a change to make. If
+            you think a finding is wrong, fix everything else and explain in your final
+            message why you disagreed with that one finding — do not silently skip it.
+
+            Keep the change scoped to the findings and the brief. Do not start anything
+            new.
+
+            ## Rules
+
+            - Work only on the branch `${{ env.AGENT_BRANCH }}`. Never switch to `main`.
+            - Never push to `main`. Never force-push.
+            - Never modify anything under `.github/`, any `.env*` file, or `vercel.json`.
+            - Do not add npm dependencies. Only `npm ci`.
+            - TypeScript strict. No `any` in domain schemas, no unchecked `as`.
+            - Commit and push with git only. Do not use the GitHub file-operation tools.
+            - Update `docs/agent-log.md` and `progress.md` with what you changed.
+
+            ## Verify
+
+            Run `npm run lint`, `npm run test` and `npm run build` and fix what you broke.
+
+            ## Commit and push
+
+                git add -A
+                git commit -m "fix: address review findings"
+                git push origin ${{ env.AGENT_BRANCH }}
+
+            Do NOT open a pull request. The pipeline opens it only after Opus approves.
+
+  # ------------------------------------------------------------------ GATE 2
+  review2:
+    name: Verify again (Opus, code-reviewer)
+    needs: fix
+    if: needs.fix.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
+      summary: ${{ steps.verdict.outputs.summary }}
+    steps:
+      - name: Check out the agent branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ env.AGENT_BRANCH }}
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the brief
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: agent-brief
+
+      - name: Opus verifies the change again
+        id: opus
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ env.OPUS_MODEL }}
+          GH_TOKEN: ${{ github.token }}
+        with:
+          github_token: ${{ github.token }}
+          settings: '{"permissions":{"defaultMode":"acceptEdits"}}'
+          claude_args: |
+            --model ${{ env.OPUS_MODEL }}
+            --max-turns 30
+            --permission-mode acceptEdits
+            --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["approve","request_changes"]},"summary":{"type":"string"},"findings":{"type":"array","items":{"type":"string"}}},"required":["verdict","summary","findings"]}'
+            --allowedTools 'Read,Grep,Glob,LS,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(npm run:*),Bash(gh issue view:*),Bash(gh issue comment:*)'
+          prompt: |
+            You are `engineering-code-reviewer`, the review gate for a background
+            pipeline on ${{ github.repository }}. This is the second round: MiniMax has
+            just addressed your previous findings on the branch `${{ env.AGENT_BRANCH }}`.
+
+            Read `AGENTS.md` in full (especially §7), `${{ env.HANDOFF }}`, the issue
+            (`gh issue view ${{ github.event.issue.number }} --json title,body,labels`)
+            and the current change (`git diff origin/main...HEAD`). Then run
+            `npm run lint`, `npm run test` and `npm run build` and read the output.
+
+            Judge the change as a whole, not just the last commit: a finding that was
+            only half addressed is still a finding. Set `verdict` to `approve` only if
+            every previous finding is genuinely resolved and the change is now correct,
+            scoped, recorded and green. Otherwise set `request_changes` and list what
+            is still wrong in `findings`, each one a single actionable sentence.
+
+            Write `summary` as a short paragraph for the owner.
+
+            Post the review on the issue:
+
+                gh issue comment ${{ github.event.issue.number }} --body "<your review>"
+
+            Do not modify any file, do not commit, do not push, and do not merge.
+
+      - name: Record the verdict
+        id: verdict
+        env:
+          STRUCTURED: ${{ steps.opus.outputs.structured_output }}
+        run: |
+          set -euo pipefail
+          if [ -z "$STRUCTURED" ]; then
+            echo "::error::the reviewer returned no structured output"
+            exit 1
+          fi
+          verdict=$(printf '%s' "$STRUCTURED" | jq -r '.verdict // empty')
+          if [ "$verdict" != "approve" ] && [ "$verdict" != "request_changes" ]; then
+            echo "::error::unexpected verdict: '$verdict'"
+            exit 1
+          fi
+          summary=$(printf '%s' "$STRUCTURED" | jq -r '.summary // empty')
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          echo "summary=$summary" >> "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------- PUBLISH
+  publish:
+    name: Open the pull request
+    needs: [review, review2]
+    if: always() && (needs.review.outputs.verdict == 'approve' || needs.review2.outputs.verdict == 'approve')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Download the brief
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: agent-brief
+
+      - name: Open the pull request
+        id: pr
+        env:
+          # With the default GITHUB_TOKEN the pull request does not raise a
+          # `pull_request` event, so the agent-review-opus merge gate cannot
+          # attach its check to it. Set AGENT_PR_TOKEN to a token that is not the
+          # GITHUB_TOKEN to get the enforced gate. Without it, the approval Opus
+          # already gave in the review job remains the gate.
+          PR_TOKEN: ${{ secrets.AGENT_PR_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          BRANCH: ${{ env.AGENT_BRANCH }}
+          # Agent-controlled text, passed through the environment and never
+          # interpolated into the script.
+          REVIEW_SUMMARY: ${{ needs.review.outputs.summary || needs.review2.outputs.summary }}
+          HANDOFF_PATH: ${{ env.HANDOFF }}
+        run: |
+          set -euo pipefail
+          title=$(grep -m1 '^PR title:' "$HANDOFF_PATH" | sed 's/^PR title:[[:space:]]*//' || true)
+          if [ -z "$title" ]; then
+            title="ci: agent work for issue #$ISSUE"
+          fi
+          body=$(cat <<EOF
+          ## Files changed
+
+          _See the commits on this branch._
+
+          ## Tests run
+
+          - \`npm run lint\` - result
+          - \`npm run test\` - result
+          - \`npm run build\` - result
+
+          ## Failures
+
+          - None, or what failed and why.
+
+          ## Known limitations
+
+          $REVIEW_SUMMARY
+
+          ## Open questions
+
+          - Anything the owner should decide.
+
+          Closes #$ISSUE
+          EOF
+          )
+          url=$(GH_TOKEN="$PR_TOKEN" gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "$title (closes #$ISSUE)" \
+            --body "$body")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh issue comment ${{ github.event.issue.number }} --body "PR opened: ${{ steps.pr.outputs.url }}"
+
+  # ----------------------------------------------------------------- RECORD
+  report:
+    name: Report the outcome
+    needs: [review, review2, publish]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+    steps:
+      - name: Comment on the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FIRST: ${{ needs.review.outputs.verdict || 'not run' }}
+          SECOND: ${{ needs.review2.outputs.verdict || 'not run' }}
+          PUBLISHED: ${{ needs.publish.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          body=$(cat <<EOF
+          The agent pipeline finished.
+
+          - First review: $FIRST
+          - Second review: $SECOND
+          - Pull request: $PUBLISHED
+          - Run log: $RUN_URL
+          EOF
+          )
+          gh issue comment ${{ github.event.issue.number }} --body "$body"

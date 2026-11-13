@@ -143,6 +143,37 @@ Payments/billing, auth/identity, WordPress/Drupal, Solidity, ServiceNow, Feishu/
 
 A specialist consult is time-boxed to 1–2 prompts and must return a named artifact. Do not run multiple agents on the same decision in parallel.
 
+### 5.5 Background agents
+
+Work can be handed to a background agent pipeline by opening an issue and labelling it
+`agent:<name>` — currently `agent:minimax`. The label is the trigger; the issue title and
+body are the task.
+
+- One issue = one branch = one pull request. The pipeline works on
+  `minimax/issue-<number>` and opens a single pull request against `main`.
+- The pipeline mirrors the operating loop in `.agents/skills/terraform-lead/SKILL.md`:
+  **BRIEF** (Claude Opus 5.5, as `terraform-lead`) → **BUILD** (MiniMax) → **VERIFY and
+  GATE** (Claude Opus 5.5, as `engineering-code-reviewer`) → **FIX** (MiniMax, once) →
+  **RECORD** (`docs/agent-log.md` and `progress.md`). The brief is written to
+  `docs/handoffs/agent-issue-<number>.md` and the implementer follows it.
+- The pull request is opened **only after** the reviewer approves, so nothing an agent
+  produces reaches `main` without a review. `agent-review-opus.yml` is the standing merge
+  gate: it reviews any pull request on a `minimax/**` branch and fails its check unless
+  Opus approves. Make that check required in the branch protection rules for `main`.
+- Agents never push to `main`, never merge, and never approve their own pull request.
+- Only the repository owner may start a run. The workflow checks
+  `github.event.sender.login == github.repository_owner`, and the action itself refuses to
+  run for a non-human actor.
+- The owner reviews the pull request and is the only one who merges it.
+
+An agent still works inside §1 and §7: the brief names one milestone, the change is
+scoped to it, the checks pass, `docs/agent-log.md` and `progress.md` record the work, and
+the pull request body follows the §6 report clause.
+
+Required repository secrets: `ANTHROPIC_API_KEY` (Opus) and `MINIMAX_API_KEY` (MiniMax).
+Set `AGENT_PR_TOKEN` as well if the `agent-review-opus` merge gate should be enforced by
+branch protection rather than by the pipeline's own approval.
+
 ---
 
 ## 6. Standard agent brief

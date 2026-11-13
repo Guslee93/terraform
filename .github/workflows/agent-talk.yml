@@ -1,0 +1,159 @@
+name: agent-talk
+
+# The coordination channel between the two agents.
+#
+# Post a comment on any issue and mention an agent to ask it something. It
+# answers in the same thread.
+#
+#   @minimax <question>   ->  MiniMax answers
+#   @claude <question>    ->  Claude Opus 5.5 answers
+#
+# Only a human can start an exchange: the action refuses to run for a bot
+# actor, so an agent's own reply never sets the other one off.
+
+on:
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: agent-talk-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  ask-opus:
+    name: Ask Opus
+    if: contains(github.event.comment.body, '@claude')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          token: ${{ github.token }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Opus answers
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: claude-opus-5-5
+          GH_TOKEN: ${{ github.token }}
+        with:
+          github_token: ${{ github.token }}
+          settings: '{"permissions":{"defaultMode":"acceptEdits"}}'
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns 15
+            --permission-mode acceptEdits
+            --allowedTools 'Read,Grep,Glob,LS,Bash(gh issue view:*),Bash(gh pr view:*)'
+          prompt: |
+            You are Claude Opus, answering a question in the coordination channel of
+            ${{ github.repository }}. The owner asked you directly, and MiniMax, the
+            other agent on this repository, can read your answer.
+
+            Read `AGENTS.md` in full first — it is the operating guide, and it wins.
+            Then read the thread for context:
+
+                gh issue view ${{ github.event.issue.number }} --json title,body,comments
+
+            Read whatever repository files the question is about: `task_plan.md`,
+            `findings.md`, `progress.md`, `docs/handoffs/`, `docs/decisions/` and the
+            source.
+
+            Answer in the same thread:
+
+                gh issue comment ${{ github.event.issue.number }} --body "<your answer>"
+
+            Be concrete and cite real paths and real commands. If the question is about
+            the design of the background agent pipeline, review it properly and say
+            plainly where you disagree — an approval is worth more than a rubber stamp,
+            and the owner asked for a genuine second opinion.
+
+            Follow the repo's report clause (AGENTS.md §6): files changed, tests run,
+            failures, known limitations, open questions — whichever of those apply.
+
+            Do not modify any file, do not commit, do not push and do not merge.
+
+  ask-minimax:
+    name: Ask MiniMax
+    if: contains(github.event.comment.body, '@minimax')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          token: ${{ github.token }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: MiniMax answers
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+          ANTHROPIC_MODEL: MiniMax-M3.1-Flash
+          GH_TOKEN: ${{ github.token }}
+        with:
+          github_token: ${{ github.token }}
+          settings: '{"permissions":{"defaultMode":"acceptEdits"}}'
+          claude_args: |
+            --model MiniMax-M3.1-Flash
+            --max-turns 15
+            --permission-mode acceptEdits
+            --allowedTools 'Read,Grep,Glob,LS,Bash(gh issue view:*),Bash(gh pr view:*)'
+          prompt: |
+            You are MiniMax, answering a question in the coordination channel of
+            ${{ github.repository }}. The owner asked you directly, and Claude Opus,
+            the other agent on this repository, can read your answer.
+
+            Read `AGENTS.md` in full first — it is the operating guide, and it wins.
+            Then read the thread for context:
+
+                gh issue view ${{ github.event.issue.number }} --json title,body,comments
+
+            Read whatever repository files the question is about: `task_plan.md`,
+            `findings.md`, `progress.md`, `docs/handoffs/`, `docs/decisions/` and the
+            source.
+
+            Answer in the same thread:
+
+                gh issue comment ${{ github.event.issue.number }} --body "<your answer>"
+
+            Be concrete and cite real paths and real commands.
+
+            Follow the repo's report clause (AGENTS.md §6): files changed, tests run,
+            failures, known limitations, open questions — whichever of those apply.
+
+            Do not modify any file, do not commit, do not push and do not merge.

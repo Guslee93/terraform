@@ -1,0 +1,163 @@
+name: agent-review-opus
+
+# The merge gate for agent-made changes.
+#
+# Claude Opus, as `engineering-code-reviewer`, reviews every pull request the
+# background agent opened and refuses to let it through unless the change is
+# correct, scoped, recorded and green. Make this check required on `main` in the
+# branch protection rules and nothing an agent produces can reach `main` without
+# a review.
+#
+# The pipeline dispatches this workflow explicitly after opening its pull
+# request, because a pull request created with GITHUB_TOKEN does not raise a
+# `pull_request` event of its own.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - 'minimax/**'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull request number to review'
+        required: true
+        type: string
+
+concurrency:
+  group: agent-review-opus-${{ inputs.pr_number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Opus review
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    env:
+      PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+      BASE_REF: ${{ github.event.pull_request.base.sha }}
+    steps:
+      - name: Check out the pull request (pull_request event)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Check out the pull request (dispatched)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: refs/pull/${{ inputs.pr_number }}/head
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Opus reviews the pull request
+        id: opus
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: claude-opus-5-5
+          GH_TOKEN: ${{ github.token }}
+        with:
+          github_token: ${{ github.token }}
+          settings: '{"permissions":{"defaultMode":"acceptEdits"}}'
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns 30
+            --permission-mode acceptEdits
+            --json-schema '{"type":"object","properties":{"verdict":{"type":"string","enum":["approve","request_changes"]},"summary":{"type":"string"},"findings":{"type":"array","items":{"type":"string"}}},"required":["verdict","summary","findings"]}'
+            --allowedTools 'Read,Grep,Glob,LS,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(npm run:*),Bash(gh pr view:*),Bash(gh pr comment:*)'
+          prompt: |
+            You are `engineering-code-reviewer`, the review gate for pull request
+            #${{ env.PR_NUMBER }} on ${{ github.repository }}. Your verdict decides
+            whether it may be merged into `main`, so review it properly and do not
+            rubber-stamp it.
+
+            ## Read first, in order
+
+            1. `AGENTS.md` in full, especially §1 guardrails, §6 the standard agent
+               brief, §7 the definition of done, and the claim policy.
+            2. The brief, if the agent wrote one: `docs/handoffs/agent-issue-*.md`.
+            3. The pull request and the issue it closes:
+
+                   gh pr view ${{ env.PR_NUMBER }} --json title,body,files,commits
+
+            4. The change:
+
+                   git diff ${{ env.BASE_REF }}...HEAD
+                   git log ${{ env.BASE_REF }}..HEAD --stat
+
+            ## Verify
+
+            Run the checks yourself and read the output:
+
+                npm run lint
+                npm run test
+                npm run build
+
+            ## Judge against AGENTS.md §7
+
+            Approve only if every applicable item holds:
+
+            - The change matches the brief and the milestone scope; nothing unrelated changed.
+            - Domain behaviour has unit tests with known fixtures.
+            - `npm run lint`, `npm run test` and `npm run build` pass.
+            - No new `any`, no unchecked `as`, no unvalidated persisted data.
+            - Every visible control works, or is marked as a later milestone and hidden.
+            - Numbers shown in the UI derive from geometry and tests, not constants.
+            - Disclaimers and provenance remain visible.
+            - `docs/agent-log.md` and `progress.md` record the work.
+            - Screenshots were captured for visual changes.
+            - The pull request body follows AGENTS.md §6: files changed, tests run,
+              failures, known limitations, open questions.
+            - Nothing under `.github/`, no `.env*` file and no `vercel.json` was touched.
+            - No new npm dependency was added.
+            - No secret, token or credential is in the diff or in any log output.
+            - The claim policy is respected: no `planning compliant`, `verified daylight`,
+              `official parcel`, `BIM-ready` or `IFC deliverable`.
+
+            Set `verdict` to `approve` when all of that holds. Otherwise set it to
+            `request_changes` and put every problem in `findings`, each one a single
+            actionable sentence naming the file and the change to make.
+
+            Write `summary` as a short paragraph for the owner: what the change does,
+            how it was verified, and anything you would still want a human to look at.
+
+            Post your review on the pull request:
+
+                gh pr comment ${{ env.PR_NUMBER }} --body "<your review>"
+
+            Do not modify any file, do not commit, do not push, and do not merge.
+
+      - name: Enforce the verdict
+        env:
+          # Passed through the environment, never interpolated into the script.
+          STRUCTURED: ${{ steps.opus.outputs.structured_output }}
+        run: |
+          set -euo pipefail
+          if [ -z "$STRUCTURED" ]; then
+            echo "::error::the reviewer returned no structured output"
+            exit 1
+          fi
+          verdict=$(printf '%s' "$STRUCTURED" | jq -r '.verdict // empty')
+          if [ "$verdict" != "approve" ]; then
+            echo "::error::Opus requested changes - this check must not pass"
+            printf '%s' "$STRUCTURED" | jq -r '.findings[]? | "  - \(.)"'
+            exit 1
+          fi
+          echo "Opus approved the change."
