@@ -441,7 +441,7 @@ export function StudioShell({
       id: 'wind',
       label: 'Wind',
       icon: 'wind',
-      stat: windStat(windComfortView, wind.from, wind.refSpeed, climateMode === 'wind'),
+      stat: windStat(windComfortView, wind.from, wind.refSpeed, climateMode === 'wind', wind.heightM > PEDESTRIAN_HEIGHT_M),
       note: `${FLOW_DISCLAIMER} · figure = share of open ground ≥ ${ROSE_THRESHOLD_MS} m/s`,
       body: climatePanel('wind') ?? <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },

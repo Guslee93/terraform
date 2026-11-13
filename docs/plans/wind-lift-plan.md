@@ -1,6 +1,6 @@
 # Plan — Lift the wind analysis through its height slices
 
-**Status:** accepted; Phases 1–3 done (2026-11-13), Phases 4–5 open · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
+**Status:** accepted; Phases 1–4 done (2026-11-13), Phase 5 open · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
 
 ## 1. What the owner asked for
 
@@ -84,6 +84,15 @@ Not done:
 - The caption names the height: "Wind at 20 m above terrain — 2D flow, not engineering".
 - The note that the model ignores slope stays visible whenever terrain relief inside the circle is non-trivial (existing `terrainReliefM`). Following the terrain is a drawing choice; the solver still treats each slice as flat.
 - No comfort or "safe/unsafe" wording above 2 m.
+
+**Done (2026-11-13).**
+- **The map caption** is `windCaption(h)`: "Indicative wind screening at 20 m above terrain — 2D flow, not engineering". At 2 m it is the unchanged claim.
+- **The steep-site note** adds `LIFT_SLOPE_NOTE` while the map is lifted: the map is drawn following the ground, but each height is solved flat.
+- **No comfort wording above 2 m.**
+  - The map shows m/s and Comfort is disabled (Phase 2).
+  - Roof colours now follow the shown scale. They were still in comfort colours beside an m/s map, which was visible in the Phase 3 screenshots.
+  - The wind card's figure says "at 2 m" while the map shows another height.
+- **Tests:** the D34 disclaimer e2e and the lift e2e, which now checks the caption, both pass.
 
 ### Phase 5 — Evidence and gates
 

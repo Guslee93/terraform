@@ -67,6 +67,17 @@ export function windDrawLift(heightM: number): number {
   return heightM > PEDESTRIAN_HEIGHT_M ? heightM : 0
 }
 
+/**
+ * The wind claim on the map (ADR-0028 phase 4): the same claim, naming the height when the map is
+ * lifted, so a 20 m map is never read as the pedestrian one.
+ */
+export function windCaption(heightM: number): string {
+  return heightM > PEDESTRIAN_HEIGHT_M ? `Indicative wind screening at ${heightM} m above terrain — 2D flow, not engineering` : FLOW_DISCLAIMER
+}
+
+/** Lifted slices are drawn along the ground, but each one is solved as a flat plane. */
+export const LIFT_SLOPE_NOTE = 'Above 2 m the map is drawn following the ground; each height is still solved as a flat slice, so slopes and ridges do not speed up the wind here.'
+
 /** The caption for a map above pedestrian height. */
 export const heightNote = (heightM: number) => `Wind speed at ${heightM} m above terrain, in m/s. Comfort classes apply at 2 m only.`
 export type WindBaseline = { readonly flow: FlowResult; readonly circle: { readonly centre: Vec2; readonly radius: number }; readonly from: number; readonly downwash: boolean }

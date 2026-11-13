@@ -101,14 +101,15 @@ export function noiseStat(cells: readonly NoiseCell[], roads: readonly NoiseRoad
  * Share of open ground at or above the stand threshold (4 m/s), from a Comfort (activity) view,
  * and the windiest class present. `view` must be built with display 'activity'.
  */
-export function windStat(view: ClimateView | null, from: number, refSpeed: number, solving: boolean): AnalysisStat {
+export function windStat(view: ClimateView | null, from: number, refSpeed: number, solving: boolean, lifted = false): AnalysisStat {
   if (!view) return empty(solving ? 'Solving the flow…' : 'Select to solve the flow')
   if (view.assessed === 0) return empty('Solving the flow…')
   const above = view.legend.reduce((sum, entry, index) => sum + ((ACTIVITY_BANDS[index]?.below ?? 0) > ROSE_THRESHOLD_MS ? entry.share : 0), 0)
   const worst = [...view.legend].reverse().find((entry) => entry.count > 0)
   // Direction and speed are the card's own controls; the card names the windiest class.
   const secondary: Part[] = worst
-    ? [['', 'worst '], [worst.label.split(' (')[0] ?? worst.label, '']]
+    // A comfort class is a 2 m statement; while the map shows another height the card says so.
+    ? [['', 'worst '], [worst.label.split(' (')[0] ?? worst.label, lifted ? ' at 2 m' : '']]
     : [['', `${compassPoint(from)} ${from}° at ${refSpeed} m/s`]]
   return { value: formatNumber(above * 100), unit: '%', secondary }
 }
