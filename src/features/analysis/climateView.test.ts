@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ACTIVITY_BANDS, buildClimateView, captureBaseline, DEFAULT_WIND, DELTA_BANDS, displayAt, flowAtHeight, windDrawLift, WORST_NOTE, DIRECTION_BANDS, localSpeedMs, particleColour, WIND_RAMP, windSpeedColour, windColour } from './climateView'
+import { FLOW_DISCLAIMER } from './lbm'
+import { ACTIVITY_BANDS, buildClimateView, captureBaseline, windCaption, DEFAULT_WIND, DELTA_BANDS, displayAt, flowAtHeight, windDrawLift, WORST_NOTE, DIRECTION_BANDS, localSpeedMs, particleColour, WIND_RAMP, windSpeedColour, windColour } from './climateView'
 import { SUN_HOURS_DISCLAIMER } from './sunHours'
 
 describe('Direction speed ramp', () => {
@@ -128,6 +129,13 @@ describe('the wind map at a chosen height', () => {
     // A baseline without that slice cannot be compared at that height.
     const flat = captureBaseline({ ...flow(1.0), slices: [flow().slices[0]!] }, { centre: [0, 0], radius: 100 }, 270, true)
     expect(view({ display: 'delta', heightM: 20 }, flow(1.2), flat).assessed).toBe(0)
+  })
+
+  it('names the height in the map caption once the map is lifted (phase 4)', () => {
+    expect(windCaption(2)).toBe(FLOW_DISCLAIMER)
+    expect(windCaption(20)).toBe('Indicative wind screening at 20 m above terrain — 2D flow, not engineering')
+    // The claim itself never changes: still indicative, still 2D, still not engineering.
+    expect(windCaption(65)).toContain('2D flow, not engineering')
   })
 
   it('draws the map on the ground at 2 m and at terrain + height above', () => {

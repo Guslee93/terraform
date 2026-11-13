@@ -896,3 +896,10 @@ zoom in because the quads are small at the default site camera.
   a pointer drag with Esc to cancel, and Home.
 - Screenshots at 2, 10 and 30 m on both curated sites, plus Compact Infill's 65 m top slice, checked by eye: the
   handle sits on the near edge, the rings stack, low buildings fade, and Sloped Edge's disc follows the hill.
+
+## 2026-11-13 — Wind lift, Phase 4 (ADR-0028)
+
+- Caption, slope note, card label, roofs on the shown scale; 3 new unit tests; lift e2e checks the caption.
+  First run: 1 panel test failed (the steep note renders with the legend, so the test needed a view); fixed in the test.
+- Local e2e: wind, wind-a11y and m3-disclaimers 7/7. The re-captured lifted screenshots changed; the 2 m ones are
+  byte-identical, confirming there is no effect at pedestrian height.

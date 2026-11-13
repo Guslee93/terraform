@@ -43,6 +43,8 @@ describe('analysis card values come from the analysis, not constants', () => {
     // Stroll (4–6), walk (6–8) and above are at or above the 4 m/s stand threshold: 0.2 + 0.1.
     expect(stat).toMatchObject({ value: '30', unit: '%' })
     expect(text(stat.secondary)).toBe('worst Band 3')
+    // The comfort figure is always at 2 m; while the map shows another height the card says so.
+    expect(text(windStat({ ...pending, legend, assessed: 10 }, 270, 6, true, true).secondary)).toBe('worst Band 3 at 2 m')
   })
 
   it('Sun analysis cards use the medians of the same samples the layers draw', () => {

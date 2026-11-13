@@ -111,6 +111,8 @@ test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and r
   await expect(page.getByRole('list', { name: 'Wind direction legend' })).toBeVisible()
   await expect(page.getByText('Wind speed at 20 m above terrain, in m/s. Comfort classes apply at 2 m only.')).toBeVisible()
   await expect(displays.getByRole('button', { name: 'Comfort', exact: true })).toBeDisabled()
+  // The claim on the map names the height, so a lifted map is never read as the pedestrian one.
+  await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText('Indicative wind screening at 20 m above terrain — 2D flow, not engineering')).toBeVisible()
 
   // The lift handle in the scene holds the same height, and steps it from the keyboard.
   const handle = page.getByRole('slider', { name: 'Lift the wind map' })

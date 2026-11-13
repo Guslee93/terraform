@@ -23,7 +23,6 @@ import { ClimateLayer } from './ClimateLayer'
 import { FacadeSun, type FacadeOverlay } from './FacadeSun'
 import { RoofSolar } from './RoofSolar'
 import { WindStreamlines } from './WindStreamlines'
-import { FLOW_DISCLAIMER } from '../features/analysis/lbm'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
 import { GhostRings, WindLiftHandle } from './WindLiftHandle'
@@ -31,7 +30,7 @@ import { fadedBuildings, ghostHeights } from '../features/analysis/windLift'
 import { WorstArrows } from './WorstArrows'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import type { RoofSolarValue } from '../features/analysis/roofSolar'
-import { DEFAULT_WIND, displayAt, flowAtHeight, windDrawLift, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
+import { DEFAULT_WIND, displayAt, flowAtHeight, windCaption, windDrawLift, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
 import { visibleTierFootprints } from './massFootprints'
@@ -589,7 +588,7 @@ export function ViewportCanvas({
         // The wind claim stays visible with the wind layer even when the inspector group is closed (PRD R8).
         <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
           {windShown.display === 'ratio' && <WindRampBar />}
-          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{FLOW_DISCLAIMER}</p>
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{windCaption(windSettings.heightM)}</p>
         </div>
       )}
       {webgl === 'none' ? (
@@ -648,7 +647,7 @@ export function ViewportCanvas({
             {roofSolar && <RoofSolar buildings={windBuildings} values={roofSolar} heightAt={heightAt} />}
             {facade && <FacadeSun overlay={facade} heightAt={heightAt} />}
             {windWorst && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
-            {!windWorst && windFlow?.slices && windCircle && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windSettings} baseline={windBaseline} />}
+            {!windWorst && windFlow?.slices && windCircle && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windShown} baseline={windBaseline} />}
             {!windWorst && windFlow && windCircle && ((windStreamlines || reducedMotion)
               ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlines3d ? null : windSettings.heightM} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
               : windField && <WindParticles flow={windField} circle={windCircle} heightAt={windHeightAt} wind={windShown} />)}

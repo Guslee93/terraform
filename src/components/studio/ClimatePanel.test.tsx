@@ -278,6 +278,16 @@ it('above 2 m the map shows m/s: Comfort is disabled and says why (ADR-0028)', (
   expect(screen.queryByText(/above terrain, in m\/s/)).toBeNull()
 })
 
+it('on a steep site the lifted map says it follows the ground but is solved flat (phase 4)', () => {
+  // The note sits with the legend, so the panel needs a (here empty) wind view.
+  const view = { overlay: { cellM: 4, cells: [] }, legend: [], disclaimer: 'Indicative wind screening — 2D flow, not engineering', assessed: 0 }
+  const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view, terrainReliefM: 24 }
+  const { rerender } = render(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, heightM: 2 }} />)
+  expect(screen.getByText(/Steep site/)).not.toHaveTextContent('solved as a flat slice')
+  rerender(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, heightM: 20 }} />)
+  expect(screen.getByText(/Steep site/)).toHaveTextContent('each height is still solved as a flat slice')
+})
+
 it('the worst case is a 2 m screen: choosing it returns to 2 m and locks the height', () => {
   const onWindChange = vi.fn()
   const sweep = { sectors: [{ from: 0, meanRatio: 0.6, shareAbove: 0.1 }], worstFrom: 0, total: 8 }

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { demoFrame } from '../../features/analysis/windDemo'
 import { SLICE_HEIGHTS_M } from '../../features/analysis/windProfile'
 import { heightText, nearestHeight } from '../../features/analysis/windLift'
-import { CIRCLE_RADIUS, DELTA_NOTE, displayAt, heightNote, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
+import { CIRCLE_RADIUS, DELTA_NOTE, displayAt, heightNote, LIFT_SLOPE_NOTE, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { eyebrowClass, labelClass, pillButtonClass, rangeClass, segmentClass, segmentGroupClass } from '../ui/controls'
 
@@ -227,7 +227,7 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
       <p className="mt-2 text-caption text-ink-secondary">{view.disclaimer}</p>
       {mode === 'wind' && terrainReliefM >= STEEP_RELIEF_M && (
         <p className="mt-2 text-caption text-ink-secondary">
-          Steep site: the ground rises about {Math.round(terrainReliefM)} m across this circle. The wind model follows the ground and does not model the slope itself, so hills neither shelter nor speed up the flow here. Treat these results as rougher than on a flat site.
+          Steep site: the ground rises about {Math.round(terrainReliefM)} m across this circle. The wind model follows the ground and does not model the slope itself, so hills neither shelter nor speed up the flow here. Treat these results as rougher than on a flat site.{wind.heightM > PEDESTRIAN_HEIGHT_M ? ` ${LIFT_SLOPE_NOTE}` : ''}
         </p>
       )}
     </div>
