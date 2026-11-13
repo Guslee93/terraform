@@ -265,6 +265,8 @@ export function StudioShell({
   const { flow: windFlow, isCurrent: isCurrentFlow } = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash, climateMode === 'wind')
   // The live field shows even mid-edit (Forma-style live drag); only a current, settled field may become the baseline.
   const freshFlow = isCurrentFlow(windFlow) ? windFlow : null
+  // The solved heights the map can show (ADR-0028): the panel's slider and the scene's lift handle.
+  const readyHeights = useMemo(() => (freshFlow?.slices?.map((slice) => slice.z) ?? []).sort((a, b) => a - b), [freshFlow])
   // All-directions sweep (ADR-0015): opt-in, solved in its own worker.
   const [sweepOn, setSweepOn] = useState(false)
   const sweep = useWindSweep(windCircle, analysisBuildings, climateMode === 'wind' && sweepOn, wind.downwash)
@@ -387,7 +389,7 @@ export function StudioShell({
   }])), [analysisDocument])
   const selectedDeletable = !!selectedVolume && !selectedVolume.locked
   const climatePanel = (only: 'wind' | 'noise') => sitePackage ? (
-    <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick availableHeights={freshFlow?.slices?.map((slice) => slice.z) ?? []} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
+    <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick availableHeights={readyHeights} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={freshFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
       streamlines={streamlines} onStreamlinesChange={setStreamlines}
       baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
       onSetBaseline={() => { if (windFlow?.settled && windFlow.slicesComplete && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}
@@ -522,6 +524,8 @@ export function StudioShell({
                 windFlow={climateMode === 'wind' ? windFlow : null}
                 windWorst={climateMode === 'wind' && wind.display === 'worst' && sweep ? { cells: sweep.cells, worstFrom } : null}
                 windCircle={climateMode === 'wind' ? windCircle : null}
+                windHeights={readyHeights}
+                onWindHeightChange={(heightM) => setWind((w) => ({ ...w, heightM }))}
                 onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
                 exportRequest={exportRequest}
                 onExport={onExport}

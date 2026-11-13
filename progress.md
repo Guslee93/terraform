@@ -888,3 +888,11 @@ zoom in because the quads are small at the default site camera.
   failed on a strict-mode duplicate: the height note was shown both under the control and in the legend
   disclaimer. Kept once; then 6/6. Also fixed: the legend's accessible name read the stored display (Comfort) at 20 m.
 - Screenshots at 2 m and 20 m on Compact Infill checked by eye: the 20 m disc floats above the low roofs, legend in m/s.
+
+## 2026-11-13 — Wind lift, Phase 3 (ADR-0028)
+
+- Domain rules in `windLift.ts` (10 tests). Scene handle and rings in `WindLiftHandle.tsx`. Panel slider replaces the select.
+- Local e2e on the production build: wind and wind-a11y specs 5/5. The new lift test covers the slider, handle keys,
+  a pointer drag with Esc to cancel, and Home.
+- Screenshots at 2, 10 and 30 m on both curated sites, plus Compact Infill's 65 m top slice, checked by eye: the
+  handle sits on the near edge, the rings stack, low buildings fade, and Sloped Edge's disc follows the hill.

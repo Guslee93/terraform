@@ -241,20 +241,22 @@ it('disables upper controls until slices exist and exposes Direction reference s
   expect(screen.getByLabelText('Streamline opacity')).toBeDisabled()
   expect(screen.getByText(/Upper heights computing… 0\/7 ready/)).toBeInTheDocument()
   expect(screen.getByLabelText('Wind at 10 m height')).toBeEnabled()
-  // The pedestrian height is always there; upper heights unlock as their slices arrive.
-  expect(screen.getByLabelText('Height above terrain')).toBeEnabled()
-  expect(screen.getByRole('option', { name: '2 m (pedestrian)' })).toBeEnabled()
-  expect(screen.getByRole('option', { name: '10 m (computing)' })).toBeDisabled()
-  // Progressive: with the ground and 10 m slices the controls unlock; 20 m is still computing.
-  rerender(<ClimatePanel {...props} availableHeights={[2, 10]} />)
-  expect(screen.getByText(/2\/7 ready/)).toBeInTheDocument()
-  expect(screen.getByRole('option', { name: '10 m' })).toBeEnabled()
-  expect(screen.getByRole('option', { name: '20 m (computing)' })).toBeDisabled()
+  // The pedestrian height is always there; a stop still computing lands on the highest solved one.
+  const height = screen.getByRole('slider', { name: 'Height above terrain' })
+  expect(height).toBeEnabled()
+  expect(height).toHaveAttribute('aria-valuetext', '2 metres above terrain')
+  fireEvent.change(height, { target: { value: '4' } }) // the 20 m stop
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 2 })
+  // Progressive: with the ground, 5 m and 10 m slices solved, 20 m is still computing.
+  rerender(<ClimatePanel {...props} availableHeights={[2, 5, 10]} />)
+  expect(screen.getByText(/3\/7 ready/)).toBeInTheDocument()
+  fireEvent.change(height, { target: { value: '4' } })
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 10 })
   rerender(<ClimatePanel {...props} availableHeights={[2, 5, 10, 15, 20, 25, 30]} slicesComplete />)
   expect(screen.queryByText(/Upper heights computing/)).toBeNull()
   expect(screen.getByLabelText('Follow buildings in 3D')).toBeEnabled()
   expect(screen.getByLabelText('Streamline opacity')).toBeEnabled()
-  fireEvent.change(screen.getByLabelText('Height above terrain'), { target: { value: '20' } })
+  fireEvent.change(height, { target: { value: '4' } })
   expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 20 })
   fireEvent.change(screen.getByLabelText('Streamline opacity'), { target: { value: '0.5' } })
   expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineOpacity: 0.5 })

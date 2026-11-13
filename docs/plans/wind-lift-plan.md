@@ -1,6 +1,6 @@
 # Plan — Lift the wind analysis through its height slices
 
-**Status:** accepted; Phases 1–2 done (2026-11-13), Phases 3–5 open · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
+**Status:** accepted; Phases 1–3 done (2026-11-13), Phases 4–5 open · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
 
 ## 1. What the owner asked for
 
@@ -66,6 +66,18 @@ Within the 2× budget, so the requested-height-first reordering (§5.1) is not n
 - Reduced motion: no eased glide; the disc jumps to the snapped height.
 
 **Done when:** the handle and the slider move the same state; Esc cancels; keyboard reaches every height; screenshots at 2, 10, 30 m and the top slice on both curated sites.
+
+**Done (2026-11-13).** The rules are in `src/features/analysis/windLift.ts`: `nearestHeight`, `clampLift`, `stepHeight`, `liftAnchor`, `ghostHeights`, `fadedBuildings` and `heightText`, with 10 tests. The scene parts are in `src/scene/WindLiftHandle.tsx`:
+- **The handle** is an HTML slider positioned in the scene, like the roof handle. A pointer drag uses a vertical plane through the handle, facing the camera: the disc follows the pointer, the map shows the nearest solved slice, and the disc snaps on release. `Esc` restores the starting height without reaching the studio's own `Esc` handlers. Arrows, Home and End step the height.
+- **The rings** are dashed at every other solved height while the disc is lifted or being dragged.
+- **The fading:** the context buildings were one merged mesh, so the ones inside the circle no taller than the slice now go into a second translucent mesh. It is rebuilt at most once per height step.
+- **The panel slider** has one stop per height. Computing stops are greyed, and moving onto one lands on the highest solved height. It drives the same `heightM` as the handle.
+
+The e2e test lifts to 20 m with the slider, steps to 25 m with the keyboard on the handle, drags, cancels with Esc and returns home. Screenshots: `docs/screenshots/wind-lift-{compact-infill,sloped-edge}-{2m,10m,30m}-1440x900.png` and `docs/screenshots/wind-lift-compact-infill-top-1440x900.png` (65 m: Compact Infill has a tower over 30 m).
+
+Not done:
+- **Drawn masses are not faded,** only context buildings. The user's own blocks stay solid while being designed.
+- **The handle's edge point is fixed** when the circle is placed; it does not follow the camera as it orbits.
 
 ### Phase 4 — Claims and labels
 
