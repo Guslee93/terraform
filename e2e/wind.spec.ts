@@ -100,10 +100,11 @@ test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and r
   await openClimateGroup(page)
   await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: budget(15_000) })
 
-  // Upper slices arrive after the ground field; 20 m becomes selectable once it is solved.
-  const height = page.getByLabel('Height above terrain')
-  await expect(height.getByRole('option', { name: '20 m', exact: true })).toBeEnabled({ timeout: budget(60_000) })
-  await height.selectOption('20')
+  // Upper slices arrive after the ground field; the stops above 2 m unlock once they are solved.
+  const height = page.getByRole('slider', { name: 'Height above terrain' })
+  await expect(page.getByText(/Upper heights computing/)).toHaveCount(0, { timeout: budget(60_000) })
+  await height.fill('4') // the 20 m stop
+  await expect(height).toHaveAttribute('aria-valuetext', '20 metres above terrain')
 
   // Comfort classes are pedestrian criteria: above 2 m the legend is speed in m/s and says why.
   const displays = page.getByRole('group', { name: 'Wind map shows' })
@@ -111,7 +112,28 @@ test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and r
   await expect(page.getByText('Wind speed at 20 m above terrain, in m/s. Comfort classes apply at 2 m only.')).toBeVisible()
   await expect(displays.getByRole('button', { name: 'Comfort', exact: true })).toBeDisabled()
 
-  await height.selectOption('2')
+  // The lift handle in the scene holds the same height, and steps it from the keyboard.
+  const handle = page.getByRole('slider', { name: 'Lift the wind map' })
+  await expect(handle).toHaveAttribute('aria-valuetext', '20 metres above terrain')
+  await handle.focus()
+  await page.keyboard.press('ArrowUp')
+  await expect(height).toHaveAttribute('aria-valuetext', '25 metres above terrain')
+
+  // A drag moves the map through the solved heights; Esc returns it to where the drag started.
+  const box = await handle.boundingBox()
+  if (!box) throw new Error('The lift handle has no bounding box')
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 160, { steps: 8 })
+  await expect(handle).not.toHaveAttribute('aria-valuetext', '25 metres above terrain')
+  await page.keyboard.press('Escape')
+  await page.mouse.up()
+  await expect(height).toHaveAttribute('aria-valuetext', '25 metres above terrain')
+
+  // Home on the handle returns to the pedestrian height and the comfort map.
+  await handle.focus()
+  await page.keyboard.press('Home')
+  await expect(height).toHaveAttribute('aria-valuetext', '2 metres above terrain')
   await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible()
   await expect(displays.getByRole('button', { name: 'Comfort', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })

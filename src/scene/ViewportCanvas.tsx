@@ -26,6 +26,8 @@ import { WindStreamlines } from './WindStreamlines'
 import { FLOW_DISCLAIMER } from '../features/analysis/lbm'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
+import { GhostRings, WindLiftHandle } from './WindLiftHandle'
+import { fadedBuildings, ghostHeights } from '../features/analysis/windLift'
 import { WorstArrows } from './WorstArrows'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import type { RoofSolarValue } from '../features/analysis/roofSolar'
@@ -90,6 +92,10 @@ type ViewportProps = {
   onStopDemo?: () => void
   /** Wind analysis circle (ring + particle bounds); null when wind is off. */
   windCircle?: { readonly centre: Vec2; readonly radius: number } | null
+  /** Solved wind heights above terrain, ascending: the stops of the lift handle (ADR-0028). */
+  windHeights?: readonly number[]
+  /** Lifting the wind map: the handle snaps to a solved height. No handle when absent. */
+  onWindHeightChange?: (heightM: number) => void
   /** When set, the next ground click picks a point (e.g. placing the wind circle) instead of editing. */
   onPickPoint?: (point: Vec2) => void
   /** Endless ENU floor grid (1 m minor, 10 m major) under the site block. */
@@ -205,16 +211,29 @@ function TerrainMesh({
   )
 }
 
-function ContextBuildings({ buildings }: { buildings: SitePackage['buildings']['buildings'] }) {
-  const geometry = useMemo(() => createContextGeometry(buildings), [buildings])
+const NO_FADE: ReadonlySet<number> = new Set()
+/** Buildings below the lifted wind disc no longer block the wind there; they are drawn faint. */
+const FADED_OPACITY = 0.22
+
+function ContextBuildings({ buildings, faded = NO_FADE }: { buildings: SitePackage['buildings']['buildings']; faded?: ReadonlySet<number> }) {
+  // The merged mesh is split in two while the wind disc is lifted (ADR-0028 phase 3): the
+  // buildings it passes over go into a second, faint mesh. Only 7–8 heights exist, so this
+  // rebuild happens at most once per height step.
+  const [solid, ghost] = useMemo(
+    () => (faded.size === 0 ? [buildings, []] : [buildings.filter((_, i) => !faded.has(i)), buildings.filter((_, i) => faded.has(i))]),
+    [buildings, faded],
+  )
+  const geometry = useMemo(() => createContextGeometry(solid), [solid])
+  const ghostGeometry = useMemo(() => (ghost.length > 0 ? createContextGeometry(ghost) : null), [ghost])
   const edges = useMemo(() => new EdgesGeometry(geometry, EDGE_THRESHOLD_DEG), [geometry])
 
   useEffect(
     () => () => {
       geometry.dispose()
       edges.dispose()
+      ghostGeometry?.dispose()
     },
-    [geometry, edges],
+    [geometry, edges, ghostGeometry],
   )
 
   return (
@@ -233,6 +252,11 @@ function ContextBuildings({ buildings }: { buildings: SitePackage['buildings']['
       <lineSegments geometry={edges}>
         <lineBasicMaterial color={EDGE_COLOR} transparent opacity={EDGE_OPACITY} depthWrite={false} />
       </lineSegments>
+      {ghostGeometry && (
+        <mesh geometry={ghostGeometry} castShadow>
+          <meshStandardMaterial color={CONTEXT_COLOR} roughness={0.9} metalness={0} flatShading transparent opacity={FADED_OPACITY} depthWrite={false} />
+        </mesh>
+      )}
     </group>
   )
 }
@@ -488,6 +512,8 @@ export function ViewportCanvas({
   demoOrbitDeg = null,
   onStopDemo,
   windCircle = null,
+  windHeights = [],
+  onWindHeightChange,
   onPickPoint,
   grid = true,
   exportRequest = null,
@@ -528,7 +554,15 @@ export function ViewportCanvas({
   const initialTarget = enuToThreeXyz(initialPreset.target)
   const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
   // The wind map, circle and particles follow the terrain at the chosen slice height (ADR-0028).
-  const windLift = windDrawLift(windSettings.heightM)
+  // While the lift handle is dragged the disc follows the pointer; the map shows the nearest slice.
+  const [liftDrag, setLiftDrag] = useState<number | null>(null)
+  const windLift = windDrawLift(liftDrag ?? windSettings.heightM)
+  const liftable = !!windCircle && !!climate && !windWorst && windSettings.display !== 'worst' && !!onWindHeightChange && windHeights.length >= 2
+  const ghostRings = useMemo(() => (liftable ? ghostHeights(windHeights, windSettings.heightM, liftDrag !== null) : []), [liftable, windHeights, windSettings.heightM, liftDrag])
+  const fadedContext = useMemo(
+    () => (windCircle && climate && !windWorst ? fadedBuildings(buildings.buildings, windCircle, windSettings.heightM) : undefined),
+    [windCircle, climate, windWorst, buildings.buildings, windSettings.heightM],
+  )
   const windHeightAt = useMemo(() => windLift === 0 ? heightAt : (east: number, north: number) => heightAt(east, north) + windLift, [heightAt, windLift])
   const windShown = useMemo(() => ({ ...windSettings, display: displayAt(windSettings) }), [windSettings])
   const windField = useMemo(() => windFlow ? flowAtHeight(windFlow, windSettings.heightM) : null, [windFlow, windSettings.heightM])
@@ -600,7 +634,7 @@ export function ViewportCanvas({
               />
             </group>
             {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} />}
-            {layers.context && <ContextBuildings buildings={buildings.buildings} />}
+            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} />}
             {/* The streets keep the ground the package was built on, so they bridge the cut the
                 water makes in the ground beneath them (ADR-0025). */}
             {layers.streets && layers.terrain && (
@@ -619,6 +653,11 @@ export function ViewportCanvas({
               ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlines3d ? null : windSettings.heightM} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
               : windField && <WindParticles flow={windField} circle={windCircle} heightAt={windHeightAt} wind={windShown} />)}
             {windCircle && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={windHeightAt} />}
+            {windCircle && ghostRings.length > 0 && <GhostRings centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} heights={ghostRings} />}
+            {windCircle && liftable && onWindHeightChange && (
+              <WindLiftHandle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} heights={windHeights}
+                heightM={windSettings.heightM} dragM={liftDrag} onDrag={setLiftDrag} onChange={onWindHeightChange} controlsRef={controlsRef} />
+            )}
             </group>
 
             <group name="live-scenario">
