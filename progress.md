@@ -821,3 +821,7 @@ zoom in because the quads are small at the default site camera.
   between its banks with the mapped trees placed; the import reports "29 of 169 terrain samples are
   river surfaces from elevation curves", and the app raised **no console errors**. Screenshot:
   `docs/screenshots/live-water-import-1440x900.png`.
+- **Also fixed (the last open finding of the bug review):** `parseMetres` read `0x10` as 16 and
+  `1e3` as 1000, because `Number` accepts every notation. A metres field accepts only a plain
+  decimal number now; the parser has no live caller, so the change is a latent trap closed rather
+  than a visible defect corrected.

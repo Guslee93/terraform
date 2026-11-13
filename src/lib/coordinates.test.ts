@@ -46,4 +46,13 @@ describe('metre input parsing', () => {
     expect(parseMetres('3.2m')).toBeNull()
     expect(parseMetres('1e')).toBeNull()
   })
+
+  it('rejects the other number notations a metre field must not read as metres', () => {
+    // `Number` reads these as numbers: 0x10 is 16 and 1e3 is 1000.
+    expect(parseMetres('0x10')).toBeNull()
+    expect(parseMetres('0b101')).toBeNull()
+    expect(parseMetres('1e3')).toBeNull()
+    expect(parseMetres('Infinity')).toBeNull()
+    expect(parseMetres('.5')).toBe(0.5)
+  })
 })

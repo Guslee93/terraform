@@ -33,10 +33,15 @@ export function isFiniteVec3(value: readonly number[]): value is Vec3 {
   return value.length === 3 && value.every(Number.isFinite)
 }
 
-/** Parse a user-entered metre value without accepting an empty or partial number. */
+/**
+ * Parse a user-entered metre value without accepting an empty or partial number.
+ *
+ * Only a plain decimal number is a metre value: `Number` also reads `0x10` as 16 and `1e3` as
+ * 1000, which a metres field must not silently accept.
+ */
 export function parseMetres(raw: string): number | null {
   const trimmed = raw.trim().replace(',', '.')
-  if (trimmed === '') return null
+  if (!/^[+-]?(\d+(\.\d+)?|\.\d+)$/.test(trimmed)) return null
 
   const value = Number(trimmed)
   return Number.isFinite(value) ? value : null
