@@ -855,3 +855,7 @@ zoom in because the quads are small at the default site camera.
   Fix: CI multiplier 2.5× → 4× to cover the measured spread, `expectCanvasChanged`'s default budget scaled too,
   e2e job limit 60 min. Pushed while shard 3 was still running, so that run was cancelled.
 - If CI is still unreliable: a 4-core runner (paid plan) or on-demand rendering (a product change, needs an ADR).
+- **CI run on 12af9e5:** lint/test/build and shards 1 and 2 green; shard 3 green except the demo test, which
+  failed on `clock.pauseAt: Cannot fast-forward to the past` — on a slow runner more than the 1 s margin passed
+  between reading the page's time and pausing. The 4× budgets held everywhere else (X4 3.1 min, sweep 2.4 min).
+  Fix: pause 60 s ahead. Two-core local run, `--repeat-each 2`: 2/2 passed.

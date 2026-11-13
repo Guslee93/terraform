@@ -45,9 +45,12 @@ test('Play demo under reduced motion steps through fixed directions without orbi
   // in software, frames can land more than 3 s apart and a whole step is never drawn, so the test
   // owns the clock: each fast-forward fires one frame at a known time in the script. An installed
   // clock still runs in real time, so it is paused first; otherwise a slow page plays on by itself.
+  // The pause point is a minute ahead: on a slow runner more than a second can pass between reading
+  // the page's time and pausing, and pauseAt refuses a time already in the past. The demo has not
+  // started yet, so the jump is invisible to it.
   await page.clock.install()
   const now = await page.evaluate(() => Date.now())
-  await page.clock.pauseAt(now + 1_000)
+  await page.clock.pauseAt(now + 60_000)
   await page.getByRole('button', { name: 'Play demo' }).click()
   await expect(page.getByRole('button', { name: 'Stop demo' })).toBeVisible()
   // Reduced script: 270° for 0–3 s, then 0°, 90°, 180°, 3 s each.
