@@ -1,0 +1,119 @@
+name: agent-talk
+
+# Ask an agent a question in an issue or pull request thread. It answers there.
+#
+#   @opus <question>      ->  Claude Opus answers
+#   @minimax <question>   ->  MiniMax answers
+#
+# `@opus`, not `@claude`: once the Claude GitHub app is installed, `@claude` belongs
+# to its own workflow, and both would answer.
+#
+# Only the repository owner's comments start an answer, so an agent's reply never
+# sets the other one off. Agents answer; they do not change files.
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  ask-opus:
+    name: Ask Opus
+    if: contains(github.event.comment.body, '@opus') && github.event.comment.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Questions in one thread queue rather than cancel each other.
+    concurrency:
+      group: agent-talk-opus-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Opus answers
+        uses: anthropics/claude-code-action@v1.0.275
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns 15
+            --permission-mode dontAsk
+            --allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue comment:*),Bash(gh pr comment:*)"
+          prompt: |
+            You are Claude Opus, answering the owner of ${{ github.repository }} in
+            ${{ github.event.issue.pull_request && 'pull request' || 'issue' }} #${{ github.event.issue.number }}.
+            MiniMax, the other agent on this repository, may read your answer.
+
+            Read `AGENTS.md` in full first — it is the operating guide, and it wins.
+            Then read the thread: `gh ${{ github.event.issue.pull_request && 'pr' || 'issue' }} view ${{ github.event.issue.number }} --comments`.
+            Answer the owner's latest comment that mentions @opus. Read whatever
+            repository files the question is about.
+
+            Be concrete: cite real paths and commands. If the question is a design
+            question, say plainly where you disagree.
+
+            Post your answer in the same thread:
+
+                gh ${{ github.event.issue.pull_request && 'pr' || 'issue' }} comment ${{ github.event.issue.number }} --body "<your answer>"
+
+            Do not modify any file.
+
+  ask-minimax:
+    name: Ask MiniMax
+    if: contains(github.event.comment.body, '@minimax') && github.event.comment.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: agent-talk-minimax-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: MiniMax answers
+        uses: anthropics/claude-code-action@v1.0.275
+        env:
+          # Only this step talks to MiniMax.
+          ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
+        with:
+          anthropic_api_key: ${{ secrets.MINIMAX_API_KEY }}
+          github_token: ${{ github.token }}
+          claude_args: |
+            --model MiniMax-M3.1-Flash
+            --max-turns 15
+            --permission-mode dontAsk
+            --allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue comment:*),Bash(gh pr comment:*)"
+          prompt: |
+            You are MiniMax, answering the owner of ${{ github.repository }} in
+            ${{ github.event.issue.pull_request && 'pull request' || 'issue' }} #${{ github.event.issue.number }}.
+            Claude Opus, the other agent on this repository, may read your answer.
+
+            Read `AGENTS.md` in full first — it is the operating guide, and it wins.
+            Then read the thread: `gh ${{ github.event.issue.pull_request && 'pr' || 'issue' }} view ${{ github.event.issue.number }} --comments`.
+            Answer the owner's latest comment that mentions @minimax. Read whatever
+            repository files the question is about.
+
+            Be concrete: cite real paths and commands.
+
+            Post your answer in the same thread:
+
+                gh ${{ github.event.issue.pull_request && 'pr' || 'issue' }} comment ${{ github.event.issue.number }} --body "<your answer>"
+
+            Do not modify any file.

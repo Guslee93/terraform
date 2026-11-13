@@ -143,6 +143,26 @@ Payments/billing, auth/identity, WordPress/Drupal, Solidity, ServiceNow, Feishu/
 
 A specialist consult is time-boxed to 1–2 prompts and must return a named artifact. Do not run multiple agents on the same decision in parallel.
 
+### 5.5 Background agents
+
+Label an issue `agent:minimax` to hand it to the background pipeline (`.github/workflows/agent-minimax.yml`). The issue title and body are the task. Only the repository owner can start a run.
+
+- **Brief:** Claude Opus, as `terraform-lead`, writes `docs/handoffs/agent-issue-<n>.md` in the §6 format and posts it on the issue.
+- **Round 1** (`agent-round.yml`): MiniMax implements the brief and commits. A separate job checks the commits and pushes them to `minimax/issue-<n>`; a job with no secrets runs lint, unit tests and build; Opus, as `engineering-code-reviewer`, reviews the diff against §7 and posts the review on the issue.
+- **Round 2**, only if round 1 was not approved: MiniMax addresses the findings, then the same check, push, checks and review.
+- **Publish:** a pull request is opened only when Opus approves **and** lint, tests and build pass. The owner reviews and merges it; agents never merge.
+
+Isolation, enforced by the workflows rather than by prompts:
+
+- MiniMax runs with a read-only token and no Anthropic credential. It commits; it cannot push. Only `minimax/issue-<n>` is ever pushed.
+- A change to `.github/`, `.claude/`, `.mcp.json`, `.env*`, `vercel.json`, `package.json`, `package-lock.json` or `.npmrc` fails the round. Such changes are made by hand.
+- Opus never runs repository code, so agent-written code never shares a runner with the Anthropic credential.
+- MiniMax's endpoint is set on the MiniMax steps only; other steps never send a key to it.
+
+Repository secrets: `MINIMAX_API_KEY`; `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` for Opus; `AGENT_PR_TOKEN` (fine-grained, this repository, Contents: read and Pull requests: write) so `ci.yml` runs on the pull request. A pull request opened without it says that CI has not run.
+
+In any issue or pull request, the owner can write `@opus <question>` or `@minimax <question>` to get an answer in the thread (`agent-talk.yml`).
+
 ---
 
 ## 6. Standard agent brief
