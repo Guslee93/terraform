@@ -36,9 +36,11 @@ export function WindLiftHandle({ centre, radius, heightAt, heights, heightM, dra
   const ground = heightAt(anchor[0], anchor[1])
   const lift = windDrawLift(dragM ?? heightM)
   const stopRef = useRef<(() => void) | null>(null)
-  useEffect(() => () => stopRef.current?.(), [])
+  // Unmounted mid-drag (the map closed, the sweep opened): end the drag so the disc returns to rest.
+  useEffect(() => () => { if (stopRef.current) { stopRef.current(); onDrag(null) } }, [onDrag])
 
   const startDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return // a right or middle click is not a lift
     event.preventDefault()
     event.stopPropagation()
     stopRef.current?.()

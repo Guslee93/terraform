@@ -132,3 +132,19 @@ describe('roof overlays on a slope', () => {
     expect(roofBase({ footprint }, slope)).toBe(5)
   })
 })
+
+describe('createContextGeometry building ranges (ADR-0028 lift fading)', () => {
+  const box = (id: string, x: number, footprint?: [number, number][]) => ({
+    id, kind: 'apartments' as const, height: 10, baseElevation: 0, area: 16, withinStudyArea: true,
+    footprint: footprint ?? [[x, 0], [x + 4, 0], [x + 4, 4], [x, 4]],
+  })
+  it('records where each building starts, covering every vertex; a skipped footprint has none', () => {
+    const geometry = createContextGeometry([box('a', 0), box('degenerate', 0, [[0, 0], [1, 0]]), box('b', 10)])
+    const starts = geometry.userData.buildingStarts as Int32Array
+    expect(starts).toHaveLength(4)
+    expect(starts[0]).toBe(0)
+    expect(starts[2]! - starts[1]!).toBe(0) // the two-point footprint draws nothing
+    expect(starts[1]! - starts[0]!).toBe(starts[3]! - starts[2]!) // two equal boxes, equal ranges
+    expect(starts[3]).toBe(geometry.getAttribute('position').count)
+  })
+})

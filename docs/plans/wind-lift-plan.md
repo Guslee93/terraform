@@ -1,6 +1,6 @@
 # Plan — Lift the wind analysis through its height slices
 
-**Status:** accepted; Phases 1–4 done (2026-11-13), Phase 5 open · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
+**Status:** accepted; Phases 1–5 done (2026-11-13); open: the formal G3 finish-gate pass · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
 
 ## 1. What the owner asked for
 
@@ -101,6 +101,8 @@ Not done:
 - Fixed-view screenshots into `docs/screenshots/wind-lift-*.png`, including one sloped import site.
 - G1 code review record in `docs/reviews/`; G3 visual pass on the handle and ghost rings.
 - `docs/agent-log.md`, `progress.md`, AGENTS.md §10 updated.
+
+**Done (2026-11-13).** The G1 review record is `docs/reviews/wind-lift-review.md`: 10 findings over Phases 1–4, 9 confirmed and fixed, 1 kept by design, and the mesh rebuild was measured before fixing. The engineer's G3 visual check is recorded there too; the formal finish-gate pass is still open. The e2e covers the lift (slider, handle keys, drag with Esc, Home). Screenshots are in `docs/screenshots/wind-lift-*.png`. Not done: a sloped *import* site screenshot, because importing needs live Kartverket and OpenStreetMap access, which this environment did not have.
 
 ## 4. Order and size
 

@@ -6,7 +6,7 @@ import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Grid, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
+import { DoubleSide, EdgesGeometry, Float32BufferAttribute, MeshStandardMaterial, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
@@ -214,48 +214,56 @@ const NO_FADE: ReadonlySet<number> = new Set()
 /** Buildings below the lifted wind disc no longer block the wind there; they are drawn faint. */
 const FADED_OPACITY = 0.22
 
+/** One shader switch per material: draw only the faded (`keep` 1) or only the solid (`keep` 0) buildings. */
+function fadeShader(material: MeshStandardMaterial, keep: 0 | 1) {
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = 'attribute float faded;\nvarying float vFaded;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvFaded = faded;')
+    shader.fragmentShader = 'varying float vFaded;\n' + shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nif (${keep === 1 ? 'vFaded < 0.5' : 'vFaded > 0.5'}) discard;`)
+  }
+  material.customProgramCacheKey = () => `context-fade-${keep}`
+  return material
+}
+
 function ContextBuildings({ buildings, faded = NO_FADE }: { buildings: SitePackage['buildings']['buildings']; faded?: ReadonlySet<number> }) {
-  // The merged mesh is split in two while the wind disc is lifted (ADR-0028 phase 3): the
-  // buildings it passes over go into a second, faint mesh. Only 7–8 heights exist, so this
-  // rebuild happens at most once per height step.
-  const [solid, ghost] = useMemo(
-    () => (faded.size === 0 ? [buildings, []] : [buildings.filter((_, i) => !faded.has(i)), buildings.filter((_, i) => faded.has(i))]),
-    [buildings, faded],
-  )
-  const geometry = useMemo(() => createContextGeometry(solid), [solid])
-  const ghostGeometry = useMemo(() => (ghost.length > 0 ? createContextGeometry(ghost) : null), [ghost])
+  // Built once. While the wind disc is lifted (ADR-0028 phase 3) the buildings it passes over are
+  // flagged in a per-vertex attribute: the solid material skips them and a faint material draws
+  // them. Rebuilding the merged mesh instead cost 65–100 ms per height step on Compact Infill
+  // (code review 2026-11-13, finding 6); writing the flags is a fill over a few vertex ranges.
+  const geometry = useMemo(() => {
+    const merged = createContextGeometry(buildings)
+    merged.setAttribute('faded', new Float32BufferAttribute(new Float32Array(merged.getAttribute('position').count), 1))
+    return merged
+  }, [buildings])
   const edges = useMemo(() => new EdgesGeometry(geometry, EDGE_THRESHOLD_DEG), [geometry])
+  const solidMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: CONTEXT_COLOR, roughness: 0.9, metalness: 0, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), 0), [])
+  const fadedMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: CONTEXT_COLOR, roughness: 0.9, metalness: 0, flatShading: true, transparent: true, opacity: FADED_OPACITY, depthWrite: false }), 1), [])
+
+  useEffect(() => {
+    const attribute = geometry.getAttribute('faded') as Float32BufferAttribute
+    const starts = geometry.userData.buildingStarts as Int32Array
+    const flags = attribute.array as Float32Array
+    flags.fill(0)
+    for (const index of faded) flags.fill(1, starts[index], starts[index + 1])
+    attribute.needsUpdate = true
+  }, [geometry, faded])
 
   useEffect(
     () => () => {
       geometry.dispose()
       edges.dispose()
-      ghostGeometry?.dispose()
     },
-    [geometry, edges, ghostGeometry],
+    [geometry, edges],
   )
+  useEffect(() => () => { solidMaterial.dispose(); fadedMaterial.dispose() }, [solidMaterial, fadedMaterial])
 
   return (
     <group>
-      <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial
-          color={CONTEXT_COLOR}
-          roughness={0.9}
-          metalness={0}
-          flatShading
-          polygonOffset
-          polygonOffsetFactor={1}
-          polygonOffsetUnits={1}
-        />
-      </mesh>
+      {/* The solid mesh's shadow pass still includes faded buildings: they still shade the ground. */}
+      <mesh geometry={geometry} material={solidMaterial} castShadow receiveShadow />
       <lineSegments geometry={edges}>
         <lineBasicMaterial color={EDGE_COLOR} transparent opacity={EDGE_OPACITY} depthWrite={false} />
       </lineSegments>
-      {ghostGeometry && (
-        <mesh geometry={ghostGeometry} castShadow>
-          <meshStandardMaterial color={CONTEXT_COLOR} roughness={0.9} metalness={0} flatShading transparent opacity={FADED_OPACITY} depthWrite={false} />
-        </mesh>
-      )}
+      {faded.size > 0 && <mesh geometry={geometry} material={fadedMaterial} />}
     </group>
   )
 }
@@ -588,7 +596,7 @@ export function ViewportCanvas({
         // The wind claim stays visible with the wind layer even when the inspector group is closed (PRD R8).
         <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
           {windShown.display === 'ratio' && <WindRampBar />}
-          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{windCaption(windSettings.heightM)}</p>
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{windCaption(windSettings.heightM, !!windFlow && !windField)}</p>
         </div>
       )}
       {webgl === 'none' ? (
@@ -649,7 +657,7 @@ export function ViewportCanvas({
             {windWorst && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
             {!windWorst && windFlow?.slices && windCircle && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windShown} baseline={windBaseline} />}
             {!windWorst && windFlow && windCircle && ((windStreamlines || reducedMotion)
-              ? windFlow.settled && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlines3d ? null : windSettings.heightM} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
+              ? windFlow.settled && (windSettings.streamlines3d || windField) && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlines3d ? null : windSettings.heightM} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
               : windField && <WindParticles flow={windField} circle={windCircle} heightAt={windHeightAt} wind={windShown} />)}
             {windCircle && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={windHeightAt} />}
             {windCircle && ghostRings.length > 0 && <GhostRings centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} heights={ghostRings} />}

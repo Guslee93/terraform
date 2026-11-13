@@ -321,6 +321,9 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
           </div>
           {baseline && baselineMismatch && <p role="status" className="text-caption text-ink-secondary">Baseline was taken for {compassName(baseline.from)} {baseline.from}°, r = {baseline.circle.radius} m, downwash rule {baseline.downwash ? 'on' : 'off'}. Reset it to compare.</p>}
           {wind.display === 'delta' && !baselineMismatch && <p className="text-caption">{DELTA_NOTE}</p>}
+          {baseline && wind.display === 'delta' && wind.heightM > PEDESTRIAN_HEIGHT_M && !baseline.flow.slices?.some((slice) => slice.z === wind.heightM) && (
+            <p role="status" className="text-caption text-ink-secondary">The baseline has no slice at {wind.heightM} m above terrain, so there is nothing to compare at this height. Reset the baseline to compare here.</p>
+          )}
         </Section>
 
         <Section title="Rules">
