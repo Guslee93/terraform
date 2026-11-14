@@ -192,7 +192,7 @@ export function WindQuick({ wind, onChange, idPrefix = 'wind' }: { wind: WindSet
   )
 }
 
-function Section({ title, children, action, regionLabel }: { title: string; children: ReactNode; action?: ReactNode; regionLabel?: string }) {
+export function Section({ title, children, action, regionLabel }: { title: string; children: ReactNode; action?: ReactNode; regionLabel?: string }) {
   return (
     <section aria-label={regionLabel} className="border-t border-card-line pt-3">
       <div className="flex min-h-8 items-center justify-between gap-2">
@@ -201,6 +201,26 @@ function Section({ title, children, action, regionLabel }: { title: string; chil
       </div>
       <div className="mt-2 space-y-2">{children}</div>
     </section>
+  )
+}
+
+/**
+ * The analysis circle the wind and sun-hours analyses share (ADR-0031): its size, and Move circle,
+ * which places it with a click on the ground or the arrow keys.
+ */
+export function CircleControls({ radius, onRadiusChange, placing = false, onPlace, note }: { radius: number; onRadiusChange: (radius: number) => void; placing?: boolean; onPlace?: (placing: boolean) => void; note: string }) {
+  return (
+    <Section title="Analysis circle" action={<span className="text-body-sm tabular-nums text-ink">r = {radius} m</span>}>
+      <input type="range" min={CIRCLE_RADIUS.min} max={CIRCLE_RADIUS.max} step={CIRCLE_RADIUS.step} value={radius}
+        aria-label="Analysis circle" aria-valuetext={`radius ${radius} metres`}
+        onChange={(event) => onRadiusChange(Number(event.currentTarget.value))} className={rangeClass} />
+      {onPlace && (
+        <button type="button" aria-pressed={placing} onClick={() => onPlace(!placing)} className={cn(pillButtonClass, 'w-full')}>
+          {placing ? 'Click the ground or use arrow keys · Enter to place · Esc to cancel' : 'Move circle'}
+        </button>
+      )}
+      <p className="text-caption text-ink-secondary">{note}</p>
+    </Section>
   )
 }
 
@@ -286,17 +306,8 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
           {sweepOn && !sweep && <p className="text-caption text-ink-secondary">Solving directions…</p>}
         </Section>
 
-        <Section title="Analysis circle" action={<span className="text-body-sm tabular-nums text-ink">r = {wind.radius} m</span>}>
-          <input id="wind-radius" type="range" min={CIRCLE_RADIUS.min} max={CIRCLE_RADIUS.max} step={CIRCLE_RADIUS.step} value={wind.radius}
-            aria-label="Analysis circle" aria-valuetext={`radius ${wind.radius} metres`}
-            onChange={(event) => set({ radius: Number(event.currentTarget.value) })} className={rangeClass} />
-          {onPlaceCircle && (
-            <button type="button" aria-pressed={placingCircle} onClick={() => onPlaceCircle(!placingCircle)} className={cn(pillButtonClass, 'w-full')}>
-              {placingCircle ? 'Click the ground or use arrow keys · Enter to place · Esc to cancel' : 'Move circle'}
-            </button>
-          )}
-          <p className="text-caption text-ink-secondary">The flow is solved only around this circle, at about {Math.round((wind.radius * 2 * 1.4) / 160 * 10) / 10} m resolution.</p>
-        </Section>
+        <CircleControls radius={wind.radius} onRadiusChange={(radius) => set({ radius })} placing={placingCircle} onPlace={onPlaceCircle}
+          note={`The flow is solved only around this circle, at about ${Math.round((wind.radius * 2 * 1.4) / 160 * 10) / 10} m resolution.`} />
 
         <Section title="Streamlines" action={
           <label className="grid size-8 cursor-pointer place-items-center">

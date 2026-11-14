@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { FLOW_DISCLAIMER } from './lbm'
 import { profileFactor } from './windProfile'
 import { ACTIVITY_BANDS, buildClimateView, captureBaseline, windCaption, DEFAULT_WIND, DELTA_BANDS, displayAt, flowAtHeight, windDrawLift, WORST_NOTE, DIRECTION_BANDS, localSpeedMs, particleColour, WIND_RAMP, windSpeedColour, windColour } from './climateView'
-import { SUN_HOURS_DISCLAIMER } from './sunHours'
 
 describe('Direction speed ramp', () => {
   it.each(WIND_RAMP)('matches $speed m/s', ({ speed, colour }) => expect(windSpeedColour(speed)).toBe(colour))
@@ -40,21 +39,6 @@ describe('audit fixes', () => {
     expect(at(9)).toMatch(/^Uncomfortable \(8–10/)
     expect(at(12)).toMatch(/^Very uncomfortable \(10–15/)
     expect(at(16)).toMatch(/^Unsafe/)
-  })
-})
-
-describe('sun-hours view (ADR-0021)', () => {
-  it('tallies assessed cells and shows the exact disclaimer', () => {
-    const cells = [
-      { x: 0, y: 0, hours: 1, band: '0-20' as const },
-      { x: 10, y: 0, hours: 5, band: '40-60' as const },
-      { x: 20, y: 0, hours: null, band: null },
-    ]
-    const view = buildClimateView('sun-hours', [], [], [], null, DEFAULT_WIND, 10, null, null, cells)
-    expect(view.assessed).toBe(2)
-    expect(view.overlay.cells).toHaveLength(2)
-    expect(view.legend.find((entry) => entry.label === '40–60 % of the day')?.share).toBe(0.5)
-    expect(view.disclaimer).toBe(SUN_HOURS_DISCLAIMER)
   })
 })
 

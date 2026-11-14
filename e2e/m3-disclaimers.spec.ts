@@ -22,7 +22,7 @@ const FORBIDDEN_CLAIMS = ['compliant', 'verified', 'bim-ready', 'bim ready', 'of
 const SANCTIONED_SUN_HOURS_NOTE =
   'Indicative sun hours — geometric, clear sky, buildings only. Not a daylight assessment.'
 
-/** The Sun card's analysis-mode label (ADR-0021: `Shadows | Sun hours | Roof solar | Façade | VSC`). */
+/** The Sun card's analysis-mode label (ADR-0021; ADR-0031: `Shadows | Sun hours | Roof solar | VSC`). */
 const SANCTIONED_SUN_HOURS_LABEL = 'Sun hours'
 
 /** Sweep the whole rendered page: visible text, hidden panels, titles and aria-labels. */
@@ -74,6 +74,12 @@ test('D34: required wording is present in the studio panels and forbidden claims
   await expect(page.getByText('Geometric sun direction for this site (suncalc). Not a daylight assessment.')).toBeVisible()
   await expectNoForbiddenClaims(page, 'studio Sun group')
   await expectNoSunHoursClaim(page, 'studio Sun group')
+
+  // ADR-0031: the sun-hours controls, legend and caption keep to the sanctioned wording too.
+  await page.getByRole('group', { name: 'Sun analysis' }).first().getByRole('button', { name: 'Sun hours', exact: true }).click()
+  await expect(page.getByLabel('Median hours of direct sun in the circle')).toBeVisible()
+  await expectNoForbiddenClaims(page, 'studio Sun hours')
+  await expectNoSunHoursClaim(page, 'studio Sun hours')
 
 })
 

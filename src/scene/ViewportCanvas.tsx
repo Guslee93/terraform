@@ -22,6 +22,10 @@ import type { SunDirection } from '../features/analysis/sun'
 import { ClimateLayer } from './ClimateLayer'
 import { FacadeSun, type FacadeOverlay } from './FacadeSun'
 import { RoofSolar } from './RoofSolar'
+import { SunHoursLayer, SunHoursRampBar } from './SunHoursLayer'
+import { SUN_HOURS_DISCLAIMER } from '../features/analysis/sunHours'
+import type { CircleSunHours } from '../features/analysis/circleSunHours'
+import type { AnalysisCircle as AnalysisCircleShape } from '../features/analysis/circle'
 import { WindStreamlines } from './WindStreamlines'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
@@ -79,6 +83,11 @@ type ViewportProps = {
   roofSolar?: readonly RoofSolarValue[] | null
   /** Façade sun-hours or VSC quads; null when neither façade layer is showing. */
   facade?: FacadeOverlay | null
+  /**
+   * Sun hours on the ground, roofs and façades in the analysis circle (ADR-0031). `buildings` is the
+   * array `result` was computed for; the circle shows while the first result computes.
+   */
+  sunHours?: { readonly circle: AnalysisCircleShape; readonly result: CircleSunHours | null; readonly buildings: readonly FootprintBuilding[]; readonly computing: boolean } | null
   /** Live 2D wind flow for the particle layer; null when wind is off. */
   windFlow?: FlowResult | null
   windSettings?: WindSettings
@@ -510,6 +519,7 @@ export function ViewportCanvas({
   climate = null,
   roofSolar = null,
   facade = null,
+  sunHours = null,
   windFlow = null,
   windStreamlines = false,
   windWorst = null,
@@ -599,6 +609,13 @@ export function ViewportCanvas({
           <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{windCaption(windSettings.heightM, !!windFlow && !windField)}</p>
         </div>
       )}
+      {sunHours && (
+        // The claim stays on the map with the layer, as the wind caption does.
+        <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
+          {sunHours.result && <SunHoursRampBar possibleHours={sunHours.result.possibleHours} />}
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{sunHours.computing ? 'Computing hours of direct sun…' : SUN_HOURS_DISCLAIMER}</p>
+        </div>
+      )}
       {webgl === 'none' ? (
         <SceneUnavailable reason="unsupported" />
       ) : (
@@ -654,6 +671,8 @@ export function ViewportCanvas({
               : <ClimateLayer overlay={climate} heightAt={heightAt} buildings={windBuildings} />)}
             {roofSolar && <RoofSolar buildings={windBuildings} values={roofSolar} heightAt={heightAt} />}
             {facade && <FacadeSun overlay={facade} heightAt={heightAt} />}
+            {sunHours?.result && <SunHoursLayer sun={sunHours.result} buildings={sunHours.buildings} circle={sunHours.circle} heightAt={heightAt} />}
+            {sunHours && <AnalysisCircle centre={sunHours.circle.centre} radius={sunHours.circle.radius} heightAt={heightAt} />}
             {windWorst && <WorstArrows cells={windWorst.cells} worstFrom={windWorst.worstFrom} heightAt={heightAt} />}
             {!windWorst && windFlow?.slices && windCircle && <RoofWind buildings={windBuildings} flow={windFlow} circle={windCircle} heightAt={heightAt} wind={windShown} baseline={windBaseline} />}
             {!windWorst && windFlow && windCircle && (windFlowStyle({ lifted: windLift > 0 || liftDrag !== null, streamlinesOn: windStreamlines, reducedMotion }) === 'streamlines'

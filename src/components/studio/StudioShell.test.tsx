@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps } from 'react'
 import { MemoryRouter } from 'react-router-dom'
@@ -13,14 +13,27 @@ import { parseBuildings, parseStudyArea, parseTerrain } from '../../features/sit
 import { SITES } from '../../features/sites/siteCatalog'
 import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
 import { ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
-import { FACADE_SUN_DISCLAIMER } from '../../features/analysis/facadeSun'
+import type { SunSample } from '../../features/analysis/shadowRay'
 import { VSC_COLOUR, VSC_DISCLAIMER } from '../../features/analysis/vsc'
 import { moveGesture } from '../../features/editor/interaction'
-import { removeVolume } from '../../features/editor/commands'
 import { ViewportCanvas } from '../../scene/ViewportCanvas'
 import { StudioShell } from './StudioShell'
 
 vi.mock('../../scene/ViewportCanvas', () => ({ ViewportCanvas: vi.fn(() => <div>Viewport</div>) }))
+// jsdom has no Worker: compute the circle's sun hours in place, from the first two samples only, so
+// the wiring (buildings, circle, window) is tested at a fraction of the cost (ADR-0031).
+const sunCalls = vi.hoisted(() => ({ samples: [] as readonly SunSample[] }))
+vi.mock('../../features/analysis/useCircleSunHours', async () => {
+  const { useMemo } = await import('react')
+  const { computeCircleSunHours } = await import('../../features/analysis/circleSunHours')
+  return {
+    useCircleSunHours: (buildings: Parameters<typeof computeCircleSunHours>[0], circle: Parameters<typeof computeCircleSunHours>[1] | null, samples: readonly SunSample[], enabled: boolean) => {
+      const result = useMemo(() => (enabled && circle ? computeCircleSunHours(buildings, circle, samples.slice(0, 2)) : null), [buildings, circle, samples, enabled])
+      if (enabled) sunCalls.samples = samples
+      return { result, buildings, circle, computing: false }
+    },
+  }
+})
 const sitePackage = {
   manifest: parseSiteManifest(compactManifest),
   terrain: parseTerrain(compactTerrain),
@@ -62,34 +75,40 @@ it('starts with only Sun/Wind/Noise and automatic rendering; block tools are opt
   for (const label of ['Compare', 'Guide', 'Saved', 'Design check', 'Study area', 'Data notes', 'Render quality']) expect(screen.queryByText(label)).not.toBeInTheDocument()
 })
 
-it('draws ground sun hours, recomputes when a block is added and returns to shadows', async () => {
+it('draws sun hours on the ground, roofs and façades in the analysis circle, with a window of the day', async () => {
   mount()
   const user = userEvent.setup()
   await user.click(screen.getByTestId('analysis-card-sun'))
   const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
   if (!control) throw new Error('Missing sun analysis control')
+  // The separate Façade layer is folded into Sun hours (ADR-0031).
+  expect(within(control).queryByRole('button', { name: 'Façade' })).not.toBeInTheDocument()
   await user.click(within(control).getByRole('button', { name: 'Sun hours' }))
   expect(within(control).getByRole('button', { name: 'Sun hours' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getAllByText(SUN_HOURS_DISCLAIMER).length).toBeGreaterThan(0)
-  const before = scene().climate?.cells.length ?? 0
-  expect(before).toBeGreaterThan(0)
-  await user.click(screen.getByRole('button', { name: 'Add a block' }))
-  // Draw over an empty part of the study area so the cells inside it were assessed before.
-  draw([[-20, 75], [0, 75], [0, 95], [-20, 95]])
-  expect(scene().windBuildings).toHaveLength((sitePackage.buildings.buildings.length) + 1)
-  expect(scene().climate?.cells.length ?? 0).toBeLessThan(before)
-  const volume = scene().editor.history.document.volumes[0]
-  if (!volume) throw new Error('No drawn volume')
-  const beforeMove = (scene().climate?.cells ?? []).map((cell) => `${cell.x},${cell.y}`).join(';')
-  act(() => scene().dispatch({ type: 'pointerDown', point: [0, 0], gesture: moveGesture(volume.id) }))
-  act(() => scene().dispatch({ type: 'pointerMove', point: [30, 0] }))
-  act(() => scene().dispatch({ type: 'pointerUp' }))
-  const afterMove = (scene().climate?.cells ?? []).map((cell) => `${cell.x},${cell.y}`).join(';')
-  expect(afterMove).not.toBe(beforeMove)
-  act(() => scene().dispatch({ type: 'command', command: removeVolume(volume.id) }))
-  expect(scene().climate?.cells.length ?? 0).toBe(before)
-  await user.click(within(control).getByRole('button', { name: 'Shadows' }))
+  // The same circle as the wind analysis: the study area's centre, 100 m.
+  const shown = scene().sunHours
+  expect(shown?.circle).toEqual({ centre: [0, 0], radius: 100 })
   expect(scene().climate).toBeNull()
+  const included = shown?.result?.included.length ?? 0
+  expect(included).toBeGreaterThan(0)
+  expect(shown?.result?.facades.hours.length ?? 0).toBeGreaterThan(0)
+  const card = screen.getByRole('region', { name: 'Sun card' })
+  expect(within(card).getByText('Ground')).toBeVisible()
+  // A block drawn in the circle gets its roof and façades measured.
+  await user.click(screen.getByRole('button', { name: 'Add a block' }))
+  draw([[-20, 75], [0, 75], [0, 95], [-20, 95]])
+  const drawn = sitePackage.buildings.buildings.length
+  expect(scene().sunHours?.buildings).toHaveLength(drawn + 1)
+  expect(scene().sunHours?.result?.included).toContain(drawn)
+  // The window cuts the day's samples; the circle follows its size slider.
+  fireEvent.change(within(card).getByRole('slider', { name: 'From' }), { target: { value: '720' } })
+  expect(sunCalls.samples.length).toBeGreaterThan(0)
+  expect(sunCalls.samples.every((sample) => sample.minute >= 720)).toBe(true)
+  fireEvent.change(within(card).getByRole('slider', { name: 'Analysis circle' }), { target: { value: '60' } })
+  expect(scene().sunHours?.circle.radius).toBe(60)
+  await user.click(within(control).getByRole('button', { name: 'Shadows' }))
+  expect(scene().sunHours).toBeNull()
 })
 it('offers roof solar with its upper-bound disclaimer and no invented value while computing', async () => {
   mount()
@@ -101,30 +120,6 @@ it('offers roof solar with its upper-bound disclaimer and no invented value whil
   expect(screen.getAllByText(ROOF_SOLAR_DISCLAIMER).length).toBeGreaterThan(0)
   // jsdom has no Worker: the card says it is computing rather than showing a placeholder number.
   expect(within(screen.getByRole('region', { name: 'Sun card' })).getByText(/Computing roof solar/)).toBeVisible()
-})
-
-it('colours the façades of a user block and removes the layer in Shadows', async () => {
-  mount()
-  const user = userEvent.setup()
-  await user.click(screen.getByRole('button', { name: 'Add a block' }))
-  draw()
-  await user.click(screen.getByTestId('analysis-card-sun'))
-  const control = screen.getAllByRole('group', { name: 'Sun analysis' })[0]
-  if (!control) throw new Error('Missing sun analysis control')
-  await user.click(within(control).getByRole('button', { name: 'Façade' }))
-  expect(screen.getAllByText(FACADE_SUN_DISCLAIMER).length).toBeGreaterThan(0)
-  expect(scene().facade?.values.length ?? 0).toBeGreaterThan(0)
-  const volume = scene().editor.history.document.volumes[0]
-  if (!volume) throw new Error('No drawn volume')
-  const beforeMove = scene().facade?.values[0]?.sample.p[0]
-  act(() => scene().dispatch({ type: 'pointerDown', point: [0, 0], gesture: moveGesture(volume.id) }))
-  act(() => scene().dispatch({ type: 'pointerMove', point: [20, 0] }))
-  act(() => scene().dispatch({ type: 'pointerUp' }))
-  expect(scene().facade?.values[0]?.sample.p[0]).not.toBe(beforeMove)
-  act(() => scene().dispatch({ type: 'command', command: removeVolume(volume.id) }))
-  expect(scene().facade).toBeNull()
-  await user.click(within(control).getByRole('button', { name: 'Shadows' }))
-  expect(scene().facade).toBeNull()
 })
 
 it('colours the same façades with VSC and shows the daylight disclaimer', async () => {

@@ -3,7 +3,6 @@ import { DATE_PRESETS, TIME_PRESETS, dayModel, describeSunState, sunDirection, t
 import { formatLocalLabel, localDayMinuteToInstant, minutesOfLocalDay, toLocalWallClock, type LocalDate, type ResolvedLocalTime } from '../../features/analysis/time'
 import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
 import { ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
-import { FACADE_SUN_DISCLAIMER } from '../../features/analysis/facadeSun'
 import { VSC_DISCLAIMER } from '../../features/analysis/vsc'
 import type { SiteManifest } from '../../features/sites/manifest'
 import { cn } from '../../lib/cn'
@@ -12,14 +11,16 @@ import { formatNumber } from './format'
 
 export type SunTime = { date: LocalDate; minuteOfDay: number }
 
-/** Which sun screening layer is showing; `shadows` is the plain scene (ADR-0021). */
-export type SunAnalysis = 'shadows' | 'sun-hours' | 'roof-solar' | 'facade' | 'vsc'
+/**
+ * Which sun screening layer is showing; `shadows` is the plain scene (ADR-0021). Sun hours cover the
+ * ground, roofs and façades in the analysis circle, so the separate Façade layer is gone (ADR-0031).
+ */
+export type SunAnalysis = 'shadows' | 'sun-hours' | 'roof-solar' | 'vsc'
 
 export const SUN_ANALYSIS_OPTIONS: readonly { id: SunAnalysis; label: string }[] = [
   { id: 'shadows', label: 'Shadows' },
   { id: 'sun-hours', label: 'Sun hours' },
   { id: 'roof-solar', label: 'Roof solar' },
-  { id: 'facade', label: 'Façade' },
   { id: 'vsc', label: 'VSC' },
 ]
 
@@ -27,7 +28,6 @@ export const SUN_ANALYSIS_OPTIONS: readonly { id: SunAnalysis; label: string }[]
 export const SUN_ANALYSIS_NOTE: Record<Exclude<SunAnalysis, 'shadows'>, string> = {
   'sun-hours': SUN_HOURS_DISCLAIMER,
   'roof-solar': ROOF_SOLAR_DISCLAIMER,
-  facade: FACADE_SUN_DISCLAIMER,
   vsc: VSC_DISCLAIMER,
 }
 

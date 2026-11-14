@@ -949,3 +949,20 @@ zoom in because the quads are small at the default site camera.
 - Stack timing, before → after: Compact Infill 18.3–19.1 s → 16.6–17.5 s (10 → 14 solves);
   Sloped Edge 9.1 s → 7.9–8.6 s (5 → 7 solves).
 - Captures: 15 m before and after, 18 m after (`docs/screenshots/wind-refill-*.png`).
+
+## 2026-11-14 — Sun hours in the analysis circle (ADR-0031)
+
+- Owner request with a reference image: sun hours on façades, roofs and ground, in the wind's circle.
+- Captured the existing Sun hours (ground only, study-area rectangle, 10 m) before changing it.
+- Domain `circleSunHours.ts` with 10 tests. Worker `circleSunWorker.ts` and hook `useCircleSunHours`.
+  Scene `SunHoursLayer.tsx`: the ground via the wind heatmap and circle clip, the roofs via a plan
+  texture, the façades as a vertex-coloured mesh. Sun card `SunHoursControls.tsx` with the window and
+  the shared `CircleControls`.
+- Removed the replaced code: `computeSunHours` and its bands, `facadeSun.ts`, the Façade option, and
+  the sun-hours branch of `buildClimateView`.
+- First e2e run: one strict-mode failure. The window label appears twice, in the readout sentence and
+  in the section header; fixed with an exact match.
+- lint 0; 1082 unit tests pass; build OK. e2e (production build): sun-hours, m3-disclaimers,
+  m3-analysis, wind, wind-a11y, simplified-studio, m5-a11y and keyboard all pass (2 opt-in skipped).
+- Captures (`docs/screenshots/sun-hours-circle-*.png`, `sun-hours-ground-only-before-1440x900.png`): Compact Infill (3D, from the north, 390 × 844), Sloped Edge, and the old view for
+  comparison.

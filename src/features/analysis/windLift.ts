@@ -2,6 +2,9 @@ import type { Vec2 } from '../../lib/coordinates'
 import { PEDESTRIAN_HEIGHT_M } from './climateView'
 import type { FlowResult } from './flowRunner'
 import { MIN_LIFT_TOP_M } from './windProfile'
+import { footprintTouchesCircle } from './circle'
+
+export { footprintTouchesCircle }
 
 /** Every whole metre from 2 m to `top`. */
 const metres = (top: number) => Array.from({ length: Math.max(0, top - PEDESTRIAN_HEIGHT_M + 1) }, (_, i) => PEDESTRIAN_HEIGHT_M + i)
@@ -69,25 +72,6 @@ export function ghostHeights(heights: readonly number[], current: number, draggi
 }
 
 type Footprinted = { readonly height: number; readonly footprint: readonly (readonly [number, number])[] }
-
-/**
- * Whether a footprint touches the circle: a corner inside it, an edge passing within the radius
- * (a long building crossing the rim with no corner inside), or the circle centre inside the footprint.
- */
-export function footprintTouchesCircle(footprint: readonly (readonly [number, number])[], centre: Vec2, radius: number): boolean {
-  const [cx, cy] = centre, r2 = radius * radius
-  let inside = false
-  for (let i = 0, j = footprint.length - 1; i < footprint.length; j = i++) {
-    const [ax, ay] = footprint[j]!, [bx, by] = footprint[i]!
-    // Closest point of edge a→b to the centre.
-    const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy
-    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((cx - ax) * dx + (cy - ay) * dy) / len2))
-    if ((ax + t * dx - cx) ** 2 + (ay + t * dy - cy) ** 2 <= r2) return true
-    // Even-odd ray cast for the centre inside the footprint.
-    if ((ay > cy) !== (by > cy) && cx < ax + ((cy - ay) / (by - ay)) * dx) inside = !inside
-  }
-  return inside
-}
 
 /**
  * Buildings that fade while the disc is lifted: touching the analysis circle and no taller than

@@ -1,8 +1,7 @@
 import { ACTIVITY_BANDS, ROSE_THRESHOLD_MS, type ClimateView } from '../../features/analysis/climateView'
 import { ROAD_LEVEL_AT_10M, type NoiseCell, type NoiseRoad } from '../../features/analysis/noise'
-import { medianSunHours, type SunHoursCell } from '../../features/analysis/sunHours'
+import type { CircleSunHours } from '../../features/analysis/circleSunHours'
 import { medianRoofSolar, type RoofSolarValue } from '../../features/analysis/roofSolar'
-import { medianFacadeSun, type FacadeSunValue } from '../../features/analysis/facadeSun'
 import { medianVsc, type VscValue } from '../../features/analysis/vsc'
 import { compassPoint, type SunState } from '../../features/analysis/sun'
 import { shortDate } from './SunPanel'
@@ -34,27 +33,18 @@ export function sunStat(state: SunState, clock: string): AnalysisStat {
   }
 }
 
-/** Median assessed ground hours for the selected date; the date names the result. */
-export function sunHoursStat(cells: readonly SunHoursCell[], date: string): AnalysisStat {
-  const median = medianSunHours(cells)
-  if (median === null) return { ...empty('No assessed ground'), secondary: [[shortDate(date), '']] }
+/**
+ * Median hours of direct sun on the open ground in the analysis circle (ADR-0031); the date names
+ * the result. While the worker computes, no number: the hint says so.
+ */
+export function circleSunStat(result: CircleSunHours | null, computing: boolean, date: string): AnalysisStat {
+  const median = result?.median.ground ?? null
+  if (!result || (computing && median === null)) return { ...empty('Computing…'), secondary: [[shortDate(date), '']] }
+  if (median === null) return { ...empty('No open ground in the circle'), secondary: [[shortDate(date), '']] }
   return {
     value: formatNumber(median, 1),
     unit: ' h',
-    secondary: [['median · ', ''], [shortDate(date), '']],
-  }
-}
-
-/** Median direct-sun hours on the user's façades for the selected date. */
-export function facadeSunStat(values: readonly FacadeSunValue[], date: string): AnalysisStat {
-  const median = medianFacadeSun(values)
-  if (median === null) {
-    return { ...empty('Draw a block to see façades'), secondary: [[shortDate(date), '']] }
-  }
-  return {
-    value: formatNumber(median, 1),
-    unit: ' h',
-    secondary: [['median · ', ''], [shortDate(date), '']],
+    secondary: [['median ground · ', ''], [shortDate(date), '']],
   }
 }
 
