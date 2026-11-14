@@ -83,7 +83,7 @@ it('draws sun hours on the ground, roofs and façades in the analysis circle, wi
   if (!control) throw new Error('Missing sun analysis control')
   // The separate Façade layer is folded into Sun hours (ADR-0031).
   expect(within(control).queryByRole('button', { name: 'Façade' })).not.toBeInTheDocument()
-  await user.click(within(control).getByRole('button', { name: 'Sun hours' }))
+  // Sun hours is the Sun card's default analysis (owner, 2026-11-14).
   expect(within(control).getByRole('button', { name: 'Sun hours' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getAllByText(SUN_HOURS_DISCLAIMER).length).toBeGreaterThan(0)
   // The same circle as the wind analysis: the study area's centre, 100 m.

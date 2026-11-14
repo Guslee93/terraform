@@ -10,13 +10,14 @@ test.setTimeout(budget(120_000))
 
 const DISCLAIMER = 'Indicative sun hours — geometric, clear sky, buildings only. Not a daylight assessment.'
 
-test('ADR-0031: sun hours fill the analysis circle, follow the window and the circle, and leave with Shadows', async ({ page }) => {
+test('ADR-0031: the Sun card opens on sun hours, which fill the analysis circle, follow the window and the circle, and leave with Shadows', async ({ page }) => {
   await page.goto('/studio/compact-infill')
   await expect(page.getByRole('region', { name: /3D site viewport for Compact Infill/i })).toBeVisible()
   await openAnalysis(page, 'Sun')
   const analysis = page.getByRole('group', { name: 'Sun analysis' }).first()
   await expect(analysis.getByRole('button', { name: 'Façade', exact: true })).toHaveCount(0)
-  await analysis.getByRole('button', { name: 'Sun hours', exact: true }).click()
+  // The Sun card opens on Sun hours (owner, 2026-11-14).
+  await expect(analysis.getByRole('button', { name: 'Sun hours', exact: true })).toHaveAttribute('aria-pressed', 'true')
 
   const card = page.getByRole('region', { name: 'Sun card' })
   const readout = card.getByLabel('Median hours of direct sun in the circle')
