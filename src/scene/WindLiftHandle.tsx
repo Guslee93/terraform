@@ -26,7 +26,7 @@ type Props = {
  * The red lift handle on the analysis circle (ADR-0028 phase 3). Drag it up or down: the disc
  * follows the pointer, the map shows the nearest solved height, and the disc snaps there on release.
  * `Esc` returns to the height the drag started at. It is a slider for keyboard and screen readers
- * (arrows, Home, End). A view setting: no undo entry.
+ * (arrows 1 m, Page Up/Down 5 m, Home, End). A view setting: no undo entry.
  */
 export function WindLiftHandle({ centre, radius, heightAt, heights, heightM, dragM, onDrag, onChange, controlsRef }: Props) {
   const { camera, gl } = useThree()
@@ -92,6 +92,8 @@ export function WindLiftHandle({ centre, radius, heightAt, heights, heightM, dra
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const next = event.key === 'ArrowUp' || event.key === 'ArrowRight' ? stepHeight(heightM, heights, 1)
       : event.key === 'ArrowDown' || event.key === 'ArrowLeft' ? stepHeight(heightM, heights, -1)
+      : event.key === 'PageUp' ? nearestHeight(heightM + 5, heights)
+      : event.key === 'PageDown' ? nearestHeight(heightM - 5, heights)
       : event.key === 'Home' ? heights[0]
       : event.key === 'End' ? heights[heights.length - 1]
       : undefined

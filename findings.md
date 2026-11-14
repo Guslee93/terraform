@@ -260,3 +260,21 @@
 - **The top-slice threshold followed the list.** `sliceHeightsFor` read the threshold as
   `SLICE_HEIGHTS_M[3]`; it now takes the highest standard slice, so a 31–35 m roof gets a top slice
   (31 m → 40 m) instead of falling under the old 35 m slice.
+
+## 2026-11-14 — Wind lift to every metre (ADR-0029)
+
+- **Between roof heights the layered model has nothing new to say.** A slice's solve depends only on
+  which buildings are taller than it; the height enters as a scale factor afterwards
+  (`profileFactor(z) / profileFactor(2)` in `flowRunner.ts`). So every metre is the covering solve
+  scaled, exact within the model, and the solves needed are one per roof height, not one per metre.
+- **Roof heights cluster.** Inside the default solve frame Compact Infill has 149 buildings, but their
+  heights round up to just 9 values (4, 7, 10, … 30 m: storey multiples). Sloped Edge has 4.
+- **Measured** (full stack, 4-core container, two runs): Compact Infill 16.0 s → 18.2–19.6 s,
+  Sloped Edge 7.6–8.0 s → 8.5–9.1 s. The 2 m ground solve (≈ 9 s and 5 s) dominates both.
+- **A one-slice stack was never cached.** With fixed heights a stack always had ≥ 7 slices, so caching
+  lived in the upper-slice branch only; a frame with no roof above 2 m completes at the ground solve.
+- **Blending between slices breaks with irregular heights.** The 3D streamline sampler blended linearly
+  between neighbouring slices; with solves at 2 m and 40 m around a 40 m tower, a point at 5 m blended
+  toward the open 40 m field and passed through the tower. Sampling the covering slice fixes it.
+- **Visible in the captures:** at 9 m Compact Infill reads 94 % calm; at 10 m, where a group of roofs
+  ends, a jet opens (81 % calm, 1 % ≥ 10 m/s); at 13 m it is the 10 m picture, slightly faster.

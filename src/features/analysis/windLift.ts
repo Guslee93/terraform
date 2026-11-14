@@ -1,5 +1,27 @@
 import type { Vec2 } from '../../lib/coordinates'
 import { PEDESTRIAN_HEIGHT_M } from './climateView'
+import type { FlowResult } from './flowRunner'
+import { MIN_LIFT_TOP_M } from './windProfile'
+
+/** Every whole metre from 2 m to `top`. */
+const metres = (top: number) => Array.from({ length: Math.max(0, top - PEDESTRIAN_HEIGHT_M + 1) }, (_, i) => PEDESTRIAN_HEIGHT_M + i)
+
+/** Every height the map can be lifted to for this flow: each whole metre from 2 m to the lift top (ADR-0029). */
+export function liftHeights(flow: FlowResult | null): number[] {
+  return metres(flow?.liftTopM ?? MIN_LIFT_TOP_M)
+}
+
+/**
+ * The heights ready to show: slices are solved bottom-up, so every metre below the first unsolved
+ * slice height is ready — right after the ground solve, everything up to the first roof. All of
+ * them once the stack is complete; only 2 m without a stack.
+ */
+export function readyLiftHeights(flow: FlowResult | null): number[] {
+  if (!flow?.slices?.length || !flow.sliceHeights) return [PEDESTRIAN_HEIGHT_M]
+  const top = flow.liftTopM ?? MIN_LIFT_TOP_M
+  const next = flow.sliceHeights[flow.slices.length]
+  return metres(next === undefined ? top : Math.min(top, next - 1))
+}
 
 /**
  * The wind lift (ADR-0028 phase 3): renderer-free rules for the handle, the stepped height control,
@@ -37,12 +59,13 @@ export function liftAnchor(centre: Vec2, radius: number, viewer: Vec2): Vec2 {
 }
 
 /**
- * The other solved heights, drawn as dashed rings while the disc is lifted or being dragged. At
- * rest on the ground there is nothing to compare against, so no rings.
+ * Dashed rings that show the scale of the stack the disc moves through: 2 m and every 5 m among
+ * the ready heights (a ring per metre would be a blur), while the disc is lifted or being dragged.
+ * At rest on the ground there is nothing to compare against, so no rings.
  */
 export function ghostHeights(heights: readonly number[], current: number, dragging: boolean): number[] {
   if (!dragging && current <= PEDESTRIAN_HEIGHT_M) return []
-  return heights.filter((h) => h !== current)
+  return heights.filter((h) => h !== current && (h === PEDESTRIAN_HEIGHT_M || h % 5 === 0))
 }
 
 type Footprinted = { readonly height: number; readonly footprint: readonly (readonly [number, number])[] }

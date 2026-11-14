@@ -3,7 +3,7 @@ import { createScenario } from '../../features/massing/factories'
 import { formatMetres } from './format'
 import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { nearestHeight } from '../../features/analysis/windLift'
+import { liftHeights, nearestHeight, readyLiftHeights } from '../../features/analysis/windLift'
 import { sunState } from '../../features/analysis/sun'
 import { baselineMatches, captureBaseline, buildClimateView, DEFAULT_WIND, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, type WindBaseline, type ClimateMode, type WindSettings } from '../../features/analysis/climateView'
 import { ClimatePanel, useWindDemo } from './ClimatePanel'
@@ -269,11 +269,12 @@ export function StudioShell({
   // The solved heights the map can show (ADR-0028), for the panel's slider and the scene's lift
   // handle. They come from the flow the map draws — the latest one, even while an edit re-solves —
   // so the controls never disagree with the map (code review 2026-11-13, findings 2 and 5).
-  const readyHeights = useMemo(() => (windFlow?.slices?.map((slice) => slice.z) ?? []).sort((a, b) => a - b), [windFlow])
+  const readyHeights = useMemo(() => readyLiftHeights(windFlow), [windFlow])
+  const allHeights = useMemo(() => liftHeights(windFlow), [windFlow])
   // A height that no longer exists once a stack is complete (the top slice went with a tall
   // building) moves to the nearest one instead of leaving the map blank (finding 1).
   useEffect(() => {
-    const stops = freshFlow?.slicesComplete ? freshFlow.sliceHeights : undefined
+    const stops = freshFlow?.slicesComplete ? liftHeights(freshFlow) : undefined
     if (stops && stops.length > 0 && !stops.includes(wind.heightM)) setWind((w) => ({ ...w, heightM: nearestHeight(w.heightM, stops) }))
   }, [freshFlow, wind.heightM])
   // All-directions sweep (ADR-0015): opt-in, solved in its own worker.
@@ -398,7 +399,7 @@ export function StudioShell({
   }])), [analysisDocument])
   const selectedDeletable = !!selectedVolume && !selectedVolume.locked
   const climatePanel = (only: 'wind' | 'noise') => sitePackage ? (
-    <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick availableHeights={readyHeights} slicesComplete={!!freshFlow?.slicesComplete} sliceHeights={windFlow?.sliceHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
+    <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick availableHeights={readyHeights} slicesComplete={!!freshFlow?.slicesComplete} heights={allHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
       streamlines={streamlines} onStreamlinesChange={setStreamlines}
       baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
       onSetBaseline={() => { if (windFlow?.settled && windFlow.slicesComplete && isCurrentFlow(windFlow) && windCentre) setBaseline(captureBaseline(windFlow, { centre: windCentre, radius: wind.radius }, wind.from, wind.downwash)) }}

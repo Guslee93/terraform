@@ -2,9 +2,8 @@ import { STREAMLINE_3D_NOTE } from '../../features/analysis/streamlines3d'
 import { DirectionRose, ShareBar, type RoseSector } from './DirectionRose'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { demoFrame } from '../../features/analysis/windDemo'
-import { SLICE_HEIGHTS_M } from '../../features/analysis/windProfile'
-import { heightText, nearestHeight } from '../../features/analysis/windLift'
-import { CIRCLE_RADIUS, DELTA_NOTE, displayAt, heightNote, LIFT_SLOPE_NOTE, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
+import { heightText, liftHeights } from '../../features/analysis/windLift'
+import { CIRCLE_RADIUS, DELTA_NOTE, displayAt, flowAtHeight, heightNote, LIFT_SLOPE_NOTE, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { eyebrowClass, labelClass, pillButtonClass, rangeClass, segmentClass, segmentGroupClass } from '../ui/controls'
 
@@ -88,7 +87,8 @@ type ClimatePanelProps = {
   availableHeights?: readonly number[]
   slicesComplete?: boolean
   /** All heights the stack will have; defaults to the standard four. */
-  sliceHeights?: readonly number[]
+  /** Every height the map can be lifted to (whole metres, ascending); `availableHeights` are the ready ones. */
+  heights?: readonly number[]
   demoPlaying?: boolean
   onToggleDemo?: () => void
   /** Edit made while the demo plays: stop it, restore, then apply this change. */
@@ -118,33 +118,40 @@ const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
   { id: 'ratio', label: 'Direction' },
 ]
 
+/** Before a flow reports its lift top: 2–30 m. */
+const LIFT_FALLBACK = liftHeights(null)
+
 /**
- * The stepped height control (ADR-0028 phase 3): one stop per slice height, the same state as the
- * lift handle in the scene. Slices are solved bottom-up, so the solved stops are the lowest ones;
- * a stop still computing is greyed and labelled, and moving onto it lands on the highest solved one.
+ * The height control (ADR-0029): every whole metre from 2 m to the lift top, the same state as the
+ * lift handle in the scene. Slices are solved bottom-up, so the ready heights are the lowest ones;
+ * moving past them lands on the highest ready metre, and the rest of the track reads as computing.
  */
-function HeightControl({ wind, stops, availableHeights, slicesComplete, onChange }: { wind: WindSettings; stops: readonly number[]; availableHeights: readonly number[]; slicesComplete: boolean; onChange: (heightM: number) => void }) {
-  const ready = stops.filter((z) => z <= PEDESTRIAN_HEIGHT_M || availableHeights.includes(z))
-  const index = Math.max(0, stops.indexOf(wind.heightM))
+function HeightControl({ wind, heights, availableHeights, slicesComplete, onChange }: { wind: WindSettings; heights: readonly number[]; availableHeights: readonly number[]; slicesComplete: boolean; onChange: (heightM: number) => void }) {
+  const low = heights[0] ?? PEDESTRIAN_HEIGHT_M
+  const top = heights[heights.length - 1] ?? PEDESTRIAN_HEIGHT_M
+  const readyTop = Math.max(PEDESTRIAN_HEIGHT_M, ...availableHeights.filter((z) => z <= top))
   const locked = wind.display === 'worst'
+  const at = (z: number) => `${((z - low) / Math.max(1, top - low)) * 100}%`
+  const marks = heights.filter((z) => z === low || z === top || (z % 5 === 0 && top - z >= 3))
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <label htmlFor="wind-height" className={labelClass}>Height above terrain</label>
         <span className="text-body-sm tabular-nums text-ink">{wind.heightM} m{wind.heightM <= PEDESTRIAN_HEIGHT_M ? ' · pedestrian' : ''}</span>
       </div>
-      <input id="wind-height" type="range" min={0} max={stops.length - 1} step={1} value={index} disabled={locked}
+      <input id="wind-height" type="range" min={low} max={top} step={1} value={Math.min(top, Math.max(low, wind.heightM))} disabled={locked}
         aria-valuetext={heightText(wind.heightM)}
         aria-describedby={wind.heightM > PEDESTRIAN_HEIGHT_M ? 'wind-height-note' : !slicesComplete ? 'upper-heights-status' : undefined}
-        onChange={(event) => {
-          const wanted = stops[Number(event.currentTarget.value)] ?? PEDESTRIAN_HEIGHT_M
-          onChange(ready.includes(wanted) ? wanted : nearestHeight(wanted, ready))
-        }}
+        onChange={(event) => onChange(Math.min(Number(event.currentTarget.value), readyTop))}
         className={rangeClass} />
-      <ol aria-hidden="true" className="mt-1 flex justify-between text-caption tabular-nums">
-        {stops.map((z) => <li key={z} className={ready.includes(z) ? 'text-ink-secondary' : 'text-ink-disabled'}>{z}{ready.includes(z) ? '' : '…'}</li>)}
-      </ol>
-      {!slicesComplete && <p id="upper-heights-status" className="text-caption text-ink-secondary">Upper heights computing… {availableHeights.length}/{stops.length} ready</p>}
+      <div aria-hidden="true" className="relative mt-1 h-4 text-caption tabular-nums">
+        {marks.map((z) => (
+          <span key={z} style={{ left: at(z) }} className={cn('absolute', z === low ? '' : z === top ? '-translate-x-full' : '-translate-x-1/2', z <= readyTop ? 'text-ink-secondary' : 'text-ink-disabled')}>
+            {z}{z <= readyTop ? '' : '…'}
+          </span>
+        ))}
+      </div>
+      {!slicesComplete && <p id="upper-heights-status" className="text-caption text-ink-secondary">Upper heights computing… ready to {readyTop} m of {top} m</p>}
     </div>
   )
 }
@@ -197,8 +204,9 @@ function Section({ title, children, action, regionLabel }: { title: string; chil
   )
 }
 
-export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes = true, availableHeights = [], slicesComplete = false, sliceHeights = SLICE_HEIGHTS_M, demoPlaying = false, onToggleDemo, onDemoEdit, sweepOn = false, onSweepChange, sweep = null, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
-  const slicesReady = availableHeights.length >= 2
+export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes = true, availableHeights = [], slicesComplete = false, heights = LIFT_FALLBACK, demoPlaying = false, onToggleDemo, onDemoEdit, sweepOn = false, onSweepChange, sweep = null, mode, onModeChange, wind, onWindChange, view, placingCircle = false, onPlaceCircle, streamlines = false, onStreamlinesChange, baseline = null, baselineMismatch = false, canSetBaseline = false, onSetBaseline, onClearBaseline }: ClimatePanelProps) {
+  // 3D streamlines trace through the whole stack, so their controls wait for it (ADR-0029).
+  const slicesReady = slicesComplete
   // While the demo plays, an edit stops it (restoring the user's settings) and keeps the edit.
   const set = (patch: Partial<WindSettings>) => (demoPlaying && onDemoEdit ? onDemoEdit(patch) : onWindChange({ ...wind, ...patch }))
   const legend = view && mode !== 'off' && (
@@ -257,7 +265,7 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
             </button>
           ))}
         </div>
-        <HeightControl wind={wind} stops={sliceHeights} availableHeights={availableHeights} slicesComplete={slicesComplete} onChange={(heightM) => set({ heightM })} />
+        <HeightControl wind={wind} heights={heights} availableHeights={availableHeights} slicesComplete={slicesComplete} onChange={(heightM) => set({ heightM })} />
         {wind.heightM > PEDESTRIAN_HEIGHT_M && <p id="wind-height-note" className="text-caption text-ink-secondary">{heightNote(wind.heightM)}</p>}
         {wind.display === 'worst' && <p className="text-caption text-ink-secondary">The worst case is a pedestrian screen at 2 m.</p>}
         {showQuick && <WindQuick wind={wind} onChange={set} />}
@@ -323,7 +331,7 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
           </div>
           {baseline && baselineMismatch && <p role="status" className="text-caption text-ink-secondary">Baseline was taken for {compassName(baseline.from)} {baseline.from}°, r = {baseline.circle.radius} m, downwash rule {baseline.downwash ? 'on' : 'off'}. Reset it to compare.</p>}
           {wind.display === 'delta' && !baselineMismatch && <p className="text-caption">{DELTA_NOTE}</p>}
-          {baseline && wind.display === 'delta' && wind.heightM > PEDESTRIAN_HEIGHT_M && !baseline.flow.slices?.some((slice) => slice.z === wind.heightM) && (
+          {baseline && wind.display === 'delta' && wind.heightM > PEDESTRIAN_HEIGHT_M && !flowAtHeight(baseline.flow, wind.heightM) && (
             <p role="status" className="text-caption text-ink-secondary">The baseline has no slice at {wind.heightM} m above terrain, so there is nothing to compare at this height. Reset the baseline to compare here.</p>
           )}
         </Section>

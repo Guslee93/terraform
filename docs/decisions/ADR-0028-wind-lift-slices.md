@@ -1,6 +1,6 @@
 # ADR-0028 — The wind analysis lifts through terrain-following height slices
 
-- **Status:** Accepted (2026-11-13; proposed earlier the same day, merged in #4 and taken forward by the owner)
+- **Status:** Accepted (2026-11-13; proposed earlier the same day, merged in #4 and taken forward by the owner). §1 and §3 amended by ADR-0029: the lift reaches every whole metre.
 - **Relates to:** ADR-0014 (wind simulator), ADR-0015 (wind follow-ups), ADR-0023 §8 (density cost), ADR-0026 (analysis cards)
 - **Plan:** `docs/plans/wind-lift-plan.md`
 

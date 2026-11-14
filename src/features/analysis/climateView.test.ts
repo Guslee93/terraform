@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FLOW_DISCLAIMER } from './lbm'
+import { profileFactor } from './windProfile'
 import { ACTIVITY_BANDS, buildClimateView, captureBaseline, windCaption, DEFAULT_WIND, DELTA_BANDS, displayAt, flowAtHeight, windDrawLift, WORST_NOTE, DIRECTION_BANDS, localSpeedMs, particleColour, WIND_RAMP, windSpeedColour, windColour } from './climateView'
 import { SUN_HOURS_DISCLAIMER } from './sunHours'
 
@@ -82,7 +83,8 @@ describe('the wind map at a chosen height', () => {
   const ground = Object.assign(field(0.5), {})
   for (let k = 0; k < n * n; k++) if (groundSolid[k]) { ground[2 * k] = 0 }
   const open = new Uint8Array(n * n)
-  const flow = (upper = 1.2) => ({ id: 1, frame, settled: true, slicesComplete: true, velocity: ground, solid: groundSolid,
+  // Planned solves at 2, 20 and 25 m; the 25 m one is still computing.
+  const flow = (upper = 1.2) => ({ id: 1, frame, settled: true, slicesComplete: false, velocity: ground, solid: groundSolid, sliceHeights: [2, 20, 25],
     slices: [{ z: 2, velocity: ground, solid: groundSolid }, { z: 20, velocity: field(upper), solid: open }] })
   const area: [number, number][] = [[-14, -14], [14, -14], [14, 14], [-14, 14]]
   const view = (wind: Partial<typeof DEFAULT_WIND>, f = flow(), baseline: ReturnType<typeof captureBaseline> | null = null) =>
@@ -93,8 +95,21 @@ describe('the wind map at a chosen height', () => {
     expect(flowAtHeight(f, 2)).toBe(f)
     expect(flowAtHeight(f, 20)!.velocity).toBe(f.slices[1]!.velocity)
     expect(flowAtHeight(f, 20)!.solid).toBe(open)
-    // A height still computing has no field: nothing is interpolated between slices.
+    // A height whose covering slice is still computing has no field.
     expect(flowAtHeight(f, 25)).toBeNull()
+    expect(flowAtHeight(f, 30)).toBeNull()
+  })
+
+  it('shows any metre: the covering slice scaled by the wind profile (ADR-0029)', () => {
+    const f = flow()
+    // 23 m is covered by the 20 m solve: same obstacles, faster by the profile from 20 to 23 m.
+    const at23 = flowAtHeight(f, 23)!
+    expect(at23.solid).toBe(open)
+    expect(at23.velocity[0]).toBeCloseTo(1.2 * profileFactor(23) / profileFactor(20), 6)
+    // 12 m is covered by the ground solve: the block still blocks there.
+    const at12 = flowAtHeight(f, 12)!
+    expect(at12.solid).toBe(groundSolid)
+    expect(at12.velocity[0]).toBeCloseTo(0.5 * profileFactor(12) / profileFactor(2), 6)
   })
 
   it('shows comfort classes at 2 m only, and speed in m/s above', () => {

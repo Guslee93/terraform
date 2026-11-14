@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { ALPHA, profileFactor, sliceHeightsFor, sliceObstacles, SLICE_HEIGHTS_M } from './windProfile'
+import { ALPHA, buildingsNearFrame, coveringHeight, liftTop, profileFactor, sliceHeightsFor, sliceObstacles } from './windProfile'
 import { rasterize, type FlowFrame } from './lbm'
 
 const frame: FlowFrame = { nx: 16, ny: 16, dx: 2, centre: [0, 0], flow: [1, 0] }
 const block = { height: 15, footprint: [[-4, -4], [4, -4], [4, 4], [-4, 4]] as const }
 
 describe('indicative urban height profile', () => {
-  it('uses the specified heights and power law', () => {
-    expect(SLICE_HEIGHTS_M).toEqual([2, 5, 10, 15, 20, 25, 30])
+  it('uses the specified power law', () => {
     expect(ALPHA).toBe(0.22)
     expect(profileFactor(10)).toBe(1)
     expect(profileFactor(20)).toBeCloseTo(1.165, 3)
@@ -20,17 +19,32 @@ describe('indicative urban height profile', () => {
   })
 })
 
-describe('sliceHeightsFor (tall roofs)', () => {
-  const b = (height: number) => ({ height, footprint: [[0, 0], [10, 0], [10, 10], [0, 10]] as [number, number][] })
-  it('keeps the standard seven heights when nothing is taller than 30 m', () => {
-    expect(sliceHeightsFor([])).toEqual([2, 5, 10, 15, 20, 25, 30])
-    expect(sliceHeightsFor([b(12), b(30)])).toEqual([2, 5, 10, 15, 20, 25, 30])
+describe('solve heights where roofs end (ADR-0029)', () => {
+  const b = (height: number, x = 0) => ({ height, footprint: [[x, 0], [x + 10, 0], [x + 10, 10], [x, 10]] as [number, number][] })
+  it('solves 2 m and each whole metre where a roof ends, once per metre', () => {
+    // 12.4 m stops blocking at 13 m; 12.9 m and 13 m end in the same metre; 2 m or lower never blocks above 2 m.
+    expect(sliceHeightsFor([b(12.4), b(12.9), b(13), b(21), b(1.5), b(2)])).toEqual([2, 13, 21])
+    expect(sliceHeightsFor([])).toEqual([2])
   })
-  it('adds one top slice just above the tallest building, capped at 120 m', () => {
-    expect(sliceHeightsFor([b(12), b(60)])).toEqual([2, 5, 10, 15, 20, 25, 30, 65])
-    expect(sliceHeightsFor([b(61)])).toEqual([2, 5, 10, 15, 20, 25, 30, 70])
-    expect(sliceHeightsFor([b(300)])).toEqual([2, 5, 10, 15, 20, 25, 30, 120])
-    // The threshold moved from 35 m to 30 m (ADR-0028): a 31–35 m roof now gets its own slice.
-    expect(sliceHeightsFor([b(31)])).toEqual([2, 5, 10, 15, 20, 25, 30, 40])
+  it('lifts to 5 m above the tallest roof, at least 30 m, at most 120 m', () => {
+    expect(liftTop([])).toBe(30)
+    expect(liftTop([b(12)])).toBe(30)
+    expect(liftTop([b(29.2)])).toBe(35)
+    expect(liftTop([b(61)])).toBe(66)
+    expect(liftTop([b(300)])).toBe(120)
+    // A roof above the top adds no solve height.
+    expect(sliceHeightsFor([b(300)])).toEqual([2])
+  })
+  it('finds the solved height that covers any metre', () => {
+    const heights = [2, 13, 21]
+    expect(coveringHeight(heights, 2)).toBe(2)
+    expect(coveringHeight(heights, 12)).toBe(2)
+    expect(coveringHeight(heights, 13)).toBe(13)
+    expect(coveringHeight(heights, 20)).toBe(13)
+    expect(coveringHeight(heights, 35)).toBe(21)
+  })
+  it('keeps only buildings whose bounding box comes near the frame', () => {
+    const far = b(40, 1000), near = b(15, 90), long = { height: 25, footprint: [[-500, 95], [500, 95], [500, 99], [-500, 99]] as [number, number][] }
+    expect(buildingsNearFrame([far, near, long], [0, 0], 100)).toEqual([near, long])
   })
 })
