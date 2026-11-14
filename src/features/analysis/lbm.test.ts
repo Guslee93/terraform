@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Vec2 } from '../../lib/coordinates'
-import { createLbm, flowFrame, gridToWorld, rasterize, sampleRatio, sampleVelocity, speedRatio, stepLbm, velocityField, worldToGrid } from './lbm'
+import { createLbm, flowFrame, gridToWorld, rasterize, refillExchange, sampleRatio, sampleVelocity, speedRatio, stepLbm, velocityField, worldToGrid } from './lbm'
 
 const square = (x0: number, x1: number, y0: number, y1: number): Vec2[] => [
   [x0, y0],
@@ -108,5 +108,37 @@ describe('canonical flow cases', () => {
     stepLbm(s, 1500)
     expect(Math.abs(meanRho() - early)).toBeLessThan(0.01) // settled, not accumulating mass
     expect(speedRatio(s)[11 * nx + 50]).toBeGreaterThan(0.5) // street running with the wind
+  })
+})
+
+describe('refill from above (ADR-0030)', () => {
+  it('turns a refill length into a per-step rate: the free stream crosses it once per e-fold', () => {
+    expect(refillExchange(25, 3.5)).toBeCloseTo(0.014, 12) // 0.1 cells/step × 3.5 m / 25 m
+    expect(refillExchange(null, 3.5)).toBe(0)
+    expect(refillExchange(0.1, 3.5)).toBe(1) // never more than all the way in one step
+  })
+
+  it('leaves the free stream as it is', () => {
+    const s = createLbm(32, 16, new Uint8Array(32 * 16), 0.1, 0.6, 0.05)
+    stepLbm(s, 200)
+    for (const v of speedRatio(s)) expect(v).toBeCloseTo(1, 2)
+  })
+
+  it('shortens a wake without removing it, and keeps the density', () => {
+    const fr = flowFrame(square(-100, 100, -100, 100), 270, 96, 64)
+    const solid = rasterize(fr, [{ height: 20, footprint: square(-10, 10, -10, 10) }])
+    const solve = (exchange: number) => {
+      const s = createLbm(fr.nx, fr.ny, solid, 0.1, 0.6, exchange)
+      stepLbm(s, 1500)
+      let rho = 0, fluid = 0
+      for (let i = 0; i < fr.nx * fr.ny; i++) if (!solid[i]) { fluid++; for (let k = 0; k < 9; k++) rho += s.f[k * fr.nx * fr.ny + i]! }
+      return { r: speedRatio(s), rho: rho / fluid }
+    }
+    const flat = solve(0), refilled = solve(refillExchange(20, fr.dx)) // refills over 20 m
+    const deficit = (r: Float32Array, p: Vec2) => 1 - sampleRatio(fr, r, solid, p)!
+    // Right behind the block the wake is still there; 50 m on, most of it has refilled.
+    expect(1 - deficit(refilled.r, [13, 0])).toBeLessThan(0.6)
+    expect(deficit(refilled.r, [60, 0])).toBeLessThan(deficit(flat.r, [60, 0]) / 3)
+    expect(Math.abs(refilled.rho - 1)).toBeLessThan(0.01)
   })
 })

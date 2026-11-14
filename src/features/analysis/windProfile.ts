@@ -17,11 +17,20 @@ export function liftTop(buildings: readonly FootprintBuilding[]): number {
 }
 
 /**
- * The heights the solver solves (ADR-0029): 2 m, then each whole metre where a roof ends — the
- * only heights where the set of buildings blocking the wind changes. A building blocks a slice
- * when it is taller than the slice (`sliceObstacles`), so a roof at 12.4 m stops blocking at 13 m.
- * Between two of these heights the obstacles are the same, so the flow there is the solve below
- * scaled by the wind profile — exact within this model, nothing interpolated.
+ * The heights the solver solves. First (ADR-0029) 2 m and each whole metre where a roof ends —
+ * where the set of buildings blocking the wind changes. A building blocks a slice when it is
+ * taller than the slice (`sliceObstacles`), so a roof at 12.4 m stops blocking at 13 m.
+ *
+ * Then (ADR-0030) within each band between two of those, where the blocking buildings stay the
+ * same, the whole metres where the gap up to their median roof has halved, down to a 1 m gap: the
+ * refill length a solve uses (`refillLength`) is then at most twice the one at any metre it covers
+ * with a gap of 1 m or more. Under a 1 m gap the refill length is under about 8 m, two cells of the
+ * upper-slice grid. Bands deep under the roofs, where the refill barely acts, add few solves; the
+ * metres just under a roof add the most. The 2 m solve has no refill (the pedestrian field), and
+ * covers only metres at least half as far below the roofs as 2 m itself.
+ *
+ * Every metre between two solves is the solve below scaled by the wind profile; nothing is
+ * interpolated between two solves.
  */
 export function sliceHeightsFor(buildings: readonly FootprintBuilding[]): number[] {
   const top = liftTop(buildings)
@@ -30,7 +39,18 @@ export function sliceHeightsFor(buildings: readonly FootprintBuilding[]): number
     const h = Math.ceil(building.height)
     if (h > 2 && h <= top) breaks.add(h)
   }
-  return [2, ...[...breaks].sort((a, b) => a - b)]
+  const bands = [2, ...[...breaks].sort((a, b) => a - b)]
+  const heights = new Set(bands)
+  bands.forEach((bottom, i) => {
+    const end = bands[i + 1] ?? top + 1
+    const roof = medianRoofAbove(buildings, bottom)
+    if (roof === null) return
+    for (let gap = (roof - bottom) / 2; gap >= 1; gap /= 2) {
+      const z = Math.ceil(roof - gap)
+      if (z > bottom && z < end) heights.add(z)
+    }
+  })
+  return [...heights].sort((a, b) => a - b)
 }
 
 /** The solved height whose flow covers `z`: the highest of `heights` (ascending, from 2 m) at or below it. */
@@ -55,6 +75,34 @@ export function buildingsNearFrame<T extends FootprintBuilding>(buildings: reado
     return (nx - cx) ** 2 + (ny - cy) ** 2 <= halfDiagonal * halfDiagonal
   })
 }
+/**
+ * Vertical turbulence intensity σw/U near roof level, for the refill rule (ADR-0030). Urban field
+ * and wind-tunnel studies put it at about 0.1–0.25 in the roughness sublayer; the low end is used,
+ * so a wake refills no sooner than the slow end of that range.
+ */
+export const VERTICAL_TURBULENCE_INTENSITY = 0.12
+
+/**
+ * How far downwind (m) a wake in the slice solved at `z` refills with air from above (ADR-0030):
+ * the gap from the slice up to the roofs that cast its wakes — the median roof among the buildings
+ * still taller than the slice — over the vertical turbulence intensity. A slice just under the
+ * roofs refills within metres; one deep below them barely at all. Null when nothing is taller than
+ * the slice: there is no wake to refill. Every metre the solve covers shares this length, so a
+ * wake is never shorter than at the bottom of its band of heights.
+ */
+export function refillLength(buildings: readonly FootprintBuilding[], z: number): number | null {
+  const roof = medianRoofAbove(buildings, z)
+  return roof === null ? null : (roof - z) / VERTICAL_TURBULENCE_INTENSITY
+}
+
+/** The median roof height of the buildings taller than `z`, or null when none is. */
+export function medianRoofAbove(buildings: readonly FootprintBuilding[], z: number): number | null {
+  const roofs = sliceObstacles(buildings, z).map((b) => b.height).sort((a, b) => a - b)
+  if (roofs.length === 0) return null
+  const mid = roofs.length >> 1
+  return roofs.length % 2 ? roofs[mid]! : (roofs[mid - 1]! + roofs[mid]!) / 2
+}
+
 /** Indicative urban power law, not a measured site wind profile. */
 export const ALPHA = 0.22
 

@@ -930,3 +930,22 @@ zoom in because the quads are small at the default site camera.
 - e2e (production build): wind, wind-a11y, simplified-studio and wind-evidence specs 6 passed, 6 skipped (opt-in evidence).
 - Stack timing, main vs branch in a worktree: Compact Infill 16.0 s → 18.2–19.6 s; Sloped Edge 7.6–8.0 s → 8.5–9.1 s.
 - Captures at 9, 10 and 13 m on Compact Infill checked by eye: the change happens at the 10 m roofs, not between.
+
+## 2026-11-14 — Wakes above 2 m refill from above (ADR-0030)
+
+- Owner report from the phone: at 15 m "the wind path still shows the path between the buildings even
+  above the buildings". Reproduced in the production build (34 % of the circle at 0–2 m/s).
+- Diagnosed with a throwaway Vitest script (not committed): the 14 m solve matches a cold solve with
+  the same obstacles; no imprint of the lower buildings; long 2D wakes behind the 16–17 m buildings.
+  Prototyped the refill in the script and showed the owner a before/after plan view; the owner said yes.
+- First implementation refilled only the solves at roof heights; caught before testing that a lone tower
+  would then show the unrefilled 2 m field up to its roof. Added the halving solve heights.
+- 3 unit tests failed, all pinning the old solve heights; updated. New tests: refill length and rate,
+  wake shortening with density kept, the factor-of-two bound, runner exchange per solve, validation S4.
+- lint 0; 1085 unit tests pass; build OK. e2e on the production build (wind, wind-a11y,
+  simplified-studio, wind-evidence): 6 passed, 6 skipped (opt-in). After the container restarted, the
+  pinned Playwright 1.64.1 could not find its headless shell; ran with a throwaway config pointing at
+  `/opt/pw-browsers/chromium` (not committed).
+- Stack timing, before → after: Compact Infill 18.3–19.1 s → 16.6–17.5 s (10 → 14 solves);
+  Sloped Edge 9.1 s → 7.9–8.6 s (5 → 7 solves).
+- Captures: 15 m before and after, 18 m after (`docs/screenshots/wind-refill-*.png`).
