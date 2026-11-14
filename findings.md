@@ -301,3 +301,22 @@
 - **σw/U = 0.12 is an assumption.** Searched for Roth (2000)'s urban σw/u* values; the search confirmed
   the review and its roughness-sublayer depth (about 2.5–3 H) but not the numbers, so ADR-0030 states
   0.12 as indicative and gives its basis. Open for `research-synthesist`: an independent reference value.
+
+## 2026-11-14 — Sun hours in the analysis circle (ADR-0031)
+
+- **Cost on the curated sites**, 21 June, full day, r = 100 m, Node:
+  - Compact Infill: 0.53 s for 56 buildings, 11,556 ground and roof cells at 2 m and 15,432 façade
+    vertices (2 m × one storey).
+  - Sloped Edge: 0.16 s.
+  - Worth a worker, not worth fewer samples.
+- **The ramp has to work on white buildings.** ADR-0021's sun-hours bands ran from cream to dark
+  red, so a façade with no sun was nearly the colour of the building itself. A dark-to-light warm
+  ramp (YlOrBr, reversed) keeps shade dark and full sun light, with monotonic lightness.
+- **Scale by the window, not by fixed hours.** On 21 June the sun is up 18.8 h in Oslo. A fixed 0–9 h
+  scale would saturate every open roof.
+- **Midsummer north façades read orange.** In Oslo they see the low sun for hours in the early morning
+  and late evening; the median façade on Compact Infill (3.8 h) is pulled down by courtyards.
+- **D34's sun-hours audit constrains new wording:** any rendered text with the words "sun hours" must
+  be the mode label or the exact claim. The new legend and caption say "hours of direct sun".
+- **jsdom has no Worker.** The studio test mocks the hook with an in-place computation on two samples,
+  enough to test the wiring (buildings, circle, window) at a fraction of the cost.

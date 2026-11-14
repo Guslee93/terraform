@@ -40,14 +40,16 @@ import { SunBand, SunDetails, clockLabel, useSunPlayback, type SunAnalysis } fro
 import { ToolRail, type ToolId } from './ToolRail'
 import { AnalysisCards, type AnalysisCard, type AnalysisId } from './AnalysisCards'
 import { LayersCard } from './LayersCard'
-import { noiseStat, facadeSunStat, roofSolarStat, sunHoursStat, sunStat, vscStat, windStat } from './analysisValues'
+import { circleSunStat, noiseStat, roofSolarStat, sunStat, vscStat, windStat } from './analysisValues'
+import { FULL_DAY, SunHoursControls, type SunWindow } from './SunHoursControls'
 import { computeNoise, NOISE_DISCLAIMER } from '../../features/analysis/noise'
 import { daySunSamples } from '../../features/analysis/shadowRay'
-import { computeSunHours, SUN_HOURS_COLOUR, SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
+import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
+import { windowSunSamples } from '../../features/analysis/circleSunHours'
+import { useCircleSunHours } from '../../features/analysis/useCircleSunHours'
 import { roofSolarLegend, roofSolarYieldKwh, ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
 import { useRoofSolar } from '../../features/analysis/useRoofSolar'
 import { facadeSamples } from '../../features/analysis/facadeSamples'
-import { computeFacadeSun, facadeSunLegend, FACADE_SUN_DISCLAIMER } from '../../features/analysis/facadeSun'
 import { computeVsc, vscLegend, VSC_COLOUR, VSC_DISCLAIMER } from '../../features/analysis/vsc'
 import { FLOW_DISCLAIMER } from '../../features/analysis/lbm'
 import { removeVolume } from '../../features/editor/commands'
@@ -186,10 +188,9 @@ export function StudioShell({
     () => (sitePackage ? daySunSamples(sunTime.date, sitePackage.manifest.location) : []),
     [sitePackage, sunTime.date],
   )
-  const sunHoursCells = useMemo(
-    () => (studyArea && climateMode === 'sun-hours' ? computeSunHours(studyArea, analysisBuildings, sunSamples, 10) : []),
-    [studyArea, analysisBuildings, sunSamples, climateMode],
-  )
+  // Sun hours count only the part of the day the window keeps (ADR-0031).
+  const [sunWindow, setSunWindow] = useState<SunWindow>(FULL_DAY)
+  const windowedSunSamples = useMemo(() => windowSunSamples(sunSamples, sunWindow[0], sunWindow[1]), [sunSamples, sunWindow])
   // Roof solar depends only on the buildings and the site, so it is computed once per edit in its worker.
   const roofSolarActive = activeCard === 'sun' && sunAnalysis === 'roof-solar'
   const roofSolarValues = useRoofSolar(analysisBuildings, sitePackage?.manifest.location ?? null, roofSolarActive, roofSolarFocus)
@@ -225,25 +226,12 @@ export function StudioShell({
     })
   }, [analysisDocument, sitePackage])
   const facadeSampleList = useMemo(() => facadeSamples(facadeMasses), [facadeMasses])
-  const facadeActive = activeCard === 'sun' && sunAnalysis === 'facade'
-  const facadeSunValues = useMemo(
-    () => (facadeActive ? computeFacadeSun(facadeSampleList, analysisBuildings, sunSamples) : []),
-    [facadeActive, facadeSampleList, analysisBuildings, sunSamples],
-  )
   const vscActive = activeCard === 'sun' && sunAnalysis === 'vsc'
   const vscValues = useMemo(
     () => (vscActive ? computeVsc(facadeSampleList, analysisBuildings) : []),
     [vscActive, facadeSampleList, analysisBuildings],
   )
   const facadeOverlay = useMemo(() => {
-    if (facadeActive && facadeSunValues.length > 0) {
-      return {
-        values: facadeSunValues.map((value) => ({
-          sample: value.sample,
-          colour: SUN_HOURS_COLOUR[value.band],
-        })),
-      }
-    }
     if (vscActive && vscValues.length > 0) {
       return {
         values: vscValues.map((value) => ({
@@ -253,16 +241,18 @@ export function StudioShell({
       }
     }
     return null
-  }, [facadeActive, facadeSunValues, vscActive, vscValues])
+  }, [vscActive, vscValues])
   const [placingCircle, setPlacingCircle] = useState(false)
-  // The Move circle button exists only on the Wind card; leaving it must end the key and click capture.
+  // Move circle exists on the Wind card and on Sun hours; leaving them must end the key and click capture.
   useEffect(() => {
-    if (climateMode !== 'wind') setPlacingCircle(false)
+    if (climateMode !== 'wind' && climateMode !== 'sun-hours') setPlacingCircle(false)
   }, [climateMode])
   const windCentre = useMemo(() => wind.centre ?? (studyArea ? ringCentroid(studyArea) : null), [wind.centre, studyArea])
   // Stable object: scene layers memoise on it (roofs, heatmap), so a fresh literal would rebuild them on every render.
   const windCircle = useMemo(() => (windCentre ? { centre: windCentre, radius: wind.radius } : null), [windCentre, wind.radius])
   const windArea = useMemo(() => (windCentre ? circlePolygon(windCentre, wind.radius) : null), [windCentre, wind.radius])
+  // Sun hours on the ground, roofs and façades in the same circle (ADR-0031), from a worker.
+  const circleSun = useCircleSunHours(analysisBuildings, windCircle, windowedSunSamples, climateMode === 'sun-hours')
   const { flow: windFlow, isCurrent: isCurrentFlow } = useWindFlow(windArea, analysisBuildings, wind.from, climateMode === 'wind', wind.downwash, climateMode === 'wind')
   // The live field shows even mid-edit (Forma-style live drag); only a current, settled field may become the baseline.
   const freshFlow = isCurrentFlow(windFlow) ? windFlow : null
@@ -299,9 +289,10 @@ export function StudioShell({
     return () => window.removeEventListener('keydown', onKey)
   }, [placingCircle, windCentre])
   const climateView = useMemo(() => {
-    if (!sitePackage || !studyArea || !windArea || climateMode === 'off') return null
-    return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline, worstCase, sunHoursCells)
-  }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind, windCentre, baseline, worstCase, sunHoursCells])
+    // Sun hours draw their own layers (ADR-0031); the shared view covers wind and noise.
+    if (!sitePackage || !studyArea || !windArea || climateMode === 'off' || climateMode === 'sun-hours') return null
+    return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline, worstCase)
+  }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind, windCentre, baseline, worstCase])
   // Dock figures (ADR-0016): every value comes from the same analysis the layers draw.
   const noiseCells = useMemo(() => (sitePackage && studyArea ? computeNoise(studyArea, sitePackage.roads, analysisBuildings, 10) : []), [sitePackage, studyArea, analysisBuildings])
   const windComfortView = useMemo(() => {
@@ -413,32 +404,28 @@ export function StudioShell({
       label: 'Sun',
       icon: 'sun',
       stat: solar
-        // Sun hours, roof solar, façade sun and VSC are computed only while the card is open.
+        // Sun hours, roof solar and VSC are computed only while the card is open.
         ? activeCard !== 'sun' && sunAnalysis !== 'shadows'
           ? { value: null, unit: '', hint: 'Select to compute', secondary: [] }
           : sunAnalysis === 'sun-hours'
-          ? sunHoursStat(sunHoursCells, sunTime.date)
+          ? circleSunStat(circleSun.result, circleSun.computing, sunTime.date)
           : sunAnalysis === 'roof-solar'
             ? roofSolarStat(roofSolarValues)
-            : sunAnalysis === 'facade'
-              ? facadeSunStat(facadeSunValues, sunTime.date)
-              : sunAnalysis === 'vsc'
-                ? vscStat(vscValues)
-                : sunStat(solar.state, clockLabel(sunTime.minuteOfDay))
+            : sunAnalysis === 'vsc'
+              ? vscStat(vscValues)
+              : sunStat(solar.state, clockLabel(sunTime.minuteOfDay))
         : { value: null, unit: '', hint: 'Site loading', secondary: [] },
-      note: sunAnalysis === 'sun-hours' ? SUN_HOURS_DISCLAIMER : sunAnalysis === 'roof-solar' ? ROOF_SOLAR_DISCLAIMER : sunAnalysis === 'facade' ? FACADE_SUN_DISCLAIMER : sunAnalysis === 'vsc' ? VSC_DISCLAIMER : 'Geometric sun direction — not a daylight assessment',
+      note: sunAnalysis === 'sun-hours' ? SUN_HOURS_DISCLAIMER : sunAnalysis === 'roof-solar' ? ROOF_SOLAR_DISCLAIMER : sunAnalysis === 'vsc' ? VSC_DISCLAIMER : 'Geometric sun direction — not a daylight assessment',
       body: solar && sitePackage ? (
         <div className="space-y-4">
           {/* The time band: the day profile, the time slider and playback. The analysis switch lives in SunDetails. */}
           <SunBand time={sunTime} onChange={setSunTime} state={solar.state} location={sitePackage.manifest.location} playback={playback} />
-          {climateMode === 'sun-hours' && climateView && climateView.assessed > 0 && (
-            <ShareBar entries={climateView.legend} label="Share of the study area by band" />
+          {climateMode === 'sun-hours' && (
+            <SunHoursControls result={circleSun.result} computing={circleSun.computing} date={sunTime.date} timeWindow={sunWindow} onWindowChange={setSunWindow}
+              radius={wind.radius} onRadiusChange={(radius) => setWind((w) => ({ ...w, radius }))} placing={placingCircle} onPlace={setPlacingCircle} />
           )}
           {roofSolarActive && roofSolarValues && roofSolarValues.length > 0 && (
             <ShareBar entries={roofSolarLegend(roofSolarValues)} label="Share of roofs by band" />
-          )}
-          {facadeActive && facadeSunValues.length > 0 && (
-            <ShareBar entries={facadeSunLegend(facadeSunValues)} label="Share of your façades by band" />
           )}
           {vscActive && vscValues.length > 0 && (
             <ShareBar entries={vscLegend(vscValues)} label="Share of your façades by band" />
@@ -524,7 +511,8 @@ export function StudioShell({
                 renderPreference="auto"
                 climate={climateView?.overlay ?? null}
                 roofSolar={roofSolarActive ? roofSolarValues : null}
-                facade={facadeActive || vscActive ? facadeOverlay : null}
+                facade={vscActive ? facadeOverlay : null}
+                sunHours={climateMode === 'sun-hours' && windCircle ? { circle: windCircle, result: circleSun.result, buildings: circleSun.buildings, computing: circleSun.computing } : null}
                 demoOrbitDeg={windDemo.orbitDeg}
                 onStopDemo={windDemo.stop}
                 windStreamlines={streamlines}

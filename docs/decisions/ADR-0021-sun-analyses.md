@@ -1,6 +1,6 @@
 # ADR-0021 — Sun analyses: ground sun hours, roof solar, façade sun hours, VSC
 
-- **Status:** Accepted (owner brief, 2026-11-10)
+- **Status:** Accepted (owner brief, 2026-11-10). Ground sun hours and façade sun hours superseded by ADR-0031: sun hours on the ground, roofs and façades in the analysis circle; the Façade option is folded into Sun hours.
 - **Brief:** `docs/plans/sun-analyses-deepseek-prompt.md`
 - **Related:** ADR-0002 (ENU), ADR-0013 (screening layers), ADR-0016 (dock/panel layout), ADR-0020 (search → analyse → export)
 - **Dependencies:** none added. `suncalc`, `three` and React are already in the app.

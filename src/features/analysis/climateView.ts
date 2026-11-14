@@ -5,13 +5,6 @@ import type { FlowResult } from './flowRunner'
 import { FLOW_DISCLAIMER, sampleVelocity } from './lbm'
 import { LAWSON_NORCONSULT, SAFETY } from './comfort'
 import { computeNoise, NOISE_BAND_LABEL, NOISE_DISCLAIMER, type NoiseBand, type NoiseRoad } from './noise'
-import {
-  SUN_HOURS_BAND_LABEL,
-  SUN_HOURS_COLOUR,
-  SUN_HOURS_DISCLAIMER,
-  SUN_HOURS_ORDER,
-  type SunHoursCell,
-} from './sunHours'
 
 export type ClimateMode = 'off' | 'wind' | 'noise' | 'sun-hours'
 
@@ -232,8 +225,9 @@ export const WORST_NOTE = 'Worst case over 8 wind directions, each weighted equa
 /** Threshold for the rose's "share above": too windy to stand comfortably (Lawson B/C boundary, 4 m/s). */
 export const ROSE_THRESHOLD_MS = LAWSON_NORCONSULT.thresholds[1]
 
+/** Wind and noise. Sun hours draw their own layers (ADR-0031). */
 export function buildClimateView(
-  mode: Exclude<ClimateMode, 'off'>,
+  mode: Exclude<ClimateMode, 'off' | 'sun-hours'>,
   studyArea: readonly Vec2[],
   buildings: readonly FootprintBuilding[],
   roads: readonly NoiseRoad[],
@@ -242,27 +236,7 @@ export function buildClimateView(
   cellM = 10,
   baseline: WindBaseline | null = null,
   worst: WorstCase | null = null,
-  sunHours: readonly SunHoursCell[] = [],
 ): ClimateView {
-  if (mode === 'sun-hours') {
-    const { legend, assessed } = tally(
-      sunHours.map((cell) => cell.band),
-      SUN_HOURS_ORDER,
-      SUN_HOURS_BAND_LABEL,
-      SUN_HOURS_COLOUR,
-    )
-    return {
-      overlay: {
-        cellM,
-        cells: sunHours.flatMap((cell) =>
-          cell.band ? [{ x: cell.x, y: cell.y, colour: SUN_HOURS_COLOUR[cell.band] }] : [],
-        ),
-      },
-      legend,
-      disclaimer: SUN_HOURS_DISCLAIMER,
-      assessed,
-    }
-  }
   if (mode === 'wind' && wind.display === 'worst') {
     const points: { x: number; y: number; colour: string; band: string }[] = []
     if (worst) for (let i = 0; i < worst.maxRatio.length; i++) {

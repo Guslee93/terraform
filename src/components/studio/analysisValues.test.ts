@@ -4,7 +4,8 @@ import { computeNoise } from '../../features/analysis/noise'
 import { DEMO_SUN_INSTANT, sunState } from '../../features/analysis/sun'
 import type { FacadeSample } from '../../features/analysis/facadeSamples'
 import type { Vec2 } from '../../lib/coordinates'
-import { facadeSunStat, noiseStat, roofSolarStat, sunHoursStat, sunStat, vscStat, windStat } from './analysisValues'
+import { computeCircleSunHours } from '../../features/analysis/circleSunHours'
+import { circleSunStat, noiseStat, roofSolarStat, sunStat, vscStat, windStat } from './analysisValues'
 
 const parcel: Vec2[] = [[-50, -50], [50, -50], [50, 50], [-50, 50], [-50, -50]]
 const text = (parts: readonly (readonly [string, string])[]) => parts.map(([value, unit]) => value + unit).join('')
@@ -48,23 +49,22 @@ describe('analysis card values come from the analysis, not constants', () => {
   })
 
   it('Sun analysis cards use the medians of the same samples the layers draw', () => {
-    const cells = [
-      { x: 0, y: 0, hours: 2, band: '20-40' as const },
-      { x: 10, y: 0, hours: 6, band: '60-80' as const },
-    ]
-    expect(sunHoursStat(cells, '2026-06-21')).toMatchObject({ value: '4.0', unit: ' h' })
-    expect(text(sunHoursStat(cells, '2026-06-21').secondary)).toBe('median · 21 Jun')
+    // One hour of sun from the south: open ground gets all of it (ADR-0031).
+    const enu: [number, number, number] = [0, -Math.cos(Math.PI / 6), Math.sin(Math.PI / 6)]
+    const sun = computeCircleSunHours([], { centre: [0, 0], radius: 20 }, [720, 735, 750, 765].map((minute) => ({ minute, enu, elevationDeg: 30 })))
+    expect(circleSunStat(sun, false, '2026-06-21')).toMatchObject({ value: '1.0', unit: ' h' })
+    expect(text(circleSunStat(sun, false, '2026-06-21').secondary)).toBe('median ground · 21 Jun')
+    // No result yet: no number, and the card says it is computing.
+    expect(circleSunStat(null, true, '2026-06-21')).toMatchObject({ value: null, hint: 'Computing…' })
+    // A circle covered by buildings has no open ground to summarise.
+    const covered = computeCircleSunHours([{ height: 10, footprint: [[-50, -50], [50, -50], [50, 50], [-50, 50]] }], { centre: [0, 0], radius: 20 }, [])
+    expect(circleSunStat(covered, false, '2026-06-21')).toMatchObject({ value: null, hint: 'No open ground in the circle' })
 
     expect(roofSolarStat([{ kwhPerM2: 800, sampleCount: 1, analysed: true }, { kwhPerM2: 1000, sampleCount: 1, analysed: true }]))
       .toMatchObject({ value: '900', unit: ' kWh' })
     expect(text(roofSolarStat([{ kwhPerM2: 800, sampleCount: 1, analysed: true }]).secondary)).toBe('/m²·yr · clear sky')
 
     const sample: FacadeSample = { p: [0, 0, 1], normal: [0, -1], massId: 'm', tierIndex: 0 }
-    expect(facadeSunStat([
-      { sample, hours: 2, band: '20-40' },
-      { sample, hours: 6, band: '60-80' },
-    ], '2026-06-21')).toMatchObject({ value: '4.0', unit: ' h' })
-    expect(facadeSunStat([], '2026-06-21')).toMatchObject({ value: null, hint: 'Draw a block to see façades' })
     expect(vscStat([
       { sample, vsc: 10, band: 'under-15' },
       { sample, vsc: 30, band: '27-plus' },
