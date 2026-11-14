@@ -1,4 +1,4 @@
-import { profileFactor } from './windProfile'
+import { coveringHeight, profileFactor } from './windProfile'
 import type { Vec2 } from '../../lib/coordinates'
 import { sampleGrid, type FootprintBuilding } from './grid'
 import type { FlowResult } from './flowRunner'
@@ -40,15 +40,21 @@ export const DEFAULT_WIND: WindSettings = { from: 270, display: 'activity', refS
 export const PEDESTRIAN_HEIGHT_M = 2
 
 /**
- * The flow at `heightM` above terrain. At pedestrian height it is the solved ground field as is
- * (the downwash rule included); above, the matching slice's field on the same grid (slices are
- * upsampled to the fine frame), unboosted. Null while that slice is still computing: no value is
- * interpolated between heights (ADR-0028 §3).
+ * The flow at `heightM` above terrain (ADR-0029). At pedestrian height it is the solved ground
+ * field as is (the downwash rule included). Above, it is the solved slice that covers the height —
+ * the highest solve height at or below it, where the same buildings block the wind — scaled by the
+ * wind profile from that slice's height to this one. Exact within this model: between two roof
+ * heights only the profile changes. Null while the covering slice is still computing.
  */
 export function flowAtHeight(flow: FlowResult, heightM: number): FlowResult | null {
   if (heightM <= PEDESTRIAN_HEIGHT_M) return flow
-  const slice = flow.slices?.find((s) => s.z === heightM)
-  return slice ? { ...flow, velocity: slice.velocity, solid: slice.solid } : null
+  const solved = flow.slices ?? []
+  const covering = coveringHeight(flow.sliceHeights ?? solved.map((s) => s.z), heightM)
+  const slice = solved.find((s) => s.z === covering)
+  if (!slice) return null
+  if (slice.z === heightM) return { ...flow, velocity: slice.velocity, solid: slice.solid }
+  const factor = profileFactor(heightM) / profileFactor(slice.z)
+  return { ...flow, velocity: slice.velocity.map((v) => v * factor), solid: slice.solid }
 }
 
 /**

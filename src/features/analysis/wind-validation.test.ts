@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { Vec2 } from '../../lib/coordinates'
 import type { FootprintBuilding } from './grid'
-import { createFlowRunner, type FlowSlice } from './flowRunner'
+import { createFlowRunner, type FlowResult } from './flowRunner'
 import { circlePolygon } from './grid'
-import { profileFactor, SLICE_HEIGHTS_M } from './windProfile'
+import { profileFactor } from './windProfile'
+import { flowAtHeight } from './climateView'
 import { createLbm, flowFrame, gridToWorld, rasterize, sampleRatio, sampleVelocity, speedRatio, stepLbm, type FlowFrame } from './lbm'
 
 /**
@@ -246,12 +247,13 @@ describe('wind validation — height slices (W5)', { timeout: 60_000 }, () => {
     runner.request({ id: 1, frame: sliceFrame, buildings, reset: true, slices: true })
     for (let i = 0; i < 5000; i++) {
       const r = runner.tick(0)
-      if (r?.slicesComplete && r.slices) return r.slices
+      if (r?.slicesComplete && r.slices) return r
     }
     throw new Error('slice stack did not complete')
   }
-  const at = (slices: FlowSlice[], z: number, p: Vec2) => {
-    const s = slices.find((slice) => slice.z === z)!
+  // Any whole metre (ADR-0029): the covering slice, scaled by the profile.
+  const at = (flow: FlowResult, z: number, p: Vec2) => {
+    const s = flowAtHeight(flow, z)!
     const v = sampleVelocity(sliceFrame, s.velocity, s.solid, p)
     return v ? Math.hypot(v[0], v[1]) : null
   }
@@ -264,19 +266,20 @@ describe('wind validation — height slices (W5)', { timeout: 60_000 }, () => {
     expect(above).toBeGreaterThan(ground * 1.5)
   })
 
-  it('S2: a 40 m tower blocks every standard slice (up to 30 m) and leaves a wake in each', () => {
+  it('S2: a 40 m tower blocks every metre below its roof, leaves a wake in each, and stops at its roof', () => {
     const slices = stack([{ height: 40, footprint: rect(-10, 10, -10, 10) }])
-    for (const z of SLICE_HEIGHTS_M) {
+    for (const z of [2, 5, 10, 17, 25, 33, 39]) {
       expect(at(slices, z, [0, 0])).toBeNull()
       const free = at(slices, z, [-45, 30])!
       expect(at(slices, z, [18, 0])!).toBeLessThan(free * 0.6)
     }
+    expect(at(slices, 40, [0, 0])).not.toBeNull()
   })
 
   it('S3: undisturbed wind follows the indicative profile with height (±10 %)', () => {
     const slices = stack([])
     const ground = at(slices, 2, [-30, 20])!
-    for (const z of SLICE_HEIGHTS_M.filter((h) => h > 2)) {
+    for (const z of [3, 5, 10, 20, 30]) {
       const expected = ground * profileFactor(z) / profileFactor(2)
       expect(Math.abs(at(slices, z, [-30, 20])! - expected) / expected).toBeLessThan(0.1)
     }

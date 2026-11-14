@@ -4,7 +4,8 @@ import { createFlowRunner, MAX_STEPS, type FlowRequest, type FlowResult } from '
 import * as lbm from './lbm'
 import type { FlowFrame } from './lbm'
 import type { FootprintBuilding } from './grid'
-import { profileFactor, sliceObstacles, SLICE_HEIGHTS_M } from './windProfile'
+import { profileFactor, sliceHeightsFor, sliceObstacles } from './windProfile'
+import { flowAtHeight } from './climateView'
 import { MessageChannel } from 'node:worker_threads'
 
 function transfer(value: unknown, options: { transfer: ArrayBufferLike[] }) {
@@ -68,17 +69,20 @@ describe('height slice stack', () => {
     expect(runner.hasPendingWork()).toBe(true)
     expect(create).toHaveBeenCalledTimes(1)
     const result = finish(runner)
-    expect(create).toHaveBeenCalledTimes(SLICE_HEIGHTS_M.length)
-    expect(step.mock.calls.reduce((sum, call) => sum + call[1]!, 0)).toBeLessThan(MAX_STEPS * SLICE_HEIGHTS_M.length)
-    expect(result.slices?.map((s) => s.z)).toEqual([2, 5, 10, 15, 20, 25, 30])
+    // ADR-0029: one solve at 2 m and one where the 15 m roof ends; nothing else changes the obstacles.
+    expect(create).toHaveBeenCalledTimes(2)
+    expect(step.mock.calls.reduce((sum, call) => sum + call[1]!, 0)).toBeLessThan(MAX_STEPS * 2)
+    expect(result.slices?.map((s) => s.z)).toEqual([2, 15])
+    expect(result.liftTopM).toBe(30)
     expect(result.frame).toEqual(frame)
-    const byZ = (z: number) => result.slices!.find((s) => s.z === z)
-    const pedestrian = byZ(2), ten = byZ(10), twenty = byZ(20)
-    expect(pedestrian!.velocity).toEqual(result.velocity)
-    expect(ten!.solid[12 * 24 + 12]).toBe(1)
-    expect(twenty!.solid[12 * 24 + 12]).toBe(0)
+    // The slices are the fields as solved; the downwash rule (off here) only ever touches `velocity`.
+    expect(result.slices![0]!.velocity).toEqual(result.velocity)
+    // Any metre: below the roof the block still blocks, at and above it the flow passes over.
+    const ten = flowAtHeight(result, 10)!, twenty = flowAtHeight(result, 20)!
+    expect(ten.solid[12 * 24 + 12]).toBe(1)
+    expect(twenty.solid[12 * 24 + 12]).toBe(0)
     const wake = sampleVelocity(frame, result.velocity, result.solid, [16, 0])!
-    const above = sampleVelocity(frame, twenty!.velocity, twenty!.solid, [16, 0])!
+    const above = sampleVelocity(frame, twenty.velocity, twenty.solid, [16, 0])!
     expect(Math.hypot(...above)).toBeGreaterThan(Math.hypot(...wake))
     expect(Math.hypot(...above)).toBeCloseTo(profileFactor(20) / profileFactor(2), 2)
     expect(runner.tick(0)).toBeNull()
@@ -116,7 +120,7 @@ describe('height slice stack', () => {
     expect(step).not.toHaveBeenCalled()
     expect(cached.id).toBe(3)
     expect(cached.velocity).toEqual(expected)
-    expect(cached.slices).toHaveLength(SLICE_HEIGHTS_M.length)
+    expect(cached.slices).toHaveLength(original.slices!.length)
     expect(runner.hasPendingWork()).toBe(false)
   })
 
@@ -175,13 +179,12 @@ it.skipIf(!process.env.WIND_BENCHMARK)('benchmark Compact Infill 160², r=100 m,
   while (runner.hasPendingWork()) {
     const before = performance.now()
     if (process.env.WIND_BENCHMARK === 'baseline') {
-      const z = SLICE_HEIGHTS_M[times.length]!
+      const z = sliceHeightsFor(buildings)[times.length]!
       const solver = lbm.createLbm(160, 160, lbm.rasterize(frame, sliceObstacles(buildings, z)))
       lbm.stepLbm(solver, MAX_STEPS)
       lbm.velocityField(solver)
     } else runner.tick(Infinity)
     times.push(performance.now() - before)
-    if (times.length === SLICE_HEIGHTS_M.length) break
   }
   process.stdout.write(JSON.stringify({ slicesMs: times, totalMs: performance.now() - start }) + "\n")
 }, 120_000)
@@ -199,12 +202,15 @@ it('returns progressive fine-grid slices in z order with a faster 10 m field abo
   const frame: FlowFrame = { nx: 160, ny: 160, dx: 1.75, centre: [0, 0], flow: [1, 0] }
   const create = vi.spyOn(lbm, 'createLbm')
   const runner = createFlowRunner()
-  runner.request({ id: 1, frame, buildings: [{ height: 8, footprint: square(-10, 10, -10, 10) }], reset: true, slices: true })
+  // Two roofs, at 8 m and 12.5 m: solves at 2, 8 and 13 m (ADR-0029).
+  runner.request({ id: 1, frame, buildings: [{ height: 8, footprint: square(-10, 10, -10, 10) }, { height: 12.5, footprint: square(40, 50, -5, 5) }], reset: true, slices: true })
   let result: FlowResult | null = null
-  const last = SLICE_HEIGHTS_M.length - 1
+  const heights = [2, 8, 13]
+  const last = heights.length - 1
   for (let i = 0; i <= last; i++) {
     result = runner.tick(Infinity)!
-    expect(result.slices?.map((s) => s.z)).toEqual(SLICE_HEIGHTS_M.slice(0, i + 1))
+    expect(result.sliceHeights).toEqual(heights)
+    expect(result.slices?.map((s) => s.z)).toEqual(heights.slice(0, i + 1))
     expect(result.slicesComplete).toBe(i === last)
     for (const slice of result.slices!) {
       expect(slice.velocity.length).toBe(160 * 160 * 2)
@@ -216,7 +222,7 @@ it('returns progressive fine-grid slices in z order with a faster 10 m field abo
     }
   }
   expect(create.mock.calls.map(([nx, ny]) => [nx, ny])).toEqual([[160, 160], ...Array.from({ length: last }, () => [80, 80])])
-  const ground = result!.slices!.find((s) => s.z === 2)!, ten = result!.slices!.find((s) => s.z === 10)!
+  const ground = result!.slices!.find((s) => s.z === 2)!, ten = flowAtHeight(result!, 10)!
   expect(Math.hypot(...sampleVelocity(frame, ten.velocity, ten.solid, [25, 0])!))
     .toBeGreaterThan(Math.hypot(...sampleVelocity(frame, ground.velocity, ground.solid, [25, 0])!))
 }, 20_000)

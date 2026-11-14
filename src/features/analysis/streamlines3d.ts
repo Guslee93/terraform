@@ -2,12 +2,13 @@ import type { Vec2 } from '../../lib/coordinates'
 import { pointInPolygon } from '../../lib/polygon'
 import type { FlowSlice } from './flowRunner'
 import type { FootprintBuilding } from './grid'
+import { profileFactor } from './windProfile'
 import { gridToWorld, sampleVelocity, worldToGrid, type FlowFrame } from './lbm'
 
 /**
  * Pseudo-3D streamlines through the height-slice stack (W5c, docs/plans/wind-3d-plan.md §3B).
  *
- * Horizontal motion is interpolated between the solved slices at the line's height. Vertical
+ * Horizontal motion is the solved slice covering the line's height, scaled by the wind profile. Vertical
  * motion is a RULE, not solved physics: a line meeting a building it can clear within
  * CLIMB_MAX_M rises over the roof and relaxes back down afterwards; a taller building is left to
  * the horizontal field, which already routes the line round it. Labelled as visual guidance.
@@ -49,20 +50,20 @@ function heightAtGrid(frame: FlowFrame, grid: Float32Array, p: Vec2): number {
   return grid[y * frame.nx + x]!
 }
 
-/** Horizontal velocity ratio at (p, z), linearly between the bracketing slices; null if blocked. */
+/**
+ * Horizontal velocity ratio at (p, z); null if blocked. ADR-0029: the slice that covers z — the
+ * highest solved height at or below it, where the same buildings block — scaled by the wind profile
+ * to z. Exact within the layered model; blending toward a slice above would let a line pass
+ * through a building that still stands at z.
+ */
 export function velocityAtHeight(frame: FlowFrame, slices: readonly FlowSlice[], p: Vec2, z: number): Vec2 | null {
-  const sorted = slices
-  let i = 0
-  while (i < sorted.length - 2 && z > sorted[i + 1]!.z) i++
-  const lo = sorted[i]!
-  const hi = sorted[Math.min(i + 1, sorted.length - 1)]!
-  const a = sampleVelocity(frame, lo.velocity, lo.solid, p)
-  const b = sampleVelocity(frame, hi.velocity, hi.solid, p)
-  if (!a && !b) return null
-  if (!a) return b
-  if (!b || hi === lo) return a
-  const t = Math.min(1, Math.max(0, (z - lo.z) / (hi.z - lo.z)))
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+  let covering = slices[0]
+  for (const slice of slices) if (slice.z <= z) covering = slice
+  if (!covering) return null
+  const v = sampleVelocity(frame, covering.velocity, covering.solid, p)
+  if (!v) return null
+  const factor = profileFactor(Math.max(z, covering.z)) / profileFactor(covering.z)
+  return [v[0] * factor, v[1] * factor]
 }
 
 /**

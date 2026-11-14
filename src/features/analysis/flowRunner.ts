@@ -1,4 +1,4 @@
-import { profileFactor, sliceHeightsFor, sliceObstacles } from './windProfile'
+import { buildingsNearFrame, liftTop, profileFactor, sliceHeightsFor, sliceObstacles } from './windProfile'
 import type { FootprintBuilding } from './grid'
 import { downwashBoost } from './comfort'
 import { createLbm, rasterize, stepLbm, velocityField, speedRatio, upsampleVelocity, warmStartLbm, type FlowFrame, type Lbm } from './lbm'
@@ -51,8 +51,10 @@ export type FlowResult = {
   readonly settled: boolean
   readonly slices?: FlowSlice[]
   readonly slicesComplete?: boolean
-  /** Every slice height this stack will have (the standard seven, plus a top slice for tall buildings). */
+  /** Every height this stack solves, ascending: 2 m and each whole metre where a roof ends (ADR-0029). */
   readonly sliceHeights?: readonly number[]
+  /** The top of the lift (m): the map can be shown at any whole metre from 2 m up to here (ADR-0029). */
+  readonly liftTopM?: number
 }
 
 /** Sorted geometry fingerprint: hash for lookup, full signature checked to avoid collisions. */
@@ -77,6 +79,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
   let buildings: readonly FootprintBuilding[] = []
   let wantsSlices = false
   let heights: number[] = []
+  let topM = 0
   let stack: FlowSlice[] = []
   let upper: Lbm | null = null
   let upperSteps = 0
@@ -90,6 +93,13 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
   let signature = ''
   const cache = new Map<string, { signature: string; stack: FlowSlice[] }>()
 
+  /** A complete stack goes into the cache, most recent last; the oldest of more than eight goes. */
+  function storeStack() {
+    cache.delete(key)
+    cache.set(key, { signature, stack })
+    if (cache.size > 8) cache.delete(cache.keys().next().value!)
+  }
+
   function result(): FlowResult {
     // All outbound buffers are copies: transferring them must not detach solver/cache state.
     const ground = stack[0] ?? { z: 2, velocity: velocityField(lbm!), solid: lbm!.solid }
@@ -98,11 +108,11 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
       velocity[2 * i] = velocity[2 * i]! * boost[i]!
       velocity[2 * i + 1] = velocity[2 * i + 1]! * boost[i]!
     }
-    const slices = wantsSlices && stack.length > 0
-      ? stack.map((slice, i) => i === 0 ? { z: slice.z, velocity: velocity.slice(), solid: slice.solid.slice() } : copySlice(slice))
-      : undefined
+    // The slices are the solved fields as solved: the 2 m one without the downwash rule, which is a
+    // ground-level rule (`velocity` carries it). Heights above 2 m scale these fields (ADR-0029).
+    const slices = wantsSlices && stack.length > 0 ? stack.map(copySlice) : undefined
     return { id, frame: frame!, solid: ground.solid.slice(), velocity, settled, slicesComplete: wantsSlices && stack.length === heights.length, sliceHeights: wantsSlices ? heights : undefined,
-      ...(slices ? { slices } : {}) }
+      ...(wantsSlices ? { liftTopM: topM } : {}), ...(slices ? { slices } : {}) }
   }
 
   return {
@@ -116,9 +126,12 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
       stack = []
       pending = true
       wantsSlices = req.slices === true
-      heights = sliceHeightsFor(req.buildings)
       buildings = req.buildings
       frame = req.frame
+      // Only roofs that can reach the frame add a solve height (ADR-0029).
+      const near = buildingsNearFrame(buildings, frame.centre, (Math.hypot(frame.nx, frame.ny) * frame.dx) / 2)
+      heights = sliceHeightsFor(near)
+      topM = liftTop(near)
       // Integer downsampling preserves both physical extents, including rectangular frames.
       let scale = Math.max(1, Math.ceil(Math.max(frame.nx, frame.ny) / UPPER_SLICE_RESOLUTION))
       while (scale > 1 && (frame.nx % scale !== 0 || frame.ny % scale !== 0)) scale--
@@ -169,8 +182,11 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
           settled = steps >= MAX_STEPS || (steps % CONVERGENCE_INTERVAL === 0 && checkGround!())
         } while (!settled && now() - start < budgetMs)
         if (settled) {
-          if (wantsSlices) stack.push({ z: 2, velocity: velocityField(lbm), solid: lbm.solid.slice() })
-          else pending = false
+          if (wantsSlices) {
+            stack.push({ z: 2, velocity: velocityField(lbm), solid: lbm.solid.slice() })
+            // No roof above 2 m near the frame: the ground solve is the whole stack (ADR-0029).
+            if (stack.length === heights.length) { storeStack(); pending = false }
+          } else pending = false
         }
       } else if (wantsSlices) {
         const z = heights[stack.length]!
@@ -195,9 +211,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
           upper = null
           upperSteps = 0
           if (stack.length === heights.length) {
-            cache.delete(key)
-            cache.set(key, { signature, stack })
-            if (cache.size > 8) cache.delete(cache.keys().next().value!)
+            storeStack()
             pending = false
           }
         }

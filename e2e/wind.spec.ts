@@ -103,7 +103,7 @@ test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and r
   // Upper slices arrive after the ground field; the stops above 2 m unlock once they are solved.
   const height = page.getByRole('slider', { name: 'Height above terrain' })
   await expect(page.getByText(/Upper heights computing/)).toHaveCount(0, { timeout: budget(60_000) })
-  await height.fill('4') // the 20 m stop
+  await height.fill('20') // every whole metre (ADR-0029)
   await expect(height).toHaveAttribute('aria-valuetext', '20 metres above terrain')
 
   // Comfort classes are pedestrian criteria: above 2 m the legend is speed in m/s and says why.
@@ -119,7 +119,7 @@ test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and r
   await expect(handle).toHaveAttribute('aria-valuetext', '20 metres above terrain')
   await handle.focus()
   await page.keyboard.press('ArrowUp')
-  await expect(height).toHaveAttribute('aria-valuetext', '25 metres above terrain')
+  await expect(height).toHaveAttribute('aria-valuetext', '21 metres above terrain')
 
   // A drag moves the map through the solved heights; Esc returns it to where the drag started.
   const box = await handle.boundingBox()
@@ -127,10 +127,10 @@ test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and r
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 160, { steps: 8 })
-  await expect(handle).not.toHaveAttribute('aria-valuetext', '25 metres above terrain')
+  await expect(handle).not.toHaveAttribute('aria-valuetext', '21 metres above terrain')
   await page.keyboard.press('Escape')
   await page.mouse.up()
-  await expect(height).toHaveAttribute('aria-valuetext', '25 metres above terrain')
+  await expect(height).toHaveAttribute('aria-valuetext', '21 metres above terrain')
 
   // Home on the handle returns to the pedestrian height and the comfort map.
   await handle.focus()

@@ -51,7 +51,7 @@ describe('pseudo-3D streamlines', { timeout: 30_000 }, () => {
   it(`does not climb a tower more than ${CLIMB_MAX_M} m above a line; is deterministic`, () => {
     const tower = { height: 40, footprint: rect(-10, 10, -10, 10) }
     const slices = stack([tower])
-    expect(velocityAtHeight(frame, slices, [0, 0], 5)).toBeNull() // 40 m tower: 2 m and 10 m slices both solid
+    expect(velocityAtHeight(frame, slices, [0, 0], 5)).toBeNull() // 40 m tower: the covering 2 m slice is solid up to its roof
     const a = traceStreamlines3D(frame, slices, [tower], R, { across: 9, heights: [2] })
     const b = traceStreamlines3D(frame, slices, [tower], R, { across: 9, heights: [2] })
     expect(a).toEqual(b)

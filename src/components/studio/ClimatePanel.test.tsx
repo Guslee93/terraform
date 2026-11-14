@@ -239,25 +239,29 @@ it('disables upper controls until slices exist and exposes Direction reference s
   const { rerender } = render(<ClimatePanel {...props} />)
   expect(screen.getByLabelText('Follow buildings in 3D')).toBeDisabled()
   expect(screen.getByLabelText('Streamline opacity')).toBeDisabled()
-  expect(screen.getByText(/Upper heights computing… 0\/7 ready/)).toBeInTheDocument()
+  expect(screen.getByText(/Upper heights computing… ready to 2 m of 30 m/)).toBeInTheDocument()
   expect(screen.getByLabelText('Wind at 10 m height')).toBeEnabled()
-  // The pedestrian height is always there; a stop still computing lands on the highest solved one.
+  // Every whole metre (ADR-0029); a height still computing lands on the highest ready one.
   const height = screen.getByRole('slider', { name: 'Height above terrain' })
   expect(height).toBeEnabled()
+  expect(height).toHaveAttribute('min', '2')
+  expect(height).toHaveAttribute('max', '30')
   expect(height).toHaveAttribute('aria-valuetext', '2 metres above terrain')
-  fireEvent.change(height, { target: { value: '4' } }) // the 20 m stop
+  fireEvent.change(height, { target: { value: '20' } })
   expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 2 })
-  // Progressive: with the ground, 5 m and 10 m slices solved, 20 m is still computing.
-  rerender(<ClimatePanel {...props} availableHeights={[2, 5, 10]} />)
-  expect(screen.getByText(/3\/7 ready/)).toBeInTheDocument()
-  fireEvent.change(height, { target: { value: '4' } })
-  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 10 })
-  rerender(<ClimatePanel {...props} availableHeights={[2, 5, 10, 15, 20, 25, 30]} slicesComplete />)
+  // Progressive: the ground solve covers up to the first roof (here 13 m); 20 m is still computing.
+  const upTo = (top: number) => Array.from({ length: top - 1 }, (_, i) => i + 2)
+  rerender(<ClimatePanel {...props} availableHeights={upTo(12)} />)
+  expect(screen.getByText(/ready to 12 m of 30 m/)).toBeInTheDocument()
+  expect(screen.getByLabelText('Follow buildings in 3D')).toBeDisabled() // 3D streamlines need the whole stack
+  fireEvent.change(height, { target: { value: '20' } })
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 12 })
+  rerender(<ClimatePanel {...props} availableHeights={upTo(30)} slicesComplete />)
   expect(screen.queryByText(/Upper heights computing/)).toBeNull()
   expect(screen.getByLabelText('Follow buildings in 3D')).toBeEnabled()
   expect(screen.getByLabelText('Streamline opacity')).toBeEnabled()
-  fireEvent.change(height, { target: { value: '4' } })
-  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 20 })
+  fireEvent.change(height, { target: { value: '17' } })
+  expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, heightM: 17 })
   fireEvent.change(screen.getByLabelText('Streamline opacity'), { target: { value: '0.5' } })
   expect(onWindChange).toHaveBeenLastCalledWith({ ...props.wind, streamlineOpacity: 0.5 })
   fireEvent.click(screen.getByLabelText('Follow buildings in 3D'))
@@ -265,7 +269,7 @@ it('disables upper controls until slices exist and exposes Direction reference s
 })
 
 it('above 2 m the map shows m/s: Comfort is disabled and says why (ADR-0028)', () => {
-  const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view: null, availableHeights: [2, 5, 10, 15, 20, 25, 30], slicesComplete: true }
+  const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view: null, availableHeights: Array.from({ length: 29 }, (_, i) => i + 2), slicesComplete: true }
   const { rerender } = render(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, display: 'activity', heightM: 20 }} />)
   const comfort = screen.getByRole('button', { name: 'Comfort' })
   expect(comfort).toBeDisabled()
@@ -289,7 +293,7 @@ it('on a steep site the lifted map says it follows the ground but is solved flat
 })
 
 it('above 2 m the streamline controls are off and say the flow shows as particles (owner, 2026-11-13)', () => {
-  const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view: null, availableHeights: [2, 5, 10, 15, 20, 25, 30], slicesComplete: true }
+  const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view: null, availableHeights: Array.from({ length: 29 }, (_, i) => i + 2), slicesComplete: true }
   const { rerender } = render(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, heightM: 20 }} />)
   const toggle = screen.getByRole('checkbox', { name: 'Streamlines' })
   expect(toggle).toBeDisabled()

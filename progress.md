@@ -921,3 +921,12 @@ zoom in because the quads are small at the default site camera.
   Reproduced in a 10 m capture, then fixed: the lift is a `WindParticles` prop and a change shifts the stored points.
 - Above 2 m the flow is always particles (`windFlowStyle`); 3 new unit tests. Lint, 1072 unit tests and the build
   pass; e2e wind, wind-a11y and simplified-studio 6/6. 10 m captures with normal and reduced motion checked by eye.
+
+## 2026-11-14 — Wind lift to every metre (ADR-0029)
+
+- Counted roof heights in the default solve frame before building: Compact Infill 9 distinct, Sloped Edge 4.
+- First test run: 15 failures across 7 files, all pinning the fixed heights; plus two real defects found by
+  them (one-slice stacks not cached; 3D streamline blending through a building). Fixed; 1077 unit tests pass.
+- e2e (production build): wind, wind-a11y, simplified-studio and wind-evidence specs 6 passed, 6 skipped (opt-in evidence).
+- Stack timing, main vs branch in a worktree: Compact Infill 16.0 s → 18.2–19.6 s; Sloped Edge 7.6–8.0 s → 8.5–9.1 s.
+- Captures at 9, 10 and 13 m on Compact Infill checked by eye: the change happens at the 10 m roofs, not between.

@@ -1,6 +1,6 @@
 # Plan — Lift the wind analysis through its height slices
 
-**Status:** accepted; Phases 1–5 done (2026-11-13); open: the formal G3 finish-gate pass · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
+**Status:** accepted; Phases 1–5 done (2026-11-13); every-metre lift (ADR-0029, 2026-11-14); open: the formal G3 finish-gate pass · **Date:** 2026-11-13 · **Decision record:** ADR-0028 (accepted) · **Builds on:** ADR-0014, ADR-0015, ADR-0026, `docs/plans/wind-3d-plan.md` §3A
 
 ## 1. What the owner asked for
 

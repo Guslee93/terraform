@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { windFlowStyle, clampLift, fadedBuildings, footprintTouchesCircle, ghostHeights, heightText, liftAnchor, nearestHeight, stepHeight } from './windLift'
+import { liftHeights, readyLiftHeights, windFlowStyle, clampLift, fadedBuildings, footprintTouchesCircle, ghostHeights, heightText, liftAnchor, nearestHeight, stepHeight } from './windLift'
 
 const HEIGHTS = [2, 5, 10, 15, 20, 25, 30]
 
@@ -48,9 +48,10 @@ describe('dashed rings at the other heights', () => {
   it('shows none while the disc rests at 2 m', () => {
     expect(ghostHeights(HEIGHTS, 2, false)).toEqual([])
   })
-  it('shows every other solved height while lifted or dragging', () => {
-    expect(ghostHeights(HEIGHTS, 20, false)).toEqual([2, 5, 10, 15, 25, 30])
-    expect(ghostHeights([2, 5, 10], 2, true)).toEqual([5, 10])
+  it('shows 2 m and every 5 m among the ready heights while lifted or dragging (ADR-0029)', () => {
+    const metres = Array.from({ length: 34 }, (_, i) => i + 2) // 2–35 m
+    expect(ghostHeights(metres, 20, false)).toEqual([2, 5, 10, 15, 25, 30, 35])
+    expect(ghostHeights(metres.slice(0, 11), 2, true)).toEqual([5, 10]) // ready to 12 m
   })
 })
 
@@ -97,5 +98,24 @@ describe('how the moving air is drawn', () => {
     expect(windFlowStyle({ lifted: false, streamlinesOn: false, reducedMotion: false })).toBe('particles')
     expect(windFlowStyle({ lifted: false, streamlinesOn: true, reducedMotion: false })).toBe('streamlines')
     expect(windFlowStyle({ lifted: false, streamlinesOn: false, reducedMotion: true })).toBe('streamlines')
+  })
+})
+
+describe('every metre (ADR-0029)', () => {
+  const velocity = new Float32Array(8), solid = new Uint8Array(4)
+  const flow = (solved: number, sliceHeights = [2, 8, 13]) => ({
+    id: 1, frame: { nx: 2, ny: 2, dx: 1, centre: [0, 0] as [number, number], flow: [1, 0] as [number, number] }, settled: true, velocity, solid,
+    sliceHeights, liftTopM: 30, slicesComplete: solved === sliceHeights.length,
+    slices: sliceHeights.slice(0, solved).map((z) => ({ z, velocity, solid })),
+  })
+  it('lifts to every whole metre up to the top', () => {
+    expect(liftHeights(flow(3))).toEqual(Array.from({ length: 29 }, (_, i) => i + 2))
+    expect(liftHeights(null)).toHaveLength(29) // 2–30 m before a flow reports its top
+  })
+  it('is ready up to the first unsolved roof height, from bottom to top', () => {
+    expect(readyLiftHeights(flow(1))).toEqual([2, 3, 4, 5, 6, 7]) // the ground solve covers up to the 8 m roof
+    expect(readyLiftHeights(flow(2)).at(-1)).toBe(12)
+    expect(readyLiftHeights(flow(3)).at(-1)).toBe(30)
+    expect(readyLiftHeights(null)).toEqual([2])
   })
 })
