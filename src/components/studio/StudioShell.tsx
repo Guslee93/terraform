@@ -85,7 +85,8 @@ export function StudioShell({
   const studioRoot = useRef<HTMLDivElement>(null)
   const [editor, dispatch] = useReducer(reduceEditor, undefined, () => createEditorState(createHistory(createScenario({ siteId: site.id, name: 'Blocks' }))))
   const [sunTime, setSunTime] = useState<SunTime>({ date: '2026-06-21', minuteOfDay: 900 })
-  const [sunAnalysis, setSunAnalysis] = useState<SunAnalysis>('shadows')
+  // Sun hours in the analysis circle is the Sun card's default analysis (ADR-0031, owner 2026-11-14).
+  const [sunAnalysis, setSunAnalysis] = useState<SunAnalysis>('sun-hours')
   const solar = useMemo(() => {
     if (!sitePackage) return null
     const { latitude, longitude, timeZone } = sitePackage.manifest.location

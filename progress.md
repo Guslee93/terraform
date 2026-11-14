@@ -966,3 +966,12 @@ zoom in because the quads are small at the default site camera.
   m3-analysis, wind, wind-a11y, simplified-studio, m5-a11y and keyboard all pass (2 opt-in skipped).
 - Captures (`docs/screenshots/sun-hours-circle-*.png`, `sun-hours-ground-only-before-1440x900.png`): Compact Infill (3D, from the north, 390 × 844), Sloped Edge, and the old view for
   comparison.
+
+## 2026-11-14 — Sun hours is the Sun card's default
+
+- Owner: "Make the sun hours analysis be the default sun analysis". `sunAnalysis` now starts at
+  `sun-hours` (was `shadows`); ADR-0031 §8.
+- Tests: the studio unit test and `e2e/sun-hours.spec.ts` now assert the default instead of clicking it.
+  The sun-hours, m3-analysis, m3-disclaimers, m3-evidence, keyboard and layers browser tests pass on
+  the production build (1 opt-in skipped); 468 analysis and component unit tests pass; lint and build OK.
+- The first commit went out without these notes: the script that wrote them failed on a quoting error.

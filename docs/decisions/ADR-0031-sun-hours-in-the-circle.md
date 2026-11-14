@@ -45,6 +45,9 @@ wind map already uses.
 7. **Folded in:** ground sun hours over the study area, and the separate **Façade** option, are
    replaced by this. Sun hours already covers the drawn blocks' façades, and every other façade too.
    The Sun switch is now `Shadows | Sun hours | Roof solar | VSC`. Roof solar and VSC are unchanged.
+8. **The default** (owner, 2026-11-14, after merge): the Sun card opens on Sun hours, not Shadows.
+   It computes only while the Sun card is open; the closed card says "Select to compute", as it does
+   for Roof solar and VSC.
 
 ## Consequences
 
