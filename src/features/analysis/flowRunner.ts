@@ -1,7 +1,7 @@
-import { buildingsNearFrame, liftTop, profileFactor, sliceHeightsFor, sliceObstacles } from './windProfile'
+import { buildingsNearFrame, liftTop, profileFactor, refillLength, sliceHeightsFor, sliceObstacles } from './windProfile'
 import type { FootprintBuilding } from './grid'
 import { downwashBoost } from './comfort'
-import { createLbm, rasterize, stepLbm, velocityField, speedRatio, upsampleVelocity, warmStartLbm, type FlowFrame, type Lbm } from './lbm'
+import { createLbm, DEFAULT_U0, rasterize, refillExchange, stepLbm, velocityField, speedRatio, upsampleVelocity, warmStartLbm, type FlowFrame, type Lbm } from './lbm'
 
 /** Hard cap for unconverged flow. */
 export const MAX_STEPS = 6000
@@ -77,6 +77,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
   let steps = 0
   let boost: Float32Array | null = null
   let buildings: readonly FootprintBuilding[] = []
+  let near: readonly FootprintBuilding[] = []
   let wantsSlices = false
   let heights: number[] = []
   let topM = 0
@@ -129,7 +130,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
       buildings = req.buildings
       frame = req.frame
       // Only roofs that can reach the frame add a solve height (ADR-0029).
-      const near = buildingsNearFrame(buildings, frame.centre, (Math.hypot(frame.nx, frame.ny) * frame.dx) / 2)
+      near = buildingsNearFrame(buildings, frame.centre, (Math.hypot(frame.nx, frame.ny) * frame.dx) / 2)
       heights = sliceHeightsFor(near)
       topM = liftTop(near)
       // Integer downsampling preserves both physical extents, including rectangular frames.
@@ -191,7 +192,9 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
       } else if (wantsSlices) {
         const z = heights[stack.length]!
         if (!upper) {
-          upper = createLbm(coarseFrame!.nx, coarseFrame!.ny, rasterize(coarseFrame!, sliceObstacles(buildings, z)))
+          // Above 2 m, wakes refill with air from above the slice (ADR-0030); the 2 m field does not.
+          const exchange = refillExchange(refillLength(near, z), coarseFrame!.dx)
+          upper = createLbm(coarseFrame!.nx, coarseFrame!.ny, rasterize(coarseFrame!, sliceObstacles(buildings, z)), DEFAULT_U0, undefined, exchange)
           if (previousUpper) warmStartLbm(upper, previousUpper)
           checkUpper = convergenceCheck(upper)
         }

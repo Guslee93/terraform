@@ -1,6 +1,6 @@
 # ADR-0029 — The wind lift reaches every whole metre
 
-- **Status:** Accepted (2026-11-14, the owner's request)
+- **Status:** Accepted (2026-11-14, the owner's request). §1 and the exactness claim amended by ADR-0030: solves above 2 m refill their wakes from above, with extra solves where the gap to the roofs halves.
 - **Amends:** ADR-0028 §1 (heights) and §3 (only solved heights are shown)
 - **Relates to:** ADR-0014 (wind simulator), ADR-0023 §8 (density cost)
 

@@ -21,6 +21,11 @@ export type Lbm = {
   solid: Uint8Array
   readonly u0: number
   readonly omega: number
+  /**
+   * Refill from above (ADR-0030): each step, every fluid cell's momentum relaxes this fraction of
+   * the way to the free stream, as air mixing down from above the slice does. 0 for the ground.
+   */
+  readonly exchange: number
   f: Float32Array
   tmp: Float32Array
 }
@@ -44,15 +49,27 @@ function moments(f: Float32Array, n: number, i: number): [number, number, number
   return [rho, mx / rho, my / rho]
 }
 
-export function createLbm(nx: number, ny: number, solid: Uint8Array, u0 = 0.1, tau = 0.6): Lbm {
+/** Inflow speed in lattice units (cells per step). */
+export const DEFAULT_U0 = 0.1
+
+/**
+ * The per-step exchange rate that refills a wake over `refillM` metres (ADR-0030): air at the free
+ * stream crosses `refillM / dx` cells in `refillM / (dx · u0)` steps, and the deficit falls by a
+ * factor e over that distance. 0 when there is nothing to refill.
+ */
+export function refillExchange(refillM: number | null, dx: number, u0 = DEFAULT_U0): number {
+  return refillM === null ? 0 : Math.min(1, (u0 * dx) / refillM)
+}
+
+export function createLbm(nx: number, ny: number, solid: Uint8Array, u0 = DEFAULT_U0, tau = 0.6, exchange = 0): Lbm {
   const n = nx * ny
   const f = new Float32Array(9 * n)
   for (let k = 0; k < 9; k++) f.fill(feq(k, 1, u0, 0), k * n, (k + 1) * n)
-  return { nx, ny, solid, u0, omega: 1 / tau, f, tmp: f.slice() }
+  return { nx, ny, solid, u0, omega: 1 / tau, exchange, f, tmp: f.slice() }
 }
 
 export function stepLbm(s: Lbm, steps = 1): void {
-  const { nx, ny, solid, omega, u0 } = s
+  const { nx, ny, solid, omega, u0, exchange } = s
   const n = nx * ny
   const post = new Float64Array(9)
   for (let step = 0; step < steps; step++) {
@@ -74,6 +91,8 @@ export function stepLbm(s: Lbm, steps = 1): void {
         const ux = mx / rho
         const uy = my / rho
         for (let k = 0; k < 9; k++) post[k] = f[k * n + i]! - omega * (f[k * n + i]! - feq(k, rho, ux, uy))
+        // Refill from above (ADR-0030): momentum relaxes toward the free stream, density is kept.
+        if (exchange > 0) for (let k = 0; k < 9; k++) post[k] = post[k]! - exchange * (post[k]! - feq(k, rho, u0, 0))
         for (let k = 0; k < 9; k++) {
           const tx = x + EX[k]!
           const ty = y + EY[k]!

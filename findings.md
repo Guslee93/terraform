@@ -278,3 +278,26 @@
   toward the open 40 m field and passed through the tower. Sampling the covering slice fixes it.
 - **Visible in the captures:** at 9 m Compact Infill reads 94 % calm; at 10 m, where a group of roofs
   ends, a jet opens (81 % calm, 1 % ≥ 10 m/s); at 13 m it is the 10 m picture, slightly faster.
+
+## 2026-11-14 — Wakes above 2 m refill from above (ADR-0030)
+
+- **The lifted map was not reading the lower buildings.** At 15 m on Compact Infill the 14 m solve
+  matched a cold solve with the same obstacles exactly, and the open cells inside lower buildings'
+  footprints were as fast as the rest (0.88 against 0.83 of the scaled free stream). The street-like
+  pattern came from 16–17 m buildings still above the disc and from their wakes.
+- **Flat slices cannot refill a wake.** Without air from above, a cluster of 17 m buildings left 48 %
+  of the 15 m frame below half the free stream, and one 20 m building left a calm streak across the
+  whole 280 m frame at 18 m. The coarse upper grid (dx 3.5 m at the same τ) is also twice as viscous
+  in physical terms as the ground grid.
+- **Relaxing momentum toward the free stream** at u0·dx/L per step (density kept) shortens a block's
+  wake without removing it: 50 m behind a 20 m block, 0.36 → 0.89 of the free stream with L = 20 m.
+  The cell right behind it stays calm (0.05 → 0.19).
+- **The refill rate depends on height, so roof heights alone are not enough solves.** A lone 40 m tower
+  gives solves at 2 and 40 m only; every metre from 3 to 39 m would have shown the unrefilled ground
+  field. Solving where the gap to the median roof halves adds log₂(gap) solves per band: for that
+  tower, 21, 31, 36, 38 and 39 m.
+- **Faster, not slower.** Refilled slices settle in fewer steps: Compact Infill's full stack went from
+  18.3–19.1 s for 10 solves to 16.6–17.5 s for 14.
+- **σw/U = 0.12 is an assumption.** Searched for Roth (2000)'s urban σw/u* values; the search confirmed
+  the review and its roughness-sublayer depth (about 2.5–3 H) but not the numbers, so ADR-0030 states
+  0.12 as indicative and gives its basis. Open for `research-synthesist`: an independent reference value.

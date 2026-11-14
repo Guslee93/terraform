@@ -276,6 +276,20 @@ describe('wind validation — height slices (W5)', { timeout: 60_000 }, () => {
     expect(at(slices, 40, [0, 0])).not.toBeNull()
   })
 
+  it('S4: just under the tower roof its wake refills within tens of metres; deep below it stays long (ADR-0030)', () => {
+    const slices = stack([{ height: 40, footprint: rect(-10, 10, -10, 10) }])
+    const free = (z: number) => at(slices, z, [-45, 30])!
+    const behind = (z: number, metres: number) => at(slices, z, [10 + metres, 0])! / free(z)
+    // Right behind the tower it is calm at every height under the roof: the wake is still there.
+    for (const z of [2, 25, 38]) expect(behind(z, 2)).toBeLessThan(0.3)
+    // 40 m on, the pedestrian field keeps its long wake (no refill at 2 m); 2 m under the roof the
+    // wake has mostly refilled; 15 m under it, partly (measured 0.07, 0.33 and 0.85 of free stream).
+    expect(behind(2, 40)).toBeLessThan(0.2)
+    expect(behind(38, 40)).toBeGreaterThan(0.7)
+    expect(behind(25, 40)).toBeGreaterThan(behind(2, 40) * 3)
+    expect(behind(25, 40)).toBeLessThan(behind(38, 40))
+  })
+
   it('S3: undisturbed wind follows the indicative profile with height (±10 %)', () => {
     const slices = stack([])
     const ground = at(slices, 2, [-30, 20])!

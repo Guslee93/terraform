@@ -4,7 +4,7 @@ import { createFlowRunner, MAX_STEPS, type FlowRequest, type FlowResult } from '
 import * as lbm from './lbm'
 import type { FlowFrame } from './lbm'
 import type { FootprintBuilding } from './grid'
-import { profileFactor, sliceHeightsFor, sliceObstacles } from './windProfile'
+import { profileFactor, refillLength, sliceHeightsFor, sliceObstacles } from './windProfile'
 import { flowAtHeight } from './climateView'
 import { MessageChannel } from 'node:worker_threads'
 
@@ -69,10 +69,19 @@ describe('height slice stack', () => {
     expect(runner.hasPendingWork()).toBe(true)
     expect(create).toHaveBeenCalledTimes(1)
     const result = finish(runner)
-    // ADR-0029: one solve at 2 m and one where the 15 m roof ends; nothing else changes the obstacles.
-    expect(create).toHaveBeenCalledTimes(2)
+    // ADR-0029: 2 m and the 15 m roof, where the obstacles change. ADR-0030: 9, 12 and 14 m, where
+    // the gap up to that roof halves (13 → 6 → 3 → 1 m).
+    expect(create).toHaveBeenCalledTimes(5)
     expect(step.mock.calls.reduce((sum, call) => sum + call[1]!, 0)).toBeLessThan(MAX_STEPS * 2)
-    expect(result.slices?.map((s) => s.z)).toEqual([2, 15])
+    expect(result.slices?.map((s) => s.z)).toEqual([2, 9, 12, 14, 15])
+    // The 2 m solve has no refill (the pedestrian field); the solves under the roof refill at the
+    // rate their gap gives; above the roof nothing is left to refill.
+    const exchanges = create.mock.calls.map((call) => call[5] ?? 0)
+    expect(exchanges[0]).toBe(0)
+    for (const [i, z] of [9, 12, 14].entries()) expect(exchanges[i + 1]).toBeCloseTo(lbm.refillExchange(refillLength([block], z), frame.dx), 12)
+    expect(exchanges[1]!).toBeGreaterThan(0)
+    expect(exchanges[3]!).toBeGreaterThan(exchanges[1]!)
+    expect(exchanges[4]).toBe(0)
     expect(result.liftTopM).toBe(30)
     expect(result.frame).toEqual(frame)
     // The slices are the fields as solved; the downwash rule (off here) only ever touches `velocity`.
@@ -202,10 +211,11 @@ it('returns progressive fine-grid slices in z order with a faster 10 m field abo
   const frame: FlowFrame = { nx: 160, ny: 160, dx: 1.75, centre: [0, 0], flow: [1, 0] }
   const create = vi.spyOn(lbm, 'createLbm')
   const runner = createFlowRunner()
-  // Two roofs, at 8 m and 12.5 m: solves at 2, 8 and 13 m (ADR-0029).
+  // Two roofs, at 8 m and 12.5 m: solves at 2, 8 and 13 m where they end (ADR-0029), and at 7, 11
+  // and 12 m where the gap up to the roofs above halves (ADR-0030).
   runner.request({ id: 1, frame, buildings: [{ height: 8, footprint: square(-10, 10, -10, 10) }, { height: 12.5, footprint: square(40, 50, -5, 5) }], reset: true, slices: true })
   let result: FlowResult | null = null
-  const heights = [2, 8, 13]
+  const heights = [2, 7, 8, 11, 12, 13]
   const last = heights.length - 1
   for (let i = 0; i <= last; i++) {
     result = runner.tick(Infinity)!
