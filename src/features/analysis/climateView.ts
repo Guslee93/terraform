@@ -4,7 +4,6 @@ import { sampleGrid, type FootprintBuilding } from './grid'
 import type { FlowResult } from './flowRunner'
 import { FLOW_DISCLAIMER, sampleVelocity } from './lbm'
 import { LAWSON_NORCONSULT } from './comfort'
-import { computeNoise, NOISE_BAND_LABEL, NOISE_DISCLAIMER, type NoiseBand, type NoiseRoad } from './noise'
 
 export type ClimateMode = 'off' | 'wind' | 'noise' | 'sun-hours'
 
@@ -178,14 +177,6 @@ export function particleColour(ratio: number, wind: WindSettings): string {
 export const ACTIVITY_VIEW_NAME = 'Indicative wind speed classes at the chosen wind'
 export const ACTIVITY_NOTE = `${ACTIVITY_VIEW_NAME} (Lawson thresholds) — not an annual comfort rating.`
 
-export const NOISE_COLOUR: Record<NoiseBand, string> = {
-  quiet: '#9DB8A0',
-  moderate: '#D4D08A',
-  loud: '#E0B25C',
-  'very-loud': '#CC7340',
-  extreme: '#9C2F2F',
-}
-
 export type ClimateOverlay = {
   readonly cellM: number
   /** Optional complete lattice including the circle-edge halo, clipped by the renderer. */
@@ -203,24 +194,6 @@ export type ClimateView = {
   readonly assessed: number
 }
 
-function tally<K extends string>(
-  keys: readonly (K | null)[],
-  order: readonly K[],
-  label: Record<K, string>,
-  colour: Record<K, string>,
-): { legend: LegendEntry[]; assessed: number } {
-  const assessed = keys.filter((key) => key !== null).length
-  return {
-    assessed,
-    legend: order.map((key) => {
-      const count = keys.filter((candidate) => candidate === key).length
-      return { label: label[key], colour: colour[key], count, share: assessed === 0 ? 0 : count / assessed }
-    }),
-  }
-}
-
-const NOISE_ORDER: readonly NoiseBand[] = ['quiet', 'moderate', 'loud', 'very-loud', 'extreme']
-
 /** Worst case over the all-directions sweep (ADR-0015): per open-ground cell, the highest ratio. */
 export type WorstCase = { readonly cells: Float32Array; readonly maxRatio: Float32Array; /** Directions solved so far (progressive sweep). */ readonly solved?: number }
 export const WORST_NOTE = 'Worst case over 8 wind directions, each weighted equally — not measured climate frequency.'
@@ -231,8 +204,9 @@ export const ROSE_THRESHOLD_MS = LAWSON_NORCONSULT.thresholds[1]
 export function buildClimateView(
   mode: Exclude<ClimateMode, 'off' | 'sun-hours'>,
   studyArea: readonly Vec2[],
-  buildings: readonly FootprintBuilding[],
-  roads: readonly NoiseRoad[],
+  _buildings: readonly FootprintBuilding[],
+  // ponytail: unused since the heuristic noise layer was retired (ADR-0034); kept so every call site and test keeps its shape.
+  _roads: readonly unknown[],
   flow: FlowResult | null,
   wind: WindSettings = DEFAULT_WIND,
   cellM = 10,
@@ -301,12 +275,6 @@ export function buildClimateView(
       assessed: cells.length,
     }
   }
-  const cells = computeNoise(studyArea, roads, buildings, cellM)
-  const { legend, assessed } = tally(cells.map((c) => c.band), NOISE_ORDER, NOISE_BAND_LABEL, NOISE_COLOUR)
-  return {
-    overlay: { cellM, cells: cells.flatMap((c) => (c.band ? [{ x: c.x, y: c.y, colour: NOISE_COLOUR[c.band] }] : [])) },
-    legend,
-    disclaimer: NOISE_DISCLAIMER,
-    assessed,
-  }
+  // The official noise map draws its own layer (ADR-0034); nothing else is built here.
+  return { overlay: { cellM, cells: [] }, legend: [], disclaimer: '', assessed: 0 }
 }

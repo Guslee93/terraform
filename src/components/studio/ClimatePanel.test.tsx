@@ -15,12 +15,10 @@ const area: Vec2[] = [[0, 0], [40, 0], [40, 40], [0, 40]]
 const road = { highway: 'primary', centreline: [[-100, 0], [100, 0]] as Vec2[] }
 
 describe('buildClimateView', () => {
-  it('shares sum to 1 and exclude building cells', () => {
+  it('builds nothing for noise: the official map draws its own layer (ADR-0034)', () => {
     const block = { height: 10, footprint: [[0, 0], [20, 0], [20, 20], [0, 20]] as Vec2[] }
     const view = buildClimateView('noise', area, [block], [road], null)
-    expect(view.assessed).toBe(12) // 16 cells − 4 inside the block
-    expect(view.overlay.cells).toHaveLength(12)
-    expect(view.legend.reduce((sum, entry) => sum + entry.share, 0)).toBeCloseTo(1, 9)
+    expect(view).toMatchObject({ assessed: 0, legend: [], overlay: { cells: [] } })
   })
   it('colours wind cells from the flow field, skipping building cells', () => {
     const block = { height: 10, footprint: [[0, 0], [20, 0], [20, 20], [0, 20]] as Vec2[] }
@@ -94,10 +92,11 @@ describe('ClimatePanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Noise' }))
     expect(onMode).toHaveBeenCalledWith('noise')
   })
-  it('explains an empty noise result instead of showing a blank legend', () => {
+  it('shows no legend of its own for noise: the Noise card has its own body (ADR-0034)', () => {
     const view = buildClimateView('noise', area, [], [], null)
     render(<ClimatePanel mode="noise" onModeChange={() => {}} wind={DEFAULT_WIND} onWindChange={() => {}} view={view} />)
-    expect(screen.getByText(/nothing to estimate/)).toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.queryByText(/dB/)).not.toBeInTheDocument()
   })
 })
 

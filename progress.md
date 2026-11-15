@@ -1065,3 +1065,36 @@ zoom in because the quads are small at the default site camera.
 - lint 0; **1109 unit tests pass**, 4 skipped; build OK. e2e on the dev server: sun-hours,
   m3-disclaimers and wind, 6 of 6. Python builder tests pass (shipped packages match the caches).
 - Capture: `docs/screenshots/build-heights-sun.png` (8.5 h median ground; gables visible).
+
+## 2026-11-15 — build/foundation WP-4: the official road-noise map replaces the heuristic (ADR-0034)
+
+- Data: Statens vegvesen WFS (Lden, Lnight) asked for **WGS84**, every vertex through the app's own
+  projection; rings clipped to the extent (features run for km past a site), holes kept, simplified
+  at 0.4 m. Curated: `scripts/site-assets/noise.build.ts`, raw GeoJSON cached with checksum,
+  `noise.json` 133 kB (Compact Infill) and 39 kB (Sloped Edge), year 2021 from `BEREGNETÅR`.
+  Imports: the same converter live (`statensVegvesenNoise`), stored with the package.
+- Domain `officialNoise.ts` (band lookup, shares over open ground, "not mapped"); scene
+  `NoiseBands.tsx` (one 2048 px canvas texture draped on a copy of the terrain mesh); card
+  `NoisePanel.tsx` (Lden/Lnight, band shares, source/year/limitation, the T-1442 sentence for a
+  drawn block in a band ≥ 55). Headline is the band with the largest share; "61 dB" is gone.
+- Heuristic retired: `noise.ts` deleted with its tests, legend, card figure and ground layer.
+- Gates: registration 100 % of 142 major-road samples in the ≥ 65 band at zero shift (≥ 90 %
+  required; 9–22 % at ±20 m). Perf: orbit p95 25.1–27.0 ms on Compact Infill against a 27.6 ms
+  limit, 0 long tasks idle and orbiting, draw calls unchanged at 90
+  (`feasibility/scratch/evidence/perf-build-wp4-noise.json`). The margin is one refresh step.
+- Failed attempts and corrections:
+  - Both asset writers pretty-printed their JSON (a default parameter swallowed `undefined`):
+    `noise.json` was 586 kB. Now compact; `heights.json` regenerated compact too (117 → 54 kB).
+  - A second half of the registration gate (building centres fall in the map's holes) measured only
+    50 %: the vertex mean of a courtyard block lies in its courtyard. Dropped; the road gate is the
+    plan's gate.
+  - The registration test assumed more than 200 road samples; there are 142.
+  - Full e2e run: 48 passed, 12 skipped, 1 failed (m3-analysis D32). Cause: I edited files while
+    the dev server served the run and the page reloaded mid-test. The spec passes alone (3 of 3).
+- Live check on the production build: importing Grünerløkka (400 m) fetched both WFS layers (200),
+  the card read "60–65 dB · Lden 2021" with band shares, and the attribution listed the NLOD line
+  and the limitation. No page errors.
+- lint 0; **1125 unit tests pass**, 4 skipped; build OK (studio chunk 74.3 kB gzip).
+- Captures: `docs/screenshots/build-noise-noise.png`, `build-noise-noise-sloped-edge.png`,
+  `build-noise-import-grunerlokka.png`.
+- Not done: rail and aircraft noise; a worker for the texture (not needed: no long task).

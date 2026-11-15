@@ -55,7 +55,7 @@ for (const site of SITES) {
       licence: 'CC BY 4.0 © Kartverket',
       retrieved,
       buildings: measured,
-    }, undefined)
+    }, 0)
     const note = `Building heights and simple gables measured from Kartverket's surface model (${count('gabled')} gabled, ${count('flat')} flat, ${count('complex')} other shapes drawn flat at their measured height); ${count('unmeasured')} not seen in the surface model keep the storey estimate. Not survey data.`
     registerAsset(site, 'heights', 'heights.json', {
       id: 'heights',

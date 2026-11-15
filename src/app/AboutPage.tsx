@@ -13,7 +13,7 @@ const sections = [
   {
     title: 'What this is not',
     body: [
-      'This is not an engineering wind study, a noise survey, a BIM environment, a regulatory compliance tool or a commercial SaaS. Wind and noise are screening estimates for comparing places within one site. They do not certify comfort, daylight, planning permission or legal setbacks.',
+      'This is not an engineering wind study, a noise survey, a BIM environment, a regulatory compliance tool or a commercial SaaS. Wind is a screening estimate for comparing places within one site. Road noise is Statens vegvesen’s published strategic noise map, shown as mapped bands and not for assessing individual buildings. Neither certifies comfort, daylight, planning permission or legal setbacks.',
       'All site constraints are explicitly illustrative. No parcel boundary or regulation should be treated as official unless a source is recorded in the site package and attributed in the interface.',
     ],
   },
@@ -53,7 +53,7 @@ export function AboutPage() {
             <ul className="mt-4 space-y-3 text-body-sm text-ink-secondary">
               <li className="flex gap-2">
                 <Icon name="cube" size={15} className="mt-px shrink-0 text-ink-secondary" />
-                Live 2D wind flow in an analysis circle, and road noise (screening)
+                Live 2D wind flow in an analysis circle (screening), and the official road-noise map as bands
               </li>
               <li className="flex gap-2">
                 <Icon name="sun" size={15} className="mt-px shrink-0 text-ink-secondary" />

@@ -1,3 +1,4 @@
+import { parseOfficialNoise, type OfficialNoise } from '../analysis/officialNoise'
 import { mergeHeights, parseHeights } from './heights'
 import { parseRoof, type Roof } from './roof'
 import {
@@ -117,6 +118,8 @@ export type SitePackage = {
   trees: TreesData['trees']
   /** Empty when the package has no land cover file. */
   landcover: LandCoverArea[]
+  /** The official road-noise bands; null when the package has none (no strategic map here, or an older package). */
+  noise: OfficialNoise | null
 }
 
 const BUILDING_KINDS: readonly BuildingKind[] = [
@@ -373,6 +376,16 @@ export function parseLandCover(value: unknown): LandCoverData {
   }
 }
 
+function asNoise(value: unknown, siteId: string): OfficialNoise | null {
+  if (value === undefined || value === null) return null
+  try {
+    const { dataYear, polygons } = parseOfficialNoise({ schemaVersion: 1, siteId, ...(value as object) })
+    return { dataYear, polygons }
+  } catch (error) {
+    return fail('noise', error instanceof Error ? error.message : 'invalid noise layer')
+  }
+}
+
 /** Revalidate a materialised package read from browser storage. */
 export function parseSitePackage(raw: unknown): SitePackage {
   const root = asRecord(raw, 'package')
@@ -392,7 +405,7 @@ export function parseSitePackage(raw: unknown): SitePackage {
       Math.abs(manifest.statistics.studyAreaM2 - polygonArea(studyArea.polygon)) > 1) {
     fail('manifest.statistics', 'does not match the package geometry')
   }
-  return { manifest, terrain, buildings, studyArea, roads, trees, landcover }
+  return { manifest, terrain, buildings, studyArea, roads, trees, landcover, noise: asNoise(root.noise, manifest.id) }
 }
 
 function assetUrl(siteId: string, relative: string): string {
@@ -453,8 +466,8 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
   )
   if (manifest.id !== siteId) fail('manifest.id', 'does not match the requested site')
 
-  const { roads: roadsPath, trees: treesPath, landcover: landcoverPath, heights: heightsPath } = manifest.assetPaths
-  const [terrainRaw, buildingsRaw, studyAreaRaw, roadsRaw, treesRaw, landcoverRaw, heightsRaw] = await Promise.all([
+  const { roads: roadsPath, trees: treesPath, landcover: landcoverPath, heights: heightsPath, noise: noisePath } = manifest.assetPaths
+  const [terrainRaw, buildingsRaw, studyAreaRaw, roadsRaw, treesRaw, landcoverRaw, heightsRaw, noiseRaw] = await Promise.all([
     fetchJson(assetUrl(siteId, manifest.assetPaths.terrain), signal),
     fetchJson(assetUrl(siteId, manifest.assetPaths.buildings), signal),
     fetchJson(assetUrl(siteId, manifest.assetPaths.studyArea), signal),
@@ -462,6 +475,7 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
     treesPath === undefined ? null : fetchJson(assetUrl(siteId, treesPath), signal),
     landcoverPath === undefined ? null : fetchJson(assetUrl(siteId, landcoverPath), signal),
     heightsPath === undefined ? null : fetchJson(assetUrl(siteId, heightsPath), signal),
+    noisePath === undefined ? null : fetchJson(assetUrl(siteId, noisePath), signal),
   ])
 
   const terrain = parseTerrain(terrainRaw)
@@ -471,8 +485,13 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
   const trees = treesRaw === null ? null : parseTrees(treesRaw)
   const landcover = landcoverPath === undefined ? null : parseLandCover(landcoverRaw)
   const heights = heightsPath === undefined ? null : parseHeights(heightsRaw)
+  let noise: (OfficialNoise & { siteId: string }) | null = null
+  if (noisePath !== undefined) {
+    try { noise = parseOfficialNoise(noiseRaw) }
+    catch (error) { fail('noise', error instanceof Error ? error.message : 'invalid noise layer') }
+  }
 
-  for (const asset of [terrain, buildings, studyArea, roads, trees, landcover, heights]) {
+  for (const asset of [terrain, buildings, studyArea, roads, trees, landcover, heights, noise]) {
     if (asset === null) continue
     if (asset.siteId !== siteId) fail(asset.siteId, 'site id does not match the package')
   }
@@ -495,5 +514,6 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
     roads: roads?.roads ?? [],
     trees: trees?.trees ?? [],
     landcover: landcover?.areas ?? [],
+    noise: noise ? { dataYear: noise.dataYear, polygons: noise.polygons } : null,
   }
 }

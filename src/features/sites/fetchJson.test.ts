@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import compactBuildings from '../../../public/sites/compact-infill/buildings.json'
 import compactHeights from '../../../public/sites/compact-infill/heights.json'
+import compactNoise from '../../../public/sites/compact-infill/noise.json'
 import compactLandcover from '../../../public/sites/compact-infill/landcover.json'
 import compactManifest from '../../../public/sites/compact-infill/manifest.json'
 import compactRoads from '../../../public/sites/compact-infill/roads.json'
@@ -30,6 +31,7 @@ function installSuccessFetch(landcover: unknown = compactLandcover) {
       if (url.endsWith('/trees.json')) return Promise.resolve(jsonResponse(compactTrees))
       if (url.endsWith('/landcover.json')) return Promise.resolve(jsonResponse(landcover))
       if (url.endsWith('/heights.json')) return Promise.resolve(jsonResponse(compactHeights))
+      if (url.endsWith('/noise.json')) return Promise.resolve(jsonResponse(compactNoise))
       return Promise.reject(new Error(`unexpected URL in test fetch: ${url}`))
     },
   )
@@ -217,10 +219,22 @@ describe('measured heights (ADR-0033)', () => {
       if (url.endsWith('/roads.json')) return Promise.resolve(jsonResponse(compactRoads))
       if (url.endsWith('/trees.json')) return Promise.resolve(jsonResponse(compactTrees))
       if (url.endsWith('/landcover.json')) return Promise.resolve(jsonResponse(compactLandcover))
+      if (url.endsWith('/noise.json')) return Promise.resolve(jsonResponse(compactNoise))
       return Promise.reject(new Error(`unexpected URL in test fetch: ${url}`))
     })
     vi.stubGlobal('fetch', fetchMock)
     const loaded = await loadSitePackage('compact-infill')
     expect(loaded.buildings.buildings.every((building) => building.heightSource === undefined)).toBe(true)
+  })
+})
+
+describe('official road noise (ADR-0034)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('loads noise.json with the calculation year the features carry', async () => {
+    installSuccessFetch()
+    const loaded = await loadSitePackage('compact-infill')
+    expect(loaded.noise?.dataYear).toBe(2021)
+    expect(new Set(loaded.noise?.polygons.map((polygon) => polygon.metric))).toEqual(new Set(['Lden', 'Lnight']))
   })
 })

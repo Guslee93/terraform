@@ -1,0 +1,2 @@
+2026-11-15
+https://www.vegvesen.no/kart/ogc/norstoy_1_0/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=norstoy_1_0:Strategiskstoykart_lden&outputFormat=application/json&srsName=EPSG:4326&bbox=10.7679267,59.8947048,10.7795733,59.9017952,EPSG:4326

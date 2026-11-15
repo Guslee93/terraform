@@ -28,6 +28,7 @@ const SAMPLE_PACKAGE: SitePackage = {
   roads: [],
   trees: [],
   landcover: [],
+  noise: null,
 }
 
 const NO_SITE: string | null = null

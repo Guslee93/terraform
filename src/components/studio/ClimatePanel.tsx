@@ -229,16 +229,17 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
   const slicesReady = slicesComplete
   // While the demo plays, an edit stops it (restoring the user's settings) and keeps the edit.
   const set = (patch: Partial<WindSettings>) => (demoPlaying && onDemoEdit ? onDemoEdit(patch) : onWindChange({ ...wind, ...patch }))
-  const legend = view && mode !== 'off' && (
+  // The Noise card has its own body (NoisePanel, ADR-0034); this legend is the wind map's.
+  const legend = view && mode === 'wind' && (
     <div>
       {view.assessed === 0 ? (
         <p className="text-body-sm text-ink-secondary">
-          {mode === 'wind' && baselineMismatch && wind.display === 'delta' ? 'Delta unavailable for this circle or direction.' : mode === 'noise' ? 'No mapped roads in this study area, so there is nothing to estimate.' : 'Computing the wind flow…'}
+          {mode === 'wind' && baselineMismatch && wind.display === 'delta' ? 'Delta unavailable for this circle or direction.' : 'Computing the wind flow…'}
         </p>
       ) : (
         <>
-          <ShareBar entries={view.legend} label={mode === 'wind' ? 'Share of open ground by band' : 'Share of the study area by band'} />
-          <ul className="mt-2" aria-label={mode === 'wind' ? (displayAt(wind) === 'delta' ? DELTA_NOTE : displayAt(wind) === 'activity' ? ACTIVITY_VIEW_NAME : displayAt(wind) === 'worst' ? 'Worst-case speed classes legend' : 'Wind direction legend') : 'Noise legend'}>
+          <ShareBar entries={view.legend} label="Share of open ground by band" />
+          <ul className="mt-2" aria-label={displayAt(wind) === 'delta' ? DELTA_NOTE : displayAt(wind) === 'activity' ? ACTIVITY_VIEW_NAME : displayAt(wind) === 'worst' ? 'Worst-case speed classes legend' : 'Wind direction legend'}>
             {view.legend.map((entry) => (
               <li key={entry.label} className="flex min-h-7 items-center justify-between gap-3 text-body-sm text-ink">
                 <span className="flex items-center gap-2">
@@ -358,8 +359,7 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
         </Section>
       </>}
 
-      {mode === 'off' && <p className="text-body-sm text-ink-secondary">Choose Wind or Noise to colour the ground.</p>}
-      {mode === 'noise' && legend}
+      {mode === 'off' && <p className="text-body-sm text-ink-secondary">Choose Wind or Noise to show a layer.</p>}
     </div>
   )
 }

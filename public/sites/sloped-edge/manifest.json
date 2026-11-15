@@ -30,7 +30,8 @@
     "roads": "roads.json",
     "trees": "trees.json",
     "landcover": "landcover.json",
-    "heights": "heights.json"
+    "heights": "heights.json",
+    "noise": "noise.json"
   },
   "constraints": {
     "maxHeightMeters": 15,
@@ -133,7 +134,8 @@
     "Roads are OSM centrelines with illustrative widths by highway class; tunnels omitted",
     "Trees are mapped OSM positions (natural=tree nodes, natural=tree_row lines every 8 m) drawn with illustrative, position-varied sizes and tints",
     "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m² and incomplete rings omitted; multipolygon inner rings ignored",
-    "[heights] Building heights and simple gables measured from Kartverket's surface model (177 gabled, 26 flat, 17 other shapes drawn flat at their measured height); 10 not seen in the surface model keep the storey estimate. Not survey data."
+    "[heights] Building heights and simple gables measured from Kartverket's surface model (177 gabled, 26 flat, 17 other shapes drawn flat at their measured height); 10 not seen in the surface model keep the storey estimate. Not survey data.",
+    "[noise] Road-noise bands are Statens vegvesen's strategic noise map (Lden and Lnight, calculated for 2021, CNOSSOS-EU), clipped to the terrain extent and simplified at 0.4 m; shown as published, not calculated here"
   ],
   "statistics": {
     "buildingCount": 230,
@@ -152,6 +154,19 @@
       "attribution": "© Kartverket",
       "retrieved": "2026-11-15",
       "useLimitation": "Heights are measured from a lidar surface model, not surveyed. Lidar and map epochs differ."
+    },
+    {
+      "id": "noise",
+      "owner": "Statens vegvesen",
+      "dataset": "Strategic road-noise map (Lden, Lnight), CNOSSOS-EU",
+      "datasetUuid": "4bbae38e-4718-481d-9827-237cd5e115c8",
+      "url": "https://www.vegvesen.no/kart/ogc/norstoy_1_0/ows",
+      "licence": "NLOD 1.0",
+      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "attribution": "Contains data under the Norwegian licence for Open Government data (NLOD) distributed by Statens vegvesen",
+      "retrieved": "2026-11-15",
+      "dataYear": 2021,
+      "useLimitation": "Datasettet skal ikke brukes til å vurdere behov for tiltak på enkeltbygg. Det må utføres egne beregninger for dette. (Not for assessing the need for measures on individual buildings; separate calculations are required.)"
     }
   ]
 }

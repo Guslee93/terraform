@@ -42,7 +42,8 @@ import { AnalysisCards, type AnalysisCard, type AnalysisId } from './AnalysisCar
 import { LayersCard } from './LayersCard'
 import { circleSunStat, noiseStat, roofSolarStat, sunStat, vscStat, windStat } from './analysisValues'
 import { FULL_DAY, SunHoursControls, type SunWindow } from './SunHoursControls'
-import { computeNoise, NOISE_DISCLAIMER } from '../../features/analysis/noise'
+import { bandLookup, bandShares, footprintInSensitiveBand, NOISE_LIMITATION, noiseSourceLine, OFFICIAL_NOISE_NOTE, type NoiseMetric } from '../../features/analysis/officialNoise'
+import { NoisePanel } from './NoisePanel'
 import { daySunSamples } from '../../features/analysis/shadowRay'
 import { sunHoursDisclaimer } from '../../features/analysis/sunHours'
 import { measuredCount } from '../../features/sites/heights'
@@ -297,7 +298,18 @@ export function StudioShell({
     return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline, worstCase)
   }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind, windCentre, baseline, worstCase])
   // Dock figures (ADR-0016): every value comes from the same analysis the layers draw.
-  const noiseCells = useMemo(() => (sitePackage && studyArea ? computeNoise(studyArea, sitePackage.roads, analysisBuildings, 10) : []), [sitePackage, studyArea, analysisBuildings])
+  // The official road-noise map (ADR-0034): static context. Shares are over the open ground of the
+  // study area between the existing buildings, so nothing here moves when a block is drawn.
+  const [noiseMetric, setNoiseMetric] = useState<NoiseMetric>('Lden')
+  const noise = sitePackage?.noise ?? null
+  const noiseShares = useMemo(() => bandShares(noise, noiseMetric, studyArea ?? [], sitePackage?.buildings.buildings ?? []), [noise, noiseMetric, studyArea, sitePackage])
+  // The one thing a drawn block triggers: the publisher's sentence, never a level (feasibility 09 §2a).
+  const blockInNoiseBand = useMemo(() => {
+    if (!noise) return false
+    const lookup = bandLookup(noise.polygons, 'Lden')
+    return analysisDocument.volumes.some((volume) => volume.tiers.some((tier) => footprintInSensitiveBand(lookup, tier.footprint.vertices)))
+  }, [noise, analysisDocument])
+  const noiseOnMap = climateMode === 'noise' && !!noise
   const windComfortView = useMemo(() => {
     if (!sitePackage || !windArea || climateMode !== 'wind' || !windFlow) return null
     // A comfort figure is a pedestrian figure: always at 2 m, whatever height the map shows.
@@ -388,8 +400,9 @@ export function StudioShell({
   }, [dispatch, requestCamera, editable])
 
   // The layers on screen name the sources the panel and the exports credit (ADR-0032).
-  const visibleLayers = useMemo(() => visibleLayerIds(layers), [layers])
-  const exportCredits = useMemo(() => (sitePackage ? exportCreditLines(sitePackage.manifest, visibleLayers) : []), [sitePackage, visibleLayers])
+  const visibleLayers = useMemo(() => visibleLayerIds(layers, noiseOnMap ? ['noise'] : []), [layers, noiseOnMap])
+  // With the noise map on screen the export also carries its limitation (feasibility 09 §2a.5).
+  const exportCredits = useMemo(() => (sitePackage ? [...exportCreditLines(sitePackage.manifest, visibleLayers), ...(noiseOnMap ? [`Road noise: ${NOISE_LIMITATION}`] : [])] : []), [sitePackage, visibleLayers, noiseOnMap])
   const sunHoursNote = sunHoursDisclaimer(!!sitePackage && hasMeasuredHeights(sitePackage.manifest))
   // The legend says how many context heights are measured (ADR-0033).
   const layerNotes = useMemo(() => {
@@ -402,7 +415,7 @@ export function StudioShell({
     detail: `${volume.tiers[0]?.storeys ?? 0} fl · ${formatMetres(volume.tiers[0] ? tierHeight(volume.tiers[0]) : 0)}`,
   }])), [analysisDocument])
   const selectedDeletable = !!selectedVolume && !selectedVolume.locked
-  const climatePanel = (only: 'wind' | 'noise') => sitePackage ? (
+  const climatePanel = (only: 'wind') => sitePackage ? (
     <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick availableHeights={readyHeights} slicesComplete={!!freshFlow?.slicesComplete} heights={allHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
       streamlines={streamlines} onStreamlinesChange={setStreamlines}
       baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
@@ -459,9 +472,11 @@ export function StudioShell({
       id: 'noise',
       label: 'Noise',
       icon: 'noise',
-      stat: noiseStat(noiseCells, sitePackage?.roads ?? []),
-      note: NOISE_DISCLAIMER,
-      body: climatePanel('noise') ?? <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
+      stat: noiseStat(noiseShares, noiseMetric, noise?.dataYear ?? null),
+      note: OFFICIAL_NOISE_NOTE,
+      body: sitePackage
+        ? <NoisePanel noise={noise} metric={noiseMetric} onMetricChange={setNoiseMetric} shares={noiseShares} blockInBand={blockInNoiseBand} />
+        : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },
   ]
   // The open card is the analysis on the map; closing it turns the layer off.
@@ -522,7 +537,8 @@ export function StudioShell({
                 editable={editable}
                 annotations={annotations}
                 renderPreference="auto"
-                climate={climateView?.overlay ?? null}
+                climate={climateMode === 'wind' ? climateView?.overlay ?? null : null}
+                noise={noiseOnMap && noise ? { polygons: noise.polygons, metric: noiseMetric, caption: noiseSourceLine(noiseMetric, noise.dataYear) } : null}
                 roofSolar={roofSolarActive ? roofSolarValues : null}
                 facade={vscActive ? facadeOverlay : null}
                 sunHours={climateMode === 'sun-hours' && windCircle ? { circle: windCircle, result: circleSun.result, buildings: circleSun.buildings, computing: circleSun.computing } : null}

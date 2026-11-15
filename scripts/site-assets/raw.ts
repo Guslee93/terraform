@@ -13,7 +13,7 @@ const SUMS = `${RAW}/SHA256SUMS`
 export const TODAY = new Date().toISOString().slice(0, 10)
 
 export const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T
-export const writeJson = (path: string, value: unknown, indent: number | undefined = 2) => writeFileSync(path, `${JSON.stringify(value, null, indent)}\n`)
+export const writeJson = (path: string, value: unknown, indent = 2) => writeFileSync(path, `${JSON.stringify(value, null, indent)}\n`)
 export const sitePath = (site: string, file: string) => `public/sites/${site}/${file}`
 
 const sha256 = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')

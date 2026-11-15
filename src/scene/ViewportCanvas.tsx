@@ -20,6 +20,8 @@ import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
 import type { SunDirection } from '../features/analysis/sun'
 import { ClimateLayer } from './ClimateLayer'
+import { NoiseBands } from './NoiseBands'
+import type { NoiseMetric, NoisePolygon } from '../features/analysis/officialNoise'
 import { FacadeSun, type FacadeOverlay } from './FacadeSun'
 import { RoofSolar } from './RoofSolar'
 import { SunHoursLayer, SunHoursRampBar } from './SunHoursLayer'
@@ -78,8 +80,10 @@ type ViewportProps = {
   editable: boolean
   annotations?: ReadonlyMap<string, MassAnnotation>
   renderPreference: RenderPreference
-  /** Wind or noise screening cells; null when the climate layer is off. */
+  /** Wind screening cells; null when the wind layer is off. */
   climate?: ClimateOverlay | null
+  /** The official road-noise bands (ADR-0034) and the claim shown with them; null when off. */
+  noise?: { readonly polygons: readonly NoisePolygon[]; readonly metric: NoiseMetric; readonly caption: string } | null
   /** Per-roof clear-sky irradiation, aligned with `windBuildings`; null when Roof solar is off. */
   roofSolar?: readonly RoofSolarValue[] | null
   /** Façade sun-hours or VSC quads; null when neither façade layer is showing. */
@@ -520,6 +524,7 @@ export function ViewportCanvas({
   annotations,
   renderPreference,
   climate = null,
+  noise = null,
   roofSolar = null,
   facade = null,
   sunHours = null,
@@ -612,6 +617,12 @@ export function ViewportCanvas({
           <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{windCaption(windSettings.heightM, !!windFlow && !windField)}</p>
         </div>
       )}
+      {noise && (
+        // The source, year and limitation stay on the map with the bands (feasibility 09 §2a).
+        <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{noise.caption}</p>
+        </div>
+      )}
       {sunHours && (
         // The claim stays on the map with the layer, as the wind caption does.
         <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
@@ -669,6 +680,7 @@ export function ViewportCanvas({
             )}
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
+            {noise && layers.terrain && <NoiseBands polygons={noise.polygons} metric={noise.metric} terrain={sitePackage.terrain} />}
             {climate && (windCircle
               ? <WindHeatmap overlay={climate} heightAt={windHeightAt} circle={windCircle} />
               : <ClimateLayer overlay={climate} heightAt={heightAt} buildings={windBuildings} />)}

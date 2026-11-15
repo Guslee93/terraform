@@ -9,7 +9,7 @@ import { kartverketSurface, type SurfaceSource } from './surface'
 import { bjorvika, fixtureTiles, grunerlokka } from './testFixtures'
 import { buildTerrainGrid, kartverketProvider, parseKartverketSamples, terrainPoints, type TerrainProvider, type TerrainSample } from './terrain'
 import { parseSiteManifest } from '../sites/manifest'
-import { parseBuildings, parseLandCover, parseRoads, parseStudyArea, parseTerrain, parseTrees } from '../sites/package'
+import { parseBuildings, parseLandCover, parseRoads, parseSitePackage, parseStudyArea, parseTerrain, parseTrees } from '../sites/package'
 import { isSimpleRing, pointInPolygon } from '../../lib/polygon'
 import type { ImportFrame } from './frame'
 import { QUICK_PICKS } from './cities'
@@ -212,4 +212,37 @@ it('imports the default Oslo quick pick, whose many-part building 89997840 defea
   const result = await importSite(frame, { tiles: fixtureTiles, terrain: [flat] })
   expect(result.sitePackage.buildings.buildings.length).toBeGreaterThan(0)
   expect(result.sitePackage.buildings.buildings.some((building) => building.id.startsWith('89997840-'))).toBe(true)
+})
+
+it('adds the official road-noise map where the service has one, with its provenance (ADR-0034)', async () => {
+  const noise = { dataYear: 2021, polygons: [{ metric: 'Lden' as const, bandLow: 60, rings: [[[-50, -50], [50, -50], [50, 50], [-50, 50]] as [number, number][]] }] }
+  const asked: unknown[] = []
+  const source = { covers: () => true, fetchNoise: async (...args: unknown[]) => { asked.push(args); return noise } }
+  const result = await importSite(grunerlokka, { tiles: fixtureTiles, terrain: [fixtureTerrain(grunerlokkaTerrain)], noise: source })
+  expect(result.sitePackage.noise).toEqual(noise)
+  // The frame's WGS84 box, its origin and its ENU extent: the converter clips to the frame.
+  const half = grunerlokka.sizeMetres / 2
+  const [lonLat, origin, extent] = asked[0] as [number[], { latitude: number; longitude: number }, number[]]
+  expect(lonLat).toHaveLength(4)
+  expect(origin).toMatchObject({ latitude: grunerlokka.latitude, longitude: grunerlokka.longitude })
+  extent.forEach((value, index) => expect(value).toBeCloseTo([-half, -half, half, half][index]!, 6))
+  const layer = result.sitePackage.manifest.layers?.find((entry) => entry.id === 'noise')
+  expect(layer).toMatchObject({ owner: 'Statens vegvesen', licence: 'NLOD 1.0', dataYear: 2021 })
+  expect(layer?.useLimitation).toContain('enkeltbygg')
+  // The stored package survives revalidation with its noise layer.
+  expect(parseSitePackage(JSON.parse(JSON.stringify(result.sitePackage))).noise).toEqual(noise)
+})
+
+it('imports without a noise layer when the service maps nothing, fails, or does not cover the place', async () => {
+  const deps = { tiles: fixtureTiles, terrain: [fixtureTerrain(grunerlokkaTerrain)] }
+  const none = await importSite(grunerlokka, { ...deps, noise: { covers: () => true, fetchNoise: async () => null } })
+  expect(none.sitePackage.noise).toBeNull()
+  expect(none.sitePackage.manifest.layers).toBeUndefined()
+  const failed = await importSite(grunerlokka, { ...deps, noise: { covers: () => true, fetchNoise: async () => { throw new Error('HTTP 503') } } })
+  expect(failed.sitePackage.noise).toBeNull()
+  expect(failed.sitePackage.manifest.simplified.some((line) => line.includes('road-noise map could not be fetched (HTTP 503)'))).toBe(true)
+  let called = false
+  const abroad = await importSite(grunerlokka, { ...deps, noise: { covers: () => false, fetchNoise: async () => { called = true; return null } } })
+  expect(called).toBe(false)
+  expect(abroad.sitePackage.noise).toBeNull()
 })

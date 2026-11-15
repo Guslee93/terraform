@@ -40,6 +40,7 @@ const sitePackage = {
   buildings: parseBuildings(compactBuildings),
   studyArea: parseStudyArea(compactStudyArea),
   roads: [], trees: [], landcover: [],
+  noise: null,
 }
 
 

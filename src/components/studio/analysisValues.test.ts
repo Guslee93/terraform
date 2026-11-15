@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildClimateView, DEFAULT_WIND } from '../../features/analysis/climateView'
-import { computeNoise } from '../../features/analysis/noise'
+import { bandShares } from '../../features/analysis/officialNoise'
 import { DEMO_SUN_INSTANT, sunState } from '../../features/analysis/sun'
 import type { FacadeSample } from '../../features/analysis/facadeSamples'
 import type { Vec2 } from '../../lib/coordinates'
@@ -20,18 +20,19 @@ describe('analysis card values come from the analysis, not constants', () => {
     expect(sunStat(night, '23:00')).toMatchObject({ value: null, hint: 'Sun below horizon' })
   })
 
-  it('Noise is the peak of computeNoise and names the loudest mapped road class', () => {
-    const roads = [
-      { highway: 'residential', centreline: [[-50, 0], [50, 0]] as Vec2[] },
-      { highway: 'primary', centreline: [[-50, 40], [50, 40]] as Vec2[] },
-      { highway: 'footway', centreline: [[-50, -40], [50, -40]] as Vec2[] },
-    ]
-    const cells = computeNoise(parcel, roads, [], 10)
-    const peak = Math.max(...cells.flatMap((cell) => (cell.db === null ? [] : [cell.db])))
-    const stat = noiseStat(cells, roads)
-    expect(stat).toMatchObject({ value: String(Math.round(peak)), unit: ' dB' })
-    expect(text(stat.secondary)).toBe('peak · primary road')
-    expect(noiseStat(computeNoise(parcel, [], [], 10), [])).toMatchObject({ value: null, hint: 'No mapped roads in the study area' })
+  it('Noise names the mapped band with the largest share of open ground, never a single level', () => {
+    const band = (bandLow: number, x0: number, x1: number) => ({ metric: 'Lden' as const, bandLow, rings: [[[x0, -50], [x1, -50], [x1, 50], [x0, 50]] as Vec2[]] })
+    const noise = { dataYear: 2021, polygons: [band(55, -50, 10), band(65, 10, 30)] }
+    const stat = noiseStat(bandShares(noise, 'Lden', parcel, []), 'Lden', noise.dataYear)
+    expect(stat).toMatchObject({ value: '55–60', unit: ' dB' })
+    expect(text(stat.secondary)).toBe('band with the largest share of open ground · Lden 2021')
+    // The top band is open-ended.
+    expect(noiseStat(bandShares({ dataYear: 2021, polygons: [band(75, -50, 50)] }, 'Lden', parcel, []), 'Lden', 2021).value).toBe('≥ 75')
+    // No map for this metric, or no package layer at all: the card says so; it never implies quiet.
+    expect(noiseStat(bandShares(noise, 'Lnight', parcel, []), 'Lnight', noise.dataYear)).toMatchObject({ value: null, hint: 'No strategic noise map here' })
+    expect(noiseStat(bandShares(null, 'Lden', parcel, []), 'Lden', null)).toMatchObject({ value: null, hint: 'No strategic noise map here' })
+    // A map exists, but no band reaches the study area.
+    expect(noiseStat(bandShares({ dataYear: 2021, polygons: [band(55, 500, 600)] }, 'Lden', parcel, []), 'Lden', 2021)).toMatchObject({ value: null, hint: 'No mapped band in the study area' })
   })
 
   it('Wind sums the Comfort legend at or above 4 m/s and names the chosen wind as the input of the user', () => {

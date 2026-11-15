@@ -1,6 +1,7 @@
 # ADR-0013 — Wind and noise screening layers; microclimate becomes the main path
 
 - **Status:** Accepted (owner, 2026-11-04)
+- **Superseded in part:** the road-noise heuristic is retired by ADR-0034 (2026-11-15): the Noise card shows Statens vegvesen's official strategic noise map as bands. The wind part stands.
 - **Date:** 2026-11-04
 - **Deciders:** Project owner
 - **PRD references:** §3 non-goals (line 55: wind CFD, acoustic simulation), §10, §13

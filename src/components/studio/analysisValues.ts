@@ -1,5 +1,5 @@
 import { ACTIVITY_BANDS, ROSE_THRESHOLD_MS, type ClimateView } from '../../features/analysis/climateView'
-import { ROAD_LEVEL_AT_10M, type NoiseCell, type NoiseRoad } from '../../features/analysis/noise'
+import { largestBand, NO_NOISE_MAP, type NoiseMetric, type NoiseShares } from '../../features/analysis/officialNoise'
 import type { CircleSunHours } from '../../features/analysis/circleSunHours'
 import { medianRoofSolar, type RoofSolarValue } from '../../features/analysis/roofSolar'
 import { medianVsc, type VscValue } from '../../features/analysis/vsc'
@@ -74,19 +74,19 @@ export function roofSolarStat(values: readonly RoofSolarValue[] | null): Analysi
   }
 }
 
-/** Peak ground level in the study grid and the loudest mapped road class. */
-export function noiseStat(cells: readonly NoiseCell[], roads: readonly NoiseRoad[]): AnalysisStat {
-  const levels = cells.flatMap((cell) => (cell.db === null ? [] : [cell.db]))
-  if (levels.length === 0) return empty('No mapped roads in the study area')
-  const loudest = roads.reduce<string | null>((best, road) => {
-    const level = ROAD_LEVEL_AT_10M[road.highway]
-    if (level === undefined) return best
-    return best === null || level > (ROAD_LEVEL_AT_10M[best] ?? -Infinity) ? road.highway : best
-  }, null)
+/**
+ * The mapped band covering the largest share of the open ground in the study area (ADR-0034).
+ * A band, never a single level; without a map the card says so instead of implying quiet.
+ */
+export function noiseStat(shares: NoiseShares, metric: NoiseMetric, dataYear: number | null): AnalysisStat {
+  if (!shares.mapped || dataYear === null) return empty(NO_NOISE_MAP)
+  const largest = largestBand(shares)
+  if (!largest) return empty('No mapped band in the study area')
+  const top = largest.bandLow >= 75
   return {
-    value: formatNumber(Math.max(...levels)),
+    value: top ? '≥ 75' : `${largest.bandLow}–${largest.bandLow + 5}`,
     unit: ' dB',
-    secondary: [['peak', loudest ? ' · ' : ' in study area'], ...(loudest ? [[loudest.replace(/_/g, ' '), ' road'] as const] : [])],
+    secondary: [['', 'band with the largest share of open ground · '], [`${metric} ${dataYear}`, '']],
   }
 }
 
