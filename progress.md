@@ -975,3 +975,15 @@ zoom in because the quads are small at the default site camera.
   The sun-hours, m3-analysis, m3-disclaimers, m3-evidence, keyboard and layers browser tests pass on
   the production build (1 opt-in skipped); 468 analysis and component unit tests pass; lint and build OK.
 - The first commit went out without these notes: the script that wrote them failed on a quoting error.
+
+## 2026-11-15 — Wind lift: no dashed lines, handle at the centre
+
+- Owner, with a screenshot of the lifted map: "Remove the dashed lines and also move that slider to the
+  center of the wind analysis."
+- Removed the dashed rings at the other heights (`GhostRings`, `ghostHeights`), and the handle's
+  rim anchor (`liftAnchor`). The handle now sits at the circle's centre; the circle outline is a solid
+  line instead of a dashed one, and its centre tick is left out where the handle marks the centre.
+- lint 0; 1078 unit tests pass (the removed functions' tests went with them); build OK. e2e on the
+  production build: wind (including the handle drag and Esc), wind-a11y, sun-hours and simplified-studio
+  all pass, 7 of 7.
+- Captures: `docs/screenshots/wind-lift-centre-handle-{2m,15m}-1440x900.png`.

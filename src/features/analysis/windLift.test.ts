@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { liftHeights, readyLiftHeights, windFlowStyle, clampLift, fadedBuildings, footprintTouchesCircle, ghostHeights, heightText, liftAnchor, nearestHeight, stepHeight } from './windLift'
+import { liftHeights, readyLiftHeights, windFlowStyle, clampLift, fadedBuildings, footprintTouchesCircle, heightText, nearestHeight, stepHeight } from './windLift'
 
 const HEIGHTS = [2, 5, 10, 15, 20, 25, 30]
 
@@ -29,29 +29,6 @@ describe('snapping to solved heights', () => {
   })
   it('speaks a stop as metres above terrain', () => {
     expect(heightText(20)).toBe('20 metres above terrain')
-  })
-})
-
-describe('the handle', () => {
-  it('sits on the edge nearest the viewer', () => {
-    expect(liftAnchor([0, 0], 100, [0, -500])).toEqual([0, -100])
-    const [x, y] = liftAnchor([10, 10], 50, [110, 110])
-    expect(Math.hypot(x - 10, y - 10)).toBeCloseTo(50, 9)
-    expect(x).toBeCloseTo(y, 9)
-  })
-  it('falls back to the south edge when the viewer is straight above', () => {
-    expect(liftAnchor([5, 5], 60, [5, 5])).toEqual([5, -55])
-  })
-})
-
-describe('dashed rings at the other heights', () => {
-  it('shows none while the disc rests at 2 m', () => {
-    expect(ghostHeights(HEIGHTS, 2, false)).toEqual([])
-  })
-  it('shows 2 m and every 5 m among the ready heights while lifted or dragging (ADR-0029)', () => {
-    const metres = Array.from({ length: 34 }, (_, i) => i + 2) // 2–35 m
-    expect(ghostHeights(metres, 20, false)).toEqual([2, 5, 10, 15, 25, 30, 35])
-    expect(ghostHeights(metres.slice(0, 11), 2, true)).toEqual([5, 10]) // ready to 12 m
   })
 })
 

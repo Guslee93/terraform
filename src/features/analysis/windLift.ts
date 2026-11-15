@@ -28,7 +28,7 @@ export function readyLiftHeights(flow: FlowResult | null): number[] {
 
 /**
  * The wind lift (ADR-0028 phase 3): renderer-free rules for the handle, the stepped height control,
- * the dashed rings at the other heights and the buildings that fade below the lifted disc.
+ * and the buildings that fade below the lifted disc.
  */
 
 /** The solved height nearest `z` (ties go to the lower one); the disc only ever rests on these. */
@@ -48,27 +48,6 @@ export function stepHeight(current: number, heights: readonly number[], step: 1 
   const sorted = [...heights].sort((a, b) => a - b)
   const index = sorted.indexOf(nearestHeight(current, sorted))
   return sorted[Math.min(sorted.length - 1, Math.max(0, index + step))] ?? current
-}
-
-/**
- * Where the handle sits: the point of the circle's edge nearest the viewer, in plan. A viewer
- * straight above the centre has no nearest edge; the handle then sits on the south edge.
- */
-export function liftAnchor(centre: Vec2, radius: number, viewer: Vec2): Vec2 {
-  const dx = viewer[0] - centre[0], dy = viewer[1] - centre[1]
-  const length = Math.hypot(dx, dy)
-  if (length < 1e-6) return [centre[0], centre[1] - radius]
-  return [centre[0] + (dx / length) * radius, centre[1] + (dy / length) * radius]
-}
-
-/**
- * Dashed rings that show the scale of the stack the disc moves through: 2 m and every 5 m among
- * the ready heights (a ring per metre would be a blur), while the disc is lifted or being dragged.
- * At rest on the ground there is nothing to compare against, so no rings.
- */
-export function ghostHeights(heights: readonly number[], current: number, dragging: boolean): number[] {
-  if (!dragging && current <= PEDESTRIAN_HEIGHT_M) return []
-  return heights.filter((h) => h !== current && (h === PEDESTRIAN_HEIGHT_M || h % 5 === 0))
 }
 
 type Footprinted = { readonly height: number; readonly footprint: readonly (readonly [number, number])[] }
