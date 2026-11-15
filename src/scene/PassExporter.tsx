@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { addAfterEffect, useThree } from '@react-three/fiber'
 import { Vector3 } from 'three'
-import { exportPixelRatio, renderPasses, type PassImages } from './exportPasses'
+import { creditedPng, exportPixelRatio, renderPasses, type PassImages } from './exportPasses'
 import type { OrbitControlsHandle } from './CameraRig'
 
 /** Frames to let the composer and shadow map settle at the export resolution. */
@@ -12,7 +12,9 @@ const SETTLE_FRAMES = 4
  * composer's finished frame (the still) right after it is drawn, then the depth, white-model
  * and analysis passes, and restores the pixel ratio (ADR-0019).
  */
-export function PassExporter({ request, controls, onDone }: {
+export function PassExporter({ request, controls, onDone, credits = [] }: {
+  /** Attribution lines burned into the still, white-model and analysis passes (ADR-0032). */
+  credits?: readonly string[]
   request: number | null
   controls: { current: OrbitControlsHandle | null }
   onDone: (result: PassImages | Error) => void
@@ -20,7 +22,8 @@ export function PassExporter({ request, controls, onDone }: {
   const get = useThree((state) => state.get)
   const handled = useRef<number | null>(null)
   const done = useRef(onDone)
-  useEffect(() => { done.current = onDone })
+  const lines = useRef(credits)
+  useEffect(() => { done.current = onDone; lines.current = credits })
 
   useEffect(() => {
     if (request === null || handled.current === request) return
@@ -51,9 +54,9 @@ export function PassExporter({ request, controls, onDone }: {
       if (--frames > 0) return
       try {
         const { gl: renderer, scene, camera } = get()
-        const still = renderer.domElement.toDataURL('image/png')
+        const still = creditedPng(renderer.domElement, lines.current)
         const target = controls.current?.target ?? new Vector3()
-        const passes = renderPasses(renderer, scene, camera, camera.position.distanceTo(target))
+        const passes = renderPasses(renderer, scene, camera, camera.position.distanceTo(target), lines.current)
         finish({ still, ...passes })
       } catch (error) {
         finish(error instanceof Error ? error : new Error('Export failed.'))

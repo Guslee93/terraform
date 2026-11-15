@@ -53,6 +53,7 @@ import { facadeSamples } from '../../features/analysis/facadeSamples'
 import { computeVsc, vscLegend, VSC_COLOUR, VSC_DISCLAIMER } from '../../features/analysis/vsc'
 import { FLOW_DISCLAIMER } from '../../features/analysis/lbm'
 import { removeVolume } from '../../features/editor/commands'
+import { exportCreditLines, visibleLayerIds } from '../../features/sites/provenance'
 
 type PackageStatus = 'loading' | 'ready' | 'error'
 
@@ -385,6 +386,9 @@ export function StudioShell({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [dispatch, requestCamera, editable])
 
+  // The layers on screen name the sources the panel and the exports credit (ADR-0032).
+  const visibleLayers = useMemo(() => visibleLayerIds(layers), [layers])
+  const exportCredits = useMemo(() => (sitePackage ? exportCreditLines(sitePackage.manifest, visibleLayers) : []), [sitePackage, visibleLayers])
   const annotations = useMemo(() => new Map<string, MassAnnotation>(analysisDocument.volumes.map((volume) => [volume.id, {
     title: 'Block',
     detail: `${volume.tiers[0]?.storeys ?? 0} fl · ${formatMetres(volume.tiers[0] ? tierHeight(volume.tiers[0]) : 0)}`,
@@ -528,6 +532,7 @@ export function StudioShell({
                 onWindHeightChange={(heightM) => (windDemo.playing ? windDemo.stopWith({ heightM }) : setWind((w) => ({ ...w, heightM })))}
                 onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
                 exportRequest={exportRequest}
+                exportCredits={exportCredits}
                 onExport={onExport}
               />
             </>
@@ -590,11 +595,12 @@ export function StudioShell({
           analysisCards={<AnalysisCards cards={analysisCards} active={activeCard} onSelect={selectAnalysisCard} />}
           analysisOnly={analysisOnly}
           layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} />}
+          visibleLayers={visibleLayers}
           site={site}
           manifest={sitePackage?.manifest ?? null}
           packageStatus={packageStatus}
           views={ready ? <CameraPresets active={cameraPreset} onSelect={requestCamera} /> : null}
-          visuals={ready ? <ExportVisuals siteId={site.id} exporting={exportRequest !== null} message={exportMessage}
+          visuals={ready ? <ExportVisuals siteId={site.id} credits={exportCredits} exporting={exportRequest !== null} message={exportMessage}
             onExportPasses={() => {
               // The exporter lives inside the canvas; without one nothing would ever clear the request.
               if (!document.querySelector('section[aria-label="Studio viewport"] canvas')) return setExportMessage('Viewport not ready.')

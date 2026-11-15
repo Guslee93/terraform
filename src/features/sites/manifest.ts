@@ -1,3 +1,5 @@
+import { parseLayers, type LayerProvenance } from './provenance'
+
 export type Vec2Tuple = readonly [east: number, north: number]
 export type Vec3Tuple = readonly [east: number, north: number, up: number]
 
@@ -62,6 +64,8 @@ export type SiteManifest = {
   }
   cameraPresets: Record<CameraPresetId, CameraPreset>
   sources: SiteSource[]
+  /** Per-layer provenance (ADR-0032). Absent in older packages: `siteLayers` reads `sources` instead. */
+  layers?: LayerProvenance[]
   simplified: string[]
   statistics: {
     buildingCount: number
@@ -268,6 +272,7 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       eyeLevel: parseCameraPreset(cameraPresets.eyeLevel, 'manifest.cameraPresets.eyeLevel'),
     },
     sources,
+    ...(root.layers === undefined ? {} : { layers: parseLayers(root.layers, 'manifest.layers') }),
     simplified: asStringArray(root.simplified, 'manifest.simplified'),
     statistics: {
       buildingCount,

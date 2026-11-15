@@ -1024,3 +1024,21 @@ zoom in because the quads are small at the default site camera.
 - lint 0; **1083 unit tests pass**, 4 skipped; build OK. e2e not run (strings updated by hand).
 - Captures: `docs/screenshots/build-labels-{sun,wind,noise}.png` (1440 × 900), via the new
   `scripts/capture-build.mjs`.
+
+## 2026-11-15 — build/foundation WP-2: layer provenance and attribution (ADR-0032)
+
+- Domain `src/features/sites/provenance.ts`: `LayerProvenance`, strict parser, synthesis from the
+  older `sources`, visible-layer credits, export lines. Manifest gains optional `layers`.
+- Panel: Site → Data attribution lists one line per source among the layers on screen (linked
+  attribution, dataset and year, linked licence, retrieval date, use limitation).
+- Exports: the still, white-model pass, analysis pass and every clip frame carry the visible layers'
+  credits in a bottom band. The depth pass stays clean (deviation from "PNG and video frames": a
+  text band would corrupt a depth signal; recorded in the ADR).
+- One test failed on the first run: my own expectation of the list order (declared layers come
+  first). Fixed the test.
+- Browser check on the production build (Compact Infill): the panel listed OpenStreetMap and
+  Kartverket; switching Terrain off removed the Kartverket line; Image passes saved 4 files and the
+  3840 px still carries both credit lines. No page errors.
+- lint 0; **1099 unit tests pass**, 4 skipped; build OK.
+- Captures: `docs/screenshots/build-provenance-panel.png`, `build-provenance-export-still.png`.
+- Not verified: the recorded clip's band (code path shares `drawCredits`; not played back), Safari.

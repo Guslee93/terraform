@@ -110,6 +110,8 @@ type ViewportProps = {
   grid?: boolean
   /** Each new number captures the export passes once (ADR-0019). */
   exportRequest?: number | null
+  /** Attribution lines burned into the exported images (ADR-0032). */
+  exportCredits?: readonly string[]
   onExport?: (result: PassImages | Error) => void
 }
 
@@ -534,6 +536,7 @@ export function ViewportCanvas({
   onPickPoint,
   grid = true,
   exportRequest = null,
+  exportCredits,
   onExport,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -708,7 +711,7 @@ export function ViewportCanvas({
               presets={manifest.cameraPresets}
               controlsRef={controlsRef}
             />
-            {onExport && <PassExporter request={exportRequest} controls={controlsRef} onDone={onExport} />}
+            {onExport && <PassExporter request={exportRequest} controls={controlsRef} onDone={onExport} credits={exportCredits} />}
             <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />
             {/* Wait for renderer detection so Auto never starts AO on software GL. */}

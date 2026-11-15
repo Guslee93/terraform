@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { SiteManifest } from '../../features/sites/manifest'
 import type { SiteSummary } from '../../features/sites/siteCatalog'
+import { credits, siteLayers, type LayerId } from '../../features/sites/provenance'
 import type { MassingCommand } from '../../features/editor/history'
 import type { MassTier, MassVolume } from '../../features/massing/types'
 import { Icon } from '../ui/Icon'
@@ -32,11 +33,37 @@ function Group({ id, title, meta, open, onToggle, children }: {
 }
 
 
-export function Inspector({ analysisCards, analysisOnly, layers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
+const linkClass = 'underline underline-offset-2 hover:text-ink'
+
+/**
+ * One line per data source among the layers on screen (ADR-0032): who, which dataset and year,
+ * the licence, when it was retrieved, and what the publisher says it must not be used for.
+ */
+export function DataAttribution({ manifest, visible }: { manifest: SiteManifest; visible: ReadonlySet<LayerId> }) {
+  const { layers, unlisted } = siteLayers(manifest)
+  return (
+    <ul aria-label="Data attribution" className="mt-3 space-y-1.5 text-caption text-ink-secondary">
+      {credits(layers, visible).map((credit) => (
+        <li key={`${credit.owner}/${credit.dataset}`}>
+          <a className={linkClass} href={credit.url} target="_blank" rel="noreferrer">{credit.attribution}</a>
+          {' · '}{credit.dataset}{credit.dataYear === undefined ? '' : ` (${credit.dataYear})`}{' · '}
+          <a className={linkClass} href={credit.licenceUrl} target="_blank" rel="noreferrer">{credit.licence === 'no conditions' ? 'open data' : credit.licence}</a>
+          {' · retrieved '}{credit.retrieved}
+          {credit.useLimitation && <span className="block">Use limitation: {credit.useLimitation}</span>}
+        </li>
+      ))}
+      {unlisted.map((source) => <li key={source.title}>{source.attribution ?? source.title}</li>)}
+    </ul>
+  )
+}
+
+export function Inspector({ analysisCards, analysisOnly, layers, visibleLayers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
   /** The analysis cards: one per screening analysis, above the panel groups (ADR-0026). */
   analysisCards?: ReactNode
   analysisOnly: boolean
   layers: ReactNode
+  /** The layers on screen: the attribution lists their sources only. */
+  visibleLayers: ReadonlySet<LayerId>
   site: SiteSummary
   manifest: SiteManifest | null
   packageStatus: 'loading' | 'ready' | 'error'
@@ -72,9 +99,9 @@ export function Inspector({ analysisCards, analysisOnly, layers, site, manifest,
     <Group {...group('site')} title="Site">
       <p className="text-body-sm text-ink">{site.title} · Local ENU metres</p>
       {site.notices && <ul aria-label="Import notes" className="mt-2 list-disc pl-4 text-caption text-ink-secondary">{site.notices.map((notice) => <li key={notice}>{notice}</li>)}</ul>}
-      <p className="mt-3 text-caption text-ink-secondary">{manifest
-        ? manifest.sources.map((source) => source.attribution).join(' · ')
-        : 'Buildings © OpenStreetMap contributors (ODbL) · Terrain © Kartverket (CC BY 4.0)'}</p>
+      {manifest
+        ? <DataAttribution manifest={manifest} visible={visibleLayers} />
+        : <p className="mt-3 text-caption text-ink-secondary">Buildings © OpenStreetMap contributors (ODbL) · Terrain © Kartverket (CC BY 4.0)</p>}
       {manifest?.assetPaths.attribution && (
         <a
           className="mt-1 inline-flex min-h-8 items-center text-caption text-ink-secondary underline underline-offset-2 hover:text-ink"
