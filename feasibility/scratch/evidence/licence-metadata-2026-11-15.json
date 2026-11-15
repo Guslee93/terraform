@@ -1,0 +1,123 @@
+{
+ "SVV Støy Veg WMS (strategic map service)": {
+  "uuid": "4bbae38e-4718-481d-9827-237cd5e115c8",
+  "title": "Støy Veg WMS",
+  "owner": "Statens vegvesen",
+  "access": "Åpne data",
+  "licence": "Norsk lisens for offentlige data (NLOD)",
+  "licence_url": "http://data.norge.no/nlod/no/1.0",
+  "use_limitations": "Datasettet skal ikke brukes til å vurdere behov for tiltak på enkeltbygg. Det må utføres egne beregninger for dette.",
+  "updated": "2017-06-30T00:00:00",
+  "maintenance": "Etter behov"
+ },
+ "SVV Støykartlegging veg T-1442 (dataset)": {
+  "uuid": "d6db9f39-9725-4630-909e-5e62f09a0766",
+  "title": "Støykartlegging veg etter T-1442",
+  "owner": "Statens vegvesen",
+  "access": "Åpne data",
+  "licence": "Norsk lisens for offentlige data (NLOD)",
+  "licence_url": "http://data.norge.no/nlod/no/1.0",
+  "use_limitations": "Kartene skal ikke brukes til detaljvurdering av enkeltboliger, til det er usikkerheten i inngangsdata for stor",
+  "updated": "2026-08-25T00:00:00",
+  "maintenance": "Etter behov"
+ },
+ "Miljødir Støykart strategisk (dataset)": {
+  "uuid": "93a154a7-47d5-47b8-bdda-f156d92386cc",
+  "title": "Støykart - strategisk støykartlegging (Støydirektivet)",
+  "owner": "Miljødirektoratet",
+  "access": "Åpne data",
+  "licence": "Norsk lisens for offentlige data (NLOD)",
+  "licence_url": "http://data.norge.no/nlod/no/1.0",
+  "use_limitations": "",
+  "updated": "2019-02-09T00:00:00",
+  "maintenance": "Etter behov"
+ },
+ "Matrikkelen Eiendomskart Teig": {
+  "uuid": "74340c24-1c8a-4454-b813-bfe498e80f16",
+  "title": "Matrikkelen - Eiendomskart Teig",
+  "owner": "Kartverket",
+  "access": "Åpne data",
+  "licence": "Creative Commons BY 4.0 (CC BY 4.0)",
+  "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+  "use_limitations": "Ingen begrensninger på bruk er oppgitt.",
+  "updated": "2026-11-14T00:00:00",
+  "maintenance": "Kontinuerlig"
+ },
+ "Matrikkelen Teig WFS": {
+  "uuid": "339d49c3-06a5-4310-9605-fced1fe465cb",
+  "title": "Matrikkelen - Eiendomskart Teig WFS",
+  "owner": "Kartverket",
+  "access": "Åpne data",
+  "licence": "Creative Commons BY 4.0 (CC BY 4.0)",
+  "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+  "use_limitations": "",
+  "updated": "2019-01-07T00:00:00",
+  "maintenance": "Daglig"
+ },
+ "Høyde DOM1": {
+  "uuid": "35e66707-942c-4aa2-9945-d769c2aeba35",
+  "title": "Høyde DOM1",
+  "owner": "Kartverket",
+  "access": "Åpne data",
+  "licence": "Creative Commons BY 4.0 (CC BY 4.0)",
+  "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+  "use_limitations": "",
+  "updated": "2021-01-25T00:00:00",
+  "maintenance": "Kontinuerlig"
+ },
+ "NVE Flomsoner": {
+  "uuid": "e95008fc-0945-4d66-8bc9-e50ab3f50401",
+  "title": "Flomsoner",
+  "owner": "Norges vassdrags- og energidirektorat",
+  "access": "Åpne data",
+  "licence": "Norsk lisens for offentlige data (NLOD)",
+  "licence_url": "http://data.norge.no/nlod/no/1.0",
+  "use_limitations": "Ingen begrensninger på bruk er oppgitt.",
+  "updated": "2026-11-14T00:00:00",
+  "maintenance": "Kontinuerlig"
+ },
+ "NVE Flom aktsomhetsområder": {
+  "uuid": "60c5024f-bf93-4d7a-888a-5fe001427195",
+  "title": "Flom aktsomhetsområder",
+  "owner": "Norges vassdrags- og energidirektorat",
+  "access": "Åpne data",
+  "licence": "Norsk lisens for offentlige data (NLOD)",
+  "licence_url": "http://data.norge.no/nlod/no/1.0",
+  "use_limitations": "Ingen begrensninger på bruk er oppgitt.",
+  "updated": "2025-07-01T00:00:00",
+  "maintenance": "Etter behov"
+ },
+ "NVE Aktsomhetskart kvikkleireskred": {
+  "uuid": "dabd2a2c-36d5-4ed7-a4c9-d49808a2b848",
+  "title": "Aktsomhetskart for kvikkleireskred",
+  "owner": "Norges vassdrags- og energidirektorat",
+  "access": "Åpne data",
+  "licence": "Norsk lisens for offentlige data (NLOD)",
+  "licence_url": "http://data.norge.no/nlod/no/1.0",
+  "use_limitations": "",
+  "updated": "2026-11-10T00:00:00",
+  "maintenance": "Etter behov"
+ },
+ "Kartverket Stormflo og havnivå": {
+  "uuid": "fbb95c67-623f-430a-9fa5-9cfcea8366b3",
+  "title": "Stormflo og havnivå",
+  "owner": "Kartverket",
+  "access": "Åpne data",
+  "licence": "Norsk lisens for offentlige data (NLOD)",
+  "licence_url": "http://data.norge.no/nlod/no/1.0",
+  "use_limitations": "De modellerte områdene for mulig oversvømte områder i datasettet er ikke tilpasset detaljerte studier eller for å ta avgjørelser på detaljnivå.",
+  "updated": "2026-10-04T00:00:00",
+  "maintenance": "Etter behov"
+ },
+ "Bane NOR støysoner": {
+  "uuid": "47234f63-a9d1-43c7-b91c-db90c92d5008",
+  "title": "Støysoner for Bane NORs jernbanenett",
+  "owner": "Bane NOR SF",
+  "access": "Åpne data",
+  "licence": "No conditions apply to access and use",
+  "licence_url": "http://inspire.ec.europa.eu/metadata-codelist/ConditionsApplyingToAccessAndUse/noConditionsApply",
+  "use_limitations": "Ingen begrensninger på bruk er oppgitt.",
+  "updated": "2025-03-12T00:00:00",
+  "maintenance": "Etter behov"
+ }
+}

@@ -60,3 +60,22 @@ The narrowest convincing slice, built only from GO-rated parts. It gets the prem
 | Slice implementation 1.1–1.5 | Claude Code | Proof gates above, `npm run lint && test && build` |
 
 One lead per step; no parallel agents on the same decision (AGENTS.md §9).
+
+## Deferred verification tasks (to run during implementation, not before the design phase)
+
+These were explicitly **not executed** during feasibility. Each is a gate for the implementation step it belongs to. Scripts to start from already exist in `feasibility/scratch/`.
+
+| ID | Test | Why it is still open | Method / starting point | Pass criterion | Blocks |
+|---|---|---|---|---|---|
+| IT-1 | Draped overlay inside the production R3F scene (noise bands or parcels), with post-processing and ADR-0018 quality tiers | Registration proven only in an isolated three.js viewer (09 §1) | Port `registration/` mesh+UV approach; re-run `perf.mjs` | Same 0.59 m / RMSE checks reproduced in-app; no new long task > 50 ms; orbit p95 ≤ baseline + 10 % | 0.1, 1.1, 1.4 |
+| IT-2 | Curated package rebuild with measured heights | `roofFit.ts` run in scratch only; curated builder is Python | Run the TS fit at build time, or port it with a parity test | ≥ 99 % buildings measured; heights within 0.1 m of the TS fit; sun-hours fixtures re-baselined | 0.2, 1.3 |
+| IT-3 | Attribution and limitation burn-in on image/video export | Export (ADR-0019) predates new layers | Export each layer; inspect output | Every exported frame carries per-layer source, year and the NLOD limitation where required | 0.1 |
+| IT-4 | Service health and snapshot drift in CI | Services moved or failed during this study (NVE host, Geonorge 500, bygningspunkt) | Scheduled job re-runs `probe_services.py` subset; compares checksums | Alert on change; app keeps working from snapshot | 1.1, 1.4 |
+| IT-5 | WFS small-bbox robustness (matrikkel) | ±3 m bbox returned 0 features where a 25 m bbox returned the parcel | Query grid of bbox sizes around known parcels | Parcel found for every bbox ≥ the parcel's extent, or a documented minimum | 1.1 |
+| IT-6 | Sun-hours reference point vs Ladybug/Radiance | Only analytic tests so far | One façade + one ground point, same geometry and date | Within 0.25 h | 1.3 |
+| IT-7 | DEM runoff vs WhiteboxTools/TauDEM | Python method only | Same tile, same fill/D8 | ≥ 95 % cell agreement on main flow paths | 2.3 |
+| MP-1 | Real mid-range phone: iOS Safari and Android Chrome | Only a desktop 4× CPU-throttle proxy (Sloped Edge ≈ 30 fps) | `perf.mjs` windows via remote debugging; record device, OS, browser | Time to 3D ≤ 4 s on 4G profile; idle/orbit ≥ 30 fps; no crash or context loss in 5 min | redesign density decisions |
+| MP-2 | Network load from the CDN (cold, throttled 4G) | All load numbers so far are localhost | Playwright network throttling against a preview deployment (owner approval needed to deploy a preview) | Landing LCP and time-to-3D recorded with and without overlays | landing page experience |
+| MP-3 | GPU memory and thermal behaviour over a 10-minute session | Not measured anywhere | Chrome tracing / Safari Web Inspector on device | No memory growth trend; no thermal throttling below 30 fps | cinematic landing / long sessions |
+| MP-4 | Reduced-motion and low-power paths for cinematic sequences | Redesign not yet specified | After art direction exists | Equivalent information without motion | landing page |
+| RV-1 | Independent re-run of 04 §1–3 and 09 by a second agent (Codex) | Brief §9 reviewer role not yet exercised | Same scripts, clean checkout | Same numbers within stated tolerances, or a written disagreement | phase gate |

@@ -1,0 +1,890 @@
+{
+ "run_utc": "2026-11-15T18:33:14+00:00",
+ "site": {
+  "lat": 59.9235,
+  "lon": 10.758,
+  "utm33": [
+   262952.9,
+   6650490.4
+  ],
+  "bbox_half_m": 300.0
+ },
+ "services": {
+  "nve-flomsoner": {
+   "kind": "WFS",
+   "url": "https://wfs.geonorge.no/skwms1/wfs.flomsoner",
+   "caps_status": 200,
+   "caps_type": "text/xml;charset=UTF-8",
+   "feature_types": [
+    "app:Analyseområde",
+    "app:AnalyseområdeGrense",
+    "app:ElvBekk",
+    "app:FerskvannTørrfall",
+    "app:FlomAreal",
+    "app:FlomArealGrense",
+    "app:FlomHøydekontur",
+    "app:Havflate",
+    "app:Innsjø",
+    "app:KanalGrøft",
+    "app:MidtLinje",
+    "app:Tverrprofillinje",
+    "app:TørrElv"
+   ],
+   "hits": {
+    "app:FlomAreal": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd http://skjema."
+    },
+    "app:FlomArealGrense": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd http://skjema."
+    },
+    "app:FlomHøydekontur": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd http://skjema."
+    }
+   }
+  },
+  "nve-kvikkleire": {
+   "kind": "WFS",
+   "url": "https://wfs.geonorge.no/skwms1/wfs.kvikkleire",
+   "caps_status": 200,
+   "caps_type": "text/xml;charset=UTF-8",
+   "feature_types": [
+    "app:Kartleggingsområde",
+    "app:Kartleggingsområdekant",
+    "app:KvikkleireFaresoneAvgr",
+    "app:UtlopOmr",
+    "app:UtlosningOmr"
+   ],
+   "hits": {
+    "app:KvikkleireFaresoneAvgr": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd http://skjema."
+    }
+   }
+  },
+  "nve-aktsomhet-kvikkleire": {
+   "kind": "WFS",
+   "url": "https://wfs.geonorge.no/skwms1/wfs.aktsomhetskartforkvikkleireskred",
+   "caps_status": 200,
+   "caps_type": "text/xml;charset=UTF-8",
+   "feature_types": [
+    "app:AktsomhetsOmrKvikkleireskred",
+    "app:KvikkleireskredAktsomhetDekning"
+   ],
+   "hits": {
+    "app:AktsomhetsOmrKvikkleireskred": {
+     "status": 200,
+     "members": 5,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema.geonorge.no/SOSI/produktspesifikasjon/KvikkleireskredAktsomhet/1.0 https://wfs.geonorge.no/skwms1/wfs.aktsomhetskartforkvikkleireskred?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:AktsomhetsOmrKvikkleireskred&amp"
+    },
+    "app:KvikkleireskredAktsomhetDekning": {
+     "status": 200,
+     "members": 1,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema.geonorge.no/SOSI/produktspesifikasjon/KvikkleireskredAktsomhet/1.0 https://wfs.geonorge.no/skwms1/wfs.aktsomhetskartforkvikkleireskred?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:KvikkleireskredAktsomhetDekning&"
+    }
+   }
+  },
+  "kv-stormflo": {
+   "kind": "WFS",
+   "url": "https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva",
+   "caps_status": 200,
+   "caps_type": "text/xml;charset=UTF-8",
+   "feature_types": [
+    "app:Dekningsområde",
+    "app:Middelhøyvann_KlimaÅr2100",
+    "app:Middelhøyvann_KlimaÅr2150",
+    "app:Middelhøyvann_KlimaÅrNå",
+    "app:Stormflo1000År_KlimaÅr2100",
+    "app:Stormflo1000År_KlimaÅrNå",
+    "app:Stormflo200År_KlimaÅr2100",
+    "app:Stormflo200År_KlimaÅrNå",
+    "app:Stormflo20År_KlimaÅrNå",
+    "app:StormfloØvreEstimat_KlimaÅr2100",
+    "app:StormfloØvreEstimat_KlimaÅr2150",
+    "app:StormfloØvreEstimat_KlimaÅrNå"
+   ],
+   "hits": {
+    "app:Middelhøyvann_KlimaÅr2100": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema"
+    },
+    "app:Middelhøyvann_KlimaÅr2150": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema"
+    },
+    "app:Middelhøyvann_KlimaÅrNå": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema"
+    },
+    "app:Stormflo1000År_KlimaÅr2100": {
+     "status": 200,
+     "members": 2,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema.geonorge.no/SOSI/produktspesifikasjon/StormfloHavniva/20240220 https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:Stormflo1000%C3%85r_Klima%C3%85r2100&amp;NAMESPACES="
+    },
+    "app:Stormflo1000År_KlimaÅrNå": {
+     "status": 200,
+     "members": 1,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema.geonorge.no/SOSI/produktspesifikasjon/StormfloHavniva/20240220 https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:Stormflo1000%C3%85r_Klima%C3%85rN%C3%A5&amp;NAMESPAC"
+    },
+    "app:Stormflo200År_KlimaÅr2100": {
+     "status": 200,
+     "members": 2,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema.geonorge.no/SOSI/produktspesifikasjon/StormfloHavniva/20240220 https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:Stormflo200%C3%85r_Klima%C3%85r2100&amp;NAMESPACES=x"
+    },
+    "app:Stormflo200År_KlimaÅrNå": {
+     "status": 200,
+     "members": 3,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema.geonorge.no/SOSI/produktspesifikasjon/StormfloHavniva/20240220 https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:Stormflo200%C3%85r_Klima%C3%85rN%C3%A5&amp;NAMESPACE"
+    },
+    "app:Stormflo20År_KlimaÅrNå": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema"
+    },
+    "app:StormfloØvreEstimat_KlimaÅr2100": {
+     "status": 200,
+     "members": 2,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema.geonorge.no/SOSI/produktspesifikasjon/StormfloHavniva/20240220 https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:Stormflo%C3%98vreEstimat_Klima%C3%85r2100&amp;NAMESP"
+    },
+    "app:StormfloØvreEstimat_KlimaÅr2150": {
+     "status": 200,
+     "members": 1,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd https://skjema.geonorge.no/SOSI/produktspesifikasjon/StormfloHavniva/20240220 https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:Stormflo%C3%98vreEstimat_Klima%C3%85r2150&amp;NAMESP"
+    }
+   }
+  },
+  "svv-stoy-veg": {
+   "kind": "WFS",
+   "url": "https://wfs.geonorge.no/skwms1/wfs.stoy_veg",
+   "caps_status": 200,
+   "caps_type": "text/xml;charset=UTF-8",
+   "feature_types": [
+    "app:Støy",
+    "app:Støygrense"
+   ],
+   "hits": {
+    "app:Støy": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd http://skjema."
+    },
+    "app:Støygrense": {
+     "status": 200,
+     "members": 0,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd http://skjema."
+    }
+   }
+  },
+  "kv-matrikkel-teig": {
+   "kind": "WFS",
+   "url": "https://wfs.geonorge.no/skwms1/wfs.matrikkelen-eiendomskart-teig",
+   "caps_status": 200,
+   "caps_type": "text/xml;charset=UTF-8",
+   "feature_types": [
+    "app:Anleggsprojeksjonsflate",
+    "app:Anleggsprojeksjonsgrense",
+    "app:Anleggsprojeksjonspunkt",
+    "app:Eiendomsgrense",
+    "app:Hjelpelinje",
+    "app:Teig",
+    "app:Teiggrensepunkt"
+   ],
+   "hits": {
+    "app:Teig": {
+     "status": 200,
+     "members": 200,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd http://skjema.geonorge.no/SOSI/produktspesifikasjon/Matrikkelen-Eiendomskart-Teig/20211101 https://wfs.geonorge.no/skwms1/wfs.matrikkelen-eiendomskart-teig?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:Teig&amp;NAMESPACES=xmlns("
+    },
+    "app:Teiggrensepunkt": {
+     "status": 200,
+     "members": 200,
+     "numberReturned": "0",
+     "sample": "<?xml version='1.0' encoding='UTF-8'?>\n<wfs:FeatureCollection xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd http://skjema.geonorge.no/SOSI/produktspesifikasjon/Matrikkelen-Eiendomskart-Teig/20211101 https://wfs.geonorge.no/skwms1/wfs.matrikkelen-eiendomskart-teig?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;OUTPUTFORMAT=text%2Fxml%3B+subtype%3Dgml%2F3.2.1&amp;TYPENAME=app:Teiggrensepunkt&amp;NAMESP"
+    }
+   }
+  },
+  "nve-flomsoner-wms": {
+   "kind": "WMS",
+   "url": "https://kart.nve.no/enterprise/services/Flomsoner2/MapServer/WMSServer",
+   "caps_status": 200,
+   "caps_type": "text/xml",
+   "layers": [
+    "Flomsone_1000arsflom_klima",
+    "default",
+    "Flomsone_200arsflom_klima",
+    "default",
+    "Flomsone_20arsflom_klima",
+    "default",
+    "Flomsone_1000arsflom",
+    "default",
+    "Flomsone_500arsflom",
+    "default",
+    "Flomsone_200arsflom",
+    "default",
+    "Flomsone_100arsflom",
+    "default",
+    "Flomsone_50arsflom",
+    "default",
+    "Flomsone_20arsflom",
+    "default",
+    "Flomsone_10arsflom",
+    "default",
+    "Flomvannstandskurve_1000ar_klima",
+    "default",
+    "Flomvannstandskurve_200ar_klima",
+    "default",
+    "Flomvannstandskurve_20ar_klima"
+   ],
+   "queryable": [
+    "Flomsone_1000arsflom_klima",
+    "Flomsone_200arsflom_klima",
+    "Flomsone_20arsflom_klima",
+    "Flomsone_1000arsflom",
+    "Flomsone_500arsflom",
+    "Flomsone_200arsflom",
+    "Flomsone_100arsflom",
+    "Flomsone_50arsflom",
+    "Flomsone_20arsflom",
+    "Flomsone_10arsflom",
+    "Flomvannstandskurve_1000ar_klima",
+    "Flomvannstandskurve_200ar_klima",
+    "Flomvannstandskurve_20ar_klima",
+    "Flomvannstandskurve_1000ar",
+    "Flomvannstandskurve_500ar",
+    "Flomvannstandskurve_200ar",
+    "Flomvannstandskurve_100ar",
+    "Flomvannstandskurve_50ar",
+    "Flomvannstandskurve_20ar",
+    "Flomvannstandskurve_10ar",
+    "Flomvannstand_ved_tverrprofil",
+    "FlomsoneAnalyseomraade"
+   ],
+   "crs_sample": [
+    "EPSG:102100",
+    "EPSG:25831",
+    "EPSG:25832",
+    "EPSG:25833",
+    "EPSG:25834",
+    "EPSG:25835",
+    "EPSG:25836",
+    "EPSG:32631",
+    "EPSG:32632",
+    "EPSG:32633",
+    "EPSG:32634",
+    "EPSG:32635",
+    "EPSG:32636",
+    "EPSG:3857",
+    "EPSG:4326"
+   ],
+   "access": [
+    ""
+   ],
+   "fees": [
+    ""
+   ],
+   "featureinfo": {
+    "Flomsone_1000arsflom_klima": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "No features found"
+    },
+    "Flomsone_200arsflom_klima": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "No features found"
+    },
+    "Flomsone_20arsflom_klima": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "No features found"
+    },
+    "Flomsone_1000arsflom": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "No features found"
+    },
+    "Flomsone_500arsflom": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "No features found"
+    },
+    "Flomsone_200arsflom": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "No features found"
+    }
+   }
+  },
+  "nve-flomaktsomhet-wms": {
+   "kind": "WMS",
+   "url": "https://kart.nve.no/enterprise/services/Flomaktsomhet/MapServer/WMSServer",
+   "caps_status": 200,
+   "caps_type": "text/xml",
+   "layers": [
+    "FlomAktsomhet_Dekning",
+    "default",
+    "Flom_aktsomhetsomrade",
+    "default",
+    "MaksimalVannstandstigning",
+    "default"
+   ],
+   "queryable": [
+    "FlomAktsomhet_Dekning",
+    "Flom_aktsomhetsomrade",
+    "MaksimalVannstandstigning"
+   ],
+   "crs_sample": [
+    "EPSG:102100",
+    "EPSG:25831",
+    "EPSG:25832",
+    "EPSG:25833",
+    "EPSG:25834",
+    "EPSG:25835",
+    "EPSG:25836",
+    "EPSG:32631",
+    "EPSG:32632",
+    "EPSG:32633",
+    "EPSG:32634",
+    "EPSG:32635",
+    "EPSG:32636",
+    "EPSG:3857",
+    "EPSG:4326"
+   ],
+   "access": [
+    ""
+   ],
+   "fees": [
+    ""
+   ],
+   "featureinfo": {
+    "FlomAktsomhet_Dekning": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "@FlomAktsomhet_DekningOBJECTID;Shape;objType;vassOmr;dekning;oppdatDato;opphav;digDato;objektStatus;statusFra;statusTil;GlobalID;Shape.STArea();Shape.STLength();5627;Polygon;FlomAktsomhetDekning;006;Grundig kartlagt med funn;6/30/2020;NVE;Null;gjeldende;8/18/2020 6:56:11 PM;Null;Null;414991448.688046;171876.651997;"
+    },
+    "Flom_aktsomhetsomrade": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "No features found"
+    },
+    "MaksimalVannstandstigning": {
+     "status": 200,
+     "type": "text/plain",
+     "body": "No features found"
+    }
+   }
+  },
+  "svv-norstoy-wms": {
+   "kind": "WMS",
+   "url": "https://www.vegvesen.no/kart/ogc/norstoy_1_0/ows",
+   "caps_status": 200,
+   "caps_type": "text/xml",
+   "layers": [
+    "WMS",
+    "Stoyvarselkart",
+    "stoyvarselkart",
+    "Strategiskstoykart_lden",
+    "strategiskstoykartlden",
+    "Strategiskstoykart_lnight",
+    "strategiskstoykartlnight"
+   ],
+   "queryable": [
+    "Stoyvarselkart",
+    "Strategiskstoykart_lden",
+    "Strategiskstoykart_lnight"
+   ],
+   "crs_sample": [
+    "EPSG:25831",
+    "EPSG:25832",
+    "EPSG:25833",
+    "EPSG:25834",
+    "EPSG:25835",
+    "EPSG:25836",
+    "EPSG:32631",
+    "EPSG:32632",
+    "EPSG:32633",
+    "EPSG:32634",
+    "EPSG:32635",
+    "EPSG:32636",
+    "EPSG:3857",
+    "EPSG:4258",
+    "EPSG:4326"
+   ],
+   "access": [
+    "NONE"
+   ],
+   "fees": [
+    "NONE"
+   ],
+   "featureinfo": {
+    "Stoyvarselkart": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "no features were found\n"
+    },
+    "Strategiskstoykart_lden": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "Results for FeatureType 'http://norstoy_1_0:Strategiskstoykart_lden':\n--------------------------------------------\nSTØYINTERVALL = 55\nSTØYENHET = LDEN\nSTØYKILDENAVN = \"ERF-veger med ÅDT over 8200, i storbyområdene alle ERF-veger og kommunale veger med ÅDT over 500\"\nSTØYKILDE = V\nSTØYMETODE = \"NorStøy versjon 3.4, beregningsmetode Cnossos\"\n\nOPPHAV = \"Statens vegvesen, beregnet med grunnlagsdata fra"
+    },
+    "Strategiskstoykart_lnight": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "Results for FeatureType 'http://norstoy_1_0:Strategiskstoykart_lnight':\n--------------------------------------------\nSTØYINTERVALL = 50\nSTØYENHET = LNIGHT\nSTØYKILDENAVN = \"ERF-veger med ÅDT over 8200, i storbyområdene alle ERF-veger og kommunale veger med ÅDT over 500\"\nSTØYKILDE = V\nSTØYMETODE = \"NorStøy versjon 3.4, beregningsmetode Cnossos\"\n\nOPPHAV = \"Statens vegvesen, beregnet med grunnlagsdata"
+    }
+   }
+  },
+  "banenor-stoy-wms": {
+   "kind": "WMS",
+   "url": "https://wms.geonorge.no/skwms1/wms.stoysonerjernbanenett",
+   "caps_status": 200,
+   "caps_type": "text/xml; charset=UTF-8",
+   "layers": [
+    "WMS",
+    "stoysonerjernbanenett",
+    "stoy",
+    "default",
+    "stoygrense",
+    "default"
+   ],
+   "queryable": [
+    "stoysonerjernbanenett",
+    "stoy",
+    "stoygrense"
+   ],
+   "crs_sample": [
+    "EPSG:23029",
+    "EPSG:23030",
+    "EPSG:23031",
+    "EPSG:23032",
+    "EPSG:23033",
+    "EPSG:23034",
+    "EPSG:23035",
+    "EPSG:23036",
+    "EPSG:25829",
+    "EPSG:25830",
+    "EPSG:25831",
+    "EPSG:25832",
+    "EPSG:25833",
+    "EPSG:25834",
+    "EPSG:25835"
+   ],
+   "access": [
+    "Copyright Statens kartverk 2007"
+   ],
+   "fees": [
+    "Norge digital"
+   ],
+   "featureinfo": {
+    "stoysonerjernbanenett": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    },
+    "stoy": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    },
+    "stoygrense": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    }
+   }
+  },
+  "kv-stormflo-wms": {
+   "kind": "WMS",
+   "url": "https://wms.geonorge.no/skwms1/wms.stormflo_havniva",
+   "caps_status": 200,
+   "caps_type": "text/xml; charset=UTF-8",
+   "layers": [
+    "WMS",
+    "Stormflo og Havnivå",
+    "dekningsomrade",
+    "default",
+    "Middelhøyvann",
+    "middelhoyvann_klimaarna",
+    "default",
+    "middelhoyvann_klimaar2100",
+    "default",
+    "middelhoyvann_klimaar2150",
+    "default",
+    "Stormflo",
+    "stormflo1000ar_klimaarna",
+    "default",
+    "stormflo200ar_klimaarna",
+    "default",
+    "stormflo20ar_klimaarna",
+    "default",
+    "stormflo1000ar_klimaar2100",
+    "default",
+    "stormflo200ar_klimaar2100",
+    "default",
+    "stormfloovreestimat_klimaar2100",
+    "default",
+    "stormfloovreestimat_klimaar2150"
+   ],
+   "queryable": [
+    "dekningsomrade",
+    "Middelhøyvann",
+    "middelhoyvann_klimaarna",
+    "middelhoyvann_klimaar2100",
+    "middelhoyvann_klimaar2150",
+    "Stormflo",
+    "stormflo1000ar_klimaarna",
+    "stormflo200ar_klimaarna",
+    "stormflo20ar_klimaarna",
+    "stormflo1000ar_klimaar2100",
+    "stormflo200ar_klimaar2100",
+    "stormfloovreestimat_klimaar2100",
+    "stormfloovreestimat_klimaar2150",
+    "stormfloovreestimat_klimaarna"
+   ],
+   "crs_sample": [
+    "EPSG:23029",
+    "EPSG:23030",
+    "EPSG:23031",
+    "EPSG:23032",
+    "EPSG:23033",
+    "EPSG:23034",
+    "EPSG:23035",
+    "EPSG:23036",
+    "EPSG:25829",
+    "EPSG:25830",
+    "EPSG:25831",
+    "EPSG:25832",
+    "EPSG:25833",
+    "EPSG:25834",
+    "EPSG:25835"
+   ],
+   "access": [
+    "Copyright Statens kartverk"
+   ],
+   "fees": [
+    "Norge digital"
+   ],
+   "featureinfo": {
+    "dekningsomrade": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    },
+    "Middelhøyvann": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    },
+    "middelhoyvann_klimaarna": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    },
+    "middelhoyvann_klimaar2100": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    },
+    "middelhoyvann_klimaar2150": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    },
+    "Stormflo": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    }
+   }
+  },
+  "geonorge-reguleringsplaner-wms": {
+   "kind": "WMS",
+   "url": "https://wms.geonorge.no/skwms1/wms.reguleringsplaner",
+   "caps_status": 500,
+   "caps_type": "text/html",
+   "layers": [],
+   "queryable": [],
+   "crs_sample": [],
+   "access": [],
+   "fees": [],
+   "featureinfo": {}
+  },
+  "dibk-nap-wms": {
+   "kind": "WMS",
+   "url": "https://nap.ft.dibk.no/services/wms/reguleringsplaner/",
+   "caps_status": 200,
+   "caps_type": "text/xml",
+   "layers": [
+    "WMS",
+    "bebyggelsesplan_vn2",
+    "bebyggelse_arealformal_vn2",
+    "default-style-bebyggelse_arealformal_vn2",
+    "bebyggelse_hensynssoner_vn2",
+    "default-style-bebyggelse_hensynssoner_vn2",
+    "bebyggelse_bestemmelsesomrader_vn2",
+    "default-style-bebyggelse_bestemmelsesomrader_vn2",
+    "bebjuridisklinje_vn2",
+    "rpjuridisklinje",
+    "bebregulerthoyde_vn2",
+    "rpregulerthoyde",
+    "bebjuridiskpunkt_vn2",
+    "rpjuridiskpunkt",
+    "bebpaskrift_vn2",
+    "rppaskrift",
+    "bebyggelseomrade_vn2",
+    "rpomrade",
+    "vertikalniva_1",
+    "arealformal_vn1",
+    "default-style-arealformal_vn1",
+    "hensynssoner_vn1",
+    "default-style-hensynssoner_vn1",
+    "bestemmelsesomrader_vn1",
+    "default-style-bestemmelsesomrader_vn1"
+   ],
+   "queryable": [
+    "bebyggelsesplan_vn2",
+    "bebyggelse_arealformal_vn2",
+    "bebyggelse_hensynssoner_vn2",
+    "bebyggelse_bestemmelsesomrader_vn2",
+    "bebjuridisklinje_vn2",
+    "bebregulerthoyde_vn2",
+    "bebjuridiskpunkt_vn2",
+    "bebpaskrift_vn2",
+    "bebyggelseomrade_vn2",
+    "vertikalniva_1",
+    "arealformal_vn1",
+    "hensynssoner_vn1",
+    "bestemmelsesomrader_vn1",
+    "rpjuridisklinje_vn1",
+    "rpregulerthoyde_vn1",
+    "rpjuridiskpunkt_vn1",
+    "rppaskrift_vn1",
+    "rpomrade_vn1",
+    "vertikalniva_2",
+    "arealformal_vn2",
+    "hensynssoner_vn2",
+    "bestemmelsesomrader_vn2",
+    "rpjuridisklinje_vn2",
+    "rpregulerthoyde_vn2",
+    "rpjuridiskpunkt_vn2"
+   ],
+   "crs_sample": [
+    "EPSG:25832",
+    "EPSG:25833",
+    "EPSG:25835",
+    "EPSG:32632",
+    "EPSG:32633",
+    "EPSG:32635",
+    "EPSG:3857",
+    "EPSG:4258",
+    "EPSG:4326"
+   ],
+   "access": [
+    "Opphavsrett Direktoratet for byggkvalitet 2025"
+   ],
+   "fees": [
+    "none"
+   ],
+   "featureinfo": {
+    "bebyggelsesplan_vn2": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "no features were found\n"
+    },
+    "bebyggelse_arealformal_vn2": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "no features were found\n"
+    },
+    "bebyggelse_hensynssoner_vn2": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "no features were found\n"
+    },
+    "bebyggelse_bestemmelsesomrader_vn2": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "no features were found\n"
+    },
+    "bebjuridisklinje_vn2": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "no features were found\n"
+    },
+    "bebregulerthoyde_vn2": {
+     "status": 200,
+     "type": "text/plain;charset=UTF-8",
+     "body": "no features were found\n"
+    }
+   }
+  },
+  "kv-matrikkelkart-wms": {
+   "kind": "WMS",
+   "url": "https://wms.geonorge.no/skwms1/wms.matrikkelkart",
+   "caps_status": 200,
+   "caps_type": "text/xml; charset=UTF-8",
+   "layers": [
+    "WMS",
+    "matrikkelkart",
+    "default",
+    "teiger",
+    "teig",
+    "default",
+    "eiendomsgrense",
+    "default",
+    "hjelpelinje",
+    "default",
+    "grensepunkt",
+    "anleggsprojeksjonsflater",
+    "anleggsprojeksjonsgrense",
+    "default",
+    "anleggsprojeksjonspunkt",
+    "default",
+    "anleggsprojeksjonsflate",
+    "default",
+    "adresse",
+    "default",
+    "atkomst",
+    "default",
+    "bygninger",
+    "bygning_symbol",
+    "default"
+   ],
+   "queryable": [
+    "matrikkelkart",
+    "teiger",
+    "teig",
+    "eiendomsgrense",
+    "hjelpelinje",
+    "grensepunkt",
+    "anleggsprojeksjonsflater",
+    "anleggsprojeksjonsgrense",
+    "anleggsprojeksjonspunkt",
+    "anleggsprojeksjonsflate",
+    "adresse",
+    "atkomst",
+    "bygninger",
+    "bygning_symbol",
+    "bygningsnummer"
+   ],
+   "crs_sample": [
+    "EPSG:23029",
+    "EPSG:23030",
+    "EPSG:23031",
+    "EPSG:23032",
+    "EPSG:23033",
+    "EPSG:23034",
+    "EPSG:23035",
+    "EPSG:23036",
+    "EPSG:25829",
+    "EPSG:25830",
+    "EPSG:25831",
+    "EPSG:25832",
+    "EPSG:25833",
+    "EPSG:25834",
+    "EPSG:25835"
+   ],
+   "access": [
+    "Copyright Statens kartverk"
+   ],
+   "fees": [
+    "Norge digital"
+   ],
+   "featureinfo": {
+    "matrikkelkart": {
+     "status": 200,
+     "type": "text/xml; charset=UTF-8",
+     "body": "<?xml version='1.0' encoding=\"UTF-8\" standalone=\"no\" ?>\n<ServiceExceptionReport version=\"1.3.0\" xmlns=\"http://www.opengis.net/ogc\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.opengis.net/ogc http://schemas.opengis.net/wms/1.3.0/exceptions_1_3_0.xsd\">\n<ServiceException>\nmsShapefileOpen(): Unable to access file. No (NULL) filename provided.\nmsBuildPath: Unabl"
+    },
+    "teiger": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\nLayer 'eiendomsgrense'\n  Feature 17206790: \n    objtype = 'Eiendomsgrense'\n    objid = '17206790'\n    omtvistet = 'false'\n    folgerterrengdetalj = 'IkkeTerrengdetalj'\n    administrativgrense = 'IkkeAdmGrense'\n    hjelpelinjetype = ''\n    noyaktighetsklasse = 'MindreNøyaktigeMålingerOgGrenserFraTK'\n    oppdateringsdato = '2020-06-17 19:24:28.46+02'\n    datafangstdato = '19"
+    },
+    "teig": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    },
+    "eiendomsgrense": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\nLayer 'eiendomsgrense'\n  Feature 17206790: \n    objtype = 'Eiendomsgrense'\n    objid = '17206790'\n    omtvistet = 'false'\n    folgerterrengdetalj = 'IkkeTerrengdetalj'\n    administrativgrense = 'IkkeAdmGrense'\n    hjelpelinjetype = ''\n    noyaktighetsklasse = 'MindreNøyaktigeMålingerOgGrenserFraTK'\n    oppdateringsdato = '2020-06-17 19:24:28.46+02'\n    datafangstdato = '19"
+    },
+    "hjelpelinje": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\nLayer 'hjelpelinje'\n  Feature 17206790: \n    objtype = 'Eiendomsgrense'\n    objid = '17206790'\n    omtvistet = 'false'\n    folgerterrengdetalj = 'IkkeTerrengdetalj'\n    administrativgrense = 'IkkeAdmGrense'\n    hjelpelinjetype = ''\n    noyaktighetsklasse = 'MindreNøyaktigeMålingerOgGrenserFraTK'\n    oppdateringsdato = '2020-06-17 19:24:28.46+02'\n    datafangstdato = '19951"
+    },
+    "grensepunkt": {
+     "status": 200,
+     "type": "text/plain; charset=UTF-8",
+     "body": "GetFeatureInfo results:\n\n  Search returned no results.\n"
+    }
+   }
+  },
+  "kv-hoydedata-punkt": {
+   "kind": "HTTP",
+   "url": "https://ws.geonorge.no/hoydedata/v1/punkt?koordsys=4326&punkter=%5B%5B10.758%2C59.9235%5D%5D",
+   "status": 200,
+   "type": "application/json",
+   "body": "{\"koordsys\":4326,\"punkter\":[{\"datakilde\":\"dtm1\",\"terreng\":\"BymessigBebyggelse\",\"x\":10.758,\"y\":59.9235,\"z\":20.42}]}\n"
+  },
+  "kv-eiendom-punkt": {
+   "kind": "HTTP",
+   "url": "https://api.kartverket.no/eiendom/v1/punkt?nord=59.9235&ost=10.758&koordsys=4326&radius=10",
+   "status": 200,
+   "type": "application/json",
+   "body": "{\"eiendom\":[{\"bruksnummer\":255,\"festenummer\":0,\"gardsnummer\":228,\"hovedomr\\u00e5de\":true,\"kommunenummer\":\"0301\",\"lokalid\":291468076,\"matrikkelnummertekst\":\"228/255\",\"meterFraPunkt\":0,\"n\\u00f8yaktighetsklasseteig\":\"Gult\",\"objekttype\":\"Teig\",\"oppdateringsdato\":\"2020-06-16T07:18:18\",\"representasjonspunkt\":{\"koordsys\":4258,\"nord\":59.923591,\"\\u00f8st\":10.758072},\"seksjonsnummer\":0,\"teigmedflerematrikkelenheter\":false,\"uregistrertjordsameie\":false},{\"bruksnummer\":752,\"festenummer\":0,\"gardsnummer\":999,\"hovedomr\\u00e5de\":true,\"kommunenummer\":\"0301\",\"lokalid\":291706289,\"matrikkelnummertekst\":\"999/752\",\"meterFraPunkt\":1,\"n\\u00f8yaktighetsklasseteig\":\"Gult\",\"objekttype\":\"Teig\",\"oppdateringsdato\":\"2020-06-16T07:16:16\",\"representasjonspunkt\":{\"koordsys\":4258,\"nord\":59.924563,\"\\u00f8st\":10.759218},\"seksjonsnummer\":0,\"teigmedflerematrikkelenheter\":false,\"uregistrertjordsameie\":false},{\"bruksnummer\":254,\"festenummer\":0,\"gardsnummer\":228,\"hovedomr\\u00e5de\":true,\"kommunenummer\":\"0301\",\"lokalid\":291468062,\"matrikkelnummertekst\":\"228/254\",\"meterFraPunkt\":3,\"n\\u00f8yaktighetsklasseteig\":\"Gult\",\"objekttype\":\"Teig\",\"oppdateringsdato\":\"2020-06-16T07:18:18\",\"representasjonspunkt\":{\"koordsys\":4258,\"nord\":59"
+  },
+  "dibk-nap-ogcapi": {
+   "kind": "HTTP",
+   "url": "https://nap.ft.dibk.no/services/rest/reguleringsplaner/vn1/collections?f=json",
+   "status": 401,
+   "type": "text/html",
+   "body": "<!doctype html>\n<html lang=\"no\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Nasjonal arealplanbase (NAP) | Direktoratet for byggkvalitet</title>\n    <link rel=\"stylesheet\" href=\"/assets/styles.css\" />\n</head>\n\n<body>\n    <header>\n        <div class=\"header\">\n            <img src=\"/assets/logo.svg\" alt=\"Logo\" />\n        </div>\n    </header>\n\n    <main>\n        <div class=\"page\">\n            <h1 class=\"ds-heading\" data-size=\"sm\">401: Uautorisert</h1>\n\n            <p class=\"ds-paragraph\" data-size=\"sm\" data-variant=\"default\">\n                Denne siden krever innlogging.\n            </p>\n\n            <p class=\"ds-paragraph\" data-size=\"sm\" data-variant=\"default\">\n                Dersom du forsøker å aksessere OGC Feature API krever denne at du er del av <a class=\"ds-link\" href=\"https://kartverket.no/geodataarbeid/norge-digitalt/partsinformasjon\">Norge Digitalt</a>. Er du allerede part i Norge Digitalt og mangler innlogging, vennligst kontakt <a class=\"ds-link\" href=\"/cdn-cgi/l/email-protection#90f6e4f2d0f4f9f2fbbefeff\"><span class=\"__cf_email__\" data-cfemail=\"c1a7b5a381a5a8a3aaefafae\">[email&#160;protected]<"
+  },
+  "met-frost-noauth": {
+   "kind": "HTTP",
+   "url": "https://frost.met.no/sources/v0.jsonld?types=SensorSystem&geometry=nearest(POINT(10.758%2059.9235))",
+   "status": 401,
+   "type": "text/plain; charset=UTF-8",
+   "body": "{\n  \"@context\" : \"https://frost.met.no/schema\",\n  \"@type\" : \"ErrorResponse\",\n  \"apiVersion\" : \"v0\",\n  \"license\" : \"https://creativecommons.org/licenses/by/3.0/no/\",\n  \"createdAt\" : \"2026-11-15T18:33:22Z\",\n  \"queryTime\" : 0,\n  \"currentLink\" : \"https://frost.met.no/sources/v0.jsonld?types=SensorSystem&geometry=nearest(POINT(10.758%2059.9235))\",\n  \"error\" : {\n    \"code\" : 401,\n    \"message\" : \"Unauthorized\",\n    \"reason\" : \"Missing authentication token\"\n  }\n}"
+  },
+  "met-locationforecast": {
+   "kind": "HTTP",
+   "url": "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=59.9235&lon=10.7580",
+   "status": 200,
+   "type": "application/json",
+   "body": "{\"type\":\"Feature\",\"geometry\":{\"type\":\"Point\",\"coordinates\":[10.758,59.9235,19]},\"properties\":{\"meta\":{\"updated_at\":\"2026-11-15T18:32:02Z\",\"units\":{\"air_pressure_at_sea_level\":\"hPa\",\"air_temperature\":\"celsius\",\"cloud_area_fraction\":\"%\",\"precipitation_amount\":\"mm\",\"relative_humidity\":\"%\",\"wind_from_direction\":\"degrees\",\"wind_speed\":\"m/s\"}},\"timeseries\":[{\"time\":\"2026-11-15T18:00:00Z\",\"data\":{\"instant\":{\"details\":{\"air_pressure_at_sea_level\":992.8,\"air_temperature\":7.8,\"cloud_area_fraction\":87.7,\"relative_humidity\":87.5,\"wind_from_direction\":189.0,\"wind_speed\":5.0}},\"next_12_hours\":{\"summary\":{\"symbol_code\":\"cloudy\"},\"details\":{}},\"next_1_hours\":{\"summary\":{\"symbol_code\":\"cloudy\"},\"details\":{\"precipitation_amount\":0.0}},\"next_6_hours\":{\"summary\":{\"symbol_code\":\"cloudy\"},\"details\":{\"precipitation_amount\":0.0}}}},{\"time\":\"2026-11-15T19:00:00Z\",\"data\":{\"instant\":{\"details\":{\"air_pressure_at_sea_level\":992.6,\"air_temperature\":7.5,\"cloud_area_fraction\":78.9,\"relative_humidity\":90.6,\"wind_from_direction\":188.0,\"wind_speed\":4.8}},\"next_12_hours\":{\"summary\":{\"symbol_code\":\"lightrain\"},\"details\":{}},\"next_1_hours\":{\"summary\":{\"symbol_code\":\"partlycloudy_night\"},\"details\":{\"precipitation_amount"
+  }
+ }
+}

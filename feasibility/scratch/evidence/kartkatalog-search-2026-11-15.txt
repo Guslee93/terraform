@@ -1,0 +1,69 @@
+### flomsoner
+- Flomsoner | dataset | Norges vassdrags- og energidirektorat | no restrictions | e95008fc-0945-4d66-8bc9-e50ab3f50401 | https://nedlasting.geonorge.no/api/capabilities/
+- Flomsoner WFS | service | Norges vassdrags- og energidirektorat | no restrictions | bbb09c4e-f025-455c-81a0-37ee26bd3e15 | https://wfs.geonorge.no/skwms1/wfs.flomsoner?SERVICE=WFS&REQUEST=GetCapabilities
+- Flomsoner WMS | service | Norges vassdrags- og energidirektorat | no restrictions | fc5f7878-8696-47f3-a9a7-d8bf51068203 | https://kart.nve.no/enterprise/services/Flomsoner2/MapServer/WMSServer?request=GetCapabilities&service=WMS
+- Flom Aktsomhetsoner Drøbak | dataset | Frogn kommune |  | eb61c2da-f875-42f9-b61a-780639378c1e | https://nedlasting.geonorge.no/geonorge/kommunaleDokData/eb61c2da-f875-42f9-b61a-780639378c1e.zip
+- Kommunekart Lindesnes | software | Lindesnes kommune | no restrictions | c23efdc1-af14-42de-a2d0-bb2fa23d4b42 | https://www.kommunekart.com/klient/Lindesnes
+- Moss kommune | software | Moss kommune | no restrictions | 205000e9-bff8-46ed-a487-89062bda1b1a | https://kommunekart.com/klient/moss/kart
+### flomaktsomhet
+- Flomaktsomhet beregnet, Os kommune | dataset | Os kommune | no restrictions | 4fd411f0-30ae-477d-bf7a-2891102025f7 | https://nedlasting.geonorge.no/geonorge/kommunaleDokData/4fd411f0-30ae-477d-bf7a-2891102025f7.zip
+- Flomaktsomhet beregnet, Røros kommune | dataset | Røros kommune | no restrictions | 8e3dd419-5c94-434d-baee-bd4fc95f60b3 | https://nedlasting.geonorge.no/geonorge/kommunaleDokData/8e3dd419-5c94-434d-baee-bd4fc95f60b3.zip
+- Flom aktsomhetsområder | dataset | Norges vassdrags- og energidirektorat | no restrictions | 60c5024f-bf93-4d7a-888a-5fe001427195 | https://nedlasting.geonorge.no/api/capabilities/
+- Tråling forbudsområder | servicelayer | Fiskeridirektoratet | no restrictions | b2c6f249-0c19-45c0-a91a-8f873d2c3c4f | https://gis.fiskeridir.no/server/services/FiskeridirWFS_fiskeri/MapServer/WFSServer
+- Fiskeriaktivitet (passive redskaper) | servicelayer | Barentswatch | no restrictions | 69f9e7e4-daf3-4648-ac2a-faa6d158dc0c | https://geo.barentswatch.no/geoserver/bw/ows?service=wms&request=getcapabilities
+### kvikkleire
+- Kvikkleire | dataset | Norges vassdrags- og energidirektorat | no restrictions | a29b905c-6aaa-4283-ae2c-d167624c08a8 | https://nedlasting.geonorge.no/api/capabilities/
+- Aktsomhetskart for kvikkleireskred | dataset | Norges vassdrags- og energidirektorat | no restrictions | dabd2a2c-36d5-4ed7-a4c9-d49808a2b848 | https://nedlasting.geonorge.no/api/capabilities/
+- Aktsomhetsområder kvikkleireskred Fredrikstad 2023 | dataset | Fredrikstad kommune | no restrictions | e691fe86-a4c9-4d33-be4c-fce2759712a4 | https://hub-frstadkomm.opendata.arcgis.com/datasets/752ab8d90d424d349b1f727756b37f5d_2/
+- Kvikkleire WFS | service | Norges vassdrags- og energidirektorat | no restrictions | e4aed7d6-a0ef-4e48-9628-fadaa3e7f53b | https://wfs.geonorge.no/skwms1/wfs.kvikkleire?service=wfs&request=getcapabilities
+- Kvikkleire WMS | service | Norges vassdrags- og energidirektorat | no restrictions | f8007522-2b73-4702-bb97-50c720e5c3f8 | https://kart.nve.no/enterprise/services/SkredKvikkleire2/MapServer/WMSServer?request=GetCapabilities&service=WMS
+- Aktsomhetskart for Kvikkleireskred WFS | service | Norges vassdrags- og energidirektorat | no restrictions | be2933b6-1f79-4377-bbe3-3dffed2fe45a | https://wfs.geonorge.no/skwms1/wfs.aktsomhetskartforkvikkleireskred?service=WFS&request=GetCapabilities
+### stormflo
+- Stormflo og havnivå | dataset | Kartverket | no restrictions | fbb95c67-623f-430a-9fa5-9cfcea8366b3 | https://nedlasting.geonorge.no/api/capabilities/
+- Stormflo og havnivå – statistikk over berørte objekter og areal | dataset | Kartverket | no restrictions | 40fa1b55-ac02-4d61-8446-98f40f9f4a03 | https://stormflo-konsekvens.kartverket.no/index.html#tag/Konsekvenser-ved-stormflo-og-havniva
+- Stormflo og havnivå WFS | service | Kartverket | no restrictions | 72f851eb-0ca8-4c24-8e7a-51b8ee8c1294 | https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva?service=WFS&request=GetCapabilities
+- Stormflo og havnivå WMS | service | Kartverket | no restrictions | 294f3987-1cda-426e-baf9-a086a09b3e4d | https://wms.geonorge.no/skwms1/wms.stormflo_havniva?service=WMS&request=GetCapabilities
+- API - Konsekvenser ved stormflo og havnivåstigning | software | Kartverket | no restrictions | 1de88bc6-ecba-4e1b-a4f0-e9551eb1f2bd | https://stormflo-konsekvens.kartverket.no/index.html#tag/Konsekvenser-ved-stormflo-og-havniva
+- Vannstandsdata og vannstandsinformasjon | dataset | Kartverket | no restrictions | 999386cb-926e-45b5-9a1b-f71022747486 | https://kartverket.no/til-sjos/se-havniva
+### støysoner veg
+- Støy Veg WMS | service | Statens vegvesen | no restrictions | 4bbae38e-4718-481d-9827-237cd5e115c8 | https://www.vegvesen.no/kart/ogc/norstoy_1_0/ows?service=WMS&request=getcapabilities
+- Støykartlegging veg etter T-1442 WFS | service | Statens vegvesen | no restrictions | 6a657414-00ec-4177-863a-646095d4924b | https://wfs.geonorge.no/skwms1/wfs.stoy_veg?request=GetCapabilities&service=WFS
+- Støykartlegging veg etter T-1442 | dataset | Statens vegvesen | no restrictions | d6db9f39-9725-4630-909e-5e62f09a0766 | https://nedlasting.geonorge.no/api/capabilities/
+- Støysoner for Bane NORs jernbanenett | dataset | Bane NOR SF | no restrictions | 47234f63-a9d1-43c7-b91c-db90c92d5008 | https://nedlasting.geonorge.no/api/capabilities/
+- Støysoner Avinors lufthavner | dataset | Avinor | no restrictions | 1489f7f8-40c8-4dc4-83b6-bcf277b56506 | https://nedlasting.geonorge.no/api/capabilities/
+- Støysoner for Bane NORs jernbanenett WMS | service | Bane NOR SF | no restrictions | ba518936-f9b3-4363-b5c6-9118acb1d88c | https://wms.geonorge.no/skwms1/wms.stoysonerjernbanenett?service=WMS&request=GetCapabilities
+### støykart
+- Støykart - strategisk støykartlegging (Støydirektivet) | dataset | Miljødirektoratet | no restrictions | 93a154a7-47d5-47b8-bdda-f156d92386cc | https://kartkatalog.miljodirektoratet.no/Dataset/Details/1006
+- Støykartlegging veg etter T-1442 | dataset | Statens vegvesen | no restrictions | d6db9f39-9725-4630-909e-5e62f09a0766 | https://nedlasting.geonorge.no/api/capabilities/
+- Strategisk støykartlegging Lillestrøm kommune - Lokale data | dataset | Lillestrøm kommune | no restrictions | 986e30a1-1bea-4a58-aae4-212a320197a3 | https://nedlasting.geonorge.no/geonorge/kommunaleDokData/986e30a1-1bea-4a58-aae4-212a320197a3.zip
+- Byområder - strategisk støykartlegging (Støydirektivet) | dataset | Miljødirektoratet | no restrictions | bc5489d7-0461-411d-bbb0-a9a6b45f4c9e | https://kartkatalog.miljodirektoratet.no/Dataset/Details/2048
+- Støykartlegging veg etter T-1442 WFS | service | Statens vegvesen | no restrictions | 6a657414-00ec-4177-863a-646095d4924b | https://wfs.geonorge.no/skwms1/wfs.stoy_veg?request=GetCapabilities&service=WFS
+- Støy Veg WMS | service | Statens vegvesen | no restrictions | 4bbae38e-4718-481d-9827-237cd5e115c8 | https://www.vegvesen.no/kart/ogc/norstoy_1_0/ows?service=WMS&request=getcapabilities
+### reguleringsplaner
+- Reguleringsplaner | dataset | Direktoratet for byggkvalitet | norway digital restricted | dac27348-5c2e-4a6a-9497-c4c792108cae | https://nap.ft.dibk.no/services/nedlasting/api/capabilities/
+- Reguleringsplaner Hvaler kommune | dataset | Fredrikstad kommune | no restrictions | 914b65e7-226f-4104-8c96-65df9128931d | https://hub-frstadkomm.opendata.arcgis.com/maps/d4dc62d8bed543fe98b8f8ca8e151e3a
+- Reguleringsplaner i Fredrikstad kommune | dataset | Fredrikstad kommune | no restrictions | 38bebafc-6667-40aa-b642-884a4714fdd1 | https://hub-frstadkomm.opendata.arcgis.com/maps/7ab8a61bf12549799925706ef87ce82b
+- Reguleringsplaner Indre Østfold kommune | dataset | Indre Østfold kommune | no restrictions | c39026ad-bec4-48e2-af38-a1bfdc131a81 | https://arealplaner.no/indreostfold3118/arealplaner/search?planStatusId=3
+- Vedtatte reguleringsplaner og planforslag Lillestrøm kommune | dataset | Lillestrøm kommune | no restrictions | 0395b91c-4560-4517-a445-5a96041c88c1 | https://www.lillestrom.kommune.no/samfunnsutvikling/planer/reguleringsplaner/finn-reguleringsplan/
+- Reguleringsplaner Mandal | software | Mandal kommune | no restrictions | 10664ce2-d0b2-4ea1-907e-2a4905abb409 | https://www.kommunekart.com/klient/mandal
+### eiendomskart teig
+- Matrikkelen - Eiendomskart Teig | dataset | Kartverket | no restrictions | 74340c24-1c8a-4454-b813-bfe498e80f16 | https://nedlasting.geonorge.no/api/capabilities/
+- Matrikkelen Eiendomskart Teig - historiske versjoner | series | Kartverket | no restrictions | e2b33de3-e191-4aac-b183-25a456d7da33 | https://nedlasting.geonorge.no/api/capabilities/
+- Matrikkelen - Eiendomskart Teig WFS | service | Kartverket | no restrictions | 339d49c3-06a5-4310-9605-fced1fe465cb | https://wfs.geonorge.no/skwms1/wfs.matrikkelen-eiendomskart-teig?Service=WFS&Request=GetCapabilities
+- Eiendom REST-API for lokalisering | service | Kartverket | no restrictions | fd16464c-648a-4576-83e0-231f93d687ad | https://api.kartverket.no/eiendom/v1/
+- Matrikkelkart WMS | service | Kartverket | no restrictions | 30dda4c6-2cba-4378-b2e7-26f644df9d99 | https://wms.geonorge.no/skwms1/wms.matrikkelkart?service=wms&request=getcapabilities
+- Matrikkelen, Norges offisielle eiendomsregister | dataset | Kartverket | norway digital restricted | e77e6fdc-591d-4b1b-91b2-bd9d13fb33b7 | 
+### kommuneplan arealdel
+- Kommuneplanens arealdel Indre Østfold kommune | dataset | Indre Østfold kommune | no restrictions | 66dbbe11-f66c-4878-96e4-afbcbd5796f3 | https://arealplaner.no/indreostfold3118/arealplaner/750
+- Kommuneplanens arealdel Fredrikstad kommune | dataset | Fredrikstad kommune | no restrictions | 386056b7-89d8-4b34-b55e-92ef47cf1899 | https://hub-frstadkomm.opendata.arcgis.com/maps/a4fba85c60914cf5a89fdbe05bf63d43/
+- Kommuneplanens arealdel Hvaler kommune | dataset | Fredrikstad kommune | no restrictions | 439731d4-bfce-41f8-bf46-5412bed86801 | https://hub-frstadkomm.opendata.arcgis.com/maps/acba146ebe0942d48fefcbd38c9a214b
+- Kommuneplan Bergen 2018 | dataset | Bergen kommune | no restrictions | f5f9c3ce-bd6e-4d4a-83f8-7025c5d9b910 | https://nedlasting.geonorge.no/geonorge/Generell/f5f9c3ce-bd6e-4d4a-83f8-7025c5d9b910.zip
+- Kommuneplanforslag - Høring og offentlig ettersyn | dataset | Direktoratet for byggkvalitet | norway digital restricted | de8cade6-06be-4626-a867-fcd603bda27b | https://nap.ft.dibk.no/services/nedlasting/api/capabilities/
+- Kommuneplan WMS, Modum | service | Modum kommune | no restrictions | 99aeed7a-c41d-4e5f-bfe9-8378d336ad91 | http://kart3.nois.no/modum/wms/?request=GetCapabilities&service=WMS
+### DTM 1
+- DTM1 Atom feed-tjeneste | service | Kartverket | no restrictions | fd96e6c3-eff6-437c-8fd6-e7c4718b1bf8 | https://nedlasting.geonorge.no/geonorge/ATOM/hoydedata/Hoydedata_ServiceFeed.atom
+- DTM 10 Terrengmodell (UTM32) - Historisk | dataset | Kartverket | no restrictions | fd851873-f363-46f9-9fc6-bb1b403575df | https://nedlasting.geonorge.no/api/capabilities/
+- DTM 10 Terrengmodell (UTM35) - Historisk | dataset | Kartverket | no restrictions | 294c21ca-eb83-49b9-8861-bb1595ce8768 | https://nedlasting.geonorge.no/api/capabilities/
+- DTM 10 Terrengmodell (UTM33) - Historisk | dataset | Kartverket | no restrictions | dddbb667-1303-4ac5-8640-7ec04c0e3918 | https://nedlasting.geonorge.no/api/capabilities/
+- Høyde DOM1 | dataset | Kartverket | no restrictions | 35e66707-942c-4aa2-9945-d769c2aeba35 | hoydedata.no
+- Marin grense | dataset | Norges geologiske undersøkelse | no restrictions | cf8ccec7-9505-4d84-94a9-eac9c69971d3 | https://nedlasting.ngu.no/api/capabilities/

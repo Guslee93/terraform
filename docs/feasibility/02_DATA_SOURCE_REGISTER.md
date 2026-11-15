@@ -10,6 +10,8 @@ Status words used below:
 - **Blocked** — the request was refused (401) or the service is restricted.
 - **Researched** — documentation only, no live request.
 
+> **Licences confirmed later** from Geonorge metadata for every first-release layer: see 09 §4. That supersedes the "to verify" notes below for Statens vegvesen (NLOD, with a use limitation), Bane NOR (no conditions) and Kartverket storm surge (NLOD).
+
 A WMS that draws a hazard is **data delivery, not a computation**. No service below is a callable engineering simulation.
 
 ---

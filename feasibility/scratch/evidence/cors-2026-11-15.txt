@@ -1,0 +1,13 @@
+ws.geonorge.no/hoydedata | HTTP/1.1 200 OK Access-Control-Allow-Origin: * 
+wcs.geonorge.no/skwms1 | HTTP/2 200  access-control-allow-origin: * 
+kart.nve.no/enterprise | HTTP/2 200  access-control-allow-origin: https://terraform-studio-murex.vercel.app 
+kart.nve.no/enterprise | HTTP/2 200  access-control-allow-origin: https://terraform-studio-murex.vercel.app 
+wfs.geonorge.no/skwms1 | HTTP/2 200  access-control-allow-origin: * 
+wms.geonorge.no/skwms1 | HTTP/2 200  access-control-allow-origin: * 
+www.vegvesen.no/kart | HTTP/1.1 200 OK access-control-allow-origin: * 
+nap.ft.dibk.no/services | HTTP/2 200  access-control-allow-origin: https://terraform-studio-murex.vercel.app 
+wfs.geonorge.no/skwms1 | HTTP/2 200  access-control-allow-origin: * 
+api.kartverket.no/eiendom | HTTP/2 200  access-control-allow-origin: * 
+re.jrc.ec.europa.eu/api | HTTP/1.1 200 OK 
+api.met.no/weatherapi | HTTP/2 200  access-control-allow-origin: * 
+frost.met.no/sources | HTTP/2 401  

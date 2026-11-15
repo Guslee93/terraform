@@ -1,0 +1,3 @@
+Nasjonal høydemodell Digital terrengmodell 25833 WCS | Åpne data | No conditions apply to access and use http://inspire.ec.europa.eu/metadata-codelist/ConditionsApplyingToAccessAndUse/noConditionsApply | 
+Nasjonal høydemodell Digital overflatemodell 25833 WCS | Åpne data | No conditions apply to access and use http://inspire.ec.europa.eu/metadata-codelist/ConditionsApplyingToAccessAndUse/noConditionsApply | 
+Høyde DOM1 | Åpne data | Creative Commons BY 4.0 (CC BY 4.0) https://creativecommons.org/licenses/by/4.0/ | 
