@@ -5,7 +5,7 @@ import { localDayMinuteToInstant } from '../../features/analysis/time'
 import { sunState } from '../../features/analysis/sun'
 import { SunDetails, useSunPlayback, type SunTime } from './SunPanel'
 import { ACTIVITY_BANDS, ACTIVITY_NOTE, DELTA_BANDS, DIRECTION_BANDS } from '../../features/analysis/climateView'
-import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
+import { SUN_HOURS_DISCLAIMER, sunHoursDisclaimer } from '../../features/analysis/sunHours'
 import { ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
 import { circleSunStat, windStat } from './analysisValues'
 import { LayersCard } from './LayersCard'
@@ -46,6 +46,10 @@ describe('D34 claim and disclaimer audit', () => {
     expect(circleSunStat(result, false, '2026-06-21').value).toBe('9.0')
     expect(circleSunStat({ median: { ground: 8.7, roofs: null, facades: null } } as unknown as CircleSunHours, false, '2026-06-21').value).toBe('8.5')
     expect(SUN_HOURS_DISCLAIMER).toContain('terrain and trees do not shade')
+    // The claim names the height source of the package on screen (ADR-0033).
+    expect(sunHoursDisclaimer(false)).toContain('(heights estimated from storeys)')
+    expect(sunHoursDisclaimer(true)).toContain('(heights from Kartverket surface model)')
+    expect(sunHoursDisclaimer(true)).toContain('terrain and trees do not shade')
   })
 
   it('roof solar says how far above measured weather the clear-sky figure sits', () => {

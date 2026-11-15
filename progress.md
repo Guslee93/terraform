@@ -1042,3 +1042,26 @@ zoom in because the quads are small at the default site camera.
 - lint 0; **1099 unit tests pass**, 4 skipped; build OK.
 - Captures: `docs/screenshots/build-provenance-panel.png`, `build-provenance-export-still.png`.
 - Not verified: the recorded clip's band (code path shares `drawCredits`; not played back), Safari.
+
+## 2026-11-15 — build/foundation WP-3: measured heights for the curated sites (ADR-0033)
+
+- Build step `scripts/site-assets/heights.build.ts` (run through Vitest, no new dependency): one 1 m
+  surface-model raster per site from the open NHM WCS, cached in `data/raw/` with checksum and
+  request; the app's own roof fit; `heights.json` per package, registered in the manifest with a
+  `heights` provenance entry and a section in `attribution.md`.
+- Compact Infill 520 of 520 measured (282 gabled, 161 flat, 77 other). Sloped Edge 220 of 230
+  (95.7 %): ten small buildings are not in the surface model. The plan's ≥ 99 % was Compact Infill
+  only; the test asserts 99 % and 95 %. Recorded as a deviation in the ADR.
+- Registration peaks at zero shift on both sites. Sun-hours effect reproduces feasibility: 14.6 % of
+  Compact Infill's midsummer ground cells move ≥ 1 h.
+- Loader merges heights; `buildings.json` untouched. The sun-hours claim names the height source of
+  the package on screen, which also fixes the WP-1 review finding (imports were already measured).
+- Failed attempts: (1) seven tests failed after the manifest listed `heights.json` (the loader test's
+  fetch mock did not serve it; one studio test expected the old claim): updated. (2) On a cache hit
+  the raw-cache helper returned the date plus the request URL as `retrieved`; caught when the
+  attribution file showed it, fixed to the first line. (3) `console.info` from a Vitest build step
+  did not reach the terminal; the one-off effect measurement wrote to a file instead.
+- No DTM tile fetched in this package (not needed for the fit); it moves to WP-7.
+- lint 0; **1109 unit tests pass**, 4 skipped; build OK. e2e on the dev server: sun-hours,
+  m3-disclaimers and wind, 6 of 6. Python builder tests pass (shipped packages match the caches).
+- Capture: `docs/screenshots/build-heights-sun.png` (8.5 h median ground; gables visible).

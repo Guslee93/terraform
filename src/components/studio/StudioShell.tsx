@@ -44,7 +44,8 @@ import { circleSunStat, noiseStat, roofSolarStat, sunStat, vscStat, windStat } f
 import { FULL_DAY, SunHoursControls, type SunWindow } from './SunHoursControls'
 import { computeNoise, NOISE_DISCLAIMER } from '../../features/analysis/noise'
 import { daySunSamples } from '../../features/analysis/shadowRay'
-import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
+import { sunHoursDisclaimer } from '../../features/analysis/sunHours'
+import { measuredCount } from '../../features/sites/heights'
 import { windowSunSamples } from '../../features/analysis/circleSunHours'
 import { useCircleSunHours } from '../../features/analysis/useCircleSunHours'
 import { roofSolarLegend, roofSolarYieldKwh, ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
@@ -53,7 +54,7 @@ import { facadeSamples } from '../../features/analysis/facadeSamples'
 import { computeVsc, vscLegend, VSC_COLOUR, VSC_DISCLAIMER } from '../../features/analysis/vsc'
 import { FLOW_DISCLAIMER } from '../../features/analysis/lbm'
 import { removeVolume } from '../../features/editor/commands'
-import { exportCreditLines, visibleLayerIds } from '../../features/sites/provenance'
+import { exportCreditLines, hasMeasuredHeights, visibleLayerIds } from '../../features/sites/provenance'
 
 type PackageStatus = 'loading' | 'ready' | 'error'
 
@@ -389,6 +390,13 @@ export function StudioShell({
   // The layers on screen name the sources the panel and the exports credit (ADR-0032).
   const visibleLayers = useMemo(() => visibleLayerIds(layers), [layers])
   const exportCredits = useMemo(() => (sitePackage ? exportCreditLines(sitePackage.manifest, visibleLayers) : []), [sitePackage, visibleLayers])
+  const sunHoursNote = sunHoursDisclaimer(!!sitePackage && hasMeasuredHeights(sitePackage.manifest))
+  // The legend says how many context heights are measured (ADR-0033).
+  const layerNotes = useMemo(() => {
+    const context = sitePackage?.buildings.buildings ?? []
+    const measured = measuredCount(context)
+    return measured > 0 ? { context: `${measured} of ${context.length} heights from Kartverket surface model` } : {}
+  }, [sitePackage])
   const annotations = useMemo(() => new Map<string, MassAnnotation>(analysisDocument.volumes.map((volume) => [volume.id, {
     title: 'Block',
     detail: `${volume.tiers[0]?.storeys ?? 0} fl · ${formatMetres(volume.tiers[0] ? tierHeight(volume.tiers[0]) : 0)}`,
@@ -420,7 +428,7 @@ export function StudioShell({
               ? vscStat(vscValues)
               : sunStat(solar.state, clockLabel(sunTime.minuteOfDay))
         : { value: null, unit: '', hint: 'Site loading', secondary: [] },
-      note: sunAnalysis === 'sun-hours' ? SUN_HOURS_DISCLAIMER : sunAnalysis === 'roof-solar' ? ROOF_SOLAR_DISCLAIMER : sunAnalysis === 'vsc' ? VSC_DISCLAIMER : 'Geometric sun direction — not a daylight assessment',
+      note: sunAnalysis === 'sun-hours' ? sunHoursNote : sunAnalysis === 'roof-solar' ? ROOF_SOLAR_DISCLAIMER : sunAnalysis === 'vsc' ? VSC_DISCLAIMER : 'Geometric sun direction — not a daylight assessment',
       body: solar && sitePackage ? (
         <div className="space-y-4">
           {/* The time band: the day profile, the time slider and playback. The analysis switch lives in SunDetails. */}
@@ -435,7 +443,7 @@ export function StudioShell({
           {vscActive && vscValues.length > 0 && (
             <ShareBar entries={vscLegend(vscValues)} label="Share of your façades by band" />
           )}
-          <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} analysis={sunAnalysis} onAnalysisChange={setSunAnalysis} roofSolar={sunAnalysis === 'roof-solar' ? roofSolarSummary : null} />
+          <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} analysis={sunAnalysis} onAnalysisChange={setSunAnalysis} sunHoursNote={sunHoursNote} roofSolar={sunAnalysis === 'roof-solar' ? roofSolarSummary : null} />
         </div>
       ) : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },
@@ -594,7 +602,7 @@ export function StudioShell({
         ) : <Inspector
           analysisCards={<AnalysisCards cards={analysisCards} active={activeCard} onSelect={selectAnalysisCard} />}
           analysisOnly={analysisOnly}
-          layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} />}
+          layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} notes={layerNotes} />}
           visibleLayers={visibleLayers}
           site={site}
           manifest={sitePackage?.manifest ?? null}

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import compactBuildings from '../../../public/sites/compact-infill/buildings.json'
+import compactHeights from '../../../public/sites/compact-infill/heights.json'
 import compactLandcover from '../../../public/sites/compact-infill/landcover.json'
 import compactManifest from '../../../public/sites/compact-infill/manifest.json'
 import compactRoads from '../../../public/sites/compact-infill/roads.json'
@@ -28,6 +29,7 @@ function installSuccessFetch(landcover: unknown = compactLandcover) {
       if (url.endsWith('/roads.json')) return Promise.resolve(jsonResponse(compactRoads))
       if (url.endsWith('/trees.json')) return Promise.resolve(jsonResponse(compactTrees))
       if (url.endsWith('/landcover.json')) return Promise.resolve(jsonResponse(landcover))
+      if (url.endsWith('/heights.json')) return Promise.resolve(jsonResponse(compactHeights))
       return Promise.reject(new Error(`unexpected URL in test fetch: ${url}`))
     },
   )
@@ -185,5 +187,40 @@ describe('optional context layers', () => {
   it('rejects a null land cover payload when the manifest lists it', async () => {
     installSuccessFetch(null)
     await expect(loadSitePackage('compact-infill')).rejects.toThrow(/landcover.*expected an object/)
+  })
+})
+
+describe('measured heights (ADR-0033)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('loads heights.json and puts the measured height and roof on each building', async () => {
+    const fetchMock = installSuccessFetch()
+    const loaded = await loadSitePackage('compact-infill')
+    expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith('/sites/compact-infill/heights.json'))).toBe(true)
+    const measured = loaded.buildings.buildings.filter((building) => building.heightSource === 'measured')
+    expect(measured.length / loaded.buildings.buildings.length).toBeGreaterThanOrEqual(0.99)
+    expect(loaded.buildings.buildings.some((building) => building.roof?.shape === 'gabled')).toBe(true)
+    // The heights differ from the storey estimates in the footprint file.
+    const estimated = new Map(compactBuildings.buildings.map((building) => [building.id, building.height]))
+    expect(measured.some((building) => Math.abs(building.height - estimated.get(building.id)!) > 1)).toBe(true)
+  })
+
+  it('never requests heights for a package that does not list them', async () => {
+    const { heights: _heights, ...assetPaths } = compactManifest.assetPaths
+    void _heights
+    const fetchMock = vi.fn((input: RequestInfo | URL): Promise<Response> => {
+      const url = String(input)
+      if (url.endsWith('/manifest.json')) return Promise.resolve(jsonResponse({ ...compactManifest, assetPaths }))
+      if (url.endsWith('/terrain.json')) return Promise.resolve(jsonResponse(compactTerrain))
+      if (url.endsWith('/buildings.json')) return Promise.resolve(jsonResponse(compactBuildings))
+      if (url.endsWith('/study-area.json')) return Promise.resolve(jsonResponse(compactStudyArea))
+      if (url.endsWith('/roads.json')) return Promise.resolve(jsonResponse(compactRoads))
+      if (url.endsWith('/trees.json')) return Promise.resolve(jsonResponse(compactTrees))
+      if (url.endsWith('/landcover.json')) return Promise.resolve(jsonResponse(compactLandcover))
+      return Promise.reject(new Error(`unexpected URL in test fetch: ${url}`))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const loaded = await loadSitePackage('compact-infill')
+    expect(loaded.buildings.buildings.every((building) => building.heightSource === undefined)).toBe(true)
   })
 })

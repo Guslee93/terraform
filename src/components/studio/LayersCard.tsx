@@ -18,7 +18,9 @@ const LAYER_ROWS: ReadonlyArray<{
 ]
 
 /** The scene layers in the inspector. */
-export function LayersCard({ manifest, layers, onToggleLayer }: {
+export function LayersCard({ manifest, layers, onToggleLayer, notes = {} }: {
+  /** Per-site notes for a row, such as where the context heights come from (ADR-0033). */
+  notes?: Partial<Record<keyof SceneLayers, string>>
   manifest: SiteManifest | null
   layers: SceneLayers
   onToggleLayer: (layer: keyof SceneLayers) => void
@@ -28,7 +30,7 @@ export function LayersCard({ manifest, layers, onToggleLayer }: {
     <div>
           {on.map((row) => (
             <label key={row.id} className="flex min-h-8 cursor-pointer items-center justify-between gap-3 text-body-sm text-ink">
-              <span>{row.label}{row.note && <span className="block text-caption text-ink-secondary">{row.note}</span>}</span>
+              <span>{row.label}{(notes[row.id] ?? row.note) && <span className="block text-caption text-ink-secondary">{notes[row.id] ?? row.note}</span>}</span>
               <input type="checkbox" checked={layers[row.id]} onChange={() => onToggleLayer(row.id)} className={checkboxClass} />
             </label>
           ))}

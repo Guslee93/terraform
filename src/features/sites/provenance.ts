@@ -186,3 +186,8 @@ export function exportCreditLines(manifest: Parameters<typeof siteLayers>[0], vi
   const { layers, unlisted } = siteLayers(manifest)
   return [...credits(layers, visible).map(creditLine), ...unlisted.flatMap((source) => (source.attribution ? [source.attribution] : []))]
 }
+
+/** The package's building heights are measured from a surface model, not estimated from storeys. */
+export function hasMeasuredHeights(manifest: Parameters<typeof siteLayers>[0]): boolean {
+  return siteLayers(manifest).layers.some((layer) => layer.id === 'heights')
+}

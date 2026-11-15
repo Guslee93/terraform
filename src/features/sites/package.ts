@@ -1,3 +1,4 @@
+import { mergeHeights, parseHeights } from './heights'
 import { parseRoof, type Roof } from './roof'
 import {
   SitePackageError,
@@ -41,6 +42,8 @@ export type ContextBuilding = {
   footprint: Vec2Tuple[]
   /** Measured gable (ADR-0022). Absent = flat extrusion at `height`. */
   roof?: Roof
+  /** Where `height` comes from, once a heights asset has been merged (ADR-0033). */
+  heightSource?: 'measured' | 'estimated'
 }
 
 export type BuildingsData = {
@@ -450,14 +453,15 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
   )
   if (manifest.id !== siteId) fail('manifest.id', 'does not match the requested site')
 
-  const { roads: roadsPath, trees: treesPath, landcover: landcoverPath } = manifest.assetPaths
-  const [terrainRaw, buildingsRaw, studyAreaRaw, roadsRaw, treesRaw, landcoverRaw] = await Promise.all([
+  const { roads: roadsPath, trees: treesPath, landcover: landcoverPath, heights: heightsPath } = manifest.assetPaths
+  const [terrainRaw, buildingsRaw, studyAreaRaw, roadsRaw, treesRaw, landcoverRaw, heightsRaw] = await Promise.all([
     fetchJson(assetUrl(siteId, manifest.assetPaths.terrain), signal),
     fetchJson(assetUrl(siteId, manifest.assetPaths.buildings), signal),
     fetchJson(assetUrl(siteId, manifest.assetPaths.studyArea), signal),
     roadsPath === undefined ? null : fetchJson(assetUrl(siteId, roadsPath), signal),
     treesPath === undefined ? null : fetchJson(assetUrl(siteId, treesPath), signal),
     landcoverPath === undefined ? null : fetchJson(assetUrl(siteId, landcoverPath), signal),
+    heightsPath === undefined ? null : fetchJson(assetUrl(siteId, heightsPath), signal),
   ])
 
   const terrain = parseTerrain(terrainRaw)
@@ -466,8 +470,9 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
   const roads = roadsRaw === null ? null : parseRoads(roadsRaw)
   const trees = treesRaw === null ? null : parseTrees(treesRaw)
   const landcover = landcoverPath === undefined ? null : parseLandCover(landcoverRaw)
+  const heights = heightsPath === undefined ? null : parseHeights(heightsRaw)
 
-  for (const asset of [terrain, buildings, studyArea, roads, trees, landcover]) {
+  for (const asset of [terrain, buildings, studyArea, roads, trees, landcover, heights]) {
     if (asset === null) continue
     if (asset.siteId !== siteId) fail(asset.siteId, 'site id does not match the package')
   }
@@ -484,7 +489,8 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
   return {
     manifest,
     terrain,
-    buildings,
+    // Measured heights replace the storey estimates; the footprint file itself stays as it is.
+    buildings: heights ? { ...buildings, buildings: mergeHeights(buildings.buildings, heights) } : buildings,
     studyArea,
     roads: roads?.roads ?? [],
     trees: trees?.trees ?? [],

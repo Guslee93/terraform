@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "compact-infill",
   "title": "Compact Infill",
-  "subtitle": "Dense Oslo block \u00b7 strong shadow study",
+  "subtitle": "Dense Oslo block · strong shadow study",
   "description": "A tight urban study area surrounded by mature apartment blocks. The simplified context is derived from OpenStreetMap footprints and the terrain from Kartverket DTM1.",
   "morphology": "Urban infill",
   "location": {
@@ -29,11 +29,12 @@
     "attribution": "attribution.md",
     "roads": "roads.json",
     "trees": "trees.json",
-    "landcover": "landcover.json"
+    "landcover": "landcover.json",
+    "heights": "heights.json"
   },
   "constraints": {
-    "maxHeightMeters": 18.0,
-    "setbackMeters": 4.0,
+    "maxHeightMeters": 18,
+    "setbackMeters": 4,
     "label": "Illustrative design constraint"
   },
   "cameraPresets": {
@@ -44,51 +45,51 @@
         285.49
       ],
       "target": [
-        0.0,
-        0.0,
-        8.0
+        0,
+        0,
+        8
       ],
       "projection": "perspective",
       "fov": 32
     },
     "top": {
       "position": [
-        0.0,
+        0,
         -0.01,
         688.74
       ],
       "target": [
-        0.0,
-        0.0,
-        0.0
+        0,
+        0,
+        0
       ],
       "projection": "perspective",
       "fov": 32
     },
     "north": {
       "position": [
-        0.0,
+        0,
         -413.24,
         189.78
       ],
       "target": [
-        0.0,
-        0.0,
-        8.0
+        0,
+        0,
+        8
       ],
       "projection": "perspective",
       "fov": 32
     },
     "south": {
       "position": [
-        0.0,
+        0,
         413.24,
         189.78
       ],
       "target": [
-        0.0,
-        0.0,
-        8.0
+        0,
+        0,
+        8
       ],
       "projection": "perspective",
       "fov": 32
@@ -97,12 +98,12 @@
       "position": [
         244.88,
         -275.49,
-        16.0
+        16
       ],
       "target": [
-        0.0,
-        0.0,
-        8.0
+        0,
+        0,
+        8
       ],
       "projection": "perspective",
       "fov": 34
@@ -113,30 +114,44 @@
       "title": "OpenStreetMap site extract (buildings, roads, trees, land cover)",
       "url": "https://www.openstreetmap.org/copyright",
       "license": "ODbL 1.0",
-      "attribution": "\u00a9 OpenStreetMap contributors",
+      "attribution": "© OpenStreetMap contributors",
       "acquiredAt": "2026-11-11"
     },
     {
       "title": "Kartverket DTM1 elevation",
       "url": "https://ws.geonorge.no/hoydedata/v1/",
       "license": "CC BY 4.0",
-      "attribution": "\u00a9 Kartverket",
+      "attribution": "© Kartverket",
       "acquiredAt": "2026-10-27"
     }
   ],
   "simplified": [
     "Footprints simplified with a 1.2 m tolerance; building relations omitted",
     "Heights from height, building:levels, or a typology fallback",
-    "Terrain sampled on a 40 \u00d7 47 grid and recentered to the origin",
+    "Terrain sampled on a 40 × 47 grid and recentered to the origin",
     "Study boundary is authored, not a cadastral parcel",
     "Roads are OSM centrelines with illustrative widths by highway class; tunnels omitted",
     "Trees are mapped OSM positions (natural=tree nodes, natural=tree_row lines every 8 m) drawn with illustrative, position-varied sizes and tints",
-    "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m\u00b2 and incomplete rings omitted; multipolygon inner rings ignored"
+    "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m² and incomplete rings omitted; multipolygon inner rings ignored",
+    "[heights] Building heights and simple gables measured from Kartverket's surface model (282 gabled, 161 flat, 77 other shapes drawn flat at their measured height); 0 not seen in the surface model keep the storey estimate. Not survey data."
   ],
   "statistics": {
     "buildingCount": 520,
     "terrainSamples": 1880,
-    "studyAreaM2": 45600.0,
+    "studyAreaM2": 45600,
     "sourceChecksum": "417e1241ba91a643"
-  }
+  },
+  "layers": [
+    {
+      "id": "heights",
+      "owner": "Kartverket",
+      "dataset": "Høyde DOM1 (surface model, NHM), roof fit",
+      "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dom-nhm-25833",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "© Kartverket",
+      "retrieved": "2026-11-15",
+      "useLimitation": "Heights are measured from a lidar surface model, not surveyed. Lidar and map epochs differ."
+    }
+  ]
 }

@@ -23,7 +23,8 @@ import { ClimateLayer } from './ClimateLayer'
 import { FacadeSun, type FacadeOverlay } from './FacadeSun'
 import { RoofSolar } from './RoofSolar'
 import { SunHoursLayer, SunHoursRampBar } from './SunHoursLayer'
-import { SUN_HOURS_DISCLAIMER } from '../features/analysis/sunHours'
+import { sunHoursDisclaimer } from '../features/analysis/sunHours'
+import { hasMeasuredHeights } from '../features/sites/provenance'
 import type { CircleSunHours } from '../features/analysis/circleSunHours'
 import type { AnalysisCircle as AnalysisCircleShape } from '../features/analysis/circle'
 import { WindStreamlines } from './WindStreamlines'
@@ -615,7 +616,7 @@ export function ViewportCanvas({
         // The claim stays on the map with the layer, as the wind caption does.
         <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
           {sunHours.result && <SunHoursRampBar possibleHours={sunHours.result.possibleHours} />}
-          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{sunHours.computing ? 'Computing hours of direct sun…' : SUN_HOURS_DISCLAIMER}</p>
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{sunHours.computing ? 'Computing hours of direct sun…' : sunHoursDisclaimer(hasMeasuredHeights(manifest))}</p>
         </div>
       )}
       {webgl === 'none' ? (

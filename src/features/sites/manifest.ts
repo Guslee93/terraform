@@ -56,6 +56,8 @@ export type SiteManifest = {
     roads?: string
     trees?: string
     landcover?: string
+    /** Optional measured building heights, a separate CC BY 4.0 asset keyed by building id (ADR-0033). */
+    heights?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -258,6 +260,9 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       ...(assetPaths.landcover === undefined
         ? {}
         : { landcover: asString(assetPaths.landcover, 'manifest.assetPaths.landcover') }),
+      ...(assetPaths.heights === undefined
+        ? {}
+        : { heights: asString(assetPaths.heights, 'manifest.assetPaths.heights') }),
     },
     constraints: {
       maxHeightMeters,

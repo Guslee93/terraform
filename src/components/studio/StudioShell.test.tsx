@@ -11,7 +11,7 @@ import { parseSiteManifest } from '../../features/sites/manifest'
 import type { SitePackage } from '../../features/sites/package'
 import { parseBuildings, parseStudyArea, parseTerrain } from '../../features/sites/package'
 import { SITES } from '../../features/sites/siteCatalog'
-import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
+import { SUN_HOURS_DISCLAIMER_MEASURED } from '../../features/analysis/sunHours'
 import { ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
 import type { SunSample } from '../../features/analysis/shadowRay'
 import { VSC_COLOUR, VSC_DISCLAIMER } from '../../features/analysis/vsc'
@@ -85,7 +85,8 @@ it('draws sun hours on the ground, roofs and façades in the analysis circle, wi
   expect(within(control).queryByRole('button', { name: 'Façade' })).not.toBeInTheDocument()
   // Sun hours is the Sun card's default analysis (owner, 2026-11-14).
   expect(within(control).getByRole('button', { name: 'Sun hours' })).toHaveAttribute('aria-pressed', 'true')
-  expect(screen.getAllByText(SUN_HOURS_DISCLAIMER).length).toBeGreaterThan(0)
+  // The curated package carries measured heights, so the claim names their source (ADR-0033).
+  expect(screen.getAllByText(SUN_HOURS_DISCLAIMER_MEASURED).length).toBeGreaterThan(0)
   // The same circle as the wind analysis: the study area's centre, 100 m.
   const shown = scene().sunHours
   expect(shown?.circle).toEqual({ centre: [0, 0], radius: 100 })

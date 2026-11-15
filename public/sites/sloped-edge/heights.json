@@ -1,0 +1,3804 @@
+{
+  "schemaVersion": 1,
+  "siteId": "sloped-edge",
+  "source": "Kartverket surface model (DOM, NHM 1 m lidar), roof fit per ADR-0022; heights above each building's baseElevation",
+  "licence": "CC BY 4.0 © Kartverket",
+  "retrieved": "2026-11-15",
+  "buildings": [
+    {
+      "id": "111555059",
+      "kind": "complex",
+      "height": 12.5
+    },
+    {
+      "id": "113319441",
+      "kind": "gabled",
+      "height": 13,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            281.34,
+            368.84
+          ],
+          [
+            324.19,
+            364.76
+          ]
+        ],
+        "ridgeHeight": 16.44,
+        "pitchDeg": 11.8
+      }
+    },
+    {
+      "id": "137725015",
+      "kind": "flat",
+      "height": 5.1
+    },
+    {
+      "id": "113319473",
+      "kind": "flat",
+      "height": 11.9
+    },
+    {
+      "id": "111555047",
+      "kind": "gabled",
+      "height": 9.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            -175.86,
+            385.81
+          ],
+          [
+            -147.15,
+            384.7
+          ]
+        ],
+        "ridgeHeight": 11.91,
+        "pitchDeg": 14.2
+      }
+    },
+    {
+      "id": "113310759",
+      "kind": "complex",
+      "height": 10.3
+    },
+    {
+      "id": "113391001",
+      "kind": "complex",
+      "height": 5.9
+    },
+    {
+      "id": "111555070",
+      "kind": "complex",
+      "height": 25.7
+    },
+    {
+      "id": "991740740",
+      "kind": "flat",
+      "height": 6.5
+    },
+    {
+      "id": "113319476",
+      "kind": "gabled",
+      "height": 14.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            262.36,
+            368.1
+          ],
+          [
+            257.35,
+            342.72
+          ]
+        ],
+        "ridgeHeight": 15.64,
+        "pitchDeg": 23.3
+      }
+    },
+    {
+      "id": "113319453",
+      "kind": "gabled",
+      "height": 11.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            256.66,
+            383.78
+          ],
+          [
+            271.86,
+            380.68
+          ]
+        ],
+        "ridgeHeight": 13.06,
+        "pitchDeg": 11.5
+      }
+    },
+    {
+      "id": "111555048",
+      "kind": "complex",
+      "height": 23
+    },
+    {
+      "id": "113391640",
+      "kind": "gabled",
+      "height": 7.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            328.03,
+            -53.96
+          ],
+          [
+            324.56,
+            -76.62
+          ]
+        ],
+        "ridgeHeight": 8.64,
+        "pitchDeg": 21.2
+      }
+    },
+    {
+      "id": "113310738",
+      "kind": "gabled",
+      "height": 12.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            -75.14,
+            354.74
+          ],
+          [
+            -44.69,
+            351.44
+          ]
+        ],
+        "ridgeHeight": 14.06,
+        "pitchDeg": 32.1
+      }
+    },
+    {
+      "id": "113310756",
+      "kind": "gabled",
+      "height": 11.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            -22.65,
+            385.91
+          ],
+          [
+            -12.22,
+            409.01
+          ]
+        ],
+        "ridgeHeight": 12.93,
+        "pitchDeg": 27.6
+      }
+    },
+    {
+      "id": "113310773",
+      "kind": "gabled",
+      "height": 12.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            13.88,
+            378.6
+          ],
+          [
+            43.94,
+            384.23
+          ]
+        ],
+        "ridgeHeight": 14.1,
+        "pitchDeg": 31.8
+      }
+    },
+    {
+      "id": "113310743",
+      "kind": "gabled",
+      "height": 12.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            21.3,
+            335.85
+          ],
+          [
+            -8.68,
+            333.28
+          ]
+        ],
+        "ridgeHeight": 13.74,
+        "pitchDeg": 32.3
+      }
+    },
+    {
+      "id": "113310788",
+      "kind": "gabled",
+      "height": 13.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            -37.08,
+            371.72
+          ],
+          [
+            -66.7,
+            377.51
+          ]
+        ],
+        "ridgeHeight": 14.98,
+        "pitchDeg": 32.1
+      }
+    },
+    {
+      "id": "113310785",
+      "kind": "gabled",
+      "height": 11.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            -5.18,
+            354.52
+          ],
+          [
+            -34.92,
+            351.81
+          ]
+        ],
+        "ridgeHeight": 12.94,
+        "pitchDeg": 33.7
+      }
+    },
+    {
+      "id": "113310734",
+      "kind": "gabled",
+      "height": 12.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            4.13,
+            355.45
+          ],
+          [
+            33.81,
+            360.03
+          ]
+        ],
+        "ridgeHeight": 13.96,
+        "pitchDeg": 30.7
+      }
+    },
+    {
+      "id": "113307636",
+      "kind": "flat",
+      "height": 11.7
+    },
+    {
+      "id": "113391592",
+      "kind": "gabled",
+      "height": 7.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            231.51,
+            -57.29
+          ],
+          [
+            234.26,
+            -34.66
+          ]
+        ],
+        "ridgeHeight": 8.27,
+        "pitchDeg": 13.8
+      }
+    },
+    {
+      "id": "113391660",
+      "kind": "gabled",
+      "height": 7.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            295.95,
+            -64.19
+          ],
+          [
+            309.5,
+            -66.48
+          ]
+        ],
+        "ridgeHeight": 9,
+        "pitchDeg": 12.9
+      }
+    },
+    {
+      "id": "113391586",
+      "kind": "gabled",
+      "height": 7.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            283.2,
+            -40.4
+          ],
+          [
+            280.33,
+            -63.77
+          ]
+        ],
+        "ridgeHeight": 8.49,
+        "pitchDeg": 17.5
+      }
+    },
+    {
+      "id": "115792952",
+      "kind": "complex",
+      "height": 9.6
+    },
+    {
+      "id": "113310751",
+      "kind": "gabled",
+      "height": 9.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            269.97,
+            303.21
+          ],
+          [
+            290.66,
+            301.15
+          ]
+        ],
+        "ridgeHeight": 9.71,
+        "pitchDeg": 15.8
+      }
+    },
+    {
+      "id": "113391634",
+      "kind": "gabled",
+      "height": 6.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            249.32,
+            -57.11
+          ],
+          [
+            260.86,
+            -58.63
+          ]
+        ],
+        "ridgeHeight": 7.73,
+        "pitchDeg": 13.1
+      }
+    },
+    {
+      "id": "113391023",
+      "kind": "gabled",
+      "height": 6.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            59.86,
+            143.87
+          ],
+          [
+            47.04,
+            143.87
+          ]
+        ],
+        "ridgeHeight": 7.74,
+        "pitchDeg": 18.2
+      }
+    },
+    {
+      "id": "113310747",
+      "kind": "gabled",
+      "height": 11.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            210.93,
+            275.85
+          ],
+          [
+            212.6,
+            290.73
+          ]
+        ],
+        "ridgeHeight": 12.82,
+        "pitchDeg": 33.6
+      }
+    },
+    {
+      "id": "149484508",
+      "kind": "gabled",
+      "height": 8.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            -29.21,
+            1.67
+          ],
+          [
+            -10.57,
+            -0.78
+          ]
+        ],
+        "ridgeHeight": 9.8,
+        "pitchDeg": 28.7
+      }
+    },
+    {
+      "id": "113310765",
+      "kind": "gabled",
+      "height": 12.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            77.8,
+            321.08
+          ],
+          [
+            82.76,
+            335.69
+          ]
+        ],
+        "ridgeHeight": 13.4,
+        "pitchDeg": 23
+      }
+    },
+    {
+      "id": "113391625",
+      "kind": "gabled",
+      "height": 9.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            145.13,
+            169.18
+          ],
+          [
+            143.03,
+            158.05
+          ]
+        ],
+        "ridgeHeight": 11.6,
+        "pitchDeg": 29.7
+      }
+    },
+    {
+      "id": "132022104",
+      "kind": "gabled",
+      "height": 6.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            241.37,
+            115
+          ],
+          [
+            256.45,
+            112.68
+          ]
+        ],
+        "ridgeHeight": 8.27,
+        "pitchDeg": 31
+      }
+    },
+    {
+      "id": "113390982",
+      "kind": "gabled",
+      "height": 11.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            268.8,
+            213.24
+          ],
+          [
+            274.16,
+            226.79
+          ]
+        ],
+        "ridgeHeight": 12.27,
+        "pitchDeg": 25.7
+      }
+    },
+    {
+      "id": "132121362",
+      "kind": "gabled",
+      "height": 8.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            308.2,
+            -2.2
+          ],
+          [
+            306.17,
+            -15.91
+          ]
+        ],
+        "ridgeHeight": 11.45,
+        "pitchDeg": 40.6
+      }
+    },
+    {
+      "id": "113310792",
+      "kind": "gabled",
+      "height": 12.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            183.09,
+            293.97
+          ],
+          [
+            167.62,
+            299.29
+          ]
+        ],
+        "ridgeHeight": 13.93,
+        "pitchDeg": 31.6
+      }
+    },
+    {
+      "id": "113310737",
+      "kind": "gabled",
+      "height": 11.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            262.34,
+            316.58
+          ],
+          [
+            244.21,
+            318.21
+          ]
+        ],
+        "ridgeHeight": 12.39,
+        "pitchDeg": 15
+      }
+    },
+    {
+      "id": "113391000",
+      "kind": "gabled",
+      "height": 9.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            204.66,
+            226.69
+          ],
+          [
+            183.35,
+            228.94
+          ]
+        ],
+        "ridgeHeight": 10.46,
+        "pitchDeg": 16.4
+      }
+    },
+    {
+      "id": "113390979",
+      "kind": "flat",
+      "height": 5.9
+    },
+    {
+      "id": "113310798",
+      "kind": "gabled",
+      "height": 12.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            121.63,
+            312.37
+          ],
+          [
+            107.6,
+            317.1
+          ]
+        ],
+        "ridgeHeight": 13.92,
+        "pitchDeg": 30.9
+      }
+    },
+    {
+      "id": "113310787",
+      "kind": "gabled",
+      "height": 13.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            100.59,
+            359.16
+          ],
+          [
+            86.42,
+            363.3
+          ]
+        ],
+        "ridgeHeight": 14.52,
+        "pitchDeg": 28.9
+      }
+    },
+    {
+      "id": "113310748",
+      "kind": "gabled",
+      "height": 11.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            62.29,
+            353.55
+          ],
+          [
+            48.46,
+            357.55
+          ]
+        ],
+        "ridgeHeight": 12.12,
+        "pitchDeg": 23.4
+      }
+    },
+    {
+      "id": "113310784",
+      "kind": "gabled",
+      "height": 11.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            63.87,
+            328.19
+          ],
+          [
+            49.59,
+            332.69
+          ]
+        ],
+        "ridgeHeight": 13.16,
+        "pitchDeg": 29.9
+      }
+    },
+    {
+      "id": "113310733",
+      "kind": "gabled",
+      "height": 12,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            50.27,
+            333.29
+          ],
+          [
+            36.36,
+            337.88
+          ]
+        ],
+        "ridgeHeight": 13.12,
+        "pitchDeg": 27.1
+      }
+    },
+    {
+      "id": "113310769",
+      "kind": "gabled",
+      "height": 13,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            123.86,
+            350.46
+          ],
+          [
+            138.05,
+            346.54
+          ]
+        ],
+        "ridgeHeight": 14.22,
+        "pitchDeg": 30.4
+      }
+    },
+    {
+      "id": "113391008",
+      "kind": "gabled",
+      "height": 8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            72.7,
+            54.74
+          ],
+          [
+            72.39,
+            43.8
+          ]
+        ],
+        "ridgeHeight": 9.6,
+        "pitchDeg": 22.3
+      }
+    },
+    {
+      "id": "113310746",
+      "kind": "gabled",
+      "height": 12.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            156.36,
+            328.97
+          ],
+          [
+            165.14,
+            317.32
+          ]
+        ],
+        "ridgeHeight": 13.54,
+        "pitchDeg": 31.7
+      }
+    },
+    {
+      "id": "113310779",
+      "kind": "gabled",
+      "height": 11.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            131.55,
+            309.07
+          ],
+          [
+            145.22,
+            304.41
+          ]
+        ],
+        "ridgeHeight": 12.74,
+        "pitchDeg": 31.3
+      }
+    },
+    {
+      "id": "113390984",
+      "kind": "complex",
+      "height": 6.1
+    },
+    {
+      "id": "113310735",
+      "kind": "gabled",
+      "height": 14.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            72.67,
+            367.3
+          ],
+          [
+            86.43,
+            363.3
+          ]
+        ],
+        "ridgeHeight": 15.6,
+        "pitchDeg": 29.2
+      }
+    },
+    {
+      "id": "113319708",
+      "kind": "gabled",
+      "height": 12.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            191.84,
+            346.74
+          ],
+          [
+            177.98,
+            346.96
+          ]
+        ],
+        "ridgeHeight": 14.66,
+        "pitchDeg": 43.8
+      }
+    },
+    {
+      "id": "113390983",
+      "kind": "gabled",
+      "height": 6.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            127.81,
+            42.78
+          ],
+          [
+            127.98,
+            59.67
+          ]
+        ],
+        "ridgeHeight": 7.29,
+        "pitchDeg": 21
+      }
+    },
+    {
+      "id": "113310761",
+      "kind": "gabled",
+      "height": 12.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            155.14,
+            327.58
+          ],
+          [
+            146.4,
+            339.12
+          ]
+        ],
+        "ridgeHeight": 13.63,
+        "pitchDeg": 31.1
+      }
+    },
+    {
+      "id": "113310742",
+      "kind": "gabled",
+      "height": 12.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            94.37,
+            321.86
+          ],
+          [
+            107.72,
+            317.38
+          ]
+        ],
+        "ridgeHeight": 14.21,
+        "pitchDeg": 30.8
+      }
+    },
+    {
+      "id": "113391665",
+      "kind": "gabled",
+      "height": 9.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            112.91,
+            198.42
+          ],
+          [
+            111.98,
+            184.61
+          ]
+        ],
+        "ridgeHeight": 10.27,
+        "pitchDeg": 24.4
+      }
+    },
+    {
+      "id": "1030903596",
+      "kind": "gabled",
+      "height": 11.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            145.44,
+            305.09
+          ],
+          [
+            158.75,
+            300.55
+          ]
+        ],
+        "ridgeHeight": 12.75,
+        "pitchDeg": 31.4
+      }
+    },
+    {
+      "id": "113390993",
+      "kind": "gabled",
+      "height": 10.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            91.1,
+            230.96
+          ],
+          [
+            83.31,
+            216.79
+          ]
+        ],
+        "ridgeHeight": 11.77,
+        "pitchDeg": 37.3
+      }
+    },
+    {
+      "id": "113310775",
+      "kind": "gabled",
+      "height": 13.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            124.39,
+            352.35
+          ],
+          [
+            110.98,
+            356.06
+          ]
+        ],
+        "ridgeHeight": 14.48,
+        "pitchDeg": 32.2
+      }
+    },
+    {
+      "id": "113310736",
+      "kind": "gabled",
+      "height": 13.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            254.67,
+            281.42
+          ],
+          [
+            240.76,
+            283.87
+          ]
+        ],
+        "ridgeHeight": 14.35,
+        "pitchDeg": 26.6
+      }
+    },
+    {
+      "id": "132022109",
+      "kind": "gabled",
+      "height": 8.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            286.9,
+            101.75
+          ],
+          [
+            269.67,
+            104.27
+          ]
+        ],
+        "ridgeHeight": 9.4,
+        "pitchDeg": 32.4
+      }
+    },
+    {
+      "id": "1030902627",
+      "kind": "gabled",
+      "height": 12,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            196.56,
+            290.17
+          ],
+          [
+            182.86,
+            294.8
+          ]
+        ],
+        "ridgeHeight": 12.86,
+        "pitchDeg": 23.9
+      }
+    },
+    {
+      "id": "113310731",
+      "kind": "gabled",
+      "height": 12.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            228.75,
+            324.21
+          ],
+          [
+            226.72,
+            310
+          ]
+        ],
+        "ridgeHeight": 13.83,
+        "pitchDeg": 34.6
+      }
+    },
+    {
+      "id": "132022107",
+      "kind": "gabled",
+      "height": 7.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            211.92,
+            36.37
+          ],
+          [
+            222.25,
+            34.89
+          ]
+        ],
+        "ridgeHeight": 9.03,
+        "pitchDeg": 25.8
+      }
+    },
+    {
+      "id": "132022740",
+      "kind": "flat",
+      "height": 8.8
+    },
+    {
+      "id": "113391010",
+      "kind": "gabled",
+      "height": 10,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            306.18,
+            195.57
+          ],
+          [
+            295.7,
+            201.73
+          ]
+        ],
+        "ridgeHeight": 11.94,
+        "pitchDeg": 38.4
+      }
+    },
+    {
+      "id": "113310783",
+      "kind": "gabled",
+      "height": 11.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            266.42,
+            271.52
+          ],
+          [
+            269.05,
+            287.11
+          ]
+        ],
+        "ridgeHeight": 12.12,
+        "pitchDeg": 29.6
+      }
+    },
+    {
+      "id": "115792934",
+      "kind": "gabled",
+      "height": 10.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            296.5,
+            128.27
+          ],
+          [
+            307.68,
+            118.69
+          ]
+        ],
+        "ridgeHeight": 12.49,
+        "pitchDeg": 47.9
+      }
+    },
+    {
+      "id": "113310757",
+      "kind": "gabled",
+      "height": 9.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            57.12,
+            379.82
+          ],
+          [
+            66.11,
+            376.5
+          ]
+        ],
+        "ridgeHeight": 13.71,
+        "pitchDeg": 47.4
+      }
+    },
+    {
+      "id": "115792923",
+      "kind": "gabled",
+      "height": 9.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            236.96,
+            148.4
+          ],
+          [
+            249.42,
+            146.71
+          ]
+        ],
+        "ridgeHeight": 11.35,
+        "pitchDeg": 38.7
+      }
+    },
+    {
+      "id": "132022108",
+      "kind": "gabled",
+      "height": 10,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            273.68,
+            61.84
+          ],
+          [
+            275.75,
+            76.5
+          ]
+        ],
+        "ridgeHeight": 11.18,
+        "pitchDeg": 35.3
+      }
+    },
+    {
+      "id": "991730990",
+      "kind": "gabled",
+      "height": 7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            112.2,
+            108.05
+          ],
+          [
+            97.66,
+            109.98
+          ]
+        ],
+        "ridgeHeight": 8.11,
+        "pitchDeg": 34.9
+      }
+    },
+    {
+      "id": "132022085",
+      "kind": "flat",
+      "height": 7
+    },
+    {
+      "id": "115792956",
+      "kind": "complex",
+      "height": 9.3
+    },
+    {
+      "id": "113390976",
+      "kind": "flat",
+      "height": 6.2
+    },
+    {
+      "id": "113391007",
+      "kind": "flat",
+      "height": 6.1
+    },
+    {
+      "id": "113391585",
+      "kind": "gabled",
+      "height": 4.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            127.79,
+            161.37
+          ],
+          [
+            130.38,
+            175.17
+          ]
+        ],
+        "ridgeHeight": 4.83,
+        "pitchDeg": 14.3
+      }
+    },
+    {
+      "id": "115792927",
+      "kind": "gabled",
+      "height": 9.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            208.63,
+            181.01
+          ],
+          [
+            223.26,
+            179.82
+          ]
+        ],
+        "ridgeHeight": 10.28,
+        "pitchDeg": 35
+      }
+    },
+    {
+      "id": "115792918",
+      "kind": "complex",
+      "height": 9.4
+    },
+    {
+      "id": "113307655",
+      "kind": "gabled",
+      "height": 7.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            321.08,
+            284.34
+          ],
+          [
+            332.42,
+            283.33
+          ]
+        ],
+        "ridgeHeight": 8.92,
+        "pitchDeg": 35.1
+      }
+    },
+    {
+      "id": "991740715",
+      "kind": "gabled",
+      "height": 7.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            323.41,
+            57.22
+          ],
+          [
+            325.8,
+            71.66
+          ]
+        ],
+        "ridgeHeight": 9.61,
+        "pitchDeg": 33
+      }
+    },
+    {
+      "id": "113391612",
+      "kind": "gabled",
+      "height": 9.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            141.72,
+            121.3
+          ],
+          [
+            143.25,
+            132.47
+          ]
+        ],
+        "ridgeHeight": 10.07,
+        "pitchDeg": 22.7
+      }
+    },
+    {
+      "id": "113390985",
+      "kind": "gabled",
+      "height": 8.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            289.51,
+            216.43
+          ],
+          [
+            282.99,
+            204.03
+          ]
+        ],
+        "ridgeHeight": 9.27,
+        "pitchDeg": 22.3
+      }
+    },
+    {
+      "id": "132121354",
+      "kind": "gabled",
+      "height": 10.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            311.65,
+            21.5
+          ],
+          [
+            313.77,
+            35.71
+          ]
+        ],
+        "ridgeHeight": 11.4,
+        "pitchDeg": 25.6
+      }
+    },
+    {
+      "id": "132022086",
+      "kind": "gabled",
+      "height": 8.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            211.68,
+            74.92
+          ],
+          [
+            226.79,
+            72.89
+          ]
+        ],
+        "ridgeHeight": 10.59,
+        "pitchDeg": 51.1
+      }
+    },
+    {
+      "id": "115792946",
+      "kind": "gabled",
+      "height": 9.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            285.78,
+            136.77
+          ],
+          [
+            272.23,
+            139.88
+          ]
+        ],
+        "ridgeHeight": 10.66,
+        "pitchDeg": 28.8
+      }
+    },
+    {
+      "id": "132022083",
+      "kind": "gabled",
+      "height": 9.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            170.18,
+            126.18
+          ],
+          [
+            183.36,
+            124.16
+          ]
+        ],
+        "ridgeHeight": 10.12,
+        "pitchDeg": 31.5
+      }
+    },
+    {
+      "id": "113390996",
+      "kind": "gabled",
+      "height": 6.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            138.58,
+            243.98
+          ],
+          [
+            151.85,
+            244.45
+          ]
+        ],
+        "ridgeHeight": 7.25,
+        "pitchDeg": 23
+      }
+    },
+    {
+      "id": "132121363",
+      "kind": "gabled",
+      "height": 7.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            325.53,
+            -20.27
+          ],
+          [
+            341.22,
+            -23.87
+          ]
+        ],
+        "ridgeHeight": 10.09,
+        "pitchDeg": 46.4
+      }
+    },
+    {
+      "id": "113390971",
+      "kind": "gabled",
+      "height": 7.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            28.93,
+            99.05
+          ],
+          [
+            29.1,
+            110.98
+          ]
+        ],
+        "ridgeHeight": 8.82,
+        "pitchDeg": 40.6
+      }
+    },
+    {
+      "id": "113390978",
+      "kind": "gabled",
+      "height": 12.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            248.19,
+            231.48
+          ],
+          [
+            246.71,
+            218.01
+          ]
+        ],
+        "ridgeHeight": 12.96,
+        "pitchDeg": 25.4
+      }
+    },
+    {
+      "id": "113391652",
+      "kind": "gabled",
+      "height": 6.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            95.51,
+            168.9
+          ],
+          [
+            80.64,
+            169.86
+          ]
+        ],
+        "ridgeHeight": 7.46,
+        "pitchDeg": 26.2
+      }
+    },
+    {
+      "id": "132022749",
+      "kind": "gabled",
+      "height": 7.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            169.82,
+            20.37
+          ],
+          [
+            182.98,
+            18.46
+          ]
+        ],
+        "ridgeHeight": 8.5,
+        "pitchDeg": 34
+      }
+    },
+    {
+      "id": "113319686",
+      "kind": "gabled",
+      "height": 7.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            233.92,
+            365.66
+          ],
+          [
+            231.68,
+            353.88
+          ]
+        ],
+        "ridgeHeight": 8.57,
+        "pitchDeg": 20.7
+      }
+    },
+    {
+      "id": "113391017",
+      "kind": "gabled",
+      "height": 4.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            258.81,
+            -106.12
+          ],
+          [
+            246.23,
+            -101.94
+          ]
+        ],
+        "ridgeHeight": 5.56,
+        "pitchDeg": 21.6
+      }
+    },
+    {
+      "id": "113391002",
+      "kind": "gabled",
+      "height": 8.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            309.22,
+            223.82
+          ],
+          [
+            305.95,
+            217.3
+          ]
+        ],
+        "ridgeHeight": 10.32,
+        "pitchDeg": 22.3
+      }
+    },
+    {
+      "id": "132022106",
+      "kind": "gabled",
+      "height": 10,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            269.41,
+            26.7
+          ],
+          [
+            271.3,
+            39.06
+          ]
+        ],
+        "ridgeHeight": 11.26,
+        "pitchDeg": 35
+      }
+    },
+    {
+      "id": "132022759",
+      "kind": "gabled",
+      "height": 7.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            197.75,
+            15.29
+          ],
+          [
+            210.24,
+            13.3
+          ]
+        ],
+        "ridgeHeight": 8.4,
+        "pitchDeg": 35.9
+      }
+    },
+    {
+      "id": "991729882",
+      "kind": "complex",
+      "height": 6.7
+    },
+    {
+      "id": "113390994",
+      "kind": "gabled",
+      "height": 10.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            113.03,
+            2.77
+          ],
+          [
+            113.22,
+            14.8
+          ]
+        ],
+        "ridgeHeight": 11.64,
+        "pitchDeg": 35
+      }
+    },
+    {
+      "id": "113391607",
+      "kind": "flat",
+      "height": 3.4
+    },
+    {
+      "id": "132022101",
+      "kind": "complex",
+      "height": 7.8
+    },
+    {
+      "id": "113391019",
+      "kind": "gabled",
+      "height": 5.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            42.95,
+            162.38
+          ],
+          [
+            56.58,
+            162.49
+          ]
+        ],
+        "ridgeHeight": 6.38,
+        "pitchDeg": 20.9
+      }
+    },
+    {
+      "id": "113319694",
+      "kind": "gabled",
+      "height": 8.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            242.07,
+            394.81
+          ],
+          [
+            245.09,
+            408.4
+          ]
+        ],
+        "ridgeHeight": 8.92,
+        "pitchDeg": 27.2
+      }
+    },
+    {
+      "id": "113390990",
+      "kind": "gabled",
+      "height": 10,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            143.02,
+            45.56
+          ],
+          [
+            144.76,
+            57.86
+          ]
+        ],
+        "ridgeHeight": 11.38,
+        "pitchDeg": 39.2
+      }
+    },
+    {
+      "id": "132022093",
+      "kind": "gabled",
+      "height": 6.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            230.41,
+            114.61
+          ],
+          [
+            217.92,
+            116.4
+          ]
+        ],
+        "ridgeHeight": 7.63,
+        "pitchDeg": 28.1
+      }
+    },
+    {
+      "id": "991736077",
+      "kind": "gabled",
+      "height": 8.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            35.91,
+            211.4
+          ],
+          [
+            35.74,
+            223.43
+          ]
+        ],
+        "ridgeHeight": 9.33,
+        "pitchDeg": 28
+      }
+    },
+    {
+      "id": "113310796",
+      "kind": "flat",
+      "height": 10
+    },
+    {
+      "id": "113319687",
+      "kind": "gabled",
+      "height": 9.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            227.88,
+            380.71
+          ],
+          [
+            225.58,
+            369.6
+          ]
+        ],
+        "ridgeHeight": 10.44,
+        "pitchDeg": 23.5
+      }
+    },
+    {
+      "id": "113319718",
+      "kind": "flat",
+      "height": 10.4
+    },
+    {
+      "id": "991736076",
+      "kind": "gabled",
+      "height": 8.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            24.5,
+            223.34
+          ],
+          [
+            24.61,
+            211.16
+          ]
+        ],
+        "ridgeHeight": 9.11,
+        "pitchDeg": 26.1
+      }
+    },
+    {
+      "id": "132022758",
+      "kind": "gabled",
+      "height": 8.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            196.89,
+            -3.23
+          ],
+          [
+            211.32,
+            -5.11
+          ]
+        ],
+        "ridgeHeight": 10.04,
+        "pitchDeg": 48.9
+      }
+    },
+    {
+      "id": "132022092",
+      "kind": "gabled",
+      "height": 5.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            168.66,
+            97.4
+          ],
+          [
+            178.93,
+            95.84
+          ]
+        ],
+        "ridgeHeight": 7.32,
+        "pitchDeg": 35.1
+      }
+    },
+    {
+      "id": "607880359",
+      "kind": "flat",
+      "height": 9.4
+    },
+    {
+      "id": "132022105",
+      "kind": "gabled",
+      "height": 7.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            247.56,
+            31.35
+          ],
+          [
+            237.24,
+            32.8
+          ]
+        ],
+        "ridgeHeight": 9.65,
+        "pitchDeg": 39.8
+      }
+    },
+    {
+      "id": "113391018",
+      "kind": "gabled",
+      "height": 5.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            112.44,
+            246.31
+          ],
+          [
+            124.3,
+            245.41
+          ]
+        ],
+        "ridgeHeight": 6.44,
+        "pitchDeg": 24.2
+      }
+    },
+    {
+      "id": "991734663",
+      "kind": "gabled",
+      "height": 8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            193.84,
+            -41.5
+          ],
+          [
+            205.34,
+            -42.96
+          ]
+        ],
+        "ridgeHeight": 8.46,
+        "pitchDeg": 16.8
+      }
+    },
+    {
+      "id": "113391654",
+      "kind": "gabled",
+      "height": 8.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            130.41,
+            86.88
+          ],
+          [
+            115.35,
+            89.32
+          ]
+        ],
+        "ridgeHeight": 10.37,
+        "pitchDeg": 48.4
+      }
+    },
+    {
+      "id": "991740727",
+      "kind": "gabled",
+      "height": 7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            52.78,
+            69.44
+          ],
+          [
+            66.22,
+            68.98
+          ]
+        ],
+        "ridgeHeight": 7.24,
+        "pitchDeg": 11.4
+      }
+    },
+    {
+      "id": "132022112",
+      "kind": "gabled",
+      "height": 8.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            240.67,
+            72.52
+          ],
+          [
+            251.49,
+            71.02
+          ]
+        ],
+        "ridgeHeight": 10.16,
+        "pitchDeg": 33.7
+      }
+    },
+    {
+      "id": "132022110",
+      "kind": "gabled",
+      "height": 6.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            184.29,
+            54.74
+          ],
+          [
+            198.34,
+            52.58
+          ]
+        ],
+        "ridgeHeight": 7.35,
+        "pitchDeg": 28.4
+      }
+    },
+    {
+      "id": "113319713",
+      "kind": "gabled",
+      "height": 9.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            170.47,
+            351.72
+          ],
+          [
+            162.11,
+            363.25
+          ]
+        ],
+        "ridgeHeight": 10.07,
+        "pitchDeg": 41.5
+      }
+    },
+    {
+      "id": "113391628",
+      "kind": "gabled",
+      "height": 9.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            106.63,
+            90.54
+          ],
+          [
+            94.65,
+            92.21
+          ]
+        ],
+        "ridgeHeight": 10.69,
+        "pitchDeg": 36.3
+      }
+    },
+    {
+      "id": "132022111",
+      "kind": "gabled",
+      "height": 9.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            263.12,
+            -10.25
+          ],
+          [
+            264.92,
+            1.59
+          ]
+        ],
+        "ridgeHeight": 11.11,
+        "pitchDeg": 39
+      }
+    },
+    {
+      "id": "115792944",
+      "kind": "complex",
+      "height": 9.5
+    },
+    {
+      "id": "113310730",
+      "kind": "flat",
+      "height": 9.4
+    },
+    {
+      "id": "113390981",
+      "kind": "gabled",
+      "height": 7.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            113.11,
+            57.25
+          ],
+          [
+            101.04,
+            58.85
+          ]
+        ],
+        "ridgeHeight": 8.36,
+        "pitchDeg": 30.2
+      }
+    },
+    {
+      "id": "991740722",
+      "kind": "gabled",
+      "height": 6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            114.55,
+            -29.98
+          ],
+          [
+            115.14,
+            -42.59
+          ]
+        ],
+        "ridgeHeight": 7.74,
+        "pitchDeg": 39
+      }
+    },
+    {
+      "id": "1567985140",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "113319711",
+      "kind": "gabled",
+      "height": 9.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            237.81,
+            385.72
+          ],
+          [
+            239.51,
+            395.5
+          ]
+        ],
+        "ridgeHeight": 10.81,
+        "pitchDeg": 27.1
+      }
+    },
+    {
+      "id": "132022084",
+      "kind": "gabled",
+      "height": 7.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            248.07,
+            42.45
+          ],
+          [
+            235.14,
+            44.09
+          ]
+        ],
+        "ridgeHeight": 8.32,
+        "pitchDeg": 37.1
+      }
+    },
+    {
+      "id": "115792948",
+      "kind": "gabled",
+      "height": 10,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            309.72,
+            98.86
+          ],
+          [
+            322.57,
+            96.93
+          ]
+        ],
+        "ridgeHeight": 10.63,
+        "pitchDeg": 26.9
+      }
+    },
+    {
+      "id": "991740721",
+      "kind": "gabled",
+      "height": 6.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            150.04,
+            -38.07
+          ],
+          [
+            142.07,
+            -37.73
+          ]
+        ],
+        "ridgeHeight": 8.09,
+        "pitchDeg": 28.1
+      }
+    },
+    {
+      "id": "115792914",
+      "kind": "gabled",
+      "height": 8.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            211.87,
+            149.95
+          ],
+          [
+            200.82,
+            151.55
+          ]
+        ],
+        "ridgeHeight": 9.88,
+        "pitchDeg": 39.1
+      }
+    },
+    {
+      "id": "113319704",
+      "kind": "gabled",
+      "height": 10.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            143.36,
+            374.95
+          ],
+          [
+            154.68,
+            369.74
+          ]
+        ],
+        "ridgeHeight": 11.26,
+        "pitchDeg": 17.9
+      }
+    },
+    {
+      "id": "113310799",
+      "kind": "gabled",
+      "height": 9.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            243.9,
+            301.91
+          ],
+          [
+            257.29,
+            301.42
+          ]
+        ],
+        "ridgeHeight": 10.28,
+        "pitchDeg": 41.1
+      }
+    },
+    {
+      "id": "991740724",
+      "kind": "gabled",
+      "height": 7.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            177.07,
+            -39.29
+          ],
+          [
+            183.28,
+            -40.05
+          ]
+        ],
+        "ridgeHeight": 8.88,
+        "pitchDeg": 25.4
+      }
+    },
+    {
+      "id": "113391620",
+      "kind": "gabled",
+      "height": 7.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            141.92,
+            104.2
+          ],
+          [
+            130.99,
+            105.53
+          ]
+        ],
+        "ridgeHeight": 8.48,
+        "pitchDeg": 24.1
+      }
+    },
+    {
+      "id": "113390974",
+      "kind": "gabled",
+      "height": 7.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            60.76,
+            103.64
+          ],
+          [
+            58.35,
+            93.93
+          ]
+        ],
+        "ridgeHeight": 8.77,
+        "pitchDeg": 34.7
+      }
+    },
+    {
+      "id": "115792933",
+      "kind": "gabled",
+      "height": 9.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            177.66,
+            154.4
+          ],
+          [
+            187.71,
+            152.94
+          ]
+        ],
+        "ridgeHeight": 10.58,
+        "pitchDeg": 32.6
+      }
+    },
+    {
+      "id": "1567985138",
+      "kind": "gabled",
+      "height": 8.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            128.39,
+            184.98
+          ],
+          [
+            129.47,
+            198.12
+          ]
+        ],
+        "ridgeHeight": 9.17,
+        "pitchDeg": 31
+      }
+    },
+    {
+      "id": "113307532",
+      "kind": "gabled",
+      "height": 7.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            332.5,
+            294.07
+          ],
+          [
+            323.88,
+            294.85
+          ]
+        ],
+        "ridgeHeight": 9.13,
+        "pitchDeg": 37.6
+      }
+    },
+    {
+      "id": "113310795",
+      "kind": "gabled",
+      "height": 4.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            234.36,
+            269.25
+          ],
+          [
+            244.3,
+            266.21
+          ]
+        ],
+        "ridgeHeight": 5.98,
+        "pitchDeg": 30.5
+      }
+    },
+    {
+      "id": "1030903533",
+      "kind": "complex",
+      "height": 9.2
+    },
+    {
+      "id": "113319712",
+      "kind": "gabled",
+      "height": 8.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            128.62,
+            379.62
+          ],
+          [
+            137.13,
+            377.99
+          ]
+        ],
+        "ridgeHeight": 9.89,
+        "pitchDeg": 36.9
+      }
+    },
+    {
+      "id": "113310767",
+      "kind": "gabled",
+      "height": 6.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            48.04,
+            403.34
+          ],
+          [
+            54.03,
+            397.57
+          ]
+        ],
+        "ridgeHeight": 7.89,
+        "pitchDeg": 29.3
+      }
+    },
+    {
+      "id": "115792939",
+      "kind": "gabled",
+      "height": 10.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            276.22,
+            178.29
+          ],
+          [
+            268.81,
+            183.01
+          ]
+        ],
+        "ridgeHeight": 11.31,
+        "pitchDeg": 17.5
+      }
+    },
+    {
+      "id": "991740717",
+      "kind": "flat",
+      "height": 7.5
+    },
+    {
+      "id": "132022102",
+      "kind": "gabled",
+      "height": 8.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            165.2,
+            81.85
+          ],
+          [
+            174.73,
+            80.61
+          ]
+        ],
+        "ridgeHeight": 10.33,
+        "pitchDeg": 52.7
+      }
+    },
+    {
+      "id": "991734666",
+      "kind": "gabled",
+      "height": 7.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            188.19,
+            -41.67
+          ],
+          [
+            193.84,
+            -42.34
+          ]
+        ],
+        "ridgeHeight": 8.93,
+        "pitchDeg": 24.1
+      }
+    },
+    {
+      "id": "113319699",
+      "kind": "gabled",
+      "height": 8.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            90.63,
+            389.85
+          ],
+          [
+            82.03,
+            395.29
+          ]
+        ],
+        "ridgeHeight": 8.86,
+        "pitchDeg": 18.4
+      }
+    },
+    {
+      "id": "132022113",
+      "kind": "gabled",
+      "height": 7.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            191.11,
+            79.15
+          ],
+          [
+            200.06,
+            77.86
+          ]
+        ],
+        "ridgeHeight": 10.15,
+        "pitchDeg": 46.9
+      }
+    },
+    {
+      "id": "113319700",
+      "kind": "gabled",
+      "height": 9.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            114.89,
+            383.43
+          ],
+          [
+            123.69,
+            381.35
+          ]
+        ],
+        "ridgeHeight": 10.17,
+        "pitchDeg": 33.1
+      }
+    },
+    {
+      "id": "991734665",
+      "kind": "gabled",
+      "height": 7.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            188.71,
+            -40.76
+          ],
+          [
+            183.23,
+            -40.09
+          ]
+        ],
+        "ridgeHeight": 9,
+        "pitchDeg": 25.5
+      }
+    },
+    {
+      "id": "132022757",
+      "kind": "gabled",
+      "height": 8.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            169.43,
+            -0.05
+          ],
+          [
+            179.35,
+            -1.17
+          ]
+        ],
+        "ridgeHeight": 10.45,
+        "pitchDeg": 51.6
+      }
+    },
+    {
+      "id": "991740858",
+      "kind": "gabled",
+      "height": 9.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            315.78,
+            189.6
+          ],
+          [
+            323.55,
+            184.83
+          ]
+        ],
+        "ridgeHeight": 9.93,
+        "pitchDeg": 22.8
+      }
+    },
+    {
+      "id": "115792925",
+      "kind": "gabled",
+      "height": 9.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            322.36,
+            147.95
+          ],
+          [
+            314.96,
+            152.63
+          ]
+        ],
+        "ridgeHeight": 10.8,
+        "pitchDeg": 30.3
+      }
+    },
+    {
+      "id": "115792961",
+      "kind": "complex",
+      "height": 3.8
+    },
+    {
+      "id": "132022089",
+      "kind": "gabled",
+      "height": 7.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            186.49,
+            38.57
+          ],
+          [
+            195.93,
+            37.12
+          ]
+        ],
+        "ridgeHeight": 9.89,
+        "pitchDeg": 50.6
+      }
+    },
+    {
+      "id": "991732364",
+      "kind": "gabled",
+      "height": 7.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            279.61,
+            83.31
+          ],
+          [
+            288.63,
+            82.1
+          ]
+        ],
+        "ridgeHeight": 8.21,
+        "pitchDeg": 25.1
+      }
+    },
+    {
+      "id": "113390970",
+      "kind": "flat",
+      "height": 4
+    },
+    {
+      "id": "115792932",
+      "kind": "gabled",
+      "height": 7.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            295.55,
+            164.53
+          ],
+          [
+            286.97,
+            169.85
+          ]
+        ],
+        "ridgeHeight": 8.32,
+        "pitchDeg": 24.1
+      }
+    },
+    {
+      "id": "132022738",
+      "kind": "gabled",
+      "height": 8.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            160.71,
+            43.54
+          ],
+          [
+            171.1,
+            41.8
+          ]
+        ],
+        "ridgeHeight": 9.83,
+        "pitchDeg": 48.7
+      }
+    },
+    {
+      "id": "132022088",
+      "kind": "gabled",
+      "height": 7.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            279.76,
+            84.45
+          ],
+          [
+            270.8,
+            85.66
+          ]
+        ],
+        "ridgeHeight": 8.84,
+        "pitchDeg": 33.7
+      }
+    },
+    {
+      "id": "115792921",
+      "kind": "gabled",
+      "height": 8.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            295.42,
+            165.64
+          ],
+          [
+            303.93,
+            160.36
+          ]
+        ],
+        "ridgeHeight": 8.82,
+        "pitchDeg": 24.9
+      }
+    },
+    {
+      "id": "132022760",
+      "kind": "gabled",
+      "height": 9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            138.27,
+            1.67
+          ],
+          [
+            147.69,
+            1.42
+          ]
+        ],
+        "ridgeHeight": 9.88,
+        "pitchDeg": 33.5
+      }
+    },
+    {
+      "id": "113391579",
+      "kind": "gabled",
+      "height": 8.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            147.62,
+            190.73
+          ],
+          [
+            138.21,
+            191.73
+          ]
+        ],
+        "ridgeHeight": 10.12,
+        "pitchDeg": 44.7
+      }
+    },
+    {
+      "id": "115792928",
+      "kind": "flat",
+      "height": 3
+    },
+    {
+      "id": "115792958",
+      "kind": "gabled",
+      "height": 7.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            326.72,
+            142.96
+          ],
+          [
+            334.53,
+            137.57
+          ]
+        ],
+        "ridgeHeight": 7.84,
+        "pitchDeg": 21.8
+      }
+    },
+    {
+      "id": "991735259",
+      "kind": "gabled",
+      "height": 6.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            155.39,
+            -37.67
+          ],
+          [
+            161.41,
+            -37.93
+          ]
+        ],
+        "ridgeHeight": 8.26,
+        "pitchDeg": 27.4
+      }
+    },
+    {
+      "id": "115792941",
+      "kind": "gabled",
+      "height": 8.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            274.81,
+            177.34
+          ],
+          [
+            282.85,
+            172.08
+          ]
+        ],
+        "ridgeHeight": 8.78,
+        "pitchDeg": 25.7
+      }
+    },
+    {
+      "id": "113310753",
+      "kind": "gabled",
+      "height": 6.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            258.15,
+            261.52
+          ],
+          [
+            267.83,
+            258.85
+          ]
+        ],
+        "ridgeHeight": 7.32,
+        "pitchDeg": 33.8
+      }
+    },
+    {
+      "id": "132022103",
+      "kind": "gabled",
+      "height": 8.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            229.43,
+            -8.18
+          ],
+          [
+            237.75,
+            -9.18
+          ]
+        ],
+        "ridgeHeight": 9.76,
+        "pitchDeg": 44.2
+      }
+    },
+    {
+      "id": "113390967",
+      "kind": "gabled",
+      "height": 8.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            323.17,
+            184.41
+          ],
+          [
+            330.66,
+            179.54
+          ]
+        ],
+        "ridgeHeight": 9.74,
+        "pitchDeg": 27.1
+      }
+    },
+    {
+      "id": "115792950",
+      "kind": "gabled",
+      "height": 8.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            316.75,
+            153.42
+          ],
+          [
+            308.52,
+            158.61
+          ]
+        ],
+        "ridgeHeight": 9.12,
+        "pitchDeg": 25.7
+      }
+    },
+    {
+      "id": "991735258",
+      "kind": "gabled",
+      "height": 6.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            150.04,
+            -38.07
+          ],
+          [
+            155.36,
+            -38.3
+          ]
+        ],
+        "ridgeHeight": 8.09,
+        "pitchDeg": 25.8
+      }
+    },
+    {
+      "id": "113319683",
+      "kind": "gabled",
+      "height": 6.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            98.93,
+            386.27
+          ],
+          [
+            106.84,
+            383.97
+          ]
+        ],
+        "ridgeHeight": 7.74,
+        "pitchDeg": 33.3
+      }
+    },
+    {
+      "id": "113391645",
+      "kind": "flat",
+      "height": 3.4
+    },
+    {
+      "id": "113310740",
+      "kind": "gabled",
+      "height": 7.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            272.3,
+            257.67
+          ],
+          [
+            283.49,
+            254.79
+          ]
+        ],
+        "ridgeHeight": 7.68,
+        "pitchDeg": 27.8
+      }
+    },
+    {
+      "id": "115792911",
+      "kind": "gabled",
+      "height": 4.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            229.17,
+            155.58
+          ],
+          [
+            230.24,
+            163.06
+          ]
+        ],
+        "ridgeHeight": 5.17,
+        "pitchDeg": 12.5
+      }
+    },
+    {
+      "id": "113319702",
+      "kind": "flat",
+      "height": 9.1
+    },
+    {
+      "id": "113310744",
+      "kind": "flat",
+      "height": 8.6
+    },
+    {
+      "id": "991731084",
+      "kind": "flat",
+      "height": 4.5
+    },
+    {
+      "id": "1030903588",
+      "kind": "gabled",
+      "height": 7.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            286.46,
+            335.85
+          ],
+          [
+            294.86,
+            335.07
+          ]
+        ],
+        "ridgeHeight": 9,
+        "pitchDeg": 47.4
+      }
+    },
+    {
+      "id": "113319695",
+      "kind": "gabled",
+      "height": 6.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            243.01,
+            381.3
+          ],
+          [
+            240.99,
+            371.88
+          ]
+        ],
+        "ridgeHeight": 7.46,
+        "pitchDeg": 24.8
+      }
+    },
+    {
+      "id": "113319689",
+      "kind": "gabled",
+      "height": 7.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            203.52,
+            339.9
+          ],
+          [
+            195.05,
+            340.04
+          ]
+        ],
+        "ridgeHeight": 8.37,
+        "pitchDeg": 32.7
+      }
+    },
+    {
+      "id": "991734659",
+      "kind": "gabled",
+      "height": 6.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            123.42,
+            -38.08
+          ],
+          [
+            117.75,
+            -38.29
+          ]
+        ],
+        "ridgeHeight": 7.32,
+        "pitchDeg": 17.3
+      }
+    },
+    {
+      "id": "1030903581",
+      "kind": "gabled",
+      "height": 8.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            321,
+            334.12
+          ],
+          [
+            311.59,
+            334.96
+          ]
+        ],
+        "ridgeHeight": 9.06,
+        "pitchDeg": 41.5
+      }
+    },
+    {
+      "id": "132022087",
+      "kind": "gabled",
+      "height": 4.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            263.48,
+            62.28
+          ],
+          [
+            255.2,
+            63.39
+          ]
+        ],
+        "ridgeHeight": 4.65,
+        "pitchDeg": 22.1
+      }
+    },
+    {
+      "id": "1030903447",
+      "kind": "flat",
+      "height": 3.1
+    },
+    {
+      "id": "113319451",
+      "kind": "gabled",
+      "height": 7.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            286.5,
+            336.27
+          ],
+          [
+            278.84,
+            336.97
+          ]
+        ],
+        "ridgeHeight": 9.02,
+        "pitchDeg": 46.4
+      }
+    },
+    {
+      "id": "991734661",
+      "kind": "gabled",
+      "height": 6.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            128.78,
+            -38
+          ],
+          [
+            123.37,
+            -38.16
+          ]
+        ],
+        "ridgeHeight": 7.52,
+        "pitchDeg": 18.2
+      }
+    },
+    {
+      "id": "113319472",
+      "kind": "gabled",
+      "height": 7.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            311.51,
+            334.09
+          ],
+          [
+            302.53,
+            334.88
+          ]
+        ],
+        "ridgeHeight": 9.03,
+        "pitchDeg": 46.4
+      }
+    },
+    {
+      "id": "991734660",
+      "kind": "gabled",
+      "height": 7.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            128.72,
+            -38.71
+          ],
+          [
+            134.44,
+            -38.59
+          ]
+        ],
+        "ridgeHeight": 7.56,
+        "pitchDeg": 14.7
+      }
+    },
+    {
+      "id": "132022744",
+      "kind": "gabled",
+      "height": 4.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            215.58,
+            8.58
+          ],
+          [
+            216.74,
+            16.05
+          ]
+        ],
+        "ridgeHeight": 4.56,
+        "pitchDeg": 18.6
+      }
+    },
+    {
+      "id": "265117547",
+      "kind": "flat",
+      "height": 5.4
+    },
+    {
+      "id": "115792943",
+      "kind": "gabled",
+      "height": 8.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            314.98,
+            62.83
+          ],
+          [
+            321.41,
+            61.84
+          ]
+        ],
+        "ridgeHeight": 9.19,
+        "pitchDeg": 26.5
+      }
+    },
+    {
+      "id": "923489547",
+      "kind": "gabled",
+      "height": 5.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            -36.22,
+            315.84
+          ],
+          [
+            -27.79,
+            314.86
+          ]
+        ],
+        "ridgeHeight": 5.42,
+        "pitchDeg": 18.9
+      }
+    },
+    {
+      "id": "607880358",
+      "kind": "flat",
+      "height": 4.7
+    },
+    {
+      "id": "991735257",
+      "kind": "gabled",
+      "height": 7.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            161.39,
+            -38.1
+          ],
+          [
+            166.99,
+            -38.35
+          ]
+        ],
+        "ridgeHeight": 7.69,
+        "pitchDeg": 13.9
+      }
+    },
+    {
+      "id": "132022756",
+      "kind": "gabled",
+      "height": 5.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            187.49,
+            24.52
+          ],
+          [
+            186.6,
+            17.37
+          ]
+        ],
+        "ridgeHeight": 6.19,
+        "pitchDeg": 36.7
+      }
+    },
+    {
+      "id": "132022754",
+      "kind": "gabled",
+      "height": 4.6,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            192.96,
+            -3.18
+          ],
+          [
+            193.88,
+            3.74
+          ]
+        ],
+        "ridgeHeight": 4.87,
+        "pitchDeg": 17.6
+      }
+    },
+    {
+      "id": "113319703",
+      "kind": "gabled",
+      "height": 6.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            225.17,
+            339.34
+          ],
+          [
+            219.41,
+            339.34
+          ]
+        ],
+        "ridgeHeight": 7.12,
+        "pitchDeg": 36.4
+      }
+    },
+    {
+      "id": "991734677",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "991731986",
+      "kind": "gabled",
+      "height": 2.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            323.84,
+            31
+          ],
+          [
+            316.66,
+            32.07
+          ]
+        ],
+        "ridgeHeight": 3.21,
+        "pitchDeg": 15.5
+      }
+    },
+    {
+      "id": "1030903591",
+      "kind": "gabled",
+      "height": 6.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            235.29,
+            350.09
+          ],
+          [
+            234.61,
+            340.94
+          ]
+        ],
+        "ridgeHeight": 6.89,
+        "pitchDeg": 21.8
+      }
+    },
+    {
+      "id": "991734730",
+      "kind": "complex",
+      "height": 3.2
+    },
+    {
+      "id": "991730211",
+      "kind": "gabled",
+      "height": 3.9,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            181.07,
+            113.86
+          ],
+          [
+            180.19,
+            107.85
+          ]
+        ],
+        "ridgeHeight": 4.34,
+        "pitchDeg": 25.5
+      }
+    },
+    {
+      "id": "991738057",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "991740726",
+      "kind": "gabled",
+      "height": 3.5,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            81.99,
+            52.41
+          ],
+          [
+            71.94,
+            52.7
+          ]
+        ],
+        "ridgeHeight": 4.3,
+        "pitchDeg": 13.9
+      }
+    },
+    {
+      "id": "991740758",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "113310791",
+      "kind": "gabled",
+      "height": 4.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            279.45,
+            250.93
+          ],
+          [
+            267.05,
+            253.51
+          ]
+        ],
+        "ridgeHeight": 4.5,
+        "pitchDeg": 18.6
+      }
+    },
+    {
+      "id": "113391610",
+      "kind": "gabled",
+      "height": 5.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            104.96,
+            228.6
+          ],
+          [
+            98.19,
+            232.11
+          ]
+        ],
+        "ridgeHeight": 6.33,
+        "pitchDeg": 31.2
+      }
+    },
+    {
+      "id": "113391006",
+      "kind": "gabled",
+      "height": 3.1,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            74.02,
+            62.04
+          ],
+          [
+            80.68,
+            61.96
+          ]
+        ],
+        "ridgeHeight": 3.34,
+        "pitchDeg": 14.1
+      }
+    },
+    {
+      "id": "1030903295",
+      "kind": "gabled",
+      "height": 4.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            200.38,
+            326.84
+          ],
+          [
+            212.61,
+            326.41
+          ]
+        ],
+        "ridgeHeight": 4.59,
+        "pitchDeg": 17.2
+      }
+    },
+    {
+      "id": "113391015",
+      "kind": "gabled",
+      "height": 4.2,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            54.63,
+            178.81
+          ],
+          [
+            61.07,
+            178.7
+          ]
+        ],
+        "ridgeHeight": 4.54,
+        "pitchDeg": 16.1
+      }
+    },
+    {
+      "id": "1030903305",
+      "kind": "gabled",
+      "height": 5.4,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            219.31,
+            348.13
+          ],
+          [
+            224.44,
+            348.33
+          ]
+        ],
+        "ridgeHeight": 6.26,
+        "pitchDeg": 25
+      }
+    },
+    {
+      "id": "115792954",
+      "kind": "flat",
+      "height": 2.9
+    },
+    {
+      "id": "113391005",
+      "kind": "gabled",
+      "height": 4.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            45.51,
+            210.35
+          ],
+          [
+            51.61,
+            210.46
+          ]
+        ],
+        "ridgeHeight": 4.99,
+        "pitchDeg": 17.8
+      }
+    },
+    {
+      "id": "132022095",
+      "kind": "gabled",
+      "height": 3.8,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            228.36,
+            81.12
+          ],
+          [
+            229.2,
+            87.98
+          ]
+        ],
+        "ridgeHeight": 4.2,
+        "pitchDeg": 18.2
+      }
+    },
+    {
+      "id": "115792929",
+      "kind": "gabled",
+      "height": 4.3,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            199.5,
+            160.33
+          ],
+          [
+            200.53,
+            166.4
+          ]
+        ],
+        "ridgeHeight": 4.68,
+        "pitchDeg": 16.2
+      }
+    },
+    {
+      "id": "115792936",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "113310732",
+      "kind": "gabled",
+      "height": 2.7,
+      "roof": {
+        "shape": "gabled",
+        "ridge": [
+          [
+            9.38,
+            370.92
+          ],
+          [
+            3.04,
+            369.79
+          ]
+        ],
+        "ridgeHeight": 3.05,
+        "pitchDeg": 20
+      }
+    },
+    {
+      "id": "113391021",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "113391024",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "115792959",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "113391659",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "115792960",
+      "kind": "complex",
+      "height": 2.6
+    },
+    {
+      "id": "1030902650",
+      "kind": "complex",
+      "height": 14.7
+    },
+    {
+      "id": "132022751",
+      "kind": "unmeasured"
+    },
+    {
+      "id": "113390986",
+      "kind": "flat",
+      "height": 3.6
+    }
+  ]
+}
