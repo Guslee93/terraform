@@ -85,3 +85,10 @@ Licence: NLOD 1.0 (https://data.norge.no/nlod/en/1.0). Source: https://www.vegve
 Use limitation (publisher, verbatim): «Datasettet skal ikke brukes til å vurdere behov for tiltak på enkeltbygg. Det må utføres egne beregninger for dette.»
 
 Road-noise bands are Statens vegvesen's strategic noise map (Lden and Lnight, calculated for 2021, CNOSSOS-EU), clipped to the terrain extent and simplified at 0.4 m; shown as published, not calculated here. The map is static: it does not respond to anything drawn in the studio.
+
+## Parcels
+
+© Kartverket. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Source: Matrikkelen – Eiendomskart Teig, WFS https://wfs.geonorge.no/skwms1/wfs.matrikkelen-eiendomskart-teig, retrieved 2026-11-15. Taken from the WFS dataset, not from map tiles.
+
+Parcel outlines are Kartverket's eiendomskart (matrikkel teig), 375 parcels touching the terrain extent, kept whole; a map of the property register, not surveyed boundaries. Areas shown in the studio are calculated from these outlines.

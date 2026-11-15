@@ -29,6 +29,7 @@ const SAMPLE_PACKAGE: SitePackage = {
   trees: [],
   landcover: [],
   noise: null,
+  parcels: [],
 }
 
 const NO_SITE: string | null = null

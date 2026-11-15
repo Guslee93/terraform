@@ -57,11 +57,13 @@ export function DataAttribution({ manifest, visible }: { manifest: SiteManifest;
   )
 }
 
-export function Inspector({ analysisCards, analysisOnly, layers, visibleLayers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
+export function Inspector({ analysisCards, analysisOnly, layers, parcel, visibleLayers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
   /** The analysis cards: one per screening analysis, above the panel groups (ADR-0026). */
   analysisCards?: ReactNode
   analysisOnly: boolean
   layers: ReactNode
+  /** The selected parcel's facts, while the parcel layer is on (ADR-0035). */
+  parcel?: ReactNode
   /** The layers on screen: the attribution lists their sources only. */
   visibleLayers: ReadonlySet<LayerId>
   site: SiteSummary
@@ -94,7 +96,7 @@ export function Inspector({ analysisCards, analysisOnly, layers, visibleLayers, 
         : <p className="text-body-sm text-ink-secondary">{packageStatus !== 'ready' ? 'Block tools appear when the site package is ready.' : canEdit ? 'Draw a footprint, or click a block to select it.' : 'Blocks are read-only on small screens.'}</p>}
       {selectionExtra}
     </Group>}
-    <Group {...group('layers')} title="Layers">{layers}{views}</Group>
+    <Group {...group('layers')} title="Layers">{layers}{views}{parcel}</Group>
     <Group {...group('export')} title="Export">{visuals}</Group>
     <Group {...group('site')} title="Site">
       <p className="text-body-sm text-ink">{site.title} · Local ENU metres</p>

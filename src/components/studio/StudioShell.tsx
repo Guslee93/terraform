@@ -44,6 +44,8 @@ import { circleSunStat, noiseStat, roofSolarStat, sunStat, vscStat, windStat } f
 import { FULL_DAY, SunHoursControls, type SunWindow } from './SunHoursControls'
 import { bandLookup, bandShares, footprintInSensitiveBand, NOISE_LIMITATION, noiseSourceLine, OFFICIAL_NOISE_NOTE, type NoiseMetric } from '../../features/analysis/officialNoise'
 import { NoisePanel } from './NoisePanel'
+import { ParcelFacts } from './ParcelFacts'
+import { parcelAt, type Parcel } from '../../features/analysis/parcels'
 import { daySunSamples } from '../../features/analysis/shadowRay'
 import { sunHoursDisclaimer } from '../../features/analysis/sunHours'
 import { measuredCount } from '../../features/sites/heights'
@@ -129,6 +131,8 @@ export function StudioShell({
     context: true,
     streets: true,
     trees: true,
+    // Off until asked for: several hundred outlines are context, not the first thing to read.
+    parcels: false,
   })
   // The open analysis card is the analysis on the map (ADR-0026): Wind, Noise and Sun hours colour the ground.
   const [activeCard, setActiveCard] = useState<AnalysisId | null>('noise')
@@ -310,6 +314,9 @@ export function StudioShell({
     return analysisDocument.volumes.some((volume) => volume.tiers.some((tier) => footprintInSensitiveBand(lookup, tier.footprint.vertices)))
   }, [noise, analysisDocument])
   const noiseOnMap = climateMode === 'noise' && !!noise
+  // The parcel under the last ground click, while the parcel layer is on (ADR-0035).
+  const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null)
+  const parcelsOn = layers.parcels && (sitePackage?.parcels.length ?? 0) > 0
   const windComfortView = useMemo(() => {
     if (!sitePackage || !windArea || climateMode !== 'wind' || !windFlow) return null
     // A comfort figure is a pedestrian figure: always at 2 m, whatever height the map shows.
@@ -557,6 +564,8 @@ export function StudioShell({
                 onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
                 exportRequest={exportRequest}
                 exportCredits={exportCredits}
+                selectedParcel={parcelsOn ? selectedParcel : null}
+                onPickParcel={parcelsOn && sitePackage ? (point) => setSelectedParcel(parcelAt(sitePackage.parcels, point[0], point[1])) : undefined}
                 onExport={onExport}
               />
             </>
@@ -619,6 +628,7 @@ export function StudioShell({
           analysisCards={<AnalysisCards cards={analysisCards} active={activeCard} onSelect={selectAnalysisCard} />}
           analysisOnly={analysisOnly}
           layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} notes={layerNotes} />}
+          parcel={parcelsOn && sitePackage ? <ParcelFacts parcel={selectedParcel} showPlanLink={sitePackage.parcels.some((parcel) => parcel.matrikkel?.startsWith('0301-'))} /> : null}
           visibleLayers={visibleLayers}
           site={site}
           manifest={sitePackage?.manifest ?? null}

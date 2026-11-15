@@ -167,7 +167,7 @@ export function creditLine(credit: Credit): string {
 }
 
 /** The scene's layer switches, as far as provenance cares. */
-export type LayerSwitches = { readonly terrain: boolean; readonly ground: boolean; readonly context: boolean; readonly streets: boolean; readonly trees: boolean }
+export type LayerSwitches = { readonly terrain: boolean; readonly ground: boolean; readonly context: boolean; readonly streets: boolean; readonly trees: boolean; readonly parcels?: boolean }
 
 /** The layers on screen: the switched-on scene layers plus the overlays an open analysis draws. */
 export function visibleLayerIds(switches: LayerSwitches, overlays: readonly LayerId[] = []): Set<LayerId> {
@@ -178,6 +178,7 @@ export function visibleLayerIds(switches: LayerSwitches, overlays: readonly Laye
   if (switches.context) { ids.add('buildings'); ids.add('heights') }
   if (switches.streets) ids.add('roads')
   if (switches.trees) ids.add('trees')
+  if (switches.parcels) ids.add('parcels')
   return ids
 }
 

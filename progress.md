@@ -1098,3 +1098,23 @@ zoom in because the quads are small at the default site camera.
 - Captures: `docs/screenshots/build-noise-noise.png`, `build-noise-noise-sloped-edge.png`,
   `build-noise-import-grunerlokka.png`.
 - Not done: rail and aircraft noise; a worker for the texture (not needed: no long task).
+
+## 2026-11-15 — build/foundation WP-5: parcel layer (ADR-0035)
+
+- Data: Kartverket eiendomskart teig WFS (GML 3.2, asked for WGS84, latitude first), one request
+  for the whole extent, parcels kept whole. Curated: `scripts/site-assets/parcels.build.ts`,
+  375 parcels on Compact Infill and 160 on Sloped Edge; imports fetch live.
+- Domain `parcels.ts` (`parcelAt`, `parcelArea`); scene `ParcelLines.tsx`; panel `ParcelFacts.tsx`;
+  a Parcels row in Layers, off by default.
+- Done-when met: the parcel at Compact Infill's origin is 0301-228/255, 464.4 m² from the polygon
+  (register 464.6, feasibility 465.1). Clicked in the production build: same number, "464 m²".
+- Corrections on the way:
+  - I had written a dataset uuid for the parcel layer from memory. It was not verified, so it is
+    removed; `datasetUuid` is optional.
+  - The first capture showed almost no outlines: ground lines are hidden under the buildings of a
+    dense block. They are now drawn over the model.
+  - The loader test's fetch mock failed again on the new asset (third time). It now serves any
+    shipped asset from disk.
+- lint 0; **1138 unit tests pass**, 4 skipped; build OK.
+- Captures: `docs/screenshots/build-parcels-{plan,3d}.png`.
+- Not verified: a live import showing parcels; e2e suite not re-run after this package.

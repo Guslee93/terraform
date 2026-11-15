@@ -1,3 +1,4 @@
+import { kartverketParcels } from '../features/import/parcels'
 import { statensVegvesenNoise } from '../features/import/officialNoise'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -127,7 +128,7 @@ export function NewSitePage() {
     try {
       const result = await importSite(
         framed.frame,
-        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], osm: osmApiArea(), roofs: kartverketSurface(), noise: statensVegvesenNoise() },
+        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], osm: osmApiArea(), roofs: kartverketSurface(), noise: statensVegvesenNoise(), parcels: kartverketParcels() },
         {
           signal: current.signal,
           onProgress: (step, state, detail) => setSteps((previous) => ({ ...previous, [step]: { state, detail } })),

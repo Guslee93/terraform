@@ -60,6 +60,8 @@ export type SiteManifest = {
     heights?: string
     /** Optional official road-noise bands (ADR-0034). */
     noise?: string
+    /** Optional parcel outlines from the eiendomskart (ADR-0035). */
+    parcels?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -268,6 +270,9 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       ...(assetPaths.noise === undefined
         ? {}
         : { noise: asString(assetPaths.noise, 'manifest.assetPaths.noise') }),
+      ...(assetPaths.parcels === undefined
+        ? {}
+        : { parcels: asString(assetPaths.parcels, 'manifest.assetPaths.parcels') }),
     },
     constraints: {
       maxHeightMeters,

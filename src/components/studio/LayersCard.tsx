@@ -6,7 +6,7 @@ const LAYER_ROWS: ReadonlyArray<{
   id: keyof SceneLayers
   label: string
   /** Optional package file the row depends on; the row is hidden when the package lacks it. */
-  asset?: 'roads' | 'trees' | 'landcover'
+  asset?: 'roads' | 'trees' | 'landcover' | 'parcels'
   /** What the layer is not: stated where the layer is switched (feasibility 09 §5). */
   note?: string
 }> = [
@@ -15,6 +15,7 @@ const LAYER_ROWS: ReadonlyArray<{
   { id: 'context', label: 'Context buildings' },
   { id: 'streets', label: 'Streets', asset: 'roads' },
   { id: 'trees', label: 'Trees', asset: 'trees', note: 'Trees are shown, not analysed' },
+  { id: 'parcels', label: 'Parcels', asset: 'parcels', note: 'Eiendomskart — not a surveyed boundary' },
 ]
 
 /** The scene layers in the inspector. */

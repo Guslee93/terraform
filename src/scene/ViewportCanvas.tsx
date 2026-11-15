@@ -21,6 +21,8 @@ import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
 import type { SunDirection } from '../features/analysis/sun'
 import { ClimateLayer } from './ClimateLayer'
 import { NoiseBands } from './NoiseBands'
+import { ParcelLines } from './ParcelLines'
+import type { Parcel } from '../features/analysis/parcels'
 import type { NoiseMetric, NoisePolygon } from '../features/analysis/officialNoise'
 import { FacadeSun, type FacadeOverlay } from './FacadeSun'
 import { RoofSolar } from './RoofSolar'
@@ -67,6 +69,8 @@ export type SceneLayers = {
   trees: boolean
   /** Illustrative ground tints for parks, grass, woods, plazas, protected areas and water. */
   ground: boolean
+  /** Parcel outlines from the eiendomskart (ADR-0035). */
+  parcels: boolean
 }
 
 type ViewportProps = {
@@ -115,6 +119,9 @@ type ViewportProps = {
   grid?: boolean
   /** Each new number captures the export passes once (ADR-0019). */
   exportRequest?: number | null
+  /** The selected parcel, and the ground click that selects one while the parcel layer is on (ADR-0035). */
+  selectedParcel?: Parcel | null
+  onPickParcel?: (point: Vec2) => void
   /** Attribution lines burned into the exported images (ADR-0032). */
   exportCredits?: readonly string[]
   onExport?: (result: PassImages | Error) => void
@@ -543,6 +550,8 @@ export function ViewportCanvas({
   grid = true,
   exportRequest = null,
   exportCredits,
+  selectedParcel = null,
+  onPickParcel,
   onExport,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -599,6 +608,8 @@ export function ViewportCanvas({
 
   const onGroundClick = (point: Vec2, elevation: number) => {
     if (onPickPoint) return onPickPoint(point)
+    // While drawing, a click places a corner; otherwise it also selects the parcel under it.
+    if (onPickParcel && !drawing) onPickParcel(point)
     if (!editable) return
     if (drawing) dispatch({ type: 'pointerDown', point, elevation })
     else dispatch({ type: 'select', selection: EMPTY_SELECTION })
@@ -678,6 +689,7 @@ export function ViewportCanvas({
             {layers.streets && layers.terrain && (
               <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} />
             )}
+            {layers.parcels && layers.terrain && sitePackage.parcels.length > 0 && <ParcelLines parcels={sitePackage.parcels} selected={selectedParcel} heightAt={heightAt} />}
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
             {noise && layers.terrain && <NoiseBands polygons={noise.polygons} metric={noise.metric} terrain={sitePackage.terrain} />}

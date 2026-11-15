@@ -1,7 +1,6 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import compactBuildings from '../../../public/sites/compact-infill/buildings.json'
-import compactHeights from '../../../public/sites/compact-infill/heights.json'
-import compactNoise from '../../../public/sites/compact-infill/noise.json'
 import compactLandcover from '../../../public/sites/compact-infill/landcover.json'
 import compactManifest from '../../../public/sites/compact-infill/manifest.json'
 import compactRoads from '../../../public/sites/compact-infill/roads.json'
@@ -10,6 +9,16 @@ import compactTerrain from '../../../public/sites/compact-infill/terrain.json'
 import compactTrees from '../../../public/sites/compact-infill/trees.json'
 import { SitePackageError } from './manifest'
 import { loadSitePackage } from './package'
+
+/**
+ * The later assets of the shipped package (heights, noise, parcels, …), read from disk, so a new
+ * optional asset in the manifest does not need a line here. Null when the package has no such file.
+ */
+function shippedAsset(url: string): unknown {
+  const name = /\/sites\/compact-infill\/([a-z0-9-]+\.json)$/.exec(url)?.[1]
+  const path = `public/sites/compact-infill/${name}`
+  return name && existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null
+}
 
 function jsonResponse(value: unknown): Response {
   return new Response(JSON.stringify(value), {
@@ -30,8 +39,8 @@ function installSuccessFetch(landcover: unknown = compactLandcover) {
       if (url.endsWith('/roads.json')) return Promise.resolve(jsonResponse(compactRoads))
       if (url.endsWith('/trees.json')) return Promise.resolve(jsonResponse(compactTrees))
       if (url.endsWith('/landcover.json')) return Promise.resolve(jsonResponse(landcover))
-      if (url.endsWith('/heights.json')) return Promise.resolve(jsonResponse(compactHeights))
-      if (url.endsWith('/noise.json')) return Promise.resolve(jsonResponse(compactNoise))
+      const shipped = shippedAsset(url)
+      if (shipped !== null) return Promise.resolve(jsonResponse(shipped))
       return Promise.reject(new Error(`unexpected URL in test fetch: ${url}`))
     },
   )
@@ -219,7 +228,8 @@ describe('measured heights (ADR-0033)', () => {
       if (url.endsWith('/roads.json')) return Promise.resolve(jsonResponse(compactRoads))
       if (url.endsWith('/trees.json')) return Promise.resolve(jsonResponse(compactTrees))
       if (url.endsWith('/landcover.json')) return Promise.resolve(jsonResponse(compactLandcover))
-      if (url.endsWith('/noise.json')) return Promise.resolve(jsonResponse(compactNoise))
+      const shipped = shippedAsset(url)
+      if (shipped !== null) return Promise.resolve(jsonResponse(shipped))
       return Promise.reject(new Error(`unexpected URL in test fetch: ${url}`))
     })
     vi.stubGlobal('fetch', fetchMock)

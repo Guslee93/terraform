@@ -58,7 +58,7 @@ describe('D34 claim and disclaimer audit', () => {
 
   it('the trees layer says trees are not analysed', () => {
     const manifest = { assetPaths: { trees: 'trees.json' } } as unknown as SiteManifest
-    render(<LayersCard manifest={manifest} layers={{ terrain: true, ground: true, context: true, streets: true, trees: true }} onToggleLayer={() => {}} />)
+    render(<LayersCard manifest={manifest} layers={{ terrain: true, ground: true, context: true, streets: true, trees: true, parcels: false }} onToggleLayer={() => {}} />)
     expect(screen.getByText('Trees are shown, not analysed')).toBeVisible()
   })
 

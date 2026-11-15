@@ -41,6 +41,7 @@ const sitePackage = {
   studyArea: parseStudyArea(compactStudyArea),
   roads: [], trees: [], landcover: [],
   noise: null,
+  parcels: [],
 }
 
 
