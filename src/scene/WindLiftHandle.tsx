@@ -1,15 +1,14 @@
-import { Html, Line } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { Plane, Raycaster, Vector2, Vector3 } from 'three'
 import { windDrawLift } from '../features/analysis/climateView'
-import { clampLift, heightText, liftAnchor, nearestHeight, stepHeight } from '../features/analysis/windLift'
-import { enuToThreeXyz, type ThreeVec3, type Vec2 } from '../lib/coordinates'
+import { clampLift, heightText, nearestHeight, stepHeight } from '../features/analysis/windLift'
+import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import type { OrbitControlsHandle } from './CameraRig'
 
 type Props = {
   readonly centre: Vec2
-  readonly radius: number
   readonly heightAt: (east: number, north: number) => number
   /** Solved heights, ascending. */
   readonly heights: readonly number[]
@@ -23,16 +22,15 @@ type Props = {
 }
 
 /**
- * The red lift handle on the analysis circle (ADR-0028 phase 3). Drag it up or down: the disc
+ * The red lift handle at the centre of the analysis circle (ADR-0028 phase 3; at the centre since
+ * 2026-11-15, the owner's call — it was on the rim nearest the viewer). Drag it up or down: the disc
  * follows the pointer, the map shows the nearest solved height, and the disc snaps there on release.
  * `Esc` returns to the height the drag started at. It is a slider for keyboard and screen readers
  * (arrows 1 m, Page Up/Down 5 m, Home, End). A view setting: no undo entry.
  */
-export function WindLiftHandle({ centre, radius, heightAt, heights, heightM, dragM, onDrag, onChange, controlsRef }: Props) {
+export function WindLiftHandle({ centre, heightAt, heights, heightM, dragM, onDrag, onChange, controlsRef }: Props) {
   const { camera, gl } = useThree()
-  // The edge nearest the viewer when the circle is placed; it stays put while the camera orbits.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- the camera position is read once per placement
-  const anchor = useMemo(() => liftAnchor(centre, radius, [camera.position.x, -camera.position.z]), [centre, radius])
+  const anchor = centre
   const ground = heightAt(anchor[0], anchor[1])
   const lift = windDrawLift(dragM ?? heightM)
   const stopRef = useRef<(() => void) | null>(null)
@@ -123,27 +121,5 @@ export function WindLiftHandle({ centre, radius, heightAt, heights, heightM, dra
         </svg>
       </div>
     </Html>
-  )
-}
-
-const SEGMENTS = 96
-const noRaycast = () => null
-
-/** Dashed rims at the other solved heights, so the stack the disc moves through is visible. */
-export function GhostRings({ centre, radius, heightAt, heights }: { centre: Vec2; radius: number; heightAt: (east: number, north: number) => number; heights: readonly number[] }) {
-  const rings = useMemo(() => heights.map((z) => ({
-    z,
-    points: Array.from({ length: SEGMENTS + 1 }, (_, i): ThreeVec3 => {
-      const a = (2 * Math.PI * i) / SEGMENTS
-      const x = centre[0] + radius * Math.cos(a), y = centre[1] + radius * Math.sin(a)
-      return enuToThreeXyz([x, y, heightAt(x, y) + windDrawLift(z) + 0.8])
-    }),
-  })), [centre, radius, heightAt, heights])
-  return (
-    <group>
-      {rings.map((ring) => (
-        <Line key={ring.z} points={ring.points} color="#1F2328" lineWidth={1} dashed dashSize={2} gapSize={3} transparent opacity={0.45} depthTest={false} renderOrder={4} raycast={noRaycast} />
-      ))}
-    </group>
   )
 }

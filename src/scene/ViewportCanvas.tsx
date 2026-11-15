@@ -29,8 +29,8 @@ import type { AnalysisCircle as AnalysisCircleShape } from '../features/analysis
 import { WindStreamlines } from './WindStreamlines'
 import { WindParticles } from './WindParticles'
 import { AnalysisCircle } from './AnalysisCircle'
-import { GhostRings, WindLiftHandle } from './WindLiftHandle'
-import { fadedBuildings, ghostHeights, windFlowStyle } from '../features/analysis/windLift'
+import { WindLiftHandle } from './WindLiftHandle'
+import { fadedBuildings, windFlowStyle } from '../features/analysis/windLift'
 import { WorstArrows } from './WorstArrows'
 import type { FlowResult } from '../features/analysis/flowRunner'
 import type { RoofSolarValue } from '../features/analysis/roofSolar'
@@ -575,7 +575,6 @@ export function ViewportCanvas({
   const [liftDrag, setLiftDrag] = useState<number | null>(null)
   const windLift = windDrawLift(liftDrag ?? windSettings.heightM)
   const liftable = !!windCircle && !!climate && !windWorst && windSettings.display !== 'worst' && !!onWindHeightChange && windHeights.length >= 2
-  const ghostRings = useMemo(() => (liftable ? ghostHeights(windHeights, windSettings.heightM, liftDrag !== null) : []), [liftable, windHeights, windSettings.heightM, liftDrag])
   const fadedContext = useMemo(
     () => (windCircle && climate && !windWorst ? fadedBuildings(buildings.buildings, windCircle, windSettings.heightM) : undefined),
     [windCircle, climate, windWorst, buildings.buildings, windSettings.heightM],
@@ -678,10 +677,9 @@ export function ViewportCanvas({
             {!windWorst && windFlow && windCircle && (windFlowStyle({ lifted: windLift > 0 || liftDrag !== null, streamlinesOn: windStreamlines, reducedMotion }) === 'streamlines'
               ? windFlow.settled && (windSettings.streamlines3d || windField) && <WindStreamlines flow={windFlow} circle={windCircle} heightAt={heightAt} heightM={windSettings.streamlines3d ? null : windSettings.heightM} opacity={windSettings.streamlineOpacity} buildings={windBuildings} />
               : windField && <WindParticles flow={windField} circle={windCircle} heightAt={heightAt} lift={windLift} wind={windShown} />)}
-            {windCircle && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={windHeightAt} />}
-            {windCircle && ghostRings.length > 0 && <GhostRings centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} heights={ghostRings} />}
+            {windCircle && <AnalysisCircle centre={windCircle.centre} radius={windCircle.radius} heightAt={windHeightAt} tick={!(liftable && onWindHeightChange)} />}
             {windCircle && liftable && onWindHeightChange && (
-              <WindLiftHandle centre={windCircle.centre} radius={windCircle.radius} heightAt={heightAt} heights={windHeights}
+              <WindLiftHandle centre={windCircle.centre} heightAt={heightAt} heights={windHeights}
                 heightM={windSettings.heightM} dragM={liftDrag} onDrag={setLiftDrag} onChange={onWindHeightChange} controlsRef={controlsRef} />
             )}
             </group>

@@ -29,7 +29,8 @@ obstacles is the same and the solved flow differs only by that scale factor.
 4. **The slices are the fields as solved.** The 2 m slice no longer carries the downwash rule (a
    ground-level rule); the pedestrian map still does, through the flow's own `velocity`.
 5. **Controls.** The panel slider and the lift handle step 1 m (Page Up/Down 5 m on the handle);
-   the dashed rings mark 2 m and every 5 m. Heights are ready from the bottom up: right after the
+   the dashed rings mark 2 m and every 5 m (removed 2026-11-15 at the owner's request, with the
+   handle moved from the rim to the circle's centre and the circle outline drawn solid). Heights are ready from the bottom up: right after the
    ground solve, everything up to the first roof.
 6. **3D streamlines** sample the covering slice too (`velocityAtHeight`), instead of blending
    between neighbouring slices, which with irregular solve heights would have blended through a
