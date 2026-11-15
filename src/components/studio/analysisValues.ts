@@ -18,6 +18,9 @@ export type AnalysisStat = {
   readonly secondary: readonly Part[]
 }
 
+/** Sun hours read in 0.5 h steps: context heights move the result by more than 0.1 h (feasibility 09 §5). */
+export const roundToHalf = (hours: number) => Math.round(hours * 2) / 2
+
 const empty = (hint: string): AnalysisStat => ({ value: null, unit: '', hint, secondary: [] })
 
 export function sunStat(state: SunState, clock: string): AnalysisStat {
@@ -42,7 +45,7 @@ export function circleSunStat(result: CircleSunHours | null, computing: boolean,
   if (!result || (computing && median === null)) return { ...empty('Computing…'), secondary: [[shortDate(date), '']] }
   if (median === null) return { ...empty('No open ground in the circle'), secondary: [[shortDate(date), '']] }
   return {
-    value: formatNumber(median, 1),
+    value: formatNumber(roundToHalf(median), 1),
     unit: ' h',
     secondary: [['median ground · ', ''], [shortDate(date), '']],
   }
@@ -89,17 +92,17 @@ export function noiseStat(cells: readonly NoiseCell[], roads: readonly NoiseRoad
 
 /**
  * Share of open ground at or above the stand threshold (4 m/s), from a Comfort (activity) view,
- * and the windiest class present. `view` must be built with display 'activity'.
+ * at the chosen wind. `view` must be built with display 'activity'.
  */
 export function windStat(view: ClimateView | null, from: number, refSpeed: number, solving: boolean, lifted = false): AnalysisStat {
   if (!view) return empty(solving ? 'Solving the flow…' : 'Select to solve the flow')
   if (view.assessed === 0) return empty('Solving the flow…')
   const above = view.legend.reduce((sum, entry, index) => sum + ((ACTIVITY_BANDS[index]?.below ?? 0) > ROSE_THRESHOLD_MS ? entry.share : 0), 0)
-  const worst = [...view.legend].reverse().find((entry) => entry.count > 0)
-  // Direction and speed are the card's own controls; the card names the windiest class.
-  const secondary: Part[] = worst
-    // A comfort class is a 2 m statement; while the map shows another height the card says so.
-    ? [['', 'worst '], [worst.label.split(' (')[0] ?? worst.label, lifted ? ' at 2 m' : '']]
-    : [['', `${compassPoint(from)} ${from}° at ${refSpeed} m/s`]]
+  // The figure is a share at the wind the user chose, never a comfort result (feasibility 09 §5).
+  // It is always a 2 m figure; while the map shows another height the card says so.
+  const secondary: Part[] = [
+    ['', `of open ground ≥ ${ROSE_THRESHOLD_MS} m/s${lifted ? ' at 2 m' : ''}, at `],
+    [`${compassPoint(from)} ${refSpeed} m/s`, ' (your input)'],
+  ]
   return { value: formatNumber(above * 100), unit: '%', secondary }
 }

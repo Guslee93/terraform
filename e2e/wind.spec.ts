@@ -38,11 +38,11 @@ test('X4: the wind layer shows its disclaimer and legend, and the baseline/delta
   await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText(DISCLAIMER)).toBeVisible({ timeout: budget(15_000) })
   await expect(page.getByRole('region', { name: 'Wind card' }).getByText(DISCLAIMER)).toBeVisible()
   await expect(parameters(page).getByText(DISCLAIMER)).toBeVisible({ timeout: budget(15_000) })
-  await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: budget(15_000) })
+  await expect(page.getByRole('list', { name: 'Indicative wind speed classes at the chosen wind' })).toBeVisible({ timeout: budget(15_000) })
 
   // Comfort is the default map; Direction shows the speed ratio against open ground.
   const displays = page.getByRole('group', { name: 'Wind map shows' })
-  await expect(displays.getByRole('button', { name: 'Comfort', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(displays.getByRole('button', { name: 'Speed classes', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await displays.getByRole('button', { name: 'Direction', exact: true }).click()
   await expect(displays.getByRole('button', { name: 'Direction', exact: true })).toHaveAttribute('aria-pressed', 'true')
 
@@ -88,17 +88,17 @@ test('ADR-0015: the all-directions sweep fills the rose, opens Worst case, and a
   await expect(section.getByText(/weighted equally — not measured climate frequency/)).toBeVisible()
 
   await page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Worst case' }).click()
-  await expect(page.getByRole('list', { name: 'Worst-case comfort legend' })).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Worst-case speed classes legend' })).toBeVisible()
 
   await section.getByRole('button', { name: /^Wind from E \(90°\)/ }).click()
   await expect(page.getByLabel('Wind blows from')).toHaveValue('90')
-  await expect(page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Speed classes' })).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and returns to comfort at 2 m', async ({ page }) => {
   await openStudio(page)
   await openClimateGroup(page)
-  await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible({ timeout: budget(15_000) })
+  await expect(page.getByRole('list', { name: 'Indicative wind speed classes at the chosen wind' })).toBeVisible({ timeout: budget(15_000) })
 
   // Upper slices arrive after the ground field; the stops above 2 m unlock once they are solved.
   const height = page.getByRole('slider', { name: 'Height above terrain' })
@@ -106,11 +106,11 @@ test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and r
   await height.fill('20') // every whole metre (ADR-0029)
   await expect(height).toHaveAttribute('aria-valuetext', '20 metres above terrain')
 
-  // Comfort classes are pedestrian criteria: above 2 m the legend is speed in m/s and says why.
+  // Speed classes are pedestrian criteria: above 2 m the legend is speed in m/s and says why.
   const displays = page.getByRole('group', { name: 'Wind map shows' })
   await expect(page.getByRole('list', { name: 'Wind direction legend' })).toBeVisible()
-  await expect(page.getByText('Wind speed at 20 m above terrain, in m/s. Comfort classes apply at 2 m only.')).toBeVisible()
-  await expect(displays.getByRole('button', { name: 'Comfort', exact: true })).toBeDisabled()
+  await expect(page.getByText('Wind speed at 20 m above terrain, in m/s. Speed classes apply at 2 m only.')).toBeVisible()
+  await expect(displays.getByRole('button', { name: 'Speed classes', exact: true })).toBeDisabled()
   // The claim on the map names the height, so a lifted map is never read as the pedestrian one.
   await expect(page.getByRole('region', { name: /3D site viewport/ }).getByText('Indicative wind screening at 20 m above terrain — 2D flow, not engineering')).toBeVisible()
 
@@ -136,6 +136,6 @@ test('ADR-0028: the wind map lifts to 20 m above terrain, shows m/s there, and r
   await handle.focus()
   await page.keyboard.press('Home')
   await expect(height).toHaveAttribute('aria-valuetext', '2 metres above terrain')
-  await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible()
-  await expect(displays.getByRole('button', { name: 'Comfort', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('list', { name: 'Indicative wind speed classes at the chosen wind' })).toBeVisible()
+  await expect(displays.getByRole('button', { name: 'Speed classes', exact: true })).toHaveAttribute('aria-pressed', 'true')
 })

@@ -987,3 +987,40 @@ zoom in because the quads are small at the default site camera.
   production build: wind (including the handle drag and Esc), wind-a11y, sun-hours and simplified-studio
   all pass, 7 of 7.
 - Captures: `docs/screenshots/wind-lift-centre-handle-{2m,15m}-1440x900.png`.
+
+## 2026-11-15 — build/foundation WP-0: setup and baseline
+
+- Plan: `docs/plans/fable-build-plan.md` (written from the closed feasibility study). Branch
+  `build/foundation` in the worktree `../Terraform-build`, cut from `feasibility/audit` (fc7cf04).
+- Baseline at fc7cf04: `npm run test` 113 files passed, 1 skipped; **1078 passed, 4 skipped**.
+  `npm run build` OK (three-vendor 246 kB gzip, `/new` 317 kB gzip, studio 74 kB gzip).
+- `npm run lint` **failed at the baseline: 16 errors, all in `feasibility/scratch/`** (browser
+  globals in the throwaway prototypes). Product code was clean. Fixed by ignoring
+  `feasibility/scratch/**` in `eslint.config.js`: it is scratch evidence, outside `src/`.
+- Perf baseline: `feasibility/scratch/evidence/perf-build-baseline.json` (headed Chromium, 1440 × 900
+  @2x, 3 runs per site). Orbit drag: Compact Infill 53.7–56.1 fps, frame p95 25.1 ms, 0 long tasks;
+  Sloped Edge 58.3–59.6 fps, p95 24.9–26.8 ms, 0 long tasks. Gate for later packages: orbit p95
+  ≤ 27.6 ms (Compact Infill), no new long task > 50 ms.
+  Caveat: a 5 s unit-test run overlapped the Compact Infill runs, so its fps reads about 4 fps under
+  the feasibility run (57.9–58.5); the p95 is the same in both.
+- The app's default open card is Noise, so the baseline's idle and orbit windows already draw the
+  noise layer.
+
+## 2026-11-15 — build/foundation WP-1: label and claim corrections (feasibility 09 §5)
+
+- Wind: the "Unsafe (> 15 m/s)" class is gone; the top class is "Very uncomfortable (> 10 m/s)".
+  The view is named "Indicative wind speed classes at the chosen wind" (legend name and note; the
+  switch reads "Speed classes"). The card reads "of open ground ≥ 4 m/s, at W 6 m/s (your input)"
+  instead of "worst Walking". The circle note says "Grid spacing 1.8 m (not accuracy)".
+- Sun: card headline and the three medians round to 0.5 h. The disclaimer adds "(heights estimated
+  from storeys); terrain and trees do not shade".
+- Roof solar: "about 30 % above typical measured weather (PVGIS 2014–2023)".
+- Layers: the Trees row says "Trees are shown, not analysed".
+- Tests: `claims.test.tsx` gained five claim tests (no safety class in any wind legend among them);
+  `analysisValues`, `climateView`, `ClimatePanel` unit tests and the e2e strings follow the new labels.
+- Not changed: the Lawson activity names (Sitting … Very uncomfortable) stay in the legend. 07 says to
+  drop them unless a climate rose weights them; the plan's WP-1 asks only for the safety class. Owner
+  decision, listed in the report. `comfort.ts` still has the unused `lawsonClass`/`unsafe` domain code.
+- lint 0; **1083 unit tests pass**, 4 skipped; build OK. e2e not run (strings updated by hand).
+- Captures: `docs/screenshots/build-labels-{sun,wind,noise}.png` (1440 × 900), via the new
+  `scripts/capture-build.mjs`.

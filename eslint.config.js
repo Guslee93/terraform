@@ -13,6 +13,8 @@ export default tseslint.config(
       '**/venv/**',
       'test-results/**',
       'node_modules/**',
+      // Throwaway feasibility prototypes and evidence (docs/feasibility); not product code.
+      'feasibility/scratch/**',
     ],
   },
   js.configs.recommended,

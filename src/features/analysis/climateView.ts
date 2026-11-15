@@ -3,7 +3,7 @@ import type { Vec2 } from '../../lib/coordinates'
 import { sampleGrid, type FootprintBuilding } from './grid'
 import type { FlowResult } from './flowRunner'
 import { FLOW_DISCLAIMER, sampleVelocity } from './lbm'
-import { LAWSON_NORCONSULT, SAFETY } from './comfort'
+import { LAWSON_NORCONSULT } from './comfort'
 import { computeNoise, NOISE_BAND_LABEL, NOISE_DISCLAIMER, type NoiseBand, type NoiseRoad } from './noise'
 
 export type ClimateMode = 'off' | 'wind' | 'noise' | 'sun-hours'
@@ -80,7 +80,7 @@ export function windCaption(heightM: number, computing = false): string {
 export const LIFT_SLOPE_NOTE = 'Above 2 m the map is drawn following the ground; each height is still solved as a flat slice, so slopes and ridges do not speed up the wind here.'
 
 /** The caption for a map above pedestrian height. */
-export const heightNote = (heightM: number) => `Wind speed at ${heightM} m above terrain, in m/s. Comfort classes apply at 2 m only.`
+export const heightNote = (heightM: number) => `Wind speed at ${heightM} m above terrain, in m/s. Speed classes apply at 2 m only.`
 export type WindBaseline = { readonly flow: FlowResult; readonly circle: { readonly centre: Vec2; readonly radius: number }; readonly from: number; readonly downwash: boolean }
 export function captureBaseline(flow: FlowResult, circle: WindBaseline['circle'], from: number, downwash = false): WindBaseline {
   return { flow: { ...flow, frame: { ...flow.frame, centre: [...flow.frame.centre], flow: [...flow.frame.flow] }, velocity: flow.velocity.slice(), solid: flow.solid.slice(), ...(flow.slices ? { slices: flow.slices.map((slice) => ({ ...slice, velocity: slice.velocity.slice(), solid: slice.solid.slice() })) } : {}) }, circle: { centre: [...circle.centre], radius: circle.radius }, from, downwash }
@@ -150,7 +150,7 @@ export const DELTA_BANDS: readonly Band[] = [
 export const deltaBand = (delta: number) => DELTA_BANDS[delta <= -0.3 ? 0 : delta < -0.1 ? 1 : delta <= 0.1 ? 2 : delta < 0.3 ? 3 : 4]!
 export const DELTA_NOTE = 'Calmer / No change / Windier vs baseline'
 
-/** Momentary activity bands: the five Lawson thresholds (A–E) and the first safety threshold (m/s, pedestrian level). */
+/** Momentary speed classes: the five Lawson thresholds (A–E), m/s at pedestrian level. */
 const [SIT, STAND, STROLL, WALK, UNCOMFORTABLE] = LAWSON_NORCONSULT.thresholds
 export const ACTIVITY_BANDS: readonly Band[] = [
   { band: 'sit', below: SIT, label: `Sitting (< ${SIT} m/s)`, colour: '#3B6EA8' },
@@ -158,8 +158,8 @@ export const ACTIVITY_BANDS: readonly Band[] = [
   { band: 'stroll', below: STROLL, label: `Strolling (${STAND}–${STROLL} m/s)`, colour: '#E6DC9C' },
   { band: 'walk', below: WALK, label: `Walking (${STROLL}–${WALK} m/s)`, colour: '#E39A4C' },
   { band: 'uncomfortable', below: UNCOMFORTABLE, label: `Uncomfortable (${WALK}–${UNCOMFORTABLE} m/s)`, colour: '#C2452F' },
-  { band: 'very-uncomfortable', below: SAFETY.thresholds[0], label: `Very uncomfortable (${UNCOMFORTABLE}–${SAFETY.thresholds[0]} m/s)`, colour: '#962838' },
-  { band: 'unsafe', below: Infinity, label: `Unsafe (> ${SAFETY.thresholds[0]} m/s)`, colour: '#6E1A2A' },
+  // No safety class: a 2D slice at one chosen wind cannot support one (feasibility 09 §5).
+  { band: 'very-uncomfortable', below: Infinity, label: `Very uncomfortable (> ${UNCOMFORTABLE} m/s)`, colour: '#962838' },
 ]
 /** Direction legend: m/s bins coloured from the continuous ramp at each bin's midpoint. */
 export const DIRECTION_BANDS: readonly Band[] = [0, 2, 4, 6, 8, 10].map((lo) => ({
@@ -174,7 +174,9 @@ export function particleColour(ratio: number, wind: WindSettings): string {
   return wind.display === 'delta' ? '#1E3A8A' : windColour(ratio, wind)!
 }
 
-export const ACTIVITY_NOTE = 'Activity at this wind only (Lawson thresholds) — not an annual comfort rating.'
+/** The name of the view (feasibility 09 §5): classes of speed at the wind the user chose, never a comfort result. */
+export const ACTIVITY_VIEW_NAME = 'Indicative wind speed classes at the chosen wind'
+export const ACTIVITY_NOTE = `${ACTIVITY_VIEW_NAME} (Lawson thresholds) — not an annual comfort rating.`
 
 export const NOISE_COLOUR: Record<NoiseBand, string> = {
   quiet: '#9DB8A0',

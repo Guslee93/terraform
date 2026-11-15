@@ -7,12 +7,14 @@ const LAYER_ROWS: ReadonlyArray<{
   label: string
   /** Optional package file the row depends on; the row is hidden when the package lacks it. */
   asset?: 'roads' | 'trees' | 'landcover'
+  /** What the layer is not: stated where the layer is switched (feasibility 09 §5). */
+  note?: string
 }> = [
   { id: 'terrain', label: 'Terrain' },
   { id: 'ground', label: 'Land cover', asset: 'landcover' },
   { id: 'context', label: 'Context buildings' },
   { id: 'streets', label: 'Streets', asset: 'roads' },
-  { id: 'trees', label: 'Trees', asset: 'trees' },
+  { id: 'trees', label: 'Trees', asset: 'trees', note: 'Trees are shown, not analysed' },
 ]
 
 /** The scene layers in the inspector. */
@@ -26,7 +28,7 @@ export function LayersCard({ manifest, layers, onToggleLayer }: {
     <div>
           {on.map((row) => (
             <label key={row.id} className="flex min-h-8 cursor-pointer items-center justify-between gap-3 text-body-sm text-ink">
-              <span>{row.label}</span>
+              <span>{row.label}{row.note && <span className="block text-caption text-ink-secondary">{row.note}</span>}</span>
               <input type="checkbox" checked={layers[row.id]} onChange={() => onToggleLayer(row.id)} className={checkboxClass} />
             </label>
           ))}

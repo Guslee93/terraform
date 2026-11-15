@@ -3,4 +3,4 @@
  * circle): geometric direct sun, clear sky, buildings only — never a daylight or compliance result.
  */
 export const SUN_HOURS_DISCLAIMER =
-  'Indicative sun hours — geometric, clear sky, buildings only. Not a daylight assessment.'
+  'Indicative sun hours — geometric, clear sky, buildings only (heights estimated from storeys); terrain and trees do not shade. Not a daylight assessment.'

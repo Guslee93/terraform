@@ -34,18 +34,18 @@ describe('analysis card values come from the analysis, not constants', () => {
     expect(noiseStat(computeNoise(parcel, [], [], 10), [])).toMatchObject({ value: null, hint: 'No mapped roads in the study area' })
   })
 
-  it('Wind sums the Comfort legend at or above 4 m/s and reports the windiest class present', () => {
+  it('Wind sums the Comfort legend at or above 4 m/s and names the chosen wind as the input of the user', () => {
     // A Comfort view with no flow yet has no assessed cells: the card says so instead of 0 %.
     const pending = buildClimateView('wind', parcel, [], [], null, { ...DEFAULT_WIND, display: 'activity' })
     expect(windStat(pending, 270, 6, true)).toMatchObject({ value: null, hint: 'Solving the flow…' })
     expect(windStat(null, 270, 6, false)).toMatchObject({ value: null, hint: 'Select to solve the flow' })
-    const legend = [0.5, 0.2, 0.2, 0.1, 0, 0, 0].map((share, index) => ({ label: `Band ${index} (x)`, colour: '#000', count: share * 10, share }))
+    const legend = [0.5, 0.2, 0.2, 0.1, 0, 0].map((share, index) => ({ label: `Band ${index} (x)`, colour: '#000', count: share * 10, share }))
     const stat = windStat({ ...pending, legend, assessed: 10 }, 270, 6, true)
     // Stroll (4–6), walk (6–8) and above are at or above the 4 m/s stand threshold: 0.2 + 0.1.
     expect(stat).toMatchObject({ value: '30', unit: '%' })
-    expect(text(stat.secondary)).toBe('worst Band 3')
+    expect(text(stat.secondary)).toBe('of open ground ≥ 4 m/s, at W 6 m/s (your input)')
     // The comfort figure is always at 2 m; while the map shows another height the card says so.
-    expect(text(windStat({ ...pending, legend, assessed: 10 }, 270, 6, true, true).secondary)).toBe('worst Band 3 at 2 m')
+    expect(text(windStat({ ...pending, legend, assessed: 10 }, 270, 6, true, true).secondary)).toBe('of open ground ≥ 4 m/s at 2 m, at W 6 m/s (your input)')
   })
 
   it('Sun analysis cards use the medians of the same samples the layers draw', () => {

@@ -84,7 +84,7 @@ describe('ClimatePanel', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /Downwash rule/ }))
     expect(onFrom).toHaveBeenLastCalledWith({ ...DEFAULT_WIND, downwash: false })
     expect(screen.getByLabelText('Wind at 10 m height')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Speed classes' })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Direction' }))
     expect(onFrom).toHaveBeenLastCalledWith({ ...DEFAULT_WIND, display: 'ratio' })
     fireEvent.change(screen.getByLabelText('Analysis circle'), { target: { value: '150' } })
@@ -271,14 +271,14 @@ it('disables upper controls until slices exist and exposes Direction reference s
 it('above 2 m the map shows m/s: Comfort is disabled and says why (ADR-0028)', () => {
   const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view: null, availableHeights: Array.from({ length: 29 }, (_, i) => i + 2), slicesComplete: true }
   const { rerender } = render(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, display: 'activity', heightM: 20 }} />)
-  const comfort = screen.getByRole('button', { name: 'Comfort' })
+  const comfort = screen.getByRole('button', { name: 'Speed classes' })
   expect(comfort).toBeDisabled()
-  expect(comfort).toHaveAccessibleDescription(/Comfort classes apply at 2 m only/)
+  expect(comfort).toHaveAccessibleDescription(/Speed classes apply at 2 m only/)
   expect(screen.getByRole('button', { name: 'Direction' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getByText(/Wind speed at 20 m above terrain, in m\/s/)).toBeInTheDocument()
   rerender(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, display: 'activity', heightM: 2 }} />)
-  expect(screen.getByRole('button', { name: 'Comfort' })).toBeEnabled()
-  expect(screen.getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: 'Speed classes' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Speed classes' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.queryByText(/above terrain, in m\/s/)).toBeNull()
 })
 
