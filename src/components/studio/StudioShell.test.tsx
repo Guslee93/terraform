@@ -42,6 +42,7 @@ const sitePackage = {
   roads: [], trees: [], landcover: [],
   noise: null,
   parcels: [],
+  hazards: null,
 }
 
 

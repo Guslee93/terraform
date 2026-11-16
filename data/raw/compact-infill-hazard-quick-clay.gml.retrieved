@@ -1,0 +1,2 @@
+2026-11-16
+https://wfs.geonorge.no/skwms1/wfs.aktsomhetskartforkvikkleireskred?service=WFS&version=2.0.0&request=GetFeature&typeNames=app%3AAktsomhetsOmrKvikkleireskred&srsName=urn:ogc:def:crs:EPSG::4326&count=2000&bbox=59.9202048,10.7524240,59.9267952,10.7635760,urn:ogc:def:crs:EPSG::4326

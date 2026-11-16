@@ -32,7 +32,8 @@
     "landcover": "landcover.json",
     "heights": "heights.json",
     "noise": "noise.json",
-    "parcels": "parcels.json"
+    "parcels": "parcels.json",
+    "hazards": "hazards.json"
   },
   "constraints": {
     "maxHeightMeters": 15,
@@ -137,7 +138,8 @@
     "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m² and incomplete rings omitted; multipolygon inner rings ignored",
     "[heights] Building heights and simple gables measured from Kartverket's surface model (177 gabled, 26 flat, 17 other shapes drawn flat at their measured height); 10 not seen in the surface model keep the storey estimate. Not survey data.",
     "[noise] Road-noise bands are Statens vegvesen's strategic noise map (Lden and Lnight, calculated for 2021, CNOSSOS-EU), clipped to the terrain extent and simplified at 0.4 m; shown as published, not calculated here",
-    "[parcels] Parcel outlines are Kartverket's eiendomskart (matrikkel teig), 160 parcels touching the terrain extent, kept whole; a map of the property register, not surveyed boundaries"
+    "[parcels] Parcel outlines are Kartverket's eiendomskart (matrikkel teig), 160 parcels touching the terrain extent, kept whole; a map of the property register, not surveyed boundaries",
+    "[hazards] Mapped hazards are presence facts from NVE and Kartverket, clipped to the terrain extent (Flood zones: not mapped by NVE; Flood susceptibility areas: not mapped by NVE; Quick-clay susceptibility areas: 1 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: not mapped by Kartverket); an absence is \"not mapped\", never \"safe\""
   ],
   "statistics": {
     "buildingCount": 230,
@@ -180,6 +182,51 @@
       "attribution": "© Kartverket",
       "retrieved": "2026-11-15",
       "useLimitation": "Eiendomskart — not a surveyed boundary. Boundary accuracy varies by parcel."
+    },
+    {
+      "id": "flood-zones",
+      "owner": "NVE",
+      "dataset": "Flomsoner (detailed flood-zone maps)",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.flomsoner",
+      "licence": "NLOD 1.0",
+      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "attribution": "Kilde: NVE",
+      "retrieved": "2026-11-16",
+      "useLimitation": "Detailed flood-zone maps exist for selected river reaches only; most rivers have none."
+    },
+    {
+      "id": "flood-susceptibility",
+      "owner": "NVE",
+      "dataset": "Flom aktsomhetsområder",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.flomaktsomhetsomrader",
+      "licence": "NLOD 1.0",
+      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "attribution": "Kilde: NVE",
+      "retrieved": "2026-11-16",
+      "useLimitation": "A national screening map of where flood hazard must be assessed; not a flood-zone map."
+    },
+    {
+      "id": "quick-clay",
+      "owner": "NVE",
+      "dataset": "Aktsomhetskart for kvikkleireskred",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.aktsomhetskartforkvikkleireskred",
+      "licence": "NLOD 1.0",
+      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "attribution": "Kilde: NVE",
+      "retrieved": "2026-11-16",
+      "dataYear": 2026,
+      "useLimitation": "A screening map of where quick-clay hazard must be assessed; not a mapped hazard zone."
+    },
+    {
+      "id": "storm-surge",
+      "owner": "Kartverket",
+      "dataset": "Stormflo og havnivå",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva",
+      "licence": "NLOD 1.0",
+      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "attribution": "Contains data under the Norwegian licence for Open Government data (NLOD) distributed by Kartverket",
+      "retrieved": "2026-11-16",
+      "useLimitation": "Modelled areas, not suited to detailed studies or decisions at detail level (publisher)."
     }
   ]
 }

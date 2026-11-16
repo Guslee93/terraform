@@ -30,6 +30,7 @@ const SAMPLE_PACKAGE: SitePackage = {
   landcover: [],
   noise: null,
   parcels: [],
+  hazards: null,
 }
 
 const NO_SITE: string | null = null

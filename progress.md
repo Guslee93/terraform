@@ -1118,3 +1118,26 @@ zoom in because the quads are small at the default site camera.
 - lint 0; **1138 unit tests pass**, 4 skipped; build OK.
 - Captures: `docs/screenshots/build-parcels-{plan,3d}.png`.
 - Not verified: a live import showing parcels; e2e suite not re-run after this package.
+
+## 2026-11-16 — build/foundation WP-6: mapped hazard facts and source health check (ADR-0036)
+
+- Four maps as presence facts: NVE flood zones, NVE flood susceptibility (from the WFS
+  `wfs.flomaktsomhetsomrader`, not point GetFeatureInfo), NVE quick-clay susceptibility, Kartverket
+  storm surge (200-year, 2100 climate). Curated build step, live on import, panel list in Site.
+- Compact Infill: flood zones "Not mapped by NVE"; flood susceptibility and storm surge "Mapped
+  nearby"; quick clay "Mapped here". Sloped Edge: only quick clay is mapped.
+- Shared `gml.ts` polygon reader; the parcel converter now uses it.
+- `scripts/check-sources.mjs`: 16 sources, all unchanged. No CI workflow touched; a weekly schedule
+  is proposed in the ADR for the owner.
+- Failed attempts:
+  - My first probe loop used zsh word-splitting that zsh does not do; every request was malformed.
+    Redone in Python.
+  - The health check first reported 14 of 16 sources as changed: WFS answers carry a request
+    timestamp. After ignoring it, the four noise answers still differed: the server generates
+    feature ids per request. Verified the features are identical (13 of 13 by properties and
+    geometry), then ignored those ids too.
+  - The first panel layout overflowed sideways with the long storm-surge label; label and
+    statement are now stacked (overflow measured 0 px).
+- lint 0; **1151 unit tests pass**, 4 skipped; build OK.
+- Capture: `docs/screenshots/build-hazards-panel.png`.
+- Not verified: a live import with hazard facts; e2e not re-run after WP-5 and WP-6.

@@ -18,7 +18,7 @@ export const LICENCE_URL: Record<Licence, string> = {
 }
 
 /** The layers a package can carry. `heights` is separate from `buildings` on purpose (ADR-0033). */
-export const LAYER_IDS = ['terrain', 'buildings', 'heights', 'roads', 'trees', 'landcover', 'noise', 'parcels', 'hazards', 'terrain1m'] as const
+export const LAYER_IDS = ['terrain', 'buildings', 'heights', 'roads', 'trees', 'landcover', 'noise', 'parcels', 'flood-zones', 'flood-susceptibility', 'quick-clay', 'storm-surge', 'terrain1m'] as const
 export type LayerId = (typeof LAYER_IDS)[number]
 
 export type LayerProvenance = {

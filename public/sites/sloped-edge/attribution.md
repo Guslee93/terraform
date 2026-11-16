@@ -92,3 +92,10 @@ Road-noise bands are Statens vegvesen's strategic noise map (Lden and Lnight, ca
 Source: Matrikkelen – Eiendomskart Teig, WFS https://wfs.geonorge.no/skwms1/wfs.matrikkelen-eiendomskart-teig, retrieved 2026-11-15. Taken from the WFS dataset, not from map tiles.
 
 Parcel outlines are Kartverket's eiendomskart (matrikkel teig), 160 parcels touching the terrain extent, kept whole; a map of the property register, not surveyed boundaries. Areas shown in the studio are calculated from these outlines.
+
+## Mapped hazards
+
+Kilde: NVE (Flomsoner; Flom aktsomhetsområder; Aktsomhetskart for kvikkleireskred) and Contains data under the Norwegian licence for Open Government data (NLOD) distributed by Kartverket (Stormflo og havnivå).
+Licence: NLOD 1.0 (https://data.norge.no/nlod/en/1.0). Source: Geonorge WFS services, retrieved 2026-11-16.
+
+Flood zones: not mapped by NVE; Flood susceptibility areas: not mapped by NVE; Quick-clay susceptibility areas: 1 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: not mapped by Kartverket. "Not mapped" means the authority has no mapped area in the extent; it is not a statement that the site is safe. No depths, probabilities or safety classes are derived.

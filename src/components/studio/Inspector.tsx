@@ -57,13 +57,15 @@ export function DataAttribution({ manifest, visible }: { manifest: SiteManifest;
   )
 }
 
-export function Inspector({ analysisCards, analysisOnly, layers, parcel, visibleLayers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
+export function Inspector({ analysisCards, analysisOnly, layers, parcel, hazards, visibleLayers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
   /** The analysis cards: one per screening analysis, above the panel groups (ADR-0026). */
   analysisCards?: ReactNode
   analysisOnly: boolean
   layers: ReactNode
   /** The selected parcel's facts, while the parcel layer is on (ADR-0035). */
   parcel?: ReactNode
+  /** The mapped-hazard facts for the study area (ADR-0036). */
+  hazards?: ReactNode
   /** The layers on screen: the attribution lists their sources only. */
   visibleLayers: ReadonlySet<LayerId>
   site: SiteSummary
@@ -101,6 +103,7 @@ export function Inspector({ analysisCards, analysisOnly, layers, parcel, visible
     <Group {...group('site')} title="Site">
       <p className="text-body-sm text-ink">{site.title} · Local ENU metres</p>
       {site.notices && <ul aria-label="Import notes" className="mt-2 list-disc pl-4 text-caption text-ink-secondary">{site.notices.map((notice) => <li key={notice}>{notice}</li>)}</ul>}
+      {hazards}
       {manifest
         ? <DataAttribution manifest={manifest} visible={visibleLayers} />
         : <p className="mt-3 text-caption text-ink-secondary">Buildings © OpenStreetMap contributors (ODbL) · Terrain © Kartverket (CC BY 4.0)</p>}

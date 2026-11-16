@@ -45,6 +45,7 @@ import { FULL_DAY, SunHoursControls, type SunWindow } from './SunHoursControls'
 import { bandLookup, bandShares, footprintInSensitiveBand, NOISE_LIMITATION, noiseSourceLine, OFFICIAL_NOISE_NOTE, type NoiseMetric } from '../../features/analysis/officialNoise'
 import { NoisePanel } from './NoisePanel'
 import { ParcelFacts } from './ParcelFacts'
+import { HazardFacts } from './HazardFacts'
 import { parcelAt, type Parcel } from '../../features/analysis/parcels'
 import { daySunSamples } from '../../features/analysis/shadowRay'
 import { sunHoursDisclaimer } from '../../features/analysis/sunHours'
@@ -407,9 +408,11 @@ export function StudioShell({
   }, [dispatch, requestCamera, editable])
 
   // The layers on screen name the sources the panel and the exports credit (ADR-0032).
-  const visibleLayers = useMemo(() => visibleLayerIds(layers, noiseOnMap ? ['noise'] : []), [layers, noiseOnMap])
+  // The hazard facts are always in the Site group, so their sources are always credited.
+  const hazardKinds = useMemo(() => sitePackage?.hazards?.layers.map((layer) => layer.kind) ?? [], [sitePackage])
+  const visibleLayers = useMemo(() => visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...hazardKinds]), [layers, noiseOnMap, hazardKinds])
   // With the noise map on screen the export also carries its limitation (feasibility 09 §2a.5).
-  const exportCredits = useMemo(() => (sitePackage ? [...exportCreditLines(sitePackage.manifest, visibleLayers), ...(noiseOnMap ? [`Road noise: ${NOISE_LIMITATION}`] : [])] : []), [sitePackage, visibleLayers, noiseOnMap])
+  const exportCredits = useMemo(() => (sitePackage ? [...exportCreditLines(sitePackage.manifest, visibleLayerIds(layers, noiseOnMap ? ['noise'] : [])), ...(noiseOnMap ? [`Road noise: ${NOISE_LIMITATION}`] : [])] : []), [sitePackage, layers, noiseOnMap])
   const sunHoursNote = sunHoursDisclaimer(!!sitePackage && hasMeasuredHeights(sitePackage.manifest))
   // The legend says how many context heights are measured (ADR-0033).
   const layerNotes = useMemo(() => {
@@ -630,6 +633,7 @@ export function StudioShell({
           layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} notes={layerNotes} />}
           parcel={parcelsOn && sitePackage ? <ParcelFacts parcel={selectedParcel} showPlanLink={sitePackage.parcels.some((parcel) => parcel.matrikkel?.startsWith('0301-'))} /> : null}
           visibleLayers={visibleLayers}
+          hazards={sitePackage?.hazards && studyArea ? <HazardFacts hazards={sitePackage.hazards} area={studyArea} /> : null}
           site={site}
           manifest={sitePackage?.manifest ?? null}
           packageStatus={packageStatus}
