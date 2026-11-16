@@ -66,6 +66,8 @@ export type SiteManifest = {
     hazards?: string
     /** Optional header of the 1 m terrain tile; its data file has the same name with `.bin` (ADR-0037). */
     terrain1m?: string
+    /** Optional winter climate context from NVE's snow model (ADR-0039). */
+    snow?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -283,6 +285,9 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       ...(assetPaths.terrain1m === undefined
         ? {}
         : { terrain1m: asString(assetPaths.terrain1m, 'manifest.assetPaths.terrain1m') }),
+      ...(assetPaths.snow === undefined
+        ? {}
+        : { snow: asString(assetPaths.snow, 'manifest.assetPaths.snow') }),
     },
     constraints: {
       maxHeightMeters,

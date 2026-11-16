@@ -40,12 +40,17 @@ import { SunBand, SunDetails, clockLabel, useSunPlayback, type SunAnalysis } fro
 import { ToolRail, type ToolId } from './ToolRail'
 import { AnalysisCards, type AnalysisCard, type AnalysisId } from './AnalysisCards'
 import { LayersCard } from './LayersCard'
-import { circleSunStat, noiseStat, roofSolarStat, sunStat, vscStat, windStat } from './analysisValues'
+import { circleSunStat, noiseStat, roofSolarStat, snowStat, sunStat, vscStat, waterStat, windStat } from './analysisValues'
 import { FULL_DAY, SunHoursControls, type SunWindow } from './SunHoursControls'
 import { bandLookup, bandShares, footprintInSensitiveBand, NOISE_LIMITATION, noiseSourceLine, OFFICIAL_NOISE_NOTE, type NoiseMetric } from '../../features/analysis/officialNoise'
 import { NoisePanel } from './NoisePanel'
 import { ParcelFacts } from './ParcelFacts'
 import { HazardFacts } from './HazardFacts'
+import { WaterPanel } from './WaterPanel'
+import { SnowPanel } from './SnowPanel'
+import { RUNOFF_NOTE, runoffSummary } from '../../features/analysis/runoff'
+import { useRunoff } from '../../features/analysis/useRunoff'
+import { SNOW_LIMITS, SNOW_NOTE } from '../../features/analysis/snowClimate'
 import { TerrainTools, type TerrainToolsState } from './TerrainTools'
 import { hornSlopeDeg, terrainProfile, type TerrainRaster } from '../../features/analysis/terrainTools'
 import { loadTerrainRaster } from '../../features/sites/terrain1m'
@@ -325,7 +330,8 @@ export function StudioShell({
   const [sectionPoints, setSectionPoints] = useState<readonly Vec2[]>([])
   const [terrainRaster, setTerrainRaster] = useState<{ siteId: string; raster: TerrainRaster } | null>(null)
   const [terrainState, setTerrainState] = useState<TerrainToolsState>('idle')
-  const terrainWanted = !!terrain1mPath && (slopeOn || sectionPicking || sectionPoints.length > 0)
+  const waterActive = activeCard === 'water'
+  const terrainWanted = !!terrain1mPath && (slopeOn || sectionPicking || sectionPoints.length > 0 || waterActive)
   const raster = terrainRaster && terrainRaster.siteId === site.id ? terrainRaster.raster : null
   useEffect(() => {
     if (!terrainWanted || !terrain1mPath || raster) return
@@ -354,9 +360,14 @@ export function StudioShell({
       return next
     })
   }, [])
+  // Stormwater runoff screening (ADR-0038): the 1 m terrain with every building, context and drawn,
+  // as a block. Runs in a worker while the Water card is open.
+  const runoffFootprints = useMemo(() => analysisBuildings.map((building) => building.footprint), [analysisBuildings])
+  const { runoff, computing: runoffComputing } = useRunoff(raster, runoffFootprints, waterActive)
+  const runoffFigures = useMemo(() => (runoff ? runoffSummary(runoff) : null), [runoff])
   // One pick mode at a time: placing the analysis circle ends a section that is waiting for points.
   useEffect(() => { if (placingCircle) setSectionPicking(false) }, [placingCircle])
-  const terrainOnMap = !!raster && (slopeOn || sectionPoints.length > 0)
+  const terrainOnMap = !!raster && (slopeOn || sectionPoints.length > 0 || waterActive)
   // The parcel under the last ground click, while the parcel layer is on (ADR-0035).
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null)
   const parcelsOn = layers.parcels && (sitePackage?.parcels.length ?? 0) > 0
@@ -452,7 +463,8 @@ export function StudioShell({
   // The layers on screen name the sources the panel and the exports credit (ADR-0032).
   // The hazard facts are always in the Site group, so their sources are always credited.
   const hazardKinds = useMemo(() => sitePackage?.hazards?.layers.map((layer) => layer.kind) ?? [], [sitePackage])
-  const visibleLayers = useMemo(() => visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...(terrainOnMap ? ['terrain1m' as const] : []), ...hazardKinds]), [layers, noiseOnMap, terrainOnMap, hazardKinds])
+  const snowOpen = activeCard === 'snow' && !!sitePackage?.snow
+  const visibleLayers = useMemo(() => visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...(terrainOnMap ? ['terrain1m' as const] : []), ...(snowOpen ? ['snow' as const] : []), ...hazardKinds]), [layers, noiseOnMap, terrainOnMap, snowOpen, hazardKinds])
   // With the noise map on screen the export also carries its limitation (feasibility 09 §2a.5).
   const exportCredits = useMemo(() => (sitePackage ? [...exportCreditLines(sitePackage.manifest, visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...(terrainOnMap ? ['terrain1m' as const] : [])])), ...(noiseOnMap ? [`Road noise: ${NOISE_LIMITATION}`] : [])] : []), [sitePackage, layers, noiseOnMap, terrainOnMap])
   const sunHoursNote = sunHoursDisclaimer(!!sitePackage && hasMeasuredHeights(sitePackage.manifest))
@@ -528,6 +540,26 @@ export function StudioShell({
       note: OFFICIAL_NOISE_NOTE,
       body: sitePackage
         ? <NoisePanel noise={noise} metric={noiseMetric} onMetricChange={setNoiseMetric} shares={noiseShares} blockInBand={blockInNoiseBand} />
+        : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
+    },
+    {
+      id: 'water',
+      label: 'Water',
+      icon: 'water',
+      stat: waterStat(runoffFigures, !!terrain1mPath, waterActive, runoffComputing),
+      note: RUNOFF_NOTE,
+      body: sitePackage
+        ? <WaterPanel available={!!terrain1mPath} computing={runoffComputing || (waterActive && !runoff)} summary={runoffFigures} hazards={sitePackage.hazards} area={studyArea ?? []} />
+        : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
+    },
+    {
+      id: 'snow',
+      label: 'Snow',
+      icon: 'snow',
+      stat: snowStat(sitePackage?.snow ?? null),
+      note: `${SNOW_NOTE} ${SNOW_LIMITS}`,
+      body: sitePackage
+        ? <SnowPanel snow={sitePackage.snow} siteAltitudeM={sitePackage.manifest.crs.originElevation} />
         : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },
   ]
@@ -608,6 +640,7 @@ export function StudioShell({
                 onWindHeightChange={(heightM) => (windDemo.playing ? windDemo.stopWith({ heightM }) : setWind((w) => ({ ...w, heightM })))}
                 onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : sectionPicking ? pickSectionPoint : undefined}
                 slope={raster && slopeDegrees ? { raster, degrees: slopeDegrees } : null}
+                runoff={waterActive && terrain1mPath ? { result: runoff, caption: runoffComputing || !runoff ? 'Tracing where the water runs…' : RUNOFF_NOTE } : null}
                 section={sectionPoints}
                 exportRequest={exportRequest}
                 exportCredits={exportCredits}

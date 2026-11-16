@@ -31,6 +31,7 @@ const SAMPLE_PACKAGE: SitePackage = {
   noise: null,
   parcels: [],
   hazards: null,
+  snow: null,
 }
 
 const NO_SITE: string | null = null

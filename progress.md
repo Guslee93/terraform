@@ -1189,3 +1189,54 @@ zoom in because the quads are small at the default site camera.
 - Live in the browser after the fixes: a Grünerløkka import with noise, parcels and hazard facts
   (3.6 s; first live check of parcels and hazards on the import path); quick Slope toggle leaves no
   "Loading…"; a section still draws.
+
+## 2026-11-16 — Stormwater runoff screening and winter climate context
+
+- **The request.** The owner asked for a stormwater analysis and a snow analysis. Neither was in
+  the plan: the plan's stretch package was WP-8 (runoff), and snow was on the out-of-scope list.
+  Both are now built, on top of the foundation layers (ADR-0037's 1 m tile, ADR-0036's hazards).
+- **Runoff (ADR-0038).** `src/features/analysis/runoff.ts` is a renderer-free port of the
+  feasibility `terrain_bench.py`: Priority-Flood+Epsilon fills the hollows, D8 routes each cell
+  to its steepest downhill neighbour, and every building — context and drawn — is raised 10 m so
+  the flow goes around it. It runs in a worker (`runoffWorker.ts`, `useRunoff.ts`, 250 ms
+  debounce) because half a million cells are filled and routed. `RunoffOverlay.tsx` drapes the
+  result by the same texture path as the noise bands.
+  - **The one figure** is the share of open ground lying in depressions or enclosed courtyards:
+    16 % on Compact Infill, most of it courtyards. No depth, no volume, no rainfall, no return
+    period anywhere.
+  - **The wording says what the model cannot do.** The tile's edge is an outlet, so water from
+    outside is not included; kerbs, culverts, drains and pipes are not in the model; and a
+    courtyard closed in by buildings shows as a depression because the model has no gateways or
+    drains. That last one is the honest reading of the picture: the courtyards are a property of
+    the block structure, not flood risk.
+  - **Not compared with a reference tool** (WhiteboxTools or TauDEM; feasibility IT-7). The
+    method is checked for conservation and on analytic cases, not against another
+    implementation. It stays a Tier 2 screening.
+  - Curated sites only: the screening needs the 1 m tile. On an imported site the card says so.
+- **Snow (ADR-0039).** Before writing anything I checked the source and the licence, because
+  feasibility had left snow at "researched only" with the licence unconfirmed.
+  - NVE's grid time-series API (`gts.nve.no/api/GridTimeSeries/{x}/{y}/{from}/{to}/sd.json`,
+    EPSG:25833) returns daily snow depth in cm back to 1957, with the cell's altitude, and
+    needs no credentials. MET's Frost was not used: it needs a client ID the project has not got.
+  - The licence: NVE states «Data som ligger på api.nve.no er lisensiert under Norsk lisens for
+    offentlige data (NLOD) …» and names no version. So the provenance contract gains the value
+    `NLOD` without a version, and the hazard layers' "NLOD 1.0" is corrected to "NLOD" for the
+    same reason. **Owner: confirm with NVE before any commercial use.**
+  - **No CORS header**, so this is a build step only. An imported site has no snow context, and
+    its card says so.
+  - The build step reads the `sd` theme only. The same API offers `snowload`, which is an
+    engineering value (NS-EN 1991-1-3): never used, and the reason is recorded in the ADR.
+  - The figures: Compact Infill 30 snow days in a median winter, deepest 16 cm; Sloped Edge
+    52 days and 20 cm. February is the snowiest month on average. The model is for open terrain
+    on a 1 km grid, so a city centre is warmer and its snow is cleared: this describes the
+    neighbourhood's winters, not the site's surfaces.
+- **Checks.** lint 0; **1196 unit tests pass**, 4 skipped; build OK (Studio chunk 81.2 kB gzip).
+  Playwright, full suite, production build: **49 passed, 12 opt-in skipped, 0 failed** — the same
+  counts as the baseline before the change, with the keyboard spec now expecting the Water and
+  Snow tab stops.
+- **Captures.** `docs/screenshots/build-water-{compact-infill,sloped-edge}.png` and
+  `docs/screenshots/build-snow-{compact-infill,sloped-edge}.png`.
+- **Still open.** The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over
+  this change; the NVE licence confirmation; WP-9 (cut/fill); and the owner's own decisions on
+  `build/foundation` (draft PR #18).
+

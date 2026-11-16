@@ -43,6 +43,7 @@ const sitePackage = {
   noise: null,
   parcels: [],
   hazards: null,
+  snow: null,
 }
 
 

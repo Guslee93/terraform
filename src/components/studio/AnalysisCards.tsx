@@ -3,8 +3,8 @@ import { cn } from '../../lib/cn'
 import { Icon, type IconName } from '../ui/Icon'
 import type { AnalysisStat } from './analysisValues'
 
-/** The three screening analyses. One card each, in the Parameters panel (ADR-0026). */
-export type AnalysisId = 'sun' | 'wind' | 'noise'
+/** The analyses. One card each, in the Parameters panel (ADR-0026; Water ADR-0038, Snow ADR-0039). */
+export type AnalysisId = 'sun' | 'wind' | 'noise' | 'water' | 'snow'
 
 export type AnalysisCard = {
   readonly id: AnalysisId

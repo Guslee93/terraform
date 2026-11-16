@@ -23,6 +23,8 @@ import { ClimateLayer } from './ClimateLayer'
 import { NoiseBands } from './NoiseBands'
 import { ParcelLines, SectionLine } from './ParcelLines'
 import { SlopeOverlay } from './SlopeOverlay'
+import { RunoffOverlay } from './RunoffOverlay'
+import type { Runoff } from '../features/analysis/runoff'
 import type { TerrainRaster } from '../features/analysis/terrainTools'
 import type { Parcel } from '../features/analysis/parcels'
 import type { NoiseMetric, NoisePolygon } from '../features/analysis/officialNoise'
@@ -124,6 +126,8 @@ type ViewportProps = {
   /** Terrain tools (ADR-0037): the slope overlay's raster, and the section's picked points. */
   slope?: { readonly raster: TerrainRaster; readonly degrees: Float32Array } | null
   section?: readonly Vec2[]
+  /** The runoff screening (ADR-0038) and the claim shown with it; null when the Water card is closed. */
+  runoff?: { readonly result: Runoff | null; readonly caption: string } | null
   /** The selected parcel, and the ground click that selects one while the parcel layer is on (ADR-0035). */
   selectedParcel?: Parcel | null
   onPickParcel?: (point: Vec2) => void
@@ -557,6 +561,7 @@ export function ViewportCanvas({
   exportCredits,
   selectedParcel = null,
   slope = null,
+  runoff = null,
   section,
   onPickParcel,
   onExport,
@@ -635,6 +640,12 @@ export function ViewportCanvas({
           <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{windCaption(windSettings.heightM, !!windFlow && !windField)}</p>
         </div>
       )}
+      {runoff && (
+        // The screening's claim stays on the map with its layer.
+        <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{runoff.caption}</p>
+        </div>
+      )}
       {noise && (
         // The source, year and limitation stay on the map with the bands (feasibility 09 §2a).
         <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
@@ -700,6 +711,7 @@ export function ViewportCanvas({
             {section && section.length > 0 && layers.terrain && <SectionLine points={section} heightAt={heightAt} />}
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
+            {runoff?.result && layers.terrain && <RunoffOverlay runoff={runoff.result} terrain={sitePackage.terrain} />}
             {slope && layers.terrain && <SlopeOverlay raster={slope.raster} degrees={slope.degrees} terrain={sitePackage.terrain} />}
             {noise && layers.terrain && <NoiseBands polygons={noise.polygons} metric={noise.metric} terrain={sitePackage.terrain} />}
             {climate && (windCircle

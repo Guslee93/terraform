@@ -1,6 +1,7 @@
 import { parseOfficialNoise, type OfficialNoise } from '../analysis/officialNoise'
 import { parseParcels, type Parcel } from '../analysis/parcels'
 import { parseHazards, type Hazards } from '../analysis/hazards'
+import { parseSnowClimate, type SnowClimate } from '../analysis/snowClimate'
 import { mergeHeights, parseHeights } from './heights'
 import { parseRoof, type Roof } from './roof'
 import {
@@ -126,6 +127,8 @@ export type SitePackage = {
   parcels: Parcel[]
   /** Mapped-hazard facts; null when the package never asked the services (ADR-0036). */
   hazards: Hazards | null
+  /** Winter climate context; null when the package has none (ADR-0039). */
+  snow: SnowClimate | null
 }
 
 const BUILDING_KINDS: readonly BuildingKind[] = [
@@ -427,7 +430,7 @@ export function parseSitePackage(raw: unknown): SitePackage {
       Math.abs(manifest.statistics.studyAreaM2 - polygonArea(studyArea.polygon)) > 1) {
     fail('manifest.statistics', 'does not match the package geometry')
   }
-  return { manifest, terrain, buildings, studyArea, roads, trees, landcover, noise: asNoise(root.noise, manifest.id), parcels: asParcels(root.parcels, manifest.id), hazards: asHazards(root.hazards, manifest.id) }
+  return { manifest, terrain, buildings, studyArea, roads, trees, landcover, noise: asNoise(root.noise, manifest.id), parcels: asParcels(root.parcels, manifest.id), hazards: asHazards(root.hazards, manifest.id), snow: null }
 }
 
 function assetUrl(siteId: string, relative: string): string {
@@ -488,8 +491,8 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
   )
   if (manifest.id !== siteId) fail('manifest.id', 'does not match the requested site')
 
-  const { roads: roadsPath, trees: treesPath, landcover: landcoverPath, heights: heightsPath, noise: noisePath, parcels: parcelsPath, hazards: hazardsPath } = manifest.assetPaths
-  const [terrainRaw, buildingsRaw, studyAreaRaw, roadsRaw, treesRaw, landcoverRaw, heightsRaw, noiseRaw, parcelsRaw, hazardsRaw] = await Promise.all([
+  const { roads: roadsPath, trees: treesPath, landcover: landcoverPath, heights: heightsPath, noise: noisePath, parcels: parcelsPath, hazards: hazardsPath, snow: snowPath } = manifest.assetPaths
+  const [terrainRaw, buildingsRaw, studyAreaRaw, roadsRaw, treesRaw, landcoverRaw, heightsRaw, noiseRaw, parcelsRaw, hazardsRaw, snowRaw] = await Promise.all([
     fetchJson(assetUrl(siteId, manifest.assetPaths.terrain), signal),
     fetchJson(assetUrl(siteId, manifest.assetPaths.buildings), signal),
     fetchJson(assetUrl(siteId, manifest.assetPaths.studyArea), signal),
@@ -500,6 +503,7 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
     noisePath === undefined ? null : fetchJson(assetUrl(siteId, noisePath), signal),
     parcelsPath === undefined ? null : fetchJson(assetUrl(siteId, parcelsPath), signal),
     hazardsPath === undefined ? null : fetchJson(assetUrl(siteId, hazardsPath), signal),
+    snowPath === undefined ? null : fetchJson(assetUrl(siteId, snowPath), signal),
   ])
 
   const terrain = parseTerrain(terrainRaw)
@@ -527,7 +531,13 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
     catch (error) { fail('hazards', error instanceof Error ? error.message : 'invalid hazards') }
   }
 
-  for (const asset of [terrain, buildings, studyArea, roads, trees, landcover, heights, noise, parcels, hazards]) {
+  let snow: (SnowClimate & { siteId: string }) | null = null
+  if (snowPath !== undefined) {
+    try { snow = parseSnowClimate(snowRaw) }
+    catch (error) { fail('snow', error instanceof Error ? error.message : 'invalid snow climate') }
+  }
+
+  for (const asset of [terrain, buildings, studyArea, roads, trees, landcover, heights, noise, parcels, hazards, snow]) {
     if (asset === null) continue
     if (asset.siteId !== siteId) fail(asset.siteId, 'site id does not match the package')
   }
@@ -553,5 +563,6 @@ export async function loadSitePackage(siteId: string, signal?: AbortSignal): Pro
     noise: noise ? { dataYear: noise.dataYear, polygons: noise.polygons } : null,
     parcels: parcels?.parcels ?? [],
     hazards: hazards ? { retrieved: hazards.retrieved, layers: hazards.layers } : null,
+    snow: snow ? (({ siteId: _siteId, ...rest }) => { void _siteId; return rest })(snow) : null,
   }
 }

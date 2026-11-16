@@ -6,6 +6,8 @@ import { medianVsc, type VscValue } from '../../features/analysis/vsc'
 import { compassPoint, type SunState } from '../../features/analysis/sun'
 import { shortDate } from './SunPanel'
 import { formatNumber } from './format'
+import type { RunoffSummary } from '../../features/analysis/runoff'
+import type { SnowClimate } from '../../features/analysis/snowClimate'
 
 /** A value with its unit: the value reads dark, the unit grey (ADR-0016 card style). */
 export type Part = readonly [value: string, unit: string]
@@ -105,4 +107,22 @@ export function windStat(view: ClimateView | null, from: number, refSpeed: numbe
     [`${compassPoint(from)} ${refSpeed} m/s`, ' (your input)'],
   ]
   return { value: formatNumber(above * 100), unit: '%', secondary }
+}
+
+/**
+ * The share of the open ground with no surface way out in the model (ADR-0038): hollows in the
+ * terrain and courtyards closed in by buildings. The one figure the runoff screening shows, a
+ * property of the ground's and the buildings' shape. Never a depth or a volume of water.
+ */
+export function waterStat(summary: RunoffSummary | null, available: boolean, active: boolean, computing: boolean): AnalysisStat {
+  if (!available) return empty('Needs the 1 m terrain')
+  if (!active) return empty('Select to trace the runoff')
+  if (!summary || computing) return empty('Tracing where the water runs…')
+  return { value: formatNumber(summary.depressionShare * 100), unit: '%', secondary: [['', 'of the open ground lies in depressions or enclosed courtyards · '], ['screening', '']] }
+}
+
+/** Days with snow on the ground in a median winter (ADR-0039): climate context, not a site measurement. */
+export function snowStat(snow: SnowClimate | null): AnalysisStat {
+  if (!snow) return empty('No winter climate data for this site')
+  return { value: formatNumber(snow.snowDays.median), unit: ' days', secondary: [['', 'with snow on the ground in a median winter · '], [`${snow.winters[0]!.winter}–${snow.winters.at(-1)!.winter}`, '']] }
 }

@@ -34,7 +34,8 @@
     "noise": "noise.json",
     "parcels": "parcels.json",
     "hazards": "hazards.json",
-    "terrain1m": "terrain1m.json"
+    "terrain1m": "terrain1m.json",
+    "snow": "snow.json"
   },
   "constraints": {
     "maxHeightMeters": 15,
@@ -140,8 +141,9 @@
     "[heights] Building heights and simple gables measured from Kartverket's surface model (177 gabled, 26 flat, 17 other shapes drawn flat at their measured height); 10 not seen in the surface model keep the storey estimate. Not survey data.",
     "[noise] Road-noise bands are Statens vegvesen's strategic noise map (Lden and Lnight, calculated for 2021, CNOSSOS-EU), clipped to the terrain extent and simplified at 0.4 m; shown as published, not calculated here",
     "[parcels] Parcel outlines are Kartverket's eiendomskart (matrikkel teig), 160 parcels touching the terrain extent, kept whole; a map of the property register, not surveyed boundaries",
+    "[terrain1m] 1 m terrain is Kartverket DTM1 (bare earth, lidar), 652 × 790 cells over the terrain extent, stored in centimetres; 0 cells without data. Not a survey",
     "[hazards] Mapped hazards are presence facts from NVE and Kartverket, clipped to the terrain extent (Flood zones: not mapped by NVE; Flood susceptibility areas: not mapped by NVE; Quick-clay susceptibility areas: 1 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: not mapped by Kartverket); an absence is \"not mapped\", never \"safe\"",
-    "[terrain1m] 1 m terrain is Kartverket DTM1 (bare earth, lidar), 652 × 790 cells over the terrain extent, stored in centimetres; 0 cells without data. Not a survey"
+    "[snow] Winter climate context is NVE's snow model on the seNorge grid (daily snow depth, 1 km cell at 139 m above sea level), winters 1990/91 to 2019/20; modelled for open terrain, not measured at the site"
   ],
   "statistics": {
     "buildingCount": 230,
@@ -186,12 +188,23 @@
       "useLimitation": "Eiendomskart — not a surveyed boundary. Boundary accuracy varies by parcel."
     },
     {
+      "id": "terrain1m",
+      "owner": "Kartverket",
+      "dataset": "Høyde DTM1 (terrain model, NHM)",
+      "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm-nhm-25833",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "© Kartverket",
+      "retrieved": "2026-11-16",
+      "useLimitation": "Kartverket DTM1 (1 m bare-earth terrain from lidar) — not a survey"
+    },
+    {
       "id": "flood-zones",
       "owner": "NVE",
       "dataset": "Flomsoner (detailed flood-zone maps)",
       "url": "https://wfs.geonorge.no/skwms1/wfs.flomsoner",
-      "licence": "NLOD 1.0",
-      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
       "attribution": "Kilde: NVE",
       "retrieved": "2026-11-16",
       "useLimitation": "Detailed flood-zone maps exist for selected river reaches only; most rivers have none."
@@ -201,8 +214,8 @@
       "owner": "NVE",
       "dataset": "Flom aktsomhetsområder",
       "url": "https://wfs.geonorge.no/skwms1/wfs.flomaktsomhetsomrader",
-      "licence": "NLOD 1.0",
-      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
       "attribution": "Kilde: NVE",
       "retrieved": "2026-11-16",
       "useLimitation": "A national screening map of where flood hazard must be assessed; not a flood-zone map."
@@ -212,8 +225,8 @@
       "owner": "NVE",
       "dataset": "Aktsomhetskart for kvikkleireskred",
       "url": "https://wfs.geonorge.no/skwms1/wfs.aktsomhetskartforkvikkleireskred",
-      "licence": "NLOD 1.0",
-      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
       "attribution": "Kilde: NVE",
       "retrieved": "2026-11-16",
       "dataYear": 2026,
@@ -224,22 +237,22 @@
       "owner": "Kartverket",
       "dataset": "Stormflo og havnivå",
       "url": "https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva",
-      "licence": "NLOD 1.0",
-      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
       "attribution": "Contains data under the Norwegian licence for Open Government data (NLOD) distributed by Kartverket",
       "retrieved": "2026-11-16",
       "useLimitation": "Modelled areas, not suited to detailed studies or decisions at detail level (publisher)."
     },
     {
-      "id": "terrain1m",
-      "owner": "Kartverket",
-      "dataset": "Høyde DTM1 (terrain model, NHM)",
-      "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm-nhm-25833",
-      "licence": "CC BY 4.0",
-      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
-      "attribution": "© Kartverket",
+      "id": "snow",
+      "owner": "NVE",
+      "dataset": "Snow depth, grid time series (seNorge grid)",
+      "url": "https://api.nve.no/doc/gridtimeseries-data-gts/",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
+      "attribution": "Kilde: NVE",
       "retrieved": "2026-11-16",
-      "useLimitation": "Kartverket DTM1 (1 m bare-earth terrain from lidar) — not a survey"
+      "useLimitation": "Winter climate context from a 1 km snow model for open terrain — not a measurement at the site. Not snowdrift, not snow accumulating on or around buildings, and not a snow load. Those need a specialist study. NVE: the data are provided \"as is\" and may contain errors and omissions."
     }
   ]
 }

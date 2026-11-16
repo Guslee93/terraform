@@ -93,16 +93,22 @@ Source: Matrikkelen – Eiendomskart Teig, WFS https://wfs.geonorge.no/skwms1/wf
 
 Parcel outlines are Kartverket's eiendomskart (matrikkel teig), 375 parcels touching the terrain extent, kept whole; a map of the property register, not surveyed boundaries. Areas shown in the studio are calculated from these outlines.
 
-## Mapped hazards
-
-Kilde: NVE (Flomsoner; Flom aktsomhetsområder; Aktsomhetskart for kvikkleireskred) and Contains data under the Norwegian licence for Open Government data (NLOD) distributed by Kartverket (Stormflo og havnivå).
-Licence: NLOD 1.0 (https://data.norge.no/nlod/en/1.0). Source: Geonorge WFS services, retrieved 2026-11-16.
-
-Flood zones: not mapped by NVE; Flood susceptibility areas: 3 mapped area(s) in the extent; Quick-clay susceptibility areas: 5 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: 1 mapped area(s) in the extent. "Not mapped" means the authority has no mapped area in the extent; it is not a statement that the site is safe. No depths, probabilities or safety classes are derived.
-
 ## 1 m terrain
 
 © Kartverket. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
 Source: Høyde DTM1 from the open NHM service https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm-nhm-25833, retrieved 2026-11-16. Vertical datum NN2000.
 
 1 m terrain is Kartverket DTM1 (bare earth, lidar), 624 × 734 cells over the terrain extent, stored in centimetres; 0 cells without data. Not a survey. Used for the section and slope tools; the drawn ground is still the package's coarser grid.
+
+## Mapped hazards
+
+Kilde: NVE (Flomsoner; Flom aktsomhetsområder; Aktsomhetskart for kvikkleireskred) and Contains data under the Norwegian licence for Open Government data (NLOD) distributed by Kartverket (Stormflo og havnivå).
+Licence: Norsk lisens for offentlige data (NLOD), https://data.norge.no/nlod/. Source: Geonorge WFS services, retrieved 2026-11-16.
+
+Flood zones: not mapped by NVE; Flood susceptibility areas: 3 mapped area(s) in the extent; Quick-clay susceptibility areas: 5 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: 1 mapped area(s) in the extent. "Not mapped" means the authority has no mapped area in the extent; it is not a statement that the site is safe. No depths, probabilities or safety classes are derived.
+
+## Winter climate
+
+Kilde: NVE. Licence: Norsk lisens for offentlige data (NLOD), https://data.norge.no/nlod/ (the publisher does not state a version). Source: NVE grid time series, https://gts.nve.no/api/GridTimeSeries (documented at https://api.nve.no/doc/gridtimeseries-data-gts/), theme `sd`, retrieved 2026-11-16.
+
+Winter climate context is NVE's snow model on the seNorge grid (daily snow depth, 1 km cell at 22 m above sea level), winters 1990/91 to 2019/20; modelled for open terrain, not measured at the site. Not snowdrift, not snow accumulating on or around buildings, and not a snow load. Those need a specialist study.

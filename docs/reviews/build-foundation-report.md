@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-15 to 2026-11-16 · **Executor:** Claude Fable 5.2 (one lead session) · **Plan:** `docs/plans/fable-build-plan.md` (kept in the `Terraform-feasibility` worktree, not committed)
 **Branch:** `build/foundation`, worktree `../Terraform-build`, cut from `feasibility/audit` (fc7cf04)
-**Nothing was pushed, merged or deployed.** No PR was opened. No CI workflow was added or changed. No dependency was added.
+**Pushed; draft PR #18 is open and green.** Nothing is merged or deployed: production is unchanged. No CI workflow was added or changed. No dependency was added.
 
 ## 1. Status
 
@@ -16,10 +16,10 @@
 | WP-5 Parcel layer | Done | 6a8fe5f | ADR-0035 |
 | WP-6 Hazard facts and source health check | Done | a3c5685 | ADR-0036 |
 | WP-7 1 m terrain tools | Done, with two recorded gaps (§6) | b05454a | ADR-0037 |
-| WP-8 DEM runoff screening (stretch) | **Not started** | — | — |
+| WP-8 DEM runoff screening (stretch) | Done — at the owner's request, after the report was first written | see §11 | ADR-0038 |
 | WP-9 Cut/fill pad (stretch) | **Not started** | — | — |
 
-All MUST and SHOULD packages are complete and committed. The two COULD packages were not started: I stopped at a clean package boundary rather than begin a third data pipeline late in a long session.
+All MUST and SHOULD packages are complete and committed. WP-9 (the cut/fill pad) was not started. WP-8 (the runoff screening) was built afterwards, at the owner's request, together with a snow analysis that was not a plan package at all; both are in §11.
 
 ## 2. Checks at the last commit (b05454a)
 
@@ -112,7 +112,7 @@ The full Playwright suite was **not** re-run after WP-7; the five specs above we
 4. **CI schedule for the health check:** ADR-0036 proposes a weekly `node scripts/check-sources.mjs --strict`. No workflow was added.
 5. **Repository size:** keep the raw caches in git (reproducible, offline builds) or move them out.
 6. **Sloped Edge at 95.7 % measured heights:** accept, or look at the ten buildings.
-7. **Stretch packages WP-8 (runoff) and WP-9 (cut/fill):** both can now build on the 1 m tile and `terrainTools.ts`. Not started.
+7. **Stretch package WP-9 (cut/fill):** it can build on the 1 m tile and `terrainTools.ts`. Not started. WP-8 (runoff) was built afterwards at the owner's request — §11.
 8. **Parcels are off by default.** Say if they should be on.
 9. **The plan file itself** is uncommitted in the `Terraform-feasibility` worktree. This branch's ADRs and logs refer to it by path.
 
@@ -147,3 +147,78 @@ Live checks on the production build after the fixes:
 - **Compact Infill:** slope legend 76 / 18 / 5 / 1 %; a drawn section read "288 m long, from 20.2 m to 21.2 m above sea level". No page errors.
 
 Not reviewed in this pass: `scripts/site-assets/*.build.ts` and `scripts/check-sources.mjs` beyond reading them; the full Playwright suite was not re-run after the fixes.
+
+## 11. The owner's request: stormwater and snow (2026-11-16)
+
+Two analyses the owner asked for, built after this report's first version and committed on the same
+branch. Neither was in the plan: the plan's stretch package was WP-8 (runoff), and snow was on the
+out-of-scope list. Both were built on the foundation layers — ADR-0037's 1 m tile and ADR-0036's
+hazards.
+
+| Analysis | ADR | What it is |
+|---|---|---|
+| Stormwater runoff screening | ADR-0038 | Where surface water would run on the 1 m terrain, and where the ground forms hollows, with every building as a block |
+| Winter climate context | ADR-0039 | How much snow the neighbourhood has had on the ground, from NVE's snow model, for open terrain |
+
+### What was checked before writing anything
+
+- **Runoff.** The feasibility study had already tested the method in Python
+  (`terrain_bench.py`): Priority-Flood+Epsilon and D8 on the 1 m terrain conserve water, 100 % of
+  cells drain and no sinks remain. Its weakness there was that bare-earth terrain lets water run
+  through buildings, which is why the port raises every footprint 10 m as a block.
+- **Snow.** Feasibility had left snow at "researched only": no series pulled, licence unconfirmed.
+  Both were settled first. NVE's grid time-series API returns daily snow depth in cm back to 1957
+  for a point in EPSG:25833, with the cell's altitude, and needs no credentials. MET's Frost was
+  not used: it needs a client ID the project does not have. The licence is NVE's NLOD, named
+  without a version — so the provenance contract gains `NLOD` (no version) and the hazard layers'
+  "NLOD 1.0" is corrected to "NLOD" for the same reason. **Owner: confirm with NVE before any
+  commercial use.** There is no CORS header, so the read is a build step only.
+
+### The claims, and what is deliberately absent
+
+- The runoff card's only figure is the share of open ground lying in depressions or enclosed
+  courtyards — 16 % on Compact Infill, most of it courtyards. No depth, volume, rainfall or return
+  period appears anywhere.
+- The card states the model's limits: the tile's edge is an outlet, so water arriving from
+  outside it is not included; kerbs, culverts, drains and pipes are not in the model; and a
+  courtyard closed in by buildings shows as a depression, because the model has no gateways or
+  drains. That last one is the honest reading of the picture — the courtyards are a property of
+  the block structure, not of flood risk.
+- The snow card says it is winter climate context from a 1 km snow model for open terrain, not a
+  measurement at the site, and that a street, a courtyard or a roof will differ. It is not
+  snowdrift, not snow accumulating on or around buildings, and not a snow load.
+- The build step reads the `sd` theme only. The same API offers `snowload`, an engineering value
+  (NS-EN 1991-1-3); it is never read, and the ADR says why.
+
+### Results
+
+| Site | Model cell altitude | Snow days, median (fewest–most) | Deepest snow, median (range) | Snowiest month on average |
+|---|---|---|---|---|
+| Compact Infill | 22 m | 30 (0–131) | 16 cm (5–56 cm) | February, 8 cm |
+| Sloped Edge | 139 m | 52 (1–138) | 20 cm (5–61 cm) | February, 12 cm |
+
+### Checks
+
+| Check | Result |
+|---|---|
+| `npm run lint` | pass (0 problems) |
+| `npm run test` | **1196 passed, 4 skipped** (123 files passed, 1 skipped) |
+| `npm run build` | pass. Studio chunk 81.2 kB gzip (78.5 at WP-7) |
+| Playwright, full suite, production build | **49 passed, 12 opt-in skipped, 0 failed** — the same counts as the baseline before this change |
+| `node scripts/check-sources.mjs` | 20 sources, 20 unchanged, 0 failed |
+
+Captures: `docs/screenshots/build-water-{compact-infill,sloped-edge}.png` and
+`docs/screenshots/build-snow-{compact-infill,sloped-edge}.png`.
+
+### Not done
+
+- **No comparison with a reference tool** (WhiteboxTools or TauDEM; feasibility IT-7). The runoff
+  method is checked for conservation and on analytic cases, not against another implementation. It
+  stays a Tier 2 screening.
+- No rainfall, infiltration, pipe network, kerb heights or culverts; no depths or velocities.
+- Flow entering the tile from uphill outside it is not modelled.
+- Snowdrift, accumulation and snow loads remain Tier 3.
+- Curated sites only: an imported site has no 1 m tile and no snow context (no CORS), and both
+  cards say so.
+- The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over this change.
+
