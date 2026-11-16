@@ -4,7 +4,7 @@
 **Date:** 16 November 2026
 **Report prepared by:** Cline (continuation agent)
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
-**Code state reported on:** branch `build/foundation` @ `01c514b`
+**Code state reported on:** branch `build/foundation` @ `01c514b` (the report itself is `951dbef`)
 **Production state:** `main` @ `2089fd4` (deployed)
 
 ---
