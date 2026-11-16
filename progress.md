@@ -1165,3 +1165,13 @@ zoom in because the quads are small at the default site camera.
 - lint 0; **1171 unit tests pass**, 4 skipped; build OK (studio chunk 78.5 kB gzip, was 73.8 kB at
   the baseline). Health check: 18 sources unchanged.
 - Captures: `docs/screenshots/build-terrain-{slope,section}.png`.
+
+## 2026-11-16 — build/foundation: close-out
+
+- Stopped after WP-7, at a package boundary. WP-8 and WP-9 (stretch) not started.
+- Final perf run (`feasibility/scratch/evidence/perf-build-final.json`): orbit 64.9–70.2 fps, p95
+  17.7–24.3 ms, 0 long tasks idle and orbiting, 90 draw calls. Faster than the baseline run, which
+  the build does not explain: the machine paced frames differently on the second day. Read as no
+  measurable cost.
+- Report: `docs/reviews/build-foundation-report.md`. AGENTS.md §10 and `task_plan.md` updated.
+- Nothing pushed, merged or deployed; no pull request; no CI workflow changed; no dependency added.

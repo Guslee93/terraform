@@ -314,3 +314,21 @@ geometry, and a river is recognised as a river (ADR-0027).
       `docs/reviews/water-geometry-review.md`.
 - [x] The curated packages are byte-identical: the rule is applied when the studio loads a package.
 - [ ] The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.
+
+## Foundation layers — build/foundation (2026-11-15/16)
+
+Plan: `docs/plans/fable-build-plan.md` (from the closed feasibility study). Report:
+`docs/reviews/build-foundation-report.md`. Branch `build/foundation`, not pushed.
+
+- [x] WP-0 baseline (1078 tests; perf baseline) and WP-1 label corrections.
+- [x] WP-2 layer provenance, attribution panel, export credits (ADR-0032).
+- [x] WP-3 measured heights for the curated sites (ADR-0033).
+- [x] WP-4 official road-noise map; heuristic deleted (ADR-0034). Registration and perf gates pass.
+- [x] WP-5 parcel layer (ADR-0035).
+- [x] WP-6 hazard facts and source health check (ADR-0036).
+- [x] WP-7 1 m terrain tools: slope and section (ADR-0037). Not for imports; no 1 m contours.
+- [ ] WP-8 DEM runoff screening (stretch): not started.
+- [ ] WP-9 cut/fill pad (stretch): not started.
+- [ ] Independent review of the branch (owner: Opus or Codex), then push and pull request on the owner's yes.
+- [ ] `/code-review` of WP-5 to WP-7 (not run).
+- [x] `npm run lint`, `npm run test` (1171 passed / 4 skipped) and `npm run build` pass at b05454a.
