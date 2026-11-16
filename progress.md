@@ -1240,3 +1240,46 @@ zoom in because the quads are small at the default site camera.
   this change; the NVE licence confirmation; WP-9 (cut/fill); and the owner's own decisions on
   `build/foundation` (draft PR #18).
 
+
+## 2026-11-16 — About page: the official noise map, the wind lift, Water and Snow
+
+- **The request.** TF-VIS-004, a copy change only: the About page still described the road-noise
+  heuristic that ADR-0034 deleted, and said nothing about the wind lift, the Water card or the
+  Snow card.
+- **The contradiction.** "What this is not" already said "Road noise is Statens vegvesen's
+  published strategic noise map, shown as mapped bands and not for assessing individual
+  buildings", while the "How the model stays honest" paragraph said "Noise uses road class and
+  distance, with a fixed reduction behind buildings". The second sentence described the
+  highway-class heuristic, which ADR-0034 deleted rather than kept as a fallback.
+- **What changed.** Four sentences in one paragraph; every other sentence on the page is
+  untouched.
+  - **Wind.** "Wind is a 2D screening flow inside an analysis circle, and the map can be read at
+    any whole metre above the ground." From ADR-0028 (the circle and the single height control)
+    and ADR-0029 (every whole metre, from 2 m up to the lift top). No comfort and no safety
+    claim.
+  - **Noise.** "Noise is Statens vegvesen's published strategic road-noise map for 2021, shown as
+    published and not for assessing individual buildings." The year is the map's own (Lden 2021,
+    ADR-0034); "shown as published" is the studio's wording for looking the bands up rather than
+    computing a level.
+  - **Water.** "Water is a runoff screening on the 1 m terrain, showing flow paths and hollows,
+    with no drains, rainfall or water depth." From ADR-0038: Priority-Flood+Epsilon plus D8 on
+    the 1 m tile, with buildings as blocks. The card's own limits — the tile edge is an outlet,
+    kerbs, culverts, drains and pipes are not in the model — are summarised here.
+  - **Snow.** "Snow is winter climate context from NVE's 1 km snow model for open terrain, not a
+    measurement at the site and not a snow load." From ADR-0039's own claim wording, including
+    the refusal to read the `snowload` theme.
+  - The old wind clause "for a direction the visitor chooses" went with the sentence. The
+    direction sweep (ADR-0015) is still real; it is simply no longer described here.
+- **Checks.** lint 0; `npx vitest run src/app` — **30 of 31 pass**, 1 failed; build OK
+  (Studio chunk 81.2 kB gzip). New `src/app/AboutPage.test.tsx` (6 tests) pins the six sentences
+  and asserts that "road class and distance" is gone, that "Statens vegvesen" is present, and
+  that Water and Snow are each named.
+  - **The one failure is not this change.** `App.test.tsx` → "shows a recoverable state for an
+    unknown site package" allows 5 s for the lazy studio chunk; this sandbox needs 6.9 s to
+    resolve the error state. It fails identically on `build/foundation` with this change
+    reverted, and the owner's machine and GitHub CI are inside the budget.
+  - **The full unit suite was not run in the sandbox** (the wind solver and the noise budget
+    tests are CPU-bound and time out here under load). GitHub CI on the draft PR is the check
+    for the whole suite.
+- **Open for the owner.** NVE is named without being expanded or linked in "Data sources", and
+  the Scope list still names only wind, sun, figures and layers. Neither was in the request.

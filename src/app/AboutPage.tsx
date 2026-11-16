@@ -21,7 +21,7 @@ const sections = [
     title: 'How the model stays honest',
     body: [
       'Authored geometry lives in a local East/North/Up metre frame. One coordinate pipeline serves raycasts, snapping, measurement and export. Domain calculations are kept independent of React and Three.js so they can be tested without mounting a canvas.',
-      'Area, coverage and height come from building footprints clipped to the study boundary. Solar direction is calculated from the site’s coordinates and timestamp. Wind uses the buildings upwind of each point for a direction the visitor chooses. Noise uses road class and distance, with a fixed reduction behind buildings. Where the tool cannot make a claim, the interface says so.',
+      'Area, coverage and height come from building footprints clipped to the study boundary. Solar direction is calculated from the site’s coordinates and timestamp. Wind is a 2D screening flow inside an analysis circle, and the map can be read at any whole metre above the ground. Noise is Statens vegvesen’s published strategic road-noise map for 2021, shown as published and not for assessing individual buildings. Water is a runoff screening on the 1 m terrain, showing flow paths and hollows, with no drains, rainfall or water depth. Snow is winter climate context from NVE’s 1 km snow model for open terrain, not a measurement at the site and not a snow load. Where the tool cannot make a claim, the interface says so.',
     ],
   },
 ]
