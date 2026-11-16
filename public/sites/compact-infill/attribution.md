@@ -99,3 +99,10 @@ Kilde: NVE (Flomsoner; Flom aktsomhetsområder; Aktsomhetskart for kvikkleireskr
 Licence: NLOD 1.0 (https://data.norge.no/nlod/en/1.0). Source: Geonorge WFS services, retrieved 2026-11-16.
 
 Flood zones: not mapped by NVE; Flood susceptibility areas: 3 mapped area(s) in the extent; Quick-clay susceptibility areas: 5 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: 1 mapped area(s) in the extent. "Not mapped" means the authority has no mapped area in the extent; it is not a statement that the site is safe. No depths, probabilities or safety classes are derived.
+
+## 1 m terrain
+
+© Kartverket. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Source: Høyde DTM1 from the open NHM service https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm-nhm-25833, retrieved 2026-11-16. Vertical datum NN2000.
+
+1 m terrain is Kartverket DTM1 (bare earth, lidar), 624 × 734 cells over the terrain extent, stored in centimetres; 0 cells without data. Not a survey. Used for the section and slope tools; the drawn ground is still the package's coarser grid.

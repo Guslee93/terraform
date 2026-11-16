@@ -58,3 +58,19 @@ export function ParcelLines({ parcels, selected, heightAt }: { parcels: readonly
     </group>
   )
 }
+
+/**
+ * The section line of the terrain tools (ADR-0037): the two picked points joined along the ground,
+ * drawn over the model like the parcel outlines. One point is shown as a short cross.
+ */
+export function SectionLine({ points, heightAt }: { points: readonly (readonly [number, number])[]; heightAt: (east: number, north: number) => number }) {
+  const shape = useMemo<Parcel[]>(() => {
+    const [a, b] = points
+    if (!a) return []
+    // A ring of the two points back and forth is the line itself; one point becomes a 3 m cross.
+    const rings = b ? [[a, b]] : [[[a[0] - 1.5, a[1]], [a[0] + 1.5, a[1]]], [[a[0], a[1] - 1.5], [a[0], a[1] + 1.5]]]
+    return [{ id: 'section', matrikkel: null, updated: null, rings: rings as Parcel['rings'] }]
+  }, [points])
+  if (shape.length === 0) return null
+  return <Lines parcels={shape} heightAt={(east, north) => heightAt(east, north) + 0.2} colour="#1F3BD6" opacity={1} />
+}

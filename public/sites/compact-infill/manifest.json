@@ -33,7 +33,8 @@
     "heights": "heights.json",
     "noise": "noise.json",
     "parcels": "parcels.json",
-    "hazards": "hazards.json"
+    "hazards": "hazards.json",
+    "terrain1m": "terrain1m.json"
   },
   "constraints": {
     "maxHeightMeters": 18,
@@ -139,7 +140,8 @@
     "[heights] Building heights and simple gables measured from Kartverket's surface model (282 gabled, 161 flat, 77 other shapes drawn flat at their measured height); 0 not seen in the surface model keep the storey estimate. Not survey data.",
     "[noise] Road-noise bands are Statens vegvesen's strategic noise map (Lden and Lnight, calculated for 2021, CNOSSOS-EU), clipped to the terrain extent and simplified at 0.4 m; shown as published, not calculated here",
     "[parcels] Parcel outlines are Kartverket's eiendomskart (matrikkel teig), 375 parcels touching the terrain extent, kept whole; a map of the property register, not surveyed boundaries",
-    "[hazards] Mapped hazards are presence facts from NVE and Kartverket, clipped to the terrain extent (Flood zones: not mapped by NVE; Flood susceptibility areas: 3 mapped area(s) in the extent; Quick-clay susceptibility areas: 5 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: 1 mapped area(s) in the extent); an absence is \"not mapped\", never \"safe\""
+    "[hazards] Mapped hazards are presence facts from NVE and Kartverket, clipped to the terrain extent (Flood zones: not mapped by NVE; Flood susceptibility areas: 3 mapped area(s) in the extent; Quick-clay susceptibility areas: 5 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: 1 mapped area(s) in the extent); an absence is \"not mapped\", never \"safe\"",
+    "[terrain1m] 1 m terrain is Kartverket DTM1 (bare earth, lidar), 624 × 734 cells over the terrain extent, stored in centimetres; 0 cells without data. Not a survey"
   ],
   "statistics": {
     "buildingCount": 520,
@@ -229,6 +231,17 @@
       "retrieved": "2026-11-16",
       "dataYear": 2026,
       "useLimitation": "Modelled areas, not suited to detailed studies or decisions at detail level (publisher)."
+    },
+    {
+      "id": "terrain1m",
+      "owner": "Kartverket",
+      "dataset": "Høyde DTM1 (terrain model, NHM)",
+      "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm-nhm-25833",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "© Kartverket",
+      "retrieved": "2026-11-16",
+      "useLimitation": "Kartverket DTM1 (1 m bare-earth terrain from lidar) — not a survey"
     }
   ]
 }

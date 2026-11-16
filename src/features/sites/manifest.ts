@@ -64,6 +64,8 @@ export type SiteManifest = {
     parcels?: string
     /** Optional mapped-hazard facts from NVE and Kartverket (ADR-0036). */
     hazards?: string
+    /** Optional header of the 1 m terrain tile; its data file has the same name with `.bin` (ADR-0037). */
+    terrain1m?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -278,6 +280,9 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       ...(assetPaths.hazards === undefined
         ? {}
         : { hazards: asString(assetPaths.hazards, 'manifest.assetPaths.hazards') }),
+      ...(assetPaths.terrain1m === undefined
+        ? {}
+        : { terrain1m: asString(assetPaths.terrain1m, 'manifest.assetPaths.terrain1m') }),
     },
     constraints: {
       maxHeightMeters,

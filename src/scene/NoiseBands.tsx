@@ -44,19 +44,26 @@ export function createNoiseTexture(polygons: readonly NoisePolygon[], metric: No
 }
 
 /**
- * The official road-noise bands draped on the terrain (ADR-0034): one texture on one copy of the
- * terrain mesh, mapped by the terrain's own planar ENU UVs. No mesh per feature. The map is static
- * context: it is drawn as published and never reacts to the design.
+ * A plan texture draped on a copy of the terrain mesh by its planar ENU UVs (ADR-0034): one mesh,
+ * one texture. Shared by the noise bands and the slope overlay.
  */
-export function NoiseBands({ polygons, metric, terrain }: { polygons: readonly NoisePolygon[]; metric: NoiseMetric; terrain: TerrainData }) {
+export function DrapedTexture({ texture, terrain, opacity = 0.6 }: { texture: CanvasTexture | null; terrain: TerrainData; opacity?: number }) {
   const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
-  const texture = useMemo(() => createNoiseTexture(polygons, metric, terrain), [polygons, metric, terrain])
   useEffect(() => () => geometry.dispose(), [geometry])
   useEffect(() => () => texture?.dispose(), [texture])
   if (!texture) return null
   return (
     <mesh geometry={geometry} raycast={noRaycast} renderOrder={2}>
-      <meshBasicMaterial map={texture} transparent opacity={0.6} depthWrite={false} side={DoubleSide} toneMapped={false} polygonOffset polygonOffsetFactor={-2} />
+      <meshBasicMaterial map={texture} transparent opacity={opacity} depthWrite={false} side={DoubleSide} toneMapped={false} polygonOffset polygonOffsetFactor={-2} />
     </mesh>
   )
+}
+
+/**
+ * The official road-noise bands draped on the terrain (ADR-0034). No mesh per feature. The map is
+ * static context: it is drawn as published and never reacts to the design.
+ */
+export function NoiseBands({ polygons, metric, terrain }: { polygons: readonly NoisePolygon[]; metric: NoiseMetric; terrain: TerrainData }) {
+  const texture = useMemo(() => createNoiseTexture(polygons, metric, terrain), [polygons, metric, terrain])
+  return <DrapedTexture texture={texture} terrain={terrain} />
 }

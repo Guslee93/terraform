@@ -57,13 +57,15 @@ export function DataAttribution({ manifest, visible }: { manifest: SiteManifest;
   )
 }
 
-export function Inspector({ analysisCards, analysisOnly, layers, parcel, hazards, visibleLayers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
+export function Inspector({ analysisCards, analysisOnly, layers, parcel, terrainTools, hazards, visibleLayers, site, manifest, packageStatus, views, visuals, selected, canEdit, editingEnabled, onCommand, selectionMeta, selectionExtra }: {
   /** The analysis cards: one per screening analysis, above the panel groups (ADR-0026). */
   analysisCards?: ReactNode
   analysisOnly: boolean
   layers: ReactNode
   /** The selected parcel's facts, while the parcel layer is on (ADR-0035). */
   parcel?: ReactNode
+  /** The 1 m terrain tools: slope overlay and section (ADR-0037). */
+  terrainTools?: ReactNode
   /** The mapped-hazard facts for the study area (ADR-0036). */
   hazards?: ReactNode
   /** The layers on screen: the attribution lists their sources only. */
@@ -98,7 +100,7 @@ export function Inspector({ analysisCards, analysisOnly, layers, parcel, hazards
         : <p className="text-body-sm text-ink-secondary">{packageStatus !== 'ready' ? 'Block tools appear when the site package is ready.' : canEdit ? 'Draw a footprint, or click a block to select it.' : 'Blocks are read-only on small screens.'}</p>}
       {selectionExtra}
     </Group>}
-    <Group {...group('layers')} title="Layers">{layers}{views}{parcel}</Group>
+    <Group {...group('layers')} title="Layers">{layers}{views}{parcel}{terrainTools}</Group>
     <Group {...group('export')} title="Export">{visuals}</Group>
     <Group {...group('site')} title="Site">
       <p className="text-body-sm text-ink">{site.title} · Local ENU metres</p>

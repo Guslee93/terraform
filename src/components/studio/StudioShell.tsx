@@ -46,6 +46,9 @@ import { bandLookup, bandShares, footprintInSensitiveBand, NOISE_LIMITATION, noi
 import { NoisePanel } from './NoisePanel'
 import { ParcelFacts } from './ParcelFacts'
 import { HazardFacts } from './HazardFacts'
+import { TerrainTools, type TerrainToolsState } from './TerrainTools'
+import { terrainProfile, type TerrainRaster } from '../../features/analysis/terrainTools'
+import { loadTerrainRaster } from '../../features/sites/terrain1m'
 import { parcelAt, type Parcel } from '../../features/analysis/parcels'
 import { daySunSamples } from '../../features/analysis/shadowRay'
 import { sunHoursDisclaimer } from '../../features/analysis/sunHours'
@@ -315,6 +318,40 @@ export function StudioShell({
     return analysisDocument.volumes.some((volume) => volume.tiers.some((tier) => footprintInSensitiveBand(lookup, tier.footprint.vertices)))
   }, [noise, analysisDocument])
   const noiseOnMap = climateMode === 'noise' && !!noise
+  // Terrain tools on the 1 m tile (ADR-0037). The tile is fetched the first time a tool needs it.
+  const terrain1mPath = sitePackage?.manifest.assetPaths.terrain1m
+  const [slopeOn, setSlopeOn] = useState(false)
+  const [sectionPicking, setSectionPicking] = useState(false)
+  const [sectionPoints, setSectionPoints] = useState<readonly Vec2[]>([])
+  const [terrainRaster, setTerrainRaster] = useState<{ siteId: string; raster: TerrainRaster } | null>(null)
+  const [terrainState, setTerrainState] = useState<TerrainToolsState>('idle')
+  const terrainWanted = !!terrain1mPath && (slopeOn || sectionPicking || sectionPoints.length > 0)
+  const raster = terrainRaster && terrainRaster.siteId === site.id ? terrainRaster.raster : null
+  useEffect(() => {
+    if (!terrainWanted || !terrain1mPath || raster) return
+    const controller = new AbortController()
+    setTerrainState('loading')
+    loadTerrainRaster(site.id, terrain1mPath, controller.signal)
+      .then((loaded) => { setTerrainRaster({ siteId: site.id, raster: loaded }); setTerrainState('ready') })
+      .catch(() => { if (!controller.signal.aborted) setTerrainState('error') })
+    return () => controller.abort()
+  }, [terrainWanted, terrain1mPath, raster, site.id])
+  const sectionProfile = useMemo(() => (raster && sectionPoints.length === 2 ? terrainProfile(raster, sectionPoints, 1) : null), [raster, sectionPoints])
+  useEffect(() => {
+    if (!sectionPicking) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); setSectionPicking(false); setSectionPoints((points) => (points.length === 2 ? points : [])) } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [sectionPicking])
+  const pickSectionPoint = useCallback((point: Vec2) => {
+    setSectionPoints((points) => {
+      // A third click starts a new section; the second completes one.
+      const next = points.length === 1 ? [points[0]!, point] : [point]
+      if (next.length === 2) setSectionPicking(false)
+      return next
+    })
+  }, [])
+  const terrainOnMap = !!raster && (slopeOn || sectionPoints.length > 0)
   // The parcel under the last ground click, while the parcel layer is on (ADR-0035).
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null)
   const parcelsOn = layers.parcels && (sitePackage?.parcels.length ?? 0) > 0
@@ -410,9 +447,9 @@ export function StudioShell({
   // The layers on screen name the sources the panel and the exports credit (ADR-0032).
   // The hazard facts are always in the Site group, so their sources are always credited.
   const hazardKinds = useMemo(() => sitePackage?.hazards?.layers.map((layer) => layer.kind) ?? [], [sitePackage])
-  const visibleLayers = useMemo(() => visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...hazardKinds]), [layers, noiseOnMap, hazardKinds])
+  const visibleLayers = useMemo(() => visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...(terrainOnMap ? ['terrain1m' as const] : []), ...hazardKinds]), [layers, noiseOnMap, terrainOnMap, hazardKinds])
   // With the noise map on screen the export also carries its limitation (feasibility 09 §2a.5).
-  const exportCredits = useMemo(() => (sitePackage ? [...exportCreditLines(sitePackage.manifest, visibleLayerIds(layers, noiseOnMap ? ['noise'] : [])), ...(noiseOnMap ? [`Road noise: ${NOISE_LIMITATION}`] : [])] : []), [sitePackage, layers, noiseOnMap])
+  const exportCredits = useMemo(() => (sitePackage ? [...exportCreditLines(sitePackage.manifest, visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...(terrainOnMap ? ['terrain1m' as const] : [])])), ...(noiseOnMap ? [`Road noise: ${NOISE_LIMITATION}`] : [])] : []), [sitePackage, layers, noiseOnMap, terrainOnMap])
   const sunHoursNote = sunHoursDisclaimer(!!sitePackage && hasMeasuredHeights(sitePackage.manifest))
   // The legend says how many context heights are measured (ADR-0033).
   const layerNotes = useMemo(() => {
@@ -564,7 +601,9 @@ export function StudioShell({
                 windHeights={readyHeights}
                 // A lift is an edit like any panel edit: during the demo it stops the demo and keeps the lift.
                 onWindHeightChange={(heightM) => (windDemo.playing ? windDemo.stopWith({ heightM }) : setWind((w) => ({ ...w, heightM })))}
-                onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
+                onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : sectionPicking ? pickSectionPoint : undefined}
+                slope={slopeOn ? raster : null}
+                section={sectionPoints}
                 exportRequest={exportRequest}
                 exportCredits={exportCredits}
                 selectedParcel={parcelsOn ? selectedParcel : null}
@@ -633,6 +672,9 @@ export function StudioShell({
           layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} notes={layerNotes} />}
           parcel={parcelsOn && sitePackage ? <ParcelFacts parcel={selectedParcel} showPlanLink={sitePackage.parcels.some((parcel) => parcel.matrikkel?.startsWith('0301-'))} /> : null}
           visibleLayers={visibleLayers}
+          terrainTools={terrain1mPath ? <TerrainTools state={terrainState} raster={raster} slopeOn={slopeOn} onSlopeChange={setSlopeOn} picking={sectionPicking}
+            onPick={(picking) => { setSectionPicking(picking); if (picking) { setPlacingCircle(false); setSectionPoints([]) } }}
+            profile={sectionProfile} onClear={() => setSectionPoints([])} /> : null}
           hazards={sitePackage?.hazards && studyArea ? <HazardFacts hazards={sitePackage.hazards} area={studyArea} /> : null}
           site={site}
           manifest={sitePackage?.manifest ?? null}

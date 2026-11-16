@@ -1141,3 +1141,27 @@ zoom in because the quads are small at the default site camera.
 - lint 0; **1151 unit tests pass**, 4 skipped; build OK.
 - Capture: `docs/screenshots/build-hazards-panel.png`.
 - Not verified: a live import with hazard facts; e2e not re-run after WP-5 and WP-6.
+
+## 2026-11-16 — build/foundation WP-7: 1 m terrain tools (ADR-0037)
+
+- Data: DTM1 tile per curated site from the open NHM terrain WCS, asked for in WGS84, stored as
+  Int16 centimetres above the package origin (`terrain1m.bin` + `terrain1m.json`). Compact Infill
+  624 × 734 cells, 484 kB gzip; Sloped Edge 652 × 790, 586 kB gzip. Loaded on demand, not with the
+  package (checked in the browser: no tile request until Slope is switched on).
+- Domain `terrainTools.ts`: bilinear elevation, Horn slope, profile along a line, slope bands.
+- UI: Layers → Terrain tools: Slope switch with legend and shares, Draw a section (two clicks, Esc
+  cancels) with a profile chart; the section line and the slope texture in the scene.
+- Done-when met: the feasibility W–E section reads 8.97–21.45 m over 578.8 m (reference
+  8.98–21.44 m over 579 m), within 0.014 m.
+- Corrections on the way:
+  - Slope colours came out dark: three's `Color` converts a hex string to linear values. The band
+    colours are now read as sRGB bytes.
+  - Two of my test expectations were wrong (Horn's 3 × 3 window at the edges of a ramp; a section
+    end point half a cell off). The code was right; the expectations are corrected and explained.
+- Deviations: no terrain tools on imported sites; no contours from the 1 m raster (ADR-0037).
+- e2e: the full suite on the production build before this package: 49 passed, 12 opt-in skipped,
+  0 failed. After it (layers, keyboard, simplified-studio, m5-a11y, m3-disclaimers): 33 passed,
+  2 skipped.
+- lint 0; **1171 unit tests pass**, 4 skipped; build OK (studio chunk 78.5 kB gzip, was 73.8 kB at
+  the baseline). Health check: 18 sources unchanged.
+- Captures: `docs/screenshots/build-terrain-{slope,section}.png`.
