@@ -86,13 +86,13 @@ The full Playwright suite was **not** re-run after WP-7; the five specs above we
 | 9 | WP-6: health check "reports status and checksum drift" | Compares the **data**, ignoring the request timestamp and per-request feature ids | Raw checksums reported 14 of 16 sources as changed on the first run although nothing had changed |
 | 10 | WP-7: import path reuses its terrain at 1 m when available | **Imports have no terrain tools** | The import samples a 13 × 13 grid; a 1 m raster on import is a second terrain pipeline. Left for later |
 | 11 | WP-7: contours from the 1 m raster | **Not written** | No UI in this package uses them |
-| 12 | Review: `/code-review` after each MUST package | Done at the low level for WP-1 to WP-4; 3 findings, all fixed. **Not run for WP-5 to WP-7** | The plan asks for it on MUST packages. The SHOULD packages have had no review at all |
+| 12 | Review: `/code-review` after each MUST package | Done at the low level for WP-1 to WP-4 (3 findings, all fixed). WP-5 to WP-7 were reviewed together afterwards at the owner's request (§10): 8 findings, all fixed | The plan asks for it on MUST packages; the owner asked for the rest before any push |
 | 13 | Plan §0: port `registration/prep.py` and `main.js` | Not ported; the same results come from the app's own TypeScript | Deviation 6 made the Python resampling unnecessary |
 
 ## 7. Known limitations
 
-- **Not verified in a browser:** a live import showing parcels or hazard facts (unit-tested; the noise layer was checked live on the same import path); the recorded clip's credit band (never played back); Safari; any phone.
-- **Imports are slower.** Noise, parcels and four hazard services are fetched on import, one after another except the hazards. The slowest hazard service took 20 s once and 0.8 s later. Not measured end to end.
+- **Not verified in a browser:** the recorded clip's credit band (never played back); Safari; any phone. A live import with parcels and hazard facts was checked after the review (§10).
+- **Imports ask six more services.** Noise, parcels and four hazard maps are fetched on import, all together since the review. One live Grünerløkka import took 3.6 s from "Open in 3D" to the studio; the slowest hazard service once took 20 s on its own, so the worst case is longer.
 - **The repository grew.** `data/raw/` went from about 5 MB to 21 MB (raw GeoJSON, GML and GeoTIFF caches); `public/sites/` is 3.4 MB, of which 1.9 MB is the two 1 m terrain tiles (loaded on demand).
 - **The wind legend still carries the Lawson activity names** (Sitting … Very uncomfortable). Feasibility 07 says to drop them unless a climate rose weights them; the plan's WP-1 asked only for the safety class.
 - **Hazards:** "Not mapped" is decided from the answer for the extent, not from the services' own coverage layers. Polygons are not drawn on the map.
@@ -124,3 +124,26 @@ The full Playwright suite was **not** re-run after WP-7; the five specs above we
 - Build steps for the curated assets: `scripts/site-assets/` (`npx vitest run --config scripts/site-assets/vitest.config.ts`).
 - Source health check: `scripts/check-sources.mjs`.
 - Package format: `docs/data/site-package-spec.md` (heights, noise and the `layers` field are documented; parcels, hazards and the 1 m terrain are described in their ADRs only).
+
+## 10. Review of WP-5 to WP-7 (2026-11-16, at the owner's request)
+
+`/code-review` over `204a03b..b05454a` (8 angles, no separate verify pass). Eight findings, all fixed in the commit after this report's first version.
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | The 1 m terrain loader stayed on "Loading…" when its request was aborted (Slope switched on and off quickly) | The effect's cleanup resets the state. Checked in the browser: no status line after a quick toggle |
+| 2 | "Move circle" and "Draw a section" could both wait for a ground click | Placing the circle ends a waiting section |
+| 3 | A GML ring built from curve segments would have been read as its first segment only | Such a ring is refused with an error. None occurs in the cached answers (all are linear rings) |
+| 4 | The hazard facts were recomputed on every render of the panel | Memoised on the site's data |
+| 5 | Horn slope ran twice when Slope was switched on (panel and scene) | Computed once in the studio shell and passed to both |
+| 6 | The selected-parcel outline and the section line rebuilt their geometry on every viewport render | The line component takes a lift value; its inputs are stable |
+| 7 | The noise, parcel and hazard requests on import ran one after another | Asked together |
+| 8 | The section line faked a parcel with an unchecked cast (AGENTS.md §7) | The line component takes rings; no cast |
+
+After the fixes: lint 0; **1172 unit tests pass**, 4 skipped; build OK; Playwright layers, keyboard and m5-a11y on the production build: 30 passed, 2 skipped.
+
+Live checks on the production build after the fixes:
+- **Import (Grünerløkka, 400 m):** 3.6 s to the studio; Noise "60–65 dB"; hazards "Not mapped by NVE / Mapped here / Mapped here / Not mapped by Kartverket"; a clicked parcel read "0301-228/496 · 247 m²"; no terrain tools on the import, as designed. Capture: `docs/screenshots/build-import-parcels-hazards.png`.
+- **Compact Infill:** slope legend 76 / 18 / 5 / 1 %; a drawn section read "288 m long, from 20.2 m to 21.2 m above sea level". No page errors.
+
+Not reviewed in this pass: `scripts/site-assets/*.build.ts` and `scripts/check-sources.mjs` beyond reading them; the full Playwright suite was not re-run after the fixes.

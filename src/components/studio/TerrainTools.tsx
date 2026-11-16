@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { hornSlopeDeg, profileRange, SLOPE_BANDS, SLOPE_NOTE, slopeShares, TERRAIN_NOTE, type ProfilePoint, type TerrainRaster } from '../../features/analysis/terrainTools'
+import { profileRange, SLOPE_BANDS, SLOPE_NOTE, slopeShares, TERRAIN_NOTE, type ProfilePoint, type TerrainRaster } from '../../features/analysis/terrainTools'
 import { cn } from '../../lib/cn'
 import { checkboxClass, pillButtonClass } from '../ui/controls'
 import { formatNumber } from './format'
@@ -31,9 +31,11 @@ export function profilePath(profile: readonly ProfilePoint[]): string {
  * Tools on the 1 m terrain (ADR-0037): a slope overlay in four bands and a section along a line the
  * user draws with two clicks. Elevations are metres above sea level (NN2000), from Kartverket DTM1.
  */
-export function TerrainTools({ state, raster, slopeOn, onSlopeChange, picking, onPick, profile, onClear }: {
+export function TerrainTools({ state, raster, slopeDegrees, slopeOn, onSlopeChange, picking, onPick, profile, onClear }: {
   state: TerrainToolsState
   raster: TerrainRaster | null
+  /** Slope of every cell of the tile, computed once by the caller; null while the overlay is off or the tile is loading. */
+  slopeDegrees: Float32Array | null
   slopeOn: boolean
   onSlopeChange: (on: boolean) => void
   /** The section tool is waiting for ground clicks. */
@@ -43,7 +45,7 @@ export function TerrainTools({ state, raster, slopeOn, onSlopeChange, picking, o
   profile: readonly ProfilePoint[] | null
   onClear: () => void
 }) {
-  const shares = useMemo(() => (raster && slopeOn ? slopeShares(hornSlopeDeg(raster)) : null), [raster, slopeOn])
+  const shares = useMemo(() => (slopeDegrees ? slopeShares(slopeDegrees) : null), [slopeDegrees])
   const range = profile ? profileRange(profile) : null
   const length = profile?.at(-1)?.distance ?? 0
   const sea = (relative: number) => formatNumber(relative + (raster?.originElevation ?? 0), 1)

@@ -23,6 +23,9 @@ function ring(posList: string, origin: Origin): [number, number][] {
 
 /** Every `gml:Polygon` in `xml`: its outline first, then its holes. */
 export function gmlPolygons(xml: string, origin: Origin): [number, number][][][] {
+  // Only linear rings are read. A ring built from curve segments would lose all but its first
+  // segment, so it is refused rather than drawn wrong.
+  if (/<gml:(Ring|Curve|Arc)\b|curveMember/.test(xml)) throw new Error('GML: curve rings are not supported')
   return xml.split('<gml:Polygon').slice(1).flatMap((polygon) => {
     const rings = [...polygon.matchAll(/<gml:(exterior|interior)>[\s\S]*?<gml:posList[^>]*>([^<]+)<\/gml:posList>/g)]
       .sort((a, b) => Number(b[1] === 'exterior') - Number(a[1] === 'exterior'))

@@ -330,5 +330,5 @@ Plan: `docs/plans/fable-build-plan.md` (from the closed feasibility study). Repo
 - [ ] WP-8 DEM runoff screening (stretch): not started.
 - [ ] WP-9 cut/fill pad (stretch): not started.
 - [ ] Independent review of the branch (owner: Opus or Codex), then push and pull request on the owner's yes.
-- [ ] `/code-review` of WP-5 to WP-7 (not run).
+- [x] `/code-review` of WP-5 to WP-7: 8 findings, all fixed (report §10); 1172 tests pass.
 - [x] `npm run lint`, `npm run test` (1171 passed / 4 skipped) and `npm run build` pass at b05454a.

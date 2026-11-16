@@ -70,6 +70,10 @@ describe('converter from the WFS answer', () => {
     const [found] = parcelsFromGml(wrap(member('9', polygon(real), '<app:kommunenummer>0301</app:kommunenummer><app:gardsnummer>0</app:gardsnummer><app:bruksnummer>0</app:bruksnummer>')), origin, [-300, -300, 300, 300])
     expect(found!.matrikkel).toBeNull()
   })
+  it('refuses a ring built from curve segments instead of reading its first segment only', () => {
+    const curved = '<gml:Polygon><gml:exterior><gml:Ring><gml:curveMember><gml:posList>59.9 10.7 59.91 10.7</gml:posList></gml:curveMember></gml:Ring></gml:exterior></gml:Polygon>'
+    expect(() => parcelsFromGml(wrap(member('1', curved)), origin, [-300, -300, 300, 300])).toThrow(/curve rings are not supported/)
+  })
   it('refuses an answer that is not a feature collection or that hit the feature limit', () => {
     expect(() => parcelsFromGml('<ows:ExceptionReport/>', origin, [-1, -1, 1, 1])).toThrow(/not a WFS feature collection/)
     expect(() => parcelsFromGml(wrap(member('1', polygon(real)).repeat(PARCEL_MAX_FEATURES)), origin, [-300, -300, 300, 300])).toThrow(/may be incomplete/)

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { terrainProfile, type TerrainRaster } from '../../features/analysis/terrainTools'
+import { hornSlopeDeg, terrainProfile, type TerrainRaster } from '../../features/analysis/terrainTools'
 import { loadTerrainRaster } from '../../features/sites/terrain1m'
 import { slopePixels } from '../../scene/SlopeOverlay'
 import { profilePath, TerrainTools } from './TerrainTools'
@@ -12,13 +12,13 @@ const raster: TerrainRaster = (() => {
   for (let row = 0; row < size; row += 1) for (let col = 0; col < size; col += 1) heights[row * size + col] = Math.max(0, col + 0.5 - 20)
   return { cols: size, rows: size, minX: 0, minY: 0, maxX: size, maxY: size, originElevation: 20, heights }
 })()
-const props = { state: 'ready' as const, raster, slopeOn: false, onSlopeChange: () => {}, picking: false, onPick: () => {}, profile: null, onClear: () => {} }
+const props = { state: 'ready' as const, raster, slopeDegrees: null as Float32Array | null, slopeOn: false, onSlopeChange: () => {}, picking: false, onPick: () => {}, profile: null, onClear: () => {} }
 
 describe('Terrain tools (ADR-0037)', () => {
   it('shows the slope legend with shares only while the overlay is on', () => {
     const { rerender } = render(<TerrainTools {...props} />)
     expect(screen.queryByRole('list', { name: 'Slope legend' })).not.toBeInTheDocument()
-    rerender(<TerrainTools {...props} slopeOn />)
+    rerender(<TerrainTools {...props} slopeOn slopeDegrees={hornSlopeDeg(raster)} />)
     const rows = within(screen.getByRole('list', { name: 'Slope legend' })).getAllByRole('listitem').map((row) => row.textContent)
     // Horn's 3 × 3 window: columns 0–18 are flat (47.5 %), column 19 beside the ramp reads 14°,
     // columns 20–38 are steep (47.5 %), and the edge column 39 repeats its neighbour (26.6°).
@@ -63,7 +63,7 @@ describe('Terrain tools (ADR-0037)', () => {
 
 describe('slope overlay pixels', () => {
   it('leaves gentle ground clear and colours the steep cells', () => {
-    const pixels = slopePixels(raster)
+    const pixels = slopePixels(hornSlopeDeg(raster))
     const alpha = (row: number, col: number) => pixels[(row * 40 + col) * 4 + 3]
     expect(alpha(20, 5)).toBe(0)
     expect(alpha(20, 30)).toBe(255)

@@ -186,32 +186,25 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     catch { checkAbort(signal) }
   }
   checkAbort(signal)
-  // The official road-noise map, where one exists (ADR-0034). It is context, not a requirement:
-  // a failed request leaves the site without the layer and says so in the package notes.
-  let noise: OfficialNoise | null = null
-  let noiseFailure: string | null = null
-  if (deps.noise?.covers(frame.latitude,frame.longitude)) {
-    const {lonLat,enu} = frameBounds(frame)
-    try { noise = await deps.noise.fetchNoise(lonLat,frame,enu,signal) }
-    catch (error) { checkAbort(signal); noiseFailure = error instanceof Error ? error.message : 'request failed' }
-  }
-  // Parcel outlines from the eiendomskart (ADR-0035): context, like the noise map.
-  let parcels: Parcel[] = []
-  let parcelFailure: string | null = null
-  if (deps.parcels?.covers(frame.latitude,frame.longitude)) {
-    const {lonLat,enu} = frameBounds(frame)
-    try { parcels = await deps.parcels.fetchParcels(lonLat,frame,enu,signal) }
-    catch (error) { checkAbort(signal); parcelFailure = error instanceof Error ? error.message : 'request failed' }
-  }
-  // Mapped-hazard facts from NVE and Kartverket (ADR-0036). A service that fails is "not checked".
-  let hazards: Hazards | null = null
-  let hazardFailures: string[] = []
-  if (deps.hazards?.covers(frame.latitude,frame.longitude)) {
-    const {lonLat,enu} = frameBounds(frame)
-    try { ({hazards,failures:hazardFailures} = await deps.hazards.fetchHazards(lonLat,frame,enu,signal)) }
-    catch (error) { checkAbort(signal); hazardFailures = [error instanceof Error ? error.message : 'request failed'] }
-  }
+  // Context from the authorities, where they map this place: the official road-noise map
+  // (ADR-0034), parcel outlines (ADR-0035) and mapped-hazard facts (ADR-0036). None is required:
+  // a failed request leaves the site without that layer and says so in the package notes. The
+  // three are independent, so they are asked together.
+  const bounds = frameBounds(frame)
+  const covered = <T extends { covers(lat: number, lon: number): boolean }>(source: T | undefined): T | undefined => (source?.covers(frame.latitude,frame.longitude) ? source : undefined)
+  const failure = (error: unknown) => (error instanceof Error ? error.message : 'request failed')
+  const [noiseResult,parcelResult,hazardResult] = await Promise.all([
+    covered(deps.noise)?.fetchNoise(bounds.lonLat,frame,bounds.enu,signal).then(value=>({value,failure:null as string | null}),error=>({value:null,failure:failure(error)})),
+    covered(deps.parcels)?.fetchParcels(bounds.lonLat,frame,bounds.enu,signal).then(value=>({value,failure:null as string | null}),error=>({value:[] as Parcel[],failure:failure(error)})),
+    covered(deps.hazards)?.fetchHazards(bounds.lonLat,frame,bounds.enu,signal).then(value=>({value:value.hazards as Hazards | null,failures:value.failures}),error=>({value:null,failures:[failure(error)]})),
+  ])
   checkAbort(signal)
+  const noise: OfficialNoise | null = noiseResult?.value ?? null
+  const noiseFailure = noiseResult?.failure ?? null
+  const parcels: Parcel[] = parcelResult?.value ?? []
+  const parcelFailure = parcelResult?.failure ?? null
+  const hazards: Hazards | null = hazardResult?.value ?? null
+  const hazardFailures = hazardResult?.failures ?? []
   const sitePackage = await step('assemble','SitePackage validation',async()=>{
     const {grid,provider} = sampled
     const absolute = grid?.absolute ?? Array<number>(GRID_SIZE*GRID_SIZE).fill(0)

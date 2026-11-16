@@ -1,12 +1,11 @@
 import { useMemo } from 'react'
 import { CanvasTexture, SRGBColorSpace } from 'three'
-import { hornSlopeDeg, SLOPE_BANDS, slopeBandIndex, type TerrainRaster } from '../features/analysis/terrainTools'
+import { SLOPE_BANDS, slopeBandIndex, type TerrainRaster } from '../features/analysis/terrainTools'
 import type { TerrainData } from '../features/sites/package'
 import { DrapedTexture } from './NoiseBands'
 
 /** RGBA bytes for the slope bands, one pixel per raster cell, north row first. Gentle ground stays clear. */
-export function slopePixels(raster: TerrainRaster): Uint8ClampedArray {
-  const slope = hornSlopeDeg(raster)
+export function slopePixels(slope: Float32Array): Uint8ClampedArray {
   // The band colours as sRGB bytes, as written: three's Color would convert them to linear.
   const colours = SLOPE_BANDS.map((band) => [1, 3, 5].map((at) => Number.parseInt(band.colour.slice(at, at + 2), 16)) as [number, number, number])
   const pixels = new Uint8ClampedArray(slope.length * 4)
@@ -21,15 +20,13 @@ export function slopePixels(raster: TerrainRaster): Uint8ClampedArray {
   return pixels
 }
 
-function createSlopeTexture(raster: TerrainRaster): CanvasTexture | null {
+function createSlopeTexture(raster: TerrainRaster, degrees: Float32Array): CanvasTexture | null {
   const canvas = document.createElement('canvas')
   canvas.width = raster.cols
   canvas.height = raster.rows
   const context = canvas.getContext('2d')
   if (!context) return null
-  // ponytail: Horn slope over the whole tile runs on the main thread when the overlay is switched
-  // on (about half a million cells, once per site). Move it to a worker if a larger tile is ever shipped.
-  context.putImageData(new ImageData(slopePixels(raster) as Uint8ClampedArray<ArrayBuffer>, raster.cols, raster.rows), 0, 0)
+  context.putImageData(new ImageData(slopePixels(degrees) as Uint8ClampedArray<ArrayBuffer>, raster.cols, raster.rows), 0, 0)
   const texture = new CanvasTexture(canvas)
   texture.colorSpace = SRGBColorSpace
   return texture
@@ -39,7 +36,7 @@ function createSlopeTexture(raster: TerrainRaster): CanvasTexture | null {
  * Slope of the 1 m terrain in four bands, draped on the terrain (ADR-0037). The raster covers the
  * terrain extent exactly, so its pixels map to the terrain's planar ENU UVs with no resampling.
  */
-export function SlopeOverlay({ raster, terrain }: { raster: TerrainRaster; terrain: TerrainData }) {
-  const texture = useMemo(() => createSlopeTexture(raster), [raster])
+export function SlopeOverlay({ raster, degrees, terrain }: { raster: TerrainRaster; /** Horn slope of every cell, computed once by the caller. */ degrees: Float32Array; terrain: TerrainData }) {
+  const texture = useMemo(() => createSlopeTexture(raster, degrees), [raster, degrees])
   return <DrapedTexture texture={texture} terrain={terrain} opacity={0.7} />
 }

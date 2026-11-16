@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { HAZARD_DISCLAIMER, hazardFacts, type Hazards } from '../../features/analysis/hazards'
 import type { Vec2 } from '../../lib/coordinates'
 
@@ -6,11 +7,13 @@ import type { Vec2 } from '../../lib/coordinates'
  * by the authority, each with its source and dates. Never "safe", never a depth or a class.
  */
 export function HazardFacts({ hazards, area }: { hazards: Hazards; area: readonly Vec2[] }) {
+  // The facts change only with the site: the panel re-renders far more often than that.
+  const facts = useMemo(() => hazardFacts(hazards, area), [hazards, area])
   return (
     <section aria-label="Mapped hazards" className="mt-3 border-t border-card-line pt-3">
       <p className="text-body-sm text-ink-secondary">Mapped hazards · study area</p>
       <ul className="mt-2 space-y-2">
-        {hazardFacts(hazards, area).map((fact) => (
+        {facts.map((fact) => (
           <li key={fact.kind} className="text-body-sm">
             {/* Stacked: the labels are long and the panel is 340 px wide. */}
             <span className="block text-ink-secondary">{fact.label}</span>

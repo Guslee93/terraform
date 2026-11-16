@@ -122,7 +122,7 @@ type ViewportProps = {
   /** Each new number captures the export passes once (ADR-0019). */
   exportRequest?: number | null
   /** Terrain tools (ADR-0037): the slope overlay's raster, and the section's picked points. */
-  slope?: TerrainRaster | null
+  slope?: { readonly raster: TerrainRaster; readonly degrees: Float32Array } | null
   section?: readonly Vec2[]
   /** The selected parcel, and the ground click that selects one while the parcel layer is on (ADR-0035). */
   selectedParcel?: Parcel | null
@@ -700,7 +700,7 @@ export function ViewportCanvas({
             {section && section.length > 0 && layers.terrain && <SectionLine points={section} heightAt={heightAt} />}
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
-            {slope && layers.terrain && <SlopeOverlay raster={slope} terrain={sitePackage.terrain} />}
+            {slope && layers.terrain && <SlopeOverlay raster={slope.raster} degrees={slope.degrees} terrain={sitePackage.terrain} />}
             {noise && layers.terrain && <NoiseBands polygons={noise.polygons} metric={noise.metric} terrain={sitePackage.terrain} />}
             {climate && (windCircle
               ? <WindHeatmap overlay={climate} heightAt={windHeightAt} circle={windCircle} />

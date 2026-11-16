@@ -1175,3 +1175,17 @@ zoom in because the quads are small at the default site camera.
   measurable cost.
 - Report: `docs/reviews/build-foundation-report.md`. AGENTS.md §10 and `task_plan.md` updated.
 - Nothing pushed, merged or deployed; no pull request; no CI workflow changed; no dependency added.
+
+## 2026-11-16 — build/foundation: review of WP-5 to WP-7 and fixes
+
+- Owner asked for the review before any push. `/code-review` over `204a03b..b05454a`: 8 findings
+  (3 correctness, 4 efficiency, 1 convention), all fixed; table in
+  `docs/reviews/build-foundation-report.md` §10.
+- Two of my suspicions were checked and dropped: stored imports do keep the new layers (the store
+  revalidates through `parseSitePackage`), and the studio is remounted per site, so a selected
+  parcel cannot leak to another site.
+- lint 0; **1172 unit tests pass**, 4 skipped; build OK. e2e (production build): layers, keyboard,
+  m5-a11y: 30 passed, 2 skipped.
+- Live in the browser after the fixes: a Grünerløkka import with noise, parcels and hazard facts
+  (3.6 s; first live check of parcels and hazards on the import path); quick Slope toggle leaves no
+  "Loading…"; a section still draws.

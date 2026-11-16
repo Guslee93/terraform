@@ -47,7 +47,7 @@ import { NoisePanel } from './NoisePanel'
 import { ParcelFacts } from './ParcelFacts'
 import { HazardFacts } from './HazardFacts'
 import { TerrainTools, type TerrainToolsState } from './TerrainTools'
-import { terrainProfile, type TerrainRaster } from '../../features/analysis/terrainTools'
+import { hornSlopeDeg, terrainProfile, type TerrainRaster } from '../../features/analysis/terrainTools'
 import { loadTerrainRaster } from '../../features/sites/terrain1m'
 import { parcelAt, type Parcel } from '../../features/analysis/parcels'
 import { daySunSamples } from '../../features/analysis/shadowRay'
@@ -334,8 +334,11 @@ export function StudioShell({
     loadTerrainRaster(site.id, terrain1mPath, controller.signal)
       .then((loaded) => { setTerrainRaster({ siteId: site.id, raster: loaded }); setTerrainState('ready') })
       .catch(() => { if (!controller.signal.aborted) setTerrainState('error') })
-    return () => controller.abort()
+    // An aborted request is not "loading" any more: the status line must not outlive the tool.
+    return () => { controller.abort(); setTerrainState((state) => (state === 'loading' ? 'idle' : state)) }
   }, [terrainWanted, terrain1mPath, raster, site.id])
+  // One Horn pass per tile, shared by the panel's shares and the scene's overlay.
+  const slopeDegrees = useMemo(() => (raster && slopeOn ? hornSlopeDeg(raster) : null), [raster, slopeOn])
   const sectionProfile = useMemo(() => (raster && sectionPoints.length === 2 ? terrainProfile(raster, sectionPoints, 1) : null), [raster, sectionPoints])
   useEffect(() => {
     if (!sectionPicking) return
@@ -351,6 +354,8 @@ export function StudioShell({
       return next
     })
   }, [])
+  // One pick mode at a time: placing the analysis circle ends a section that is waiting for points.
+  useEffect(() => { if (placingCircle) setSectionPicking(false) }, [placingCircle])
   const terrainOnMap = !!raster && (slopeOn || sectionPoints.length > 0)
   // The parcel under the last ground click, while the parcel layer is on (ADR-0035).
   const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null)
@@ -602,7 +607,7 @@ export function StudioShell({
                 // A lift is an edit like any panel edit: during the demo it stops the demo and keeps the lift.
                 onWindHeightChange={(heightM) => (windDemo.playing ? windDemo.stopWith({ heightM }) : setWind((w) => ({ ...w, heightM })))}
                 onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : sectionPicking ? pickSectionPoint : undefined}
-                slope={slopeOn ? raster : null}
+                slope={raster && slopeDegrees ? { raster, degrees: slopeDegrees } : null}
                 section={sectionPoints}
                 exportRequest={exportRequest}
                 exportCredits={exportCredits}
@@ -672,7 +677,7 @@ export function StudioShell({
           layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} notes={layerNotes} />}
           parcel={parcelsOn && sitePackage ? <ParcelFacts parcel={selectedParcel} showPlanLink={sitePackage.parcels.some((parcel) => parcel.matrikkel?.startsWith('0301-'))} /> : null}
           visibleLayers={visibleLayers}
-          terrainTools={terrain1mPath ? <TerrainTools state={terrainState} raster={raster} slopeOn={slopeOn} onSlopeChange={setSlopeOn} picking={sectionPicking}
+          terrainTools={terrain1mPath ? <TerrainTools state={terrainState} raster={raster} slopeDegrees={slopeDegrees} slopeOn={slopeOn} onSlopeChange={setSlopeOn} picking={sectionPicking}
             onPick={(picking) => { setSectionPicking(picking); if (picking) { setPlacingCircle(false); setSectionPoints([]) } }}
             profile={sectionProfile} onClear={() => setSectionPoints([])} /> : null}
           hazards={sitePackage?.hazards && studyArea ? <HazardFacts hazards={sitePackage.hazards} area={studyArea} /> : null}
