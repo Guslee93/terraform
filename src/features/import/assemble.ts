@@ -267,7 +267,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
         eyeLevel:preset([round(diagonal*0.8),round(-diagonal*0.9),16],[0,0,8],34),
       },sources,
       ...(noise || parcels.length || hazards?.layers.length ? {layers:[
-        ...(hazards?.layers ?? []).map(layer=>({id:layer.kind,owner:HAZARDS[layer.kind].owner,dataset:HAZARDS[layer.kind].dataset,url:HAZARDS[layer.kind].service,licence:'NLOD 1.0',licenceUrl:'https://data.norge.no/nlod/en/1.0',
+        ...(hazards?.layers ?? []).map(layer=>({id:layer.kind,owner:HAZARDS[layer.kind].owner,dataset:HAZARDS[layer.kind].dataset,url:HAZARDS[layer.kind].service,licence:'NLOD',licenceUrl:'https://data.norge.no/nlod/',
           attribution:HAZARDS[layer.kind].owner === 'NVE' ? 'Kilde: NVE' : nlodAttribution(HAZARDS[layer.kind].owner),retrieved:hazards!.retrieved,...(layer.updated ? {dataYear:Number(layer.updated.slice(0,4))} : {}),useLimitation:HAZARDS[layer.kind].note})),
         ...(noise ? [{id:'noise',owner:NOISE_OWNER,dataset:'Strategic road-noise map (Lden, Lnight), CNOSSOS-EU',datasetUuid:NOISE_DATASET_UUID,url:NOISE_WFS_URL,licence:'NLOD 1.0',licenceUrl:'https://data.norge.no/nlod/en/1.0',
         attribution:nlodAttribution(NOISE_OWNER),retrieved:acquiredAt.slice(0,10),dataYear:noise.dataYear,
@@ -304,7 +304,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     if (manifest.statistics.buildingCount !== buildings.buildings.length || manifest.statistics.terrainSamples !== terrain.heights.flat().length || Math.abs(manifest.statistics.studyAreaM2-ringArea(studyArea.polygon))>0.1) throw new Error('Package statistics mismatch')
     for (const items of [buildings.buildings,roads.roads,landcover.areas]) if (new Set(items.map(item=>item.id)).size !== items.length) throw new Error('Duplicate package feature IDs')
     for (const building of buildings.buildings) if (Math.abs(building.area-ringArea(building.footprint))>0.051) throw new Error('Building area mismatch')
-    return {manifest,terrain,buildings,studyArea,roads:roads.roads,trees:trees.trees,landcover:landcover.areas,noise,parcels,hazards}
+    return {manifest,terrain,buildings,studyArea,roads:roads.roads,trees:trees.trees,landcover:landcover.areas,noise,parcels,hazards,snow:null}
   })
   checkAbort(signal)
   return {sitePackage,warnings,timings}

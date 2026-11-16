@@ -35,14 +35,15 @@ for (const site of SITES) {
         owner,
         dataset,
         url: service,
-        licence: 'NLOD 1.0',
-        licenceUrl: 'https://data.norge.no/nlod/en/1.0',
+        // NVE names the licence and links it without a version; Kartverket's record says NLOD too (feasibility 09 §4).
+        licence: 'NLOD',
+        licenceUrl: 'https://data.norge.no/nlod/',
         attribution: owner === 'NVE' ? 'Kilde: NVE' : nlodAttribution(owner),
         retrieved,
         ...(layer.updated ? { dataYear: Number(layer.updated.slice(0, 4)) } : {}),
         useLimitation: note,
       }, `Mapped hazards are presence facts from NVE and Kartverket, clipped to the terrain extent (${summary}); an absence is "not mapped", never "safe"`)
     }
-    attributionSection(site, 'Mapped hazards', `Kilde: NVE (Flomsoner; Flom aktsomhetsområder; Aktsomhetskart for kvikkleireskred) and ${nlodAttribution('Kartverket')} (Stormflo og havnivå).\nLicence: NLOD 1.0 (https://data.norge.no/nlod/en/1.0). Source: Geonorge WFS services, retrieved ${retrieved}.\n\n${summary}. "Not mapped" means the authority has no mapped area in the extent; it is not a statement that the site is safe. No depths, probabilities or safety classes are derived.`)
+    attributionSection(site, 'Mapped hazards', `Kilde: NVE (Flomsoner; Flom aktsomhetsområder; Aktsomhetskart for kvikkleireskred) and ${nlodAttribution('Kartverket')} (Stormflo og havnivå).\nLicence: Norsk lisens for offentlige data (NLOD), https://data.norge.no/nlod/. Source: Geonorge WFS services, retrieved ${retrieved}.\n\n${summary}. "Not mapped" means the authority has no mapped area in the extent; it is not a statement that the site is safe. No depths, probabilities or safety classes are derived.`)
   })
 }

@@ -6,19 +6,21 @@ import { SitePackageError, type SiteSource } from './manifest'
  * not be used for. Renderer-free.
  */
 
-export const LICENCES = ['CC BY 4.0', 'NLOD 1.0', 'ODbL 1.0', 'no conditions'] as const
+/** `NLOD` without a version is for publishers that name the licence and link it without saying which version (NVE). */
+export const LICENCES = ['CC BY 4.0', 'NLOD 1.0', 'NLOD', 'ODbL 1.0', 'no conditions'] as const
 export type Licence = (typeof LICENCES)[number]
 
 /** Where each licence text lives; the fallback when a synthesised entry has no link of its own. */
 export const LICENCE_URL: Record<Licence, string> = {
   'CC BY 4.0': 'https://creativecommons.org/licenses/by/4.0/',
   'NLOD 1.0': 'https://data.norge.no/nlod/en/1.0',
+  NLOD: 'https://data.norge.no/nlod/',
   'ODbL 1.0': 'https://opendatacommons.org/licenses/odbl/1-0/',
   'no conditions': 'https://www.kartverket.no/en/api-and-data/terms-of-use',
 }
 
 /** The layers a package can carry. `heights` is separate from `buildings` on purpose (ADR-0033). */
-export const LAYER_IDS = ['terrain', 'buildings', 'heights', 'roads', 'trees', 'landcover', 'noise', 'parcels', 'flood-zones', 'flood-susceptibility', 'quick-clay', 'storm-surge', 'terrain1m'] as const
+export const LAYER_IDS = ['terrain', 'buildings', 'heights', 'roads', 'trees', 'landcover', 'noise', 'parcels', 'flood-zones', 'flood-susceptibility', 'quick-clay', 'storm-surge', 'terrain1m', 'snow'] as const
 export type LayerId = (typeof LAYER_IDS)[number]
 
 export type LayerProvenance = {

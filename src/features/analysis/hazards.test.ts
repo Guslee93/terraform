@@ -111,6 +111,6 @@ describe('shipped hazard facts (ADR-0036)', () => {
     const manifest = parseSiteManifest(read(site, 'manifest.json'))
     expect(manifest.assetPaths.hazards).toBe('hazards.json')
     const layers = siteLayers(manifest).layers
-    for (const kind of HAZARD_KINDS) expect(layers.find((entry) => entry.id === kind)).toMatchObject({ licence: 'NLOD 1.0', owner: kind === 'storm-surge' ? 'Kartverket' : 'NVE' })
+    for (const kind of HAZARD_KINDS) expect(layers.find((entry) => entry.id === kind)).toMatchObject({ licence: 'NLOD', owner: kind === 'storm-surge' ? 'Kartverket' : 'NVE' })
   })
 })
