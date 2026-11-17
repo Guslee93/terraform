@@ -1409,3 +1409,19 @@ zoom in because the quads are small at the default site camera.
   `docs/qa/runoff-reference.md`.
 - **Checks.** eslint (scripts) 0; full unit suite 1212 passed / 1 failed (`wind-validation.test.ts`
   "case 4" timed out at 5 s — unrelated to this task, untouched); WhiteboxTools pipeline ran clean.
+
+## 2026-11-17 — Run 1 T1: analysis graphics registry (TF-VIS-014)
+
+- **Task TF-VIS-014.** Add `src/features/analysis/graphics.ts` (renderer-free): one source of truth for
+  every analysis colour and numeric band boundary, with `OutputClass`, `Band`, `Ramp`,
+  `AnalysisGraphic`, `GRAPHICS` and `sharedColours()`. Nine analyses: noise mapped; sun-hours and
+  slope calculated; roof-solar, VSC, wind-speed, wind-comfort, wind-delta and runoff screening.
+- **Legacy constants now derive from the registry** (no importer changes): `SUN_HOURS_RAMP`,
+  `WIND_RAMP`, `ACTIVITY_BANDS`, `DELTA_BANDS`, `SLOPE_BANDS`, `RUNOFF_LEGEND`, `NOISE_BAND_COLOUR`,
+  `ROOF_SOLAR_COLOUR`, `VSC_COLOUR`, and the streamlines' `SLOW`/`FAST`. Labels that embed thresholds
+  stay generated in their own modules (the registry carries colour + boundary only).
+- **No value changed.** `graphics.test.ts` pins the original colours (and the slope band labels)
+  against literals, and asserts every analysis has a class, banded scales ≤ 7 bands, and
+  `sharedColours()` — 11 hex values reused across analyses today, snapshot-committed so Gate 5 can
+  prove it empties.
+- **Checks.** typecheck 0 · lint 0 · full unit suite 1220 passed / 4 skipped / 0 failed · build OK.
