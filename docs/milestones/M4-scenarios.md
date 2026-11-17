@@ -1,6 +1,6 @@
 # M4 — Scenarios and comparison
 
-- **Status:** Pending
+- **Status:** Done — code review passed with follow-ups, 2026-11-02 (`docs/reviews/M4-code-review.md`)
 - **PRD gate:** QA-09 and QA-12 pass after reload (§13)
 - **Lead agent:** `engineering-senior-developer`
 - **Architecture:** `engineering-software-architect` (versioned document schema/migrations)

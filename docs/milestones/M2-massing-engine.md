@@ -1,6 +1,6 @@
 # M2 — Massing engine
 
-- **Status:** Pending
+- **Status:** Done — code review passed with follow-ups, 2026-10-28 (`docs/reviews/M2-code-review.md`)
 - **PRD gate:** QA-03–08 pass; model survives repetitive edits; derived geometry is correct for simple and stepped forms (§13)
 - **Lead agent:** `engineering-software-architect` (domain model) + `engineering-senior-developer` (implementation)
 - **Specialists:** `gis-3d-scene-developer` (gizmos/raycasting), `gis-bim-specialist` (one terminology check)
