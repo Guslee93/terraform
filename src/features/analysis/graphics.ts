@@ -212,4 +212,70 @@ export function sharedColours(): readonly string[] {
     .sort()
 }
 
+/** Whether the analysis on the map has data to show, is still solving, or is absent. */
+export type LegendState = 'ready' | 'computing' | 'not-mapped' | 'unavailable-on-import'
+
+/**
+ * What `legendFor` needs beyond the graphic itself. The `claim` sentence is produced by the
+ * analysis's existing caption function (windCaption, sunHoursDisclaimer, RUNOFF_NOTE,
+ * noiseSourceLine, …) and passed in — those functions live in modules that import this one, so
+ * importing them here would be a cycle. `legendFor` never authors claim text.
+ */
+export type LegendContext = {
+  readonly claim: string
+  readonly state?: LegendState
+  /** Provenance / source lines, from the layer's provenance or source-line functions. */
+  readonly sources?: readonly string[]
+}
+
+/** The plain model for the on-map legend of one analysis (04 §4.2); pure, no UI. */
+export type LegendModel = {
+  readonly id: AnalysisGraphicId
+  readonly title: string
+  readonly outputClass: OutputClass
+  readonly classLabel: string
+  readonly scale: AnalysisGraphic['scale']
+  readonly claim: string
+  readonly sources: readonly string[]
+  readonly state: LegendState
+}
+
+export const CLASS_LABELS: Readonly<Record<OutputClass, string>> = {
+  mapped: 'Mapped data',
+  calculated: 'Calculated',
+  screening: 'Screening',
+  illustrative: 'Illustrative',
+}
+
+export const LEGEND_TITLES: Readonly<Record<AnalysisGraphicId, string>> = {
+  'sun-hours': 'Sun hours',
+  'roof-solar': 'Roof solar',
+  vsc: 'Vertical sky component',
+  'wind-speed': 'Wind speed',
+  'wind-comfort': 'Wind comfort',
+  'wind-delta': 'Wind change',
+  noise: 'Road noise',
+  slope: 'Slope',
+  runoff: 'Runoff',
+}
+
+/**
+ * Describes the legend of whichever analysis is on the map. The claim is the string the caption
+ * blocks in `ViewportCanvas.tsx` show today for the same inputs; it is supplied, not authored, here.
+ */
+export function legendFor(id: AnalysisGraphicId, context: LegendContext): LegendModel {
+  const graphic = GRAPHICS[id]
+  return {
+    id,
+    title: LEGEND_TITLES[id],
+    outputClass: graphic.outputClass,
+    classLabel: CLASS_LABELS[graphic.outputClass],
+    scale: graphic.scale,
+    claim: context.claim,
+    sources: context.sources ?? [],
+    state: context.state ?? 'ready',
+  }
+}
+
+
 
