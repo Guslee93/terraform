@@ -1441,3 +1441,18 @@ zoom in because the quads are small at the default site camera.
 - **Known open item.** The wind activity legend's Lawson "Uncomfortable" labels are held out as an
   `it.todo` (owner decision whether to keep the names), per run book §7 T2.
 - **Checks.** typecheck 0 · lint 0 · full unit suite 1223 passed / 4 skipped / 1 todo / 0 failed · build OK.
+
+## 2026-11-17 — Run 1 T3: legend model part A (TF-VIS-040)
+
+- **Task TF-VIS-040 part A.** Add a pure, renderer-free `legendFor(id, context)` to
+  `src/features/analysis/graphics.ts` describing the legend of whichever analysis is on the map; do
+  not wire it into any component.
+- **Model.** Returns `{ title, outputClass, classLabel, scale, claim, sources, state }`. `state` is
+  `ready | computing | not-mapped | unavailable-on-import`; `classLabel` uses plain words
+  (`Mapped data`, `Calculated`, `Screening`, `Illustrative`); `scale` is the registry's ramp or
+  bands; `sources` and the default state come from the context.
+- **Claim.** Passed in from the existing caption functions (`windCaption`, `sunHoursDisclaimer`,
+  `RUNOFF_NOTE`, `noiseSourceLine`, `ROOF_SOLAR_DISCLAIMER`, `VSC_DISCLAIMER`, `SLOPE_NOTE`).
+  Those modules import `graphics.ts`, so importing them here would create a cycle; `legendFor`
+  therefore supplies — never authors — the claim text.
+- **Checks.** typecheck 0 · lint 0 · full unit suite 1227 passed / 4 skipped / 1 todo / 0 failed · build OK · no component file changed.
