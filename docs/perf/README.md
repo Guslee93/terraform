@@ -112,3 +112,11 @@ npm run lint
 The headed benchmark is deliberately reserved for the coordinator. Syntax/lint success does
 not certify browser execution or create baseline evidence. The pointer null fallback is the
 explicit allowance in the frozen work order, not a measured latency result.
+
+## Recorded baselines
+
+| File | Commit | Machine | Recorded | Conditions |
+|---|---|---|---|---|
+| `baseline-build-foundation.json` | `e41420c` (`build/foundation`) | Apple M1 Pro, Chromium 156.0.8078.4, ANGLE Metal | 2026-11-17 | Mains power (140 W). Antigravity IDE was still running (one helper at a full core); load average 5.9 before the run, 14.8 after. No window showed downgrade risk. Re-record with other apps closed if a comparison is borderline |
+
+Runs on 2026-11-17 on **battery** under the same load measured about 33 fps against about 60 on mains power, with no code change. Never compare a battery run with a mains-power run.
