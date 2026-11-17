@@ -6,9 +6,10 @@ import type { FootprintBuilding } from '../features/analysis/grid'
 import { traceStreamlines, type WindCircle } from '../features/analysis/streamlines'
 import { traceStreamlines3D } from '../features/analysis/streamlines3d'
 import { enuToThreeXyz, type ThreeVec3 } from '../lib/coordinates'
+import { STREAMLINE_COLOURS } from '../features/analysis/graphics'
 
-const SLOW = new Color('#1E3A8A') // Forma-like: deep blue (slow) → violet (fast)
-const FAST = new Color('#7B2FD1')
+const SLOW = new Color(STREAMLINE_COLOURS.slow) // Forma-like: deep blue (slow) → violet (fast)
+const FAST = new Color(STREAMLINE_COLOURS.fast)
 const colourFor = (ratio: number) => SLOW.clone().lerp(FAST, Math.min(1, Math.max(0, (ratio - 0.3) / 1.3)))
 
 /**

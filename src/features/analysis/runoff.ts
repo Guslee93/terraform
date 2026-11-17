@@ -1,6 +1,7 @@
 import type { Vec2 } from '../../lib/coordinates'
 import { pointInPolygon } from '../../lib/polygon'
 import type { TerrainRaster } from './terrainTools'
+import { bandsOf } from './graphics'
 
 /**
  * Stormwater runoff screening on the 1 m terrain (ADR-0038): where surface water would run and
@@ -212,7 +213,7 @@ export function runoffClass(runoff: Runoff, index: number): 0 | 1 | 2 | 3 {
  * phase. Screening outputs get no number beside them except the share of ground in depressions.
  */
 export const RUNOFF_LEGEND = [
-  { label: `Depressions and enclosed courtyards (hollows deeper than ${DEPRESSION_MIN_M * 100} cm)`, colour: '#93C5FD' },
-  { label: `Flow paths (water from ${FLOW_PATH_M2} m² or more)`, colour: '#3B6EA8' },
-  { label: `Main flow paths (water from ${MAIN_FLOW_PATH_M2.toLocaleString('en-GB').replace(',', ' ')} m² or more)`, colour: '#1E3A8A' },
+  { label: `Depressions and enclosed courtyards (hollows deeper than ${DEPRESSION_MIN_M * 100} cm)`, colour: bandsOf('runoff')[0]!.colour },
+  { label: `Flow paths (water from ${FLOW_PATH_M2} m² or more)`, colour: bandsOf('runoff')[1]!.colour },
+  { label: `Main flow paths (water from ${MAIN_FLOW_PATH_M2.toLocaleString('en-GB').replace(',', ' ')} m² or more)`, colour: bandsOf('runoff')[2]!.colour },
 ] as const
