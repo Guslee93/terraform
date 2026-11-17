@@ -1240,3 +1240,27 @@ zoom in because the quads are small at the default site camera.
   this change; the NVE licence confirmation; WP-9 (cut/fill); and the owner's own decisions on
   `build/foundation` (draft PR #18).
 
+
+---
+
+## 2026-11-16 (evening) — Runoff screening checked against WhiteboxTools (IT-7)
+
+- **Task TF-VIS-007.** Independently check `runoff.ts` against the WhiteboxTools reference on the
+  Compact Infill 1 m tile (624 × 734) with its 520 footprints burned in (+10 m), no drawn blocks.
+- **Reference.** WhiteboxTools v2.4.0 (MIT, run outside the repo):
+  `FillDepressions --fix_flats --flat_increment=0.00001` → `D8Pointer` →
+  `D8FlowAccumulation --pntr --out_type=cells`.
+- **Result (agreement, Jaccard):** depression 81.5 % · flow path 55.2 % · **main flow path 67.0 %**.
+  Full 4-class label agrees on 97.1 % of cells. Main-path agreement is below the IT-7 95 % bar and
+  is explained rather than tuned: the disagreement concentrates in building-enclosed courtyards
+  (Priority-Flood+Epsilon vs fixed-flat fill route the flats differently) with secondary edge-outlet
+  and threshold effects. **Verdict: no bug.**
+- **Artifacts.** `scripts/reference/runoff-whitebox/*` (export/compare/crop + README), a committed
+  regression test + fixtures (`src/features/analysis/__fixtures__/runoff-reference/*`), and
+  `docs/qa/runoff-reference.md` with the agreement table and diff image.
+- **Two WhiteboxTools v2.4.0 defects worked around** (documented in the README): the auto
+  flat-increment in `--fix_flats` produced `~10¹⁴` elevations, and its own `.asc` writer emits a
+  trailing space that its own reader cannot re-parse.
+- **Checks.** lint 0 · `npx vitest run src/features/analysis` (456 passed, 4 skipped) · `npm run build`
+  OK — all pass.
+
