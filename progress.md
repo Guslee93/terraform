@@ -1283,3 +1283,19 @@ zoom in because the quads are small at the default site camera.
     for the whole suite.
 - **Open for the owner.** NVE is named without being expanded or linked in "Data sources", and
   the Scope list still names only wind, sun, figures and layers. Neither was in the request.
+
+## 2026-11-17 — TF-VIS-011 performance harness
+
+- Implemented frozen work order in this checkout: `scripts/measure-perf.mjs` and `docs/perf/README.md`.
+- Added six ordered sampling states, fresh contexts for both sites, browser/GPU/host metadata,
+  download-arrival timing, per-run JSON checkpoints and per-site median/min/max tables.
+- Pointer helper draws a block but returns null with its reliability limitation; no numeric
+  pointer latency or baseline evidence is claimed. This fallback is authorized by the plan.
+- `node --check scripts/measure-perf.mjs`: exit 0, no output.
+- First `npm run lint`: exit 1, two `no-redeclare` errors for Node-provided globals
+  `performance` and `PerformanceObserver`. Removed redundant declarations.
+- Subsequent `npm run lint`: exit 0, `> terraform@0.1.0 lint` / `> eslint .`, no diagnostics.
+- Headed benchmark, build and tests not run, per frozen validation scope. No commit, push,
+  publication or edits to `src/`, package files or `feasibility/scratch/perf.mjs`.
+- No denied actions. Browser execution remains unverified until the coordinator runs it;
+  independent review pending. No work-order deviations beyond its explicit null fallback.
