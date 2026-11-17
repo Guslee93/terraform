@@ -1332,6 +1332,7 @@ zoom in because the quads are small at the default site camera.
 - Not supported by a file in the repository: `docs/plans/terraform-visual-upgrade/` is not present
   on any branch, so §10's new "Next" line and the status report point at a plan that is not
   committed yet.
+
 ## 2026-11-17 — About page: the rest of the copy, in line with the product as built
 
 - **The request.** The second half of the About page still described a product that no longer
