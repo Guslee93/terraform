@@ -14,18 +14,21 @@
 import { deflateSync } from 'node:zlib'
 import { writeFileSync } from 'node:fs'
 import { expect, it } from 'vitest'
-import { computeRunoff, runoffClass } from '../../../src/features/analysis/runoff'
+import { computeRunoff } from '../../../src/features/analysis/runoff'
 import {
-  burnFootprints,
+  buildVariantGround,
   classify,
   loadFootprints,
   loadTerrainRaster,
   readAsc,
+  RUNOFF_VARIANTS,
   writeJson,
+  type RunoffVariant,
 } from './common'
 
 const SITE = 'compact-infill'
-const DIR = 'tmp/runoff-whitebox'
+const VARIANT = (process.env.RUNOFF_VARIANT ?? 'standard') as RunoffVariant
+const DIR = VARIANT === 'standard' ? 'tmp/runoff-whitebox' : `tmp/runoff-whitebox/${VARIANT}`
 
 // ---- minimal PNG writer (RGB, no dependency) ------------------------------------------------
 let crc32Table: Uint32Array | undefined
@@ -87,8 +90,12 @@ it('compares computeRunoff with WhiteboxTools on the burned terrain (IT-7 steps 
   const cellArea = dx * dy
   const count = cols * rows
 
-  const burned = burnFootprints(raster, footprints)
-  const runoff = computeRunoff(raster, footprints)
+  if (!RUNOFF_VARIANTS.includes(VARIANT)) throw new Error(`unknown RUNOFF_VARIANT: ${VARIANT}`)
+  const baked = buildVariantGround(raster, footprints, VARIANT)
+  // Standard burns the footprints inside `computeRunoff`; bare/offset bake the input into the
+  // raster first and call `computeRunoff` with no footprints, so `runoff.ts` is unchanged.
+  const runoff =
+    VARIANT === 'standard' ? computeRunoff(raster, footprints) : computeRunoff({ ...raster, heights: baked.heights }, [])
   expect(Number(runoff.accumulation[123 * cols + 456])).toBeGreaterThanOrEqual(0)
 
   // WhiteboxTools outputs from README.md step 2.
@@ -101,14 +108,16 @@ it('compares computeRunoff with WhiteboxTools on the burned terrain (IT-7 steps 
 
   // WhiteboxTools hollow: fill level minus the ground it was given (same burned ground).
   const wbHollow = new Float64Array(count)
-  for (let i = 0; i < count; i += 1) wbHollow[i] = Math.max(0, filled.values[i]! - burned.ground[i]!)
+  for (let i = 0; i < count; i += 1) wbHollow[i] = Math.max(0, filled.values[i]! - baked.ground[i]!)
 
-  // Classify every cell with the same thresholds (runoffClass for Terraform, the copied rule for Whitebox).
+  // Classify every cell with the same thresholds. `classify` is the verbatim copy of `runoffClass`;
+  // it takes the mask explicitly so bare/offset (where `computeRunoff` runs with no footprints and
+  // therefore an empty `runoff.building`) still mask buildings on both sides.
   const tfClass = new Uint8Array(count)
   const wbClass = new Uint8Array(count)
   for (let i = 0; i < count; i += 1) {
-    tfClass[i] = runoffClass(runoff, i)
-    wbClass[i] = classify(runoff.building, wbAccum.values, wbHollow, cellArea, i)
+    tfClass[i] = classify(baked.building, runoff.accumulation, runoff.hollow, cellArea, i)
+    wbClass[i] = classify(baked.building, wbAccum.values, wbHollow, cellArea, i)
   }
 
   // ---- per-class agreement and the 4 × 4 confusion matrix -------------------------------
@@ -153,7 +162,8 @@ it('compares computeRunoff with WhiteboxTools on the burned terrain (IT-7 steps 
     dy,
     cellArea,
     cellCount: count,
-    buildingCells: runoff.building.reduce((sum, value) => sum + value, 0),
+    variant: VARIANT,
+    buildingCells: baked.building.reduce((sum, value) => sum + value, 0),
     terraform: { pits: runoff.pits, drained: runoff.drained, cells: runoff.cells, conserved: runoff.pits === 0 && runoff.drained === runoff.cells },
     perClass,
     confusion,

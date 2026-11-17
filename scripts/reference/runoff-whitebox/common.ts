@@ -122,21 +122,47 @@ export function loadFootprints(siteId: string): Vec2[][] {
   return buildings.map((building) => building.footprint.map(([east, north]) => [east, north] as Vec2))
 }
 
+/** A tiny per-building height offset used by the "offset" control run so no two building tops tie. */
+export const OFFSET_PER_BUILDING_M = 0.001
+
 /**
- * The burn-in from `computeRunoff` (runoff.ts), whose own burn loop is not exported, mirrored
- * line-for-line so the `.asc` WhiteboxTools consumes is the same ground the app fills. Each cell
- * whose centre lies inside a footprint is raised `BUILDING_RAISE_M` metres; cells without data
- * (NaN) are listed as outlets and never raised, exactly as in the source.
+ * Which input configuration a reference run uses. All three share the same thresholds, fill and D8
+ * commands; only the building burn-in differs.
+ * - `standard` — buildings raised `BUILDING_RAISE_M` (the app's own behaviour)
+ * - `bare`     — no buildings burned in (control for the building-block hypothesis)
+ * - `offset`   — buildings raised `BUILDING_RAISE_M + OFFSET_PER_BUILDING_M × index`, so top cells never tie
  */
-export function burnFootprints(
+export type RunoffVariant = 'standard' | 'bare' | 'offset'
+
+export const RUNOFF_VARIANTS: readonly RunoffVariant[] = ['standard', 'bare', 'offset']
+
+export type BurnedGround = {
+  /** Heights WhiteboxTools sees, with missing-data cells written down as -1e9 (the `.asc` ground). */
+  ground: Float64Array
+  /** 1 where a building stands. Identical across variants: offsets never move a boundary. */
+  building: Uint8Array
+  /** Cells with data. */
+  cells: number
+  /** Ground with the burn-in applied but NaN still marking missing data, for feeding `computeRunoff` directly. */
+  heights: Float64Array
+}
+
+/**
+ * Builds the ground WhiteboxTools and Terraform both receive, for one of the three variants above.
+ * This is the single source of the burn-in; `burnFootprints` (below) is its `standard` case.
+ */
+export function buildVariantGround(
   raster: Pick<TerrainRaster, 'cols' | 'rows' | 'minX' | 'minY' | 'maxX' | 'maxY' | 'heights'>,
   footprints: readonly (readonly Vec2[])[],
-): { ground: Float64Array; building: Uint8Array; cells: number } {
+  variant: RunoffVariant,
+): BurnedGround {
+  if (!RUNOFF_VARIANTS.includes(variant)) throw new Error(`unknown runoff variant: ${variant}`)
   const { cols, rows } = raster
   const count = cols * rows
   const dx = (raster.maxX - raster.minX) / cols
   const dy = (raster.maxY - raster.minY) / rows
   const ground = new Float64Array(count)
+  const heights = Float64Array.from(raster.heights)
   const outlet = new Uint8Array(count)
   let cells = 0
   for (let index = 0; index < count; index += 1) {
@@ -144,19 +170,39 @@ export function burnFootprints(
     if (Number.isNaN(height)) { outlet[index] = 1; ground[index] = -1e9 } else { ground[index] = height; cells += 1 }
   }
   const building = new Uint8Array(count)
-  for (const footprint of footprints) {
-    if (footprint.length < 3) continue
-    const xs = footprint.map((point) => point[0]), ys = footprint.map((point) => point[1])
-    const col0 = Math.max(0, Math.floor((Math.min(...xs) - raster.minX) / dx)), col1 = Math.min(cols - 1, Math.floor((Math.max(...xs) - raster.minX) / dx))
-    const row0 = Math.max(0, Math.floor((raster.maxY - Math.max(...ys)) / dy)), row1 = Math.min(rows - 1, Math.floor((raster.maxY - Math.min(...ys)) / dy))
-    for (let row = row0; row <= row1; row += 1) {
-      for (let col = col0; col <= col1; col += 1) {
-        const index = row * cols + col
-        if (building[index] || outlet[index]) continue
-        if (pointInPolygon([raster.minX + (col + 0.5) * dx, raster.maxY - (row + 0.5) * dy], footprint)) { building[index] = 1; ground[index]! += BUILDING_RAISE_M }
+  if (variant !== 'bare') {
+    footprints.forEach((footprint, footprintIndex) => {
+      if (footprint.length < 3) return
+      const raise = variant === 'offset' ? BUILDING_RAISE_M + OFFSET_PER_BUILDING_M * footprintIndex : BUILDING_RAISE_M
+      const xs = footprint.map((point) => point[0]), ys = footprint.map((point) => point[1])
+      const col0 = Math.max(0, Math.floor((Math.min(...xs) - raster.minX) / dx)), col1 = Math.min(cols - 1, Math.floor((Math.max(...xs) - raster.minX) / dx))
+      const row0 = Math.max(0, Math.floor((raster.maxY - Math.max(...ys)) / dy)), row1 = Math.min(rows - 1, Math.floor((raster.maxY - Math.min(...ys)) / dy))
+      for (let row = row0; row <= row1; row += 1) {
+        for (let col = col0; col <= col1; col += 1) {
+          const index = row * cols + col
+          if (building[index] || outlet[index]) continue
+          if (pointInPolygon([raster.minX + (col + 0.5) * dx, raster.maxY - (row + 0.5) * dy], footprint)) {
+            building[index] = 1
+            ground[index]! += raise
+            heights[index]! += raise
+          }
+        }
       }
-    }
+    })
   }
+  return { ground, building, cells, heights }
+}
+
+/**
+ * The burn-in from `computeRunoff` (runoff.ts), whose own burn loop is not exported, mirrored
+ * line-for-line so the `.asc` WhiteboxTools consumes is the same ground the app fills — the
+ * `standard` case of `buildVariantGround`.
+ */
+export function burnFootprints(
+  raster: Pick<TerrainRaster, 'cols' | 'rows' | 'minX' | 'minY' | 'maxX' | 'maxY' | 'heights'>,
+  footprints: readonly (readonly Vec2[])[],
+): { ground: Float64Array; building: Uint8Array; cells: number } {
+  const { ground, building, cells } = buildVariantGround(raster, footprints, 'standard')
   return { ground, building, cells }
 }
 

@@ -100,6 +100,29 @@ buildings masked), and writes:
 - `tmp/runoff-whitebox/diff.png` — grey where the 4-class labels agree, red where Terraform’s
   label is higher, blue where WhiteboxTools’ is higher (no image library: node:zlib only).
 
+## Control runs (bare and offset)
+
+TF-VIS-007's control runs re-run the same comparison with `runoff.ts` **unchanged**, varying only
+the input ground. Both run the identical `export` → WhiteboxTools → `compare` steps, with the
+variant selected by `RUNOFF_VARIANT` (default `standard`):
+
+| Variant | Ground fed to both sides |
+|---|---|
+| `standard` | footprints burned +10 m (the app's behaviour) |
+| `bare` | no footprints — the raw 1 m terrain |
+| `offset` | footprints burned +10 m plus `+0.001 m × building index` |
+
+Each variant writes to `tmp/runoff-whitebox/<variant>/` (`standard` keeps the top-level
+`tmp/runoff-whitebox/`). For the bare control:
+
+```bash
+RUNOFF_VARIANT=bare npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts export
+# the four WhiteboxTools commands from "Step 2", with --wd pointing at tmp/runoff-whitebox/bare
+RUNOFF_VARIANT=bare npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts compare
+```
+
+The agreement table and the verdict live in `docs/qa/runoff-reference.md`.
+
 ## Tool version
 
 Record the exact line `whitebox_tools -v` prints after running:
