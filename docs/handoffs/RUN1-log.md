@@ -10,14 +10,14 @@ commands the owner must run on the GPU machine.)_
 
 ## Environment
 
-- GPU: _(fill in from run book §5 on the first session)_
-- Machine / OS: _(fill in)_
+- GPU: none — headless x86_64 container (no `/dev/dri`, no `nvidia-smi`, no `glxinfo`). Pixel checks (T5, T6) will be written but not judged here.
+- Machine / OS: Linux, Node v24.15.0, npm 11.12.1. WhiteboxTools v2.4.0 at `/home/node/whiteboxtools/WhiteboxTools_linux_amd64/WBT/whitebox_tools` (zip sha256 matches the README).
 
 ## Tasks
 
 | # | Task | Status | Commit(s) | Checks run (last lines) | Open items |
 |---|---|---|---|---|---|
-| T0 | TF-VIS-007 runoff control runs (PR #23) | todo | | | |
+| T0 | TF-VIS-007 runoff control runs (PR #23) | in progress (2026-11-17) | | | |
 | T1 | TF-VIS-014 analysis graphics registry | todo | | | |
 | T2 | TF-VIS-054 claim guardrail tests | todo | | | |
 | T3 | TF-VIS-040 part A legend model | todo | | | |
@@ -39,4 +39,4 @@ _(Add the exact commands for any check that needs a real GPU.)_
 
 ## Session notes
 
-_(Newest first: date, task, what happened, what is next.)_
+- 2026-11-17 — T0 in progress: environment checked (GPU none; WhiteboxTools v2.4.0 installed and verified), standard export reproduced the recorded burned `.asc` checksum `997e54f1…`. The control runs (bare, offset) are on `test/runoff-reference`.
