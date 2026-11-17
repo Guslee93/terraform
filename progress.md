@@ -1332,3 +1332,63 @@ zoom in because the quads are small at the default site camera.
 - Not supported by a file in the repository: `docs/plans/terraform-visual-upgrade/` is not present
   on any branch, so §10's new "Next" line and the status report point at a plan that is not
   committed yet.
+
+## 2026-11-17 — About page: the rest of the copy, in line with the product as built
+
+- **The request.** The second half of the About page still described a product that no longer
+  exists: the removed area and coverage figures, the removed envelope checks, a study area the
+  visitor no longer chooses, a dashed boundary that is drawn nowhere, and a Data sources section
+  that claimed no live GIS is queried at runtime.
+- **The introduction.** It read "reads sun and shadow, wind exposure, road noise and area
+  figures" and said the visitor "chooses the study area".
+  - The five analysis cards are Sun, Wind, Noise, Water and Snow (`AnalysisCards.tsx`), so the
+    sentence now names them, plus the slope overlay and the section tool (ADR-0037).
+  - The study area is not a control any more: `StudioShell.test.tsx` asserts that the label
+    "Study area" is absent, and ADR-0020 removed the study-boundary layer. For an import the
+    study area is the chosen frame inset by 15 % on every side
+    (`src/features/import/assemble.ts`). The clause is gone.
+  - The area and coverage figures went with ADR-0020 ("the study-area facts and the area/GFA
+    tile").
+- **Parcels.** "All site constraints are explicitly illustrative" is replaced by what is true
+  now: parcel outlines come from Kartverket's Eiendomskart, shown as published and not as a
+  surveyed boundary, and the studio holds no zoning or regulation data and makes no statement
+  about what a plan allows (ADR-0035).
+- **Context building heights.** "Area, coverage and height come from building footprints
+  clipped to the study boundary" became "Context building heights on the curated sites come
+  from Kartverket's surface model, measured rather than estimated" (ADR-0033). The rest of the
+  paragraph is untouched.
+- **The Scope list.** "Study-area figures and coverage" became "Terrain slope and sections from
+  the 1 m terrain", and two items were added — the runoff screening and the winter climate
+  context — worded as in the paragraph above. The `water` and `snow` icons already exist in
+  `Icon.tsx`; no icon was invented.
+- **The constraints box.** "Envelope checks are demonstration logic" described the design
+  check that ADR-0020 removed. The box is now "Indicative and as published": screening results
+  (wind flow, runoff) are indicative; mapped facts (road noise, hazard maps, parcels) are shown
+  as their publishers issue them, with the publisher and the year the data describe.
+- **Data sources.** "No live GIS service is queried at runtime" was false: an imported address
+  queries public map and elevation services in the browser (ADR-0006). The section now says the
+  two sample sites are static packages built offline and that an imported address is different.
+  - Every source in the manifest is listed with its owner, licence and link, taken from
+    `provenance.ts` and `public/sites/compact-infill/manifest.json` as written: OpenStreetMap
+    contributors (ODbL 1.0), Kartverket (CC BY 4.0), Statens vegvesen (NLOD 1.0, calculated for
+    2021), NVE (NLOD), plus the storm-surge map under its own NLOD licence and the
+    flood-susceptibility (2025) and quick-clay (2026) years.
+  - The "Study boundary" entry claimed a dashed boundary. Nothing in `src/scene` draws one; the
+    study area is an authored rectangle that scopes the readings, so the entry now says that and
+    names the 15 % inset for an imported address.
+- **Tests.** `src/app/AboutPage.test.tsx` grew from 6 to 15 tests. It now asserts that "No live
+  GIS service is queried at runtime", "Envelope checks" and "Study-area figures" are absent,
+  that each source owner appears in the Data sources section, and that none of the banned claim
+  words appears anywhere on the page.
+- **Checks.** lint 0; `npx vitest run src/app` — **40 of 40 pass** on an idle machine; build OK.
+  `App.test.tsx`, which asserts on the About page's links and headings, passes unchanged: 7 of 7.
+  - **The suite is flaky here, not broken.** `NewSitePage.test.tsx` → "explains when an imported
+    site is gone after a reload" allows 5 s for the lazy studio chunk, which this sandbox needs
+    6.9 s to resolve; under load it fails here. It fails identically on `build/foundation`
+    without this change.
+  - **The full unit suite was not run in the sandbox.** GitHub CI on the draft PR is the check
+    for the whole suite.
+- **Open for the owner.** The site footer still says "constraints are illustrative and not
+  planning advice" (`SiteChrome.tsx`), which now has no counterpart on the About page: the
+  constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
+  string, so it was left alone.

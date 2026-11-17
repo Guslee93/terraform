@@ -6,7 +6,7 @@ const sections = [
   {
     title: 'What this is',
     body: [
-      'Terraform is a microclimate and site-analysis prototype. A visitor enters an address or opens a sample site, chooses the study area, and reads sun and shadow, wind exposure, road noise and area figures. An optional mode lets them test a building of their own against the same readings.',
+      'Terraform is a microclimate and site-analysis prototype. A visitor enters an address or opens a sample site, and reads sun and shadow, wind flow, road noise, runoff and winter snow, with the slope of the ground and a section through it. An optional mode lets them test a building of their own against the same readings.',
       'The intent is to show how architectural judgement, computational geometry and interface design can meet in one coherent tool — not to present a commercial planning product.',
     ],
   },
@@ -14,14 +14,14 @@ const sections = [
     title: 'What this is not',
     body: [
       'This is not an engineering wind study, a noise survey, a BIM environment, a regulatory compliance tool or a commercial SaaS. Wind is a screening estimate for comparing places within one site. Road noise is Statens vegvesen’s published strategic noise map, shown as mapped bands and not for assessing individual buildings. Neither certifies comfort, daylight, planning permission or legal setbacks.',
-      'All site constraints are explicitly illustrative. No parcel boundary or regulation should be treated as official unless a source is recorded in the site package and attributed in the interface.',
+      'Parcel outlines come from Kartverket’s Eiendomskart, shown as published and not as a surveyed boundary. The studio holds no zoning or regulation data and makes no statement about what a plan allows.',
     ],
   },
   {
     title: 'How the model stays honest',
     body: [
       'Authored geometry lives in a local East/North/Up metre frame. One coordinate pipeline serves raycasts, snapping, measurement and export. Domain calculations are kept independent of React and Three.js so they can be tested without mounting a canvas.',
-      'Area, coverage and height come from building footprints clipped to the study boundary. Solar direction is calculated from the site’s coordinates and timestamp. Wind is a 2D screening flow inside an analysis circle, and the map can be read at any whole metre above the ground. Noise is Statens vegvesen’s published strategic road-noise map for 2021, shown as published and not for assessing individual buildings. Water is a runoff screening on the 1 m terrain, showing flow paths and hollows, with no drains, rainfall or water depth. Snow is winter climate context from NVE’s 1 km snow model for open terrain, not a measurement at the site and not a snow load. Where the tool cannot make a claim, the interface says so.',
+      'Context building heights on the curated sites come from Kartverket’s surface model, measured rather than estimated. Solar direction is calculated from the site’s coordinates and timestamp. Wind is a 2D screening flow inside an analysis circle, and the map can be read at any whole metre above the ground. Noise is Statens vegvesen’s published strategic road-noise map for 2021, shown as published and not for assessing individual buildings. Water is a runoff screening on the 1 m terrain, showing flow paths and hollows, with no drains, rainfall or water depth. Snow is winter climate context from NVE’s 1 km snow model for open terrain, not a measurement at the site and not a snow load. Where the tool cannot make a claim, the interface says so.',
     ],
   },
 ]
@@ -61,7 +61,15 @@ export function AboutPage() {
               </li>
               <li className="flex gap-2">
                 <Icon name="ruler" size={15} className="mt-px shrink-0 text-ink-secondary" />
-                Study-area figures and coverage
+                Terrain slope and sections from the 1 m terrain
+              </li>
+              <li className="flex gap-2">
+                <Icon name="water" size={15} className="mt-px shrink-0 text-ink-secondary" />
+                Runoff screening on the 1 m terrain, showing flow paths and hollows
+              </li>
+              <li className="flex gap-2">
+                <Icon name="snow" size={15} className="mt-px shrink-0 text-ink-secondary" />
+                Winter climate context from NVE’s 1 km snow model for open terrain
               </li>
               <li className="flex gap-2">
                 <Icon name="layers" size={15} className="mt-px shrink-0 text-ink-secondary" />
@@ -70,11 +78,12 @@ export function AboutPage() {
             </ul>
             <div className="mt-8 border-t border-line py-4">
               <p className="text-caption text-ink-secondary">
-                Illustrative constraints
+                Indicative and as published
               </p>
               <p className="mt-2 text-body leading-relaxed text-ink-secondary">
-                Envelope checks are demonstration logic, not planning advice or a legal
-                determination.
+                Screening results — wind flow and runoff — are indicative. Mapped facts — road
+                noise, hazard maps and parcels — are shown as their publishers issue them, with the
+                publisher and the year the data describe.
               </p>
             </div>
           </aside>
@@ -100,9 +109,10 @@ export function AboutPage() {
                 Data sources
               </h2>
               <p className="mt-3 text-body leading-relaxed text-ink-secondary">
-                Both sites are static packages built offline. No live GIS service is queried at
-                runtime. Each package records its sources, licence, acquisition date and
-                simplifications in its own attribution file.
+                The two sample sites are static packages built offline. An imported address is
+                different: the studio asks public map and elevation services for that place, in the
+                browser, and builds the package from their answers. Each package records its
+                sources, licence, acquisition date and simplifications in its own attribution file.
               </p>
               <ul className="mt-5 space-y-3">
                 <li className="border-t border-line py-4">
@@ -132,7 +142,7 @@ export function AboutPage() {
                 </li>
                 <li className="border-t border-line py-4">
                   <p className="text-caption text-ink-secondary">
-                    Terrain
+                    Terrain, building heights and parcels
                   </p>
                   <p className="mt-1.5 text-body leading-relaxed text-ink-secondary">
                     <a
@@ -143,7 +153,9 @@ export function AboutPage() {
                     >
                       © Kartverket
                     </a>
-                    , DTM1 elevation sampled through the open height API, licensed under{' '}
+                    : the DTM1 elevation and the 1 m terrain tile, the DOM1 surface model behind the
+                    measured building heights, and the Eiendomskart parcel outlines, licensed
+                    under{' '}
                     <a
                       href="https://creativecommons.org/licenses/by/4.0/"
                       target="_blank"
@@ -152,19 +164,72 @@ export function AboutPage() {
                     >
                       CC BY 4.0
                     </a>
-                    .
+                    . Heights are measured from a lidar surface model, not surveyed.
                   </p>
                 </li>
                 <li className="border-t border-line py-4">
                   <p className="text-caption text-ink-secondary">
-                    Study boundary
+                    Storm surge
                   </p>
                   <p className="mt-1.5 text-body leading-relaxed text-ink-secondary">
-                    The dashed boundary is an authored study-area rectangle. It is not a cadastral
-                    parcel, property boundary, zoning designation or planning constraint.
+                    Kartverket’s Stormflo og havnivå storm-surge map (2026), under{' '}
+                    <a
+                      href="https://data.norge.no/nlod/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+                    >
+                      NLOD
+                    </a>
+                    . Modelled areas, which the publisher says are not suited to detailed studies
+                    or decisions at detail level.
+                  </p>
+                </li>
+                <li className="border-t border-line py-4">
+                  <p className="text-caption text-ink-secondary">
+                    Road noise
+                  </p>
+                  <p className="mt-1.5 text-body leading-relaxed text-ink-secondary">
+                    Statens vegvesen’s strategic road-noise map (Lden, Lnight), calculated for 2021,
+                    under{' '}
+                    <a
+                      href="https://data.norge.no/nlod/en/1.0"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+                    >
+                      NLOD 1.0
+                    </a>
+                    . The publisher does not allow it to be used to assess the need for measures on
+                    individual buildings.
+                  </p>
+                </li>
+                <li className="border-t border-line py-4">
+                  <p className="text-caption text-ink-secondary">
+                    Flood, quick clay and snow
+                  </p>
+                  <p className="mt-1.5 text-body leading-relaxed text-ink-secondary">
+                    NVE: the Flomsoner flood-zone maps, the Flom aktsomhetsområder
+                    flood-susceptibility map (2025), the Aktsomhetskart for kvikkleireskred
+                    quick-clay map (2026) and the snow-depth series, under{' '}
+                    <a
+                      href="https://data.norge.no/nlod/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-ink underline decoration-line underline-offset-2 hover:decoration-ink"
+                    >
+                      NLOD
+                    </a>
+                    . A “not mapped” answer from any of them means the authority has no mapped
+                    area here, and nothing more.
                   </p>
                 </li>
               </ul>
+              <p className="mt-3 text-body leading-relaxed text-ink-secondary">
+                The study area is the rectangle the readings are measured over — authored for the
+                sample sites, and the chosen frame inset by 15 % for an imported address. It is not a
+                cadastral parcel, property boundary, zoning designation or planning constraint.
+              </p>
               <p className="mt-3 text-body leading-relaxed text-ink-secondary">
                 Streets, trees, parks, grass, woods and water areas come from the same
                 OpenStreetMap extract as the building footprints, are simplified, and are drawn at
