@@ -18,7 +18,7 @@ commands the owner must run on the GPU machine.)_
 | # | Task | Status | Commit(s) | Checks run (last lines) | Open items |
 |---|---|---|---|---|---|
 | T0 | TF-VIS-007 runoff control runs (PR #23) | done | 0f17a24 (test/runoff-reference); ab1df95 + ledger (run1/foundations) | eslint(scripts) 0 · unit 1212 passed / 1 failed (wind-validation "case 4" time-out, untouched) · WhiteboxTools pipeline clean | Bare 69.8 % / offset 66.0 % main-path (far below 95 %), so "no bug" verdict withdrawn; PR #23 updated |
-| T1 | TF-VIS-014 analysis graphics registry | todo | | | |
+| T1 | TF-VIS-014 analysis graphics registry | in progress (2026-11-17) | | | |
 | T2 | TF-VIS-054 claim guardrail tests | todo | | | |
 | T3 | TF-VIS-040 part A legend model | todo | | | |
 | T4 | TF-VIS-010 reference capture script | todo | | | |
@@ -40,5 +40,6 @@ _(Add the exact commands for any check that needs a real GPU.)_
 
 ## Session notes
 
+- 2026-11-17 — T1 in progress: analysis graphics registry (`src/features/analysis/graphics.ts`) being built; the 9 analyses map to 2 calculated, 1 mapped, 6 screening.
 - 2026-11-17 — T0 **done**. Bare terrain main-path agreement 69.8 % and offset 66.0 % (standard 67.0 %) — both far below the IT-7 95 % bar, so the building-block explanation is refuted and the earlier "no bug" verdict is withdrawn. `docs/qa/runoff-reference.md` and PR #23 updated; run1 draft PR #25 opened. Next task: T1.
 - 2026-11-17 — T0 in progress: environment checked (GPU none; WhiteboxTools v2.4.0 installed and verified), standard export reproduced the recorded burned `.asc` checksum `997e54f1…`. The control runs (bare, offset) are on `test/runoff-reference`.
