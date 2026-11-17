@@ -1425,3 +1425,19 @@ zoom in because the quads are small at the default site camera.
   `sharedColours()` — 11 hex values reused across analyses today, snapshot-committed so Gate 5 can
   prove it empties.
 - **Checks.** typecheck 0 · lint 0 · full unit suite 1220 passed / 4 skipped / 0 failed · build OK.
+
+## 2026-11-17 — Run 1 T2: claim guardrail tests (TF-VIS-054)
+
+- **Task TF-VIS-054.** Add `src/features/analysis/claims.test.ts` (renderer-free): a test that fails
+  if any user-facing analysis caption, note, disclaimer or legend label makes a forbidden claim.
+- **Rule.** None may contain, case-insensitively: `safe` as a whole word, `verified`,
+  `compliant`/`compliance`, `accurate`, `certified`, `flood depth`, `snow load`, `water depth`,
+  `return period`, or `comfortable`/`uncomfortable` (unless the same string says `screening`).
+  Required disclaimers that *negate* a term ("not a statement that the site is safe", "not a snow
+  load") pass a negation check rather than being flagged.
+- **Collection.** Every wind caption per height and computing state, sun (sun-hours/roof-solar/VSC),
+  runoff, snow, noise, hazard facts, parcels, terrain, streamlines and constraints — including the
+  band labels (slope, wind delta/direction/speed, roof-solar, VSC, runoff).
+- **Known open item.** The wind activity legend's Lawson "Uncomfortable" labels are held out as an
+  `it.todo` (owner decision whether to keep the names), per run book §7 T2.
+- **Checks.** typecheck 0 · lint 0 · full unit suite 1223 passed / 4 skipped / 1 todo / 0 failed · build OK.

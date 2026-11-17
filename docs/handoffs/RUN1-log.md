@@ -19,7 +19,7 @@ commands the owner must run on the GPU machine.)_
 |---|---|---|---|---|---|
 | T0 | TF-VIS-007 runoff control runs (PR #23) | done | 0f17a24 (test/runoff-reference); ab1df95 + ledger (run1/foundations) | eslint(scripts) 0 · unit 1212 passed / 1 failed (wind-validation "case 4" time-out, untouched) · WhiteboxTools pipeline clean | Bare 69.8 % / offset 66.0 % main-path (far below 95 %), so "no bug" verdict withdrawn; PR #23 updated |
 | T1 | TF-VIS-014 analysis graphics registry | done | 61d49f3 | typecheck 0 · lint 0 · unit 1220 passed / 4 skipped / 0 failed · build OK | 11 shared hexes snapshotted (Gate 5 empties); Band omits label (labels stay in modules); WIND_RAMP widened → two `!` in climateView.test.ts |
-| T2 | TF-VIS-054 claim guardrail tests | in progress (2026-11-17) | | | |
+| T2 | TF-VIS-054 claim guardrail tests | done | b1a8dd4 | typecheck 0 · lint 0 · unit 1223 passed / 4 skipped / 1 todo (0 failed) · build OK | Lawson "Uncomfortable" labels held as `it.todo` (owner decision); required negations ("not … safe/snow load") allowed |
 | T3 | TF-VIS-040 part A legend model | todo | | | |
 | T4 | TF-VIS-010 reference capture script | todo | | | |
 | T5 | TF-VIS-012 opt-in visual regression spec | todo | | | |
@@ -40,6 +40,7 @@ _(Add the exact commands for any check that needs a real GPU.)_
 
 ## Session notes
 
+- 2026-11-17 — T2 **done**. Renderer-free guardrail collects every analysis caption/note/disclaimer/label and fails on forbidden terms; required negations ("not … safe", "not a snow load") pass; the Lawson "Uncomfortable" labels are an `it.todo` (owner decision). Commit b1a8dd4. Next: T3.
 - 2026-11-17 — T2 in progress: renderer-free claim guardrail (`src/features/analysis/claims.test.ts`) collecting every analysis caption/note/disclaimer/label and asserting no forbidden term.
 - 2026-11-17 — T1 **done**. One renderer-free source (`graphics.ts`) for every analysis colour + band boundary; legacy constants now derive from it; 11 shared hexes snapshotted. Commit 61d49f3. Next: T2.
 - 2026-11-17 — T1 in progress: analysis graphics registry (`src/features/analysis/graphics.ts`) being built; the 9 analyses map to 2 calculated, 1 mapped, 6 screening.
