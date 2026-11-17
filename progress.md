@@ -1299,3 +1299,36 @@ zoom in because the quads are small at the default site camera.
   publication or edits to `src/`, package files or `feasibility/scratch/perf.mjs`.
 - No denied actions. Browser execution remains unverified until the coordinator runs it;
   independent review pending. No work-order deviations beyond its explicit null fallback.
+
+## 2026-11-17 — TF-VIS-005 (part 1): the operating documents brought up to date
+
+- Read before writing: `AGENTS.md`; `docs/reports/terraform-project-report.md` (16 Nov 2026);
+  `docs/reviews/build-foundation-report.md` §1 and §11; the title and Decision section of ADR-0028
+  to ADR-0039; `docs/milestones/M0`–`M6`; `docs/status-report.md`; `docs/reviews/M1-code-review.md`
+  to `M5-perf.md`; `docs/agent-log.md`; `progress.md`.
+- `AGENTS.md`:
+  - header Status — added the ADR range in force: ADR-0001–ADR-0039, every one accepted but
+    ADR-0011, which is still proposed.
+  - §1 item 11 and §6 — the out-of-scope text is unchanged; each gains
+    "(Superseded in part: ADR-0006 brought live address import and MapLibre on /new.)".
+  - §3 repository map — added `src/features/import/`, the five analysis workers
+    (`circleSunWorker`, `roofSolarWorker`, `flowWorker`, `runoffWorker`, `sweepWorker`),
+    `scripts/site-assets/`, `scripts/measure-perf.mjs`, `docs/perf/`, `docs/feasibility/` and
+    `docs/plans/terraform-visual-upgrade/`; removed the (M2), (M3) and (M4) markers from the
+    modules that are built; marked `src/features/scenarios/` as domain kept, UI removed
+    (ADR-0020).
+  - §10 — "Done" rewritten as one line per ADR from ADR-0028 to ADR-0039, keeping the earlier
+    history; "Next" set to Gate 0 of `docs/plans/terraform-visual-upgrade/05-MASTER-TODO.md`.
+- `docs/milestones/M2`–`M5` — status lines set to Done with the date and the review file that
+  closed each: M2 `M2-code-review.md` (2026-10-28), M3 `M3-code-review.md` (2026-10-29),
+  M4 `M4-code-review.md` (2026-11-02), M5 `M5-a11y.md` and `M5-perf.md` (2026-11-02, no separate
+  M5 gate review on file).
+- `docs/status-report.md` — body replaced by three lines: superseded by
+  `docs/reports/terraform-project-report.md`, current work in `docs/plans/terraform-visual-upgrade/`,
+  open decisions on PR #18.
+- `docs/agent-log.md` — one row for this engagement.
+- Documentation only: no ADR, no code, no PRD file was touched.
+- `npm run lint`: exit 0, no diagnostics.
+- Not supported by a file in the repository: `docs/plans/terraform-visual-upgrade/` is not present
+  on any branch, so §10's new "Next" line and the status report point at a plan that is not
+  committed yet.
