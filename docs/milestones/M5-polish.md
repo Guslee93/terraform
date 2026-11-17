@@ -1,6 +1,6 @@
 # M5 — Portfolio polish and presentation
 
-- **Status:** Pending
+- **Status:** Done — accessibility and performance checks recorded 2026-11-02 (`docs/reviews/M5-a11y.md`, `docs/reviews/M5-perf.md`; no separate M5 gate review on file)
 - **PRD gate:** Complete 3-minute workflow works cleanly without intervention in a production build (§13)
 - **Lead agents:** `design-ui-designer` + `design-ux-architect`
 - **Implementers:** `engineering-frontend-developer`, `engineering-senior-developer`

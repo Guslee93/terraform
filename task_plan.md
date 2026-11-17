@@ -358,3 +358,11 @@ built on the foundation layers (ADR-0037's 1 m tile, ADR-0036's hazards).
       `docs/screenshots/build-snow-{compact-infill,sloped-edge}.png`.
 - [ ] The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.
 - [ ] Owner: confirm the NVE licence with NVE before any commercial use (ADR-0039).
+
+## TF-VIS-011 — frozen performance harness (2026-11-17)
+
+- [x] Verified supplied plan SHA256 `653d9bfa001590a35d0af35efb8e323ff92fdc4b56b3ebfaa3121289cb457fc4`; read required source references in this checkout.
+- [x] Added standalone headed harness and metric/options documentation; no production-source or dependency changes.
+- [x] Syntax check and agreed lint proof pass (initial redundant global declarations corrected).
+- [ ] Coordinator: run headed baseline on owner's machine; independent provider: review final changes.
+- Pointer latency uses the explicitly permitted null/reason fallback; no timing is fabricated.

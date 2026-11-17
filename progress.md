@@ -1241,6 +1241,157 @@ zoom in because the quads are small at the default site camera.
   `build/foundation` (draft PR #18).
 
 
+## 2026-11-16 — About page: the official noise map, the wind lift, Water and Snow
+
+- **The request.** TF-VIS-004, a copy change only: the About page still described the road-noise
+  heuristic that ADR-0034 deleted, and said nothing about the wind lift, the Water card or the
+  Snow card.
+- **The contradiction.** "What this is not" already said "Road noise is Statens vegvesen's
+  published strategic noise map, shown as mapped bands and not for assessing individual
+  buildings", while the "How the model stays honest" paragraph said "Noise uses road class and
+  distance, with a fixed reduction behind buildings". The second sentence described the
+  highway-class heuristic, which ADR-0034 deleted rather than kept as a fallback.
+- **What changed.** Four sentences in one paragraph; every other sentence on the page is
+  untouched.
+  - **Wind.** "Wind is a 2D screening flow inside an analysis circle, and the map can be read at
+    any whole metre above the ground." From ADR-0028 (the circle and the single height control)
+    and ADR-0029 (every whole metre, from 2 m up to the lift top). No comfort and no safety
+    claim.
+  - **Noise.** "Noise is Statens vegvesen's published strategic road-noise map for 2021, shown as
+    published and not for assessing individual buildings." The year is the map's own (Lden 2021,
+    ADR-0034); "shown as published" is the studio's wording for looking the bands up rather than
+    computing a level.
+  - **Water.** "Water is a runoff screening on the 1 m terrain, showing flow paths and hollows,
+    with no drains, rainfall or water depth." From ADR-0038: Priority-Flood+Epsilon plus D8 on
+    the 1 m tile, with buildings as blocks. The card's own limits — the tile edge is an outlet,
+    kerbs, culverts, drains and pipes are not in the model — are summarised here.
+  - **Snow.** "Snow is winter climate context from NVE's 1 km snow model for open terrain, not a
+    measurement at the site and not a snow load." From ADR-0039's own claim wording, including
+    the refusal to read the `snowload` theme.
+  - The old wind clause "for a direction the visitor chooses" went with the sentence. The
+    direction sweep (ADR-0015) is still real; it is simply no longer described here.
+- **Checks.** lint 0; `npx vitest run src/app` — **30 of 31 pass**, 1 failed; build OK
+  (Studio chunk 81.2 kB gzip). New `src/app/AboutPage.test.tsx` (6 tests) pins the six sentences
+  and asserts that "road class and distance" is gone, that "Statens vegvesen" is present, and
+  that Water and Snow are each named.
+  - **The one failure is not this change.** `App.test.tsx` → "shows a recoverable state for an
+    unknown site package" allows 5 s for the lazy studio chunk; this sandbox needs 6.9 s to
+    resolve the error state. It fails identically on `build/foundation` with this change
+    reverted, and the owner's machine and GitHub CI are inside the budget.
+  - **The full unit suite was not run in the sandbox** (the wind solver and the noise budget
+    tests are CPU-bound and time out here under load). GitHub CI on the draft PR is the check
+    for the whole suite.
+- **Open for the owner.** NVE is named without being expanded or linked in "Data sources", and
+  the Scope list still names only wind, sun, figures and layers. Neither was in the request.
+
+## 2026-11-17 — TF-VIS-011 performance harness
+
+- Implemented frozen work order in this checkout: `scripts/measure-perf.mjs` and `docs/perf/README.md`.
+- Added six ordered sampling states, fresh contexts for both sites, browser/GPU/host metadata,
+  download-arrival timing, per-run JSON checkpoints and per-site median/min/max tables.
+- Pointer helper draws a block but returns null with its reliability limitation; no numeric
+  pointer latency or baseline evidence is claimed. This fallback is authorized by the plan.
+- `node --check scripts/measure-perf.mjs`: exit 0, no output.
+- First `npm run lint`: exit 1, two `no-redeclare` errors for Node-provided globals
+  `performance` and `PerformanceObserver`. Removed redundant declarations.
+- Subsequent `npm run lint`: exit 0, `> terraform@0.1.0 lint` / `> eslint .`, no diagnostics.
+- Headed benchmark, build and tests not run, per frozen validation scope. No commit, push,
+  publication or edits to `src/`, package files or `feasibility/scratch/perf.mjs`.
+- No denied actions. Browser execution remains unverified until the coordinator runs it;
+  independent review pending. No work-order deviations beyond its explicit null fallback.
+
+## 2026-11-17 — TF-VIS-005 (part 1): the operating documents brought up to date
+
+- Read before writing: `AGENTS.md`; `docs/reports/terraform-project-report.md` (16 Nov 2026);
+  `docs/reviews/build-foundation-report.md` §1 and §11; the title and Decision section of ADR-0028
+  to ADR-0039; `docs/milestones/M0`–`M6`; `docs/status-report.md`; `docs/reviews/M1-code-review.md`
+  to `M5-perf.md`; `docs/agent-log.md`; `progress.md`.
+- `AGENTS.md`:
+  - header Status — added the ADR range in force: ADR-0001–ADR-0039, every one accepted but
+    ADR-0011, which is still proposed.
+  - §1 item 11 and §6 — the out-of-scope text is unchanged; each gains
+    "(Superseded in part: ADR-0006 brought live address import and MapLibre on /new.)".
+  - §3 repository map — added `src/features/import/`, the five analysis workers
+    (`circleSunWorker`, `roofSolarWorker`, `flowWorker`, `runoffWorker`, `sweepWorker`),
+    `scripts/site-assets/`, `scripts/measure-perf.mjs`, `docs/perf/`, `docs/feasibility/` and
+    `docs/plans/terraform-visual-upgrade/`; removed the (M2), (M3) and (M4) markers from the
+    modules that are built; marked `src/features/scenarios/` as domain kept, UI removed
+    (ADR-0020).
+  - §10 — "Done" rewritten as one line per ADR from ADR-0028 to ADR-0039, keeping the earlier
+    history; "Next" set to Gate 0 of `docs/plans/terraform-visual-upgrade/05-MASTER-TODO.md`.
+- `docs/milestones/M2`–`M5` — status lines set to Done with the date and the review file that
+  closed each: M2 `M2-code-review.md` (2026-10-28), M3 `M3-code-review.md` (2026-10-29),
+  M4 `M4-code-review.md` (2026-11-02), M5 `M5-a11y.md` and `M5-perf.md` (2026-11-02, no separate
+  M5 gate review on file).
+- `docs/status-report.md` — body replaced by three lines: superseded by
+  `docs/reports/terraform-project-report.md`, current work in `docs/plans/terraform-visual-upgrade/`,
+  open decisions on PR #18.
+- `docs/agent-log.md` — one row for this engagement.
+- Documentation only: no ADR, no code, no PRD file was touched.
+- `npm run lint`: exit 0, no diagnostics.
+- Not supported by a file in the repository: `docs/plans/terraform-visual-upgrade/` is not present
+  on any branch, so §10's new "Next" line and the status report point at a plan that is not
+  committed yet.
+
+## 2026-11-17 — About page: the rest of the copy, in line with the product as built
+
+- **The request.** The second half of the About page still described a product that no longer
+  exists: the removed area and coverage figures, the removed envelope checks, a study area the
+  visitor no longer chooses, a dashed boundary that is drawn nowhere, and a Data sources section
+  that claimed no live GIS is queried at runtime.
+- **The introduction.** It read "reads sun and shadow, wind exposure, road noise and area
+  figures" and said the visitor "chooses the study area".
+  - The five analysis cards are Sun, Wind, Noise, Water and Snow (`AnalysisCards.tsx`), so the
+    sentence now names them, plus the slope overlay and the section tool (ADR-0037).
+  - The study area is not a control any more: `StudioShell.test.tsx` asserts that the label
+    "Study area" is absent, and ADR-0020 removed the study-boundary layer. For an import the
+    study area is the chosen frame inset by 15 % on every side
+    (`src/features/import/assemble.ts`). The clause is gone.
+  - The area and coverage figures went with ADR-0020 ("the study-area facts and the area/GFA
+    tile").
+- **Parcels.** "All site constraints are explicitly illustrative" is replaced by what is true
+  now: parcel outlines come from Kartverket's Eiendomskart, shown as published and not as a
+  surveyed boundary, and the studio holds no zoning or regulation data and makes no statement
+  about what a plan allows (ADR-0035).
+- **Context building heights.** "Area, coverage and height come from building footprints
+  clipped to the study boundary" became "Context building heights on the curated sites come
+  from Kartverket's surface model, measured rather than estimated" (ADR-0033). The rest of the
+  paragraph is untouched.
+- **The Scope list.** "Study-area figures and coverage" became "Terrain slope and sections from
+  the 1 m terrain", and two items were added — the runoff screening and the winter climate
+  context — worded as in the paragraph above. The `water` and `snow` icons already exist in
+  `Icon.tsx`; no icon was invented.
+- **The constraints box.** "Envelope checks are demonstration logic" described the design
+  check that ADR-0020 removed. The box is now "Indicative and as published": screening results
+  (wind flow, runoff) are indicative; mapped facts (road noise, hazard maps, parcels) are shown
+  as their publishers issue them, with the publisher and the year the data describe.
+- **Data sources.** "No live GIS service is queried at runtime" was false: an imported address
+  queries public map and elevation services in the browser (ADR-0006). The section now says the
+  two sample sites are static packages built offline and that an imported address is different.
+  - Every source in the manifest is listed with its owner, licence and link, taken from
+    `provenance.ts` and `public/sites/compact-infill/manifest.json` as written: OpenStreetMap
+    contributors (ODbL 1.0), Kartverket (CC BY 4.0), Statens vegvesen (NLOD 1.0, calculated for
+    2021), NVE (NLOD), plus the storm-surge map under its own NLOD licence and the
+    flood-susceptibility (2025) and quick-clay (2026) years.
+  - The "Study boundary" entry claimed a dashed boundary. Nothing in `src/scene` draws one; the
+    study area is an authored rectangle that scopes the readings, so the entry now says that and
+    names the 15 % inset for an imported address.
+- **Tests.** `src/app/AboutPage.test.tsx` grew from 6 to 15 tests. It now asserts that "No live
+  GIS service is queried at runtime", "Envelope checks" and "Study-area figures" are absent,
+  that each source owner appears in the Data sources section, and that none of the banned claim
+  words appears anywhere on the page.
+- **Checks.** lint 0; `npx vitest run src/app` — **40 of 40 pass** on an idle machine; build OK.
+  `App.test.tsx`, which asserts on the About page's links and headings, passes unchanged: 7 of 7.
+  - **The suite is flaky here, not broken.** `NewSitePage.test.tsx` → "explains when an imported
+    site is gone after a reload" allows 5 s for the lazy studio chunk, which this sandbox needs
+    6.9 s to resolve; under load it fails here. It fails identically on `build/foundation`
+    without this change.
+  - **The full unit suite was not run in the sandbox.** GitHub CI on the draft PR is the check
+    for the whole suite.
+- **Open for the owner.** The site footer still says "constraints are illustrative and not
+  planning advice" (`SiteChrome.tsx`), which now has no counterpart on the About page: the
+  constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
+  string, so it was left alone.
 ---
 
 ## 2026-11-16 (evening) — Runoff screening checked against WhiteboxTools (IT-7)

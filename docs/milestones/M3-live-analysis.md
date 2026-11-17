@@ -1,6 +1,6 @@
 # M3 — Live analysis
 
-- **Status:** Pending
+- **Status:** Done — review and gate record, pass with follow-ups, owner sign-off 2026-10-29 (`docs/reviews/M3-code-review.md`)
 - **PRD gate:** Calculations match known fixtures; sunlight orientation verified against independent reference values; disclaimers visible (§13)
 - **Lead agent:** `engineering-senior-developer`
 - **Specialists:** `research-synthesist` (independent sun reference), `gis-qa-engineer` (geometry QA), `gis-3d-scene-developer` (shadows)
