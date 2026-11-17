@@ -1392,3 +1392,20 @@ zoom in because the quads are small at the default site camera.
   planning advice" (`SiteChrome.tsx`), which now has no counterpart on the About page: the
   constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
   string, so it was left alone.
+
+## 2026-11-17 — Run 1 T0: runoff control runs vs WhiteboxTools (IT-7 follow-up)
+
+- **Task TF-VIS-007 follow-up (Run 1 T0).** Re-run the WhiteboxTools comparison twice more with
+  `runoff.ts` unchanged: bare terrain (no footprints) and per-building offsets (`+0.001 m × index`)
+  so building tops never tie. Same fill, D8 and thresholds.
+- **Result (main-flow-path agreement, Jaccard):** standard 67.0 % · bare 69.8 % · offset 66.0 %.
+  Building-free terrain is still far below the IT-7 95 % bar, so the building-enclosed-courtyard
+  explanation does **not** explain the gap.
+- **Verdict corrected.** The earlier "no bug" conclusion is withdrawn: `runoff.ts` is not yet
+  validated against WhiteboxTools, and the fill/flat-routing divergence is the leading suspect.
+  See `docs/qa/runoff-reference.md` and PR #23.
+- **Artifacts.** `RUNOFF_VARIANT=standard|bare|offset` support in
+  `scripts/reference/runoff-whitebox/{common,export,compare}.ts`, plus an updated README and
+  `docs/qa/runoff-reference.md`.
+- **Checks.** eslint (scripts) 0; full unit suite 1212 passed / 1 failed (`wind-validation.test.ts`
+  "case 4" timed out at 5 s — unrelated to this task, untouched); WhiteboxTools pipeline ran clean.
