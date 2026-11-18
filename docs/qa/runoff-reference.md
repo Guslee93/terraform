@@ -130,7 +130,13 @@ Limits: crop only (40,000 cells, one main channel), standard burn-in only. The f
 runs were not re-measured with a tolerance; they need the WhiteboxTools outputs, which are not
 committed.
 
-### Proposed acceptance for IT-7 (owner decision)
+### Acceptance for IT-7 — adopted by the owner, 2026-11-18
+
+**Status:** adopted. Rule 1 is enforced on the crop by `runoff.reference.test.ts` ("draws no main
+flow path the reference lacks"); rule 2's sentence is in `RUNOFF_LIMITS` and shown on the Water
+card. **Still open:** confirming rule 1 on the full tile (standard and bare runs), which needs a
+WhiteboxTools run; until then the evidence is the crop.
+
 
 The 95 % exact-Jaccard bar asks two independent D8 implementations to agree on one-cell-wide lines
 cell by cell; no change to `runoff.ts` short of copying WhiteboxTools' flat handling would reach it,
@@ -144,8 +150,8 @@ and tuning to the reference is out of bounds. Proposed instead, **for main flow 
    paths may not appear." Wording goes through the claim tests (TF-VIS-054) and is the owner's.
 3. Flow paths (≥ 500 m²) stay a visual aid with no acceptance number.
 
-Until the owner decides, nothing changes: Water stays a Tier 2 screening, the regression guard
-below stays at its 0.6 floor, and `runoff.ts` is not tuned.
+Water stays a Tier 2 screening. The exact-agreement guard below keeps its 0.6 floor as a
+regression check, and `runoff.ts`'s method is not tuned to the reference.
 
 ## Regression guard
 

@@ -66,3 +66,21 @@ bare-earth terrain lets water run through buildings.
 - Shipped Compact Infill tile with its 520 buildings burned in: 458 016 cells, all drained, 0 pits.
 - Browser, production build: both curated sites; no page errors.
   Captures: `docs/screenshots/build-water-{compact-infill,sloped-edge}.png`.
+
+## Amendment — reference comparison (2026-11-18)
+
+IT-7 compared the screening with WhiteboxTools v2.4.0 (`docs/qa/runoff-reference.md`, TF-VIS-007).
+Exact main-path agreement is 67 % on the full tile (69.8 % on bare terrain), far below the 95 %
+bar. A tolerance analysis on the committed crop showed why the bar was the wrong test: 97 % of
+Terraform's main-path cells lie within two cells of a reference main path, but Terraform misses
+about 27 % of the reference's main-path cells where the two tools leave filled flats by different
+exits. No defect was found (second review, `docs/reviews/water-snow-code-review.md`).
+
+**Decision (owner):** IT-7 passes on two rules — (1) no invented paths: ≥ 95 % of Terraform's
+main-path cells within 2 cells of a reference main path, tested on the crop; (2) missed paths are
+disclosed: the Water card's limits now say "Where the ground is flat, water may take a different
+route than shown, and some flow paths may not appear." The method is not tuned to the reference.
+Water stays Tier 2 screening. Rule 1 still has to be confirmed on the full tile.
+
+This replaces the "No comparison with a reference tool" item under *Not done*.
+

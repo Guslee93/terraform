@@ -14,13 +14,21 @@ import { computeRunoff, MAIN_FLOW_PATH_M2, runoffClass } from './runoff'
 const FIXTURES = 'src/features/analysis/__fixtures__/runoff-reference'
 
 /**
- * Agreement required on main-flow-path cells (Jaccard). The measured agreement with the
- * WhiteboxTools reference is ≈ 67 % on the full tile and ≈ 64 % on this crop
- * (docs/qa/runoff-reference.md). The gap is not a bug — it concentrates in the building-enclosed
- * courtyards where Priority-Flood+Epsilon and WhiteboxTools' fixed-flat fill route water
- * differently — so the guard is a floor below the measured level, not the IT-7 95 % bar.
+ * Exact agreement floor on main-flow-path cells (Jaccard). Measured ≈ 67 % on the full tile and
+ * ≈ 64 % on this crop (docs/qa/runoff-reference.md). The bare-terrain control run refuted the
+ * courtyard explanation; the gap sits in how the two tools route water across filled flats. This is
+ * a regression floor, not the acceptance rule.
  */
 const MAIN_PATH_AGREEMENT_MIN = 0.6
+
+/**
+ * IT-7 acceptance adopted by the owner on 2026-11-18 (docs/qa/runoff-reference.md, "Proposed
+ * acceptance"): no invented paths — at least 95 % of Terraform's main-path cells lie within
+ * `NO_INVENTED_PATHS_CELLS` cells of a WhiteboxTools main path. Measured 97.0 % on this crop.
+ * Missed reference paths are disclosed in RUNOFF_LIMITS, not asserted here.
+ */
+const NO_INVENTED_PATHS_MIN = 0.95
+const NO_INVENTED_PATHS_CELLS = 2
 
 type CropHeader = { cols: number; rows: number; minX: number; minY: number; maxX: number; maxY: number }
 
@@ -92,5 +100,30 @@ describe('runoff against the WhiteboxTools reference (IT-7)', () => {
     expect(union).toBeGreaterThan(0) // the crop must contain main-path cells
     const agreement = both / union
     expect(agreement).toBeGreaterThanOrEqual(MAIN_PATH_AGREEMENT_MIN)
+  })
+
+  it('draws no main flow path the reference lacks (IT-7 acceptance, within 2 cells)', () => {
+    const runoff = computeRunoff(raster, footprints)
+    const { cols, rows } = header
+    const whiteboxMain = (index: number) => !runoff.building[index] && reference.values[index]! * runoff.cellArea >= MAIN_FLOW_PATH_M2
+    let near = 0
+    let total = 0
+    for (let index = 0; index < runoff.accumulation.length; index += 1) {
+      if (runoff.building[index] || runoffClass(runoff, index) !== 3) continue
+      total += 1
+      const row = Math.floor(index / cols)
+      const col = index - row * cols
+      let found = false
+      for (let dr = -NO_INVENTED_PATHS_CELLS; dr <= NO_INVENTED_PATHS_CELLS && !found; dr += 1) {
+        for (let dc = -NO_INVENTED_PATHS_CELLS; dc <= NO_INVENTED_PATHS_CELLS; dc += 1) {
+          const r = row + dr
+          const c = col + dc
+          if (r >= 0 && c >= 0 && r < rows && c < cols && whiteboxMain(r * cols + c)) { found = true; break }
+        }
+      }
+      if (found) near += 1
+    }
+    expect(total).toBeGreaterThan(0)
+    expect(near / total).toBeGreaterThanOrEqual(NO_INVENTED_PATHS_MIN)
   })
 })

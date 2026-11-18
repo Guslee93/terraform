@@ -93,6 +93,8 @@ describe('what the studio says', () => {
   it('names it a screening, with no rainfall, drainage or depths', () => {
     expect(RUNOFF_NOTE).toBe('Screening: flow paths and depressions on bare-earth terrain with buildings as blocks. No rainfall, drainage or depths.')
     expect(RUNOFF_LIMITS).toContain('water arriving from outside it is not included')
+    // IT-7 (TF-VIS-007, adopted 2026-11-18): the reference comparison shows missed paths on flats, so the card says so.
+    expect(RUNOFF_LIMITS).toContain('some flow paths may not appear')
     for (const text of [RUNOFF_NOTE, RUNOFF_LIMITS, ...RUNOFF_LEGEND.map((entry) => entry.label)]) expect(text).not.toMatch(/flood depth|return period|\bsafe\b|year flood|mm\b/i)
   })
 })
