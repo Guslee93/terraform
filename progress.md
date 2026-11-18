@@ -1561,3 +1561,13 @@ zoom in because the quads are small at the default site camera.
 - **Checks.** typecheck 0 · lint 0 · unit 1234 passed / 0 failed (table test covers all 16 input
   combinations) · build OK · `npx playwright test e2e/camera-input.spec.ts` 6 passed (the ground
   click/deselect and orbit behaviours unchanged).
+
+## 2026-11-18 — Run 1 T9: design inventory (TF-VIS-016)
+
+- **Task TF-VIS-016.** Generate `docs/design/visual-inventory.md` from the code (docs only).
+- **Content.** Every scene colour, line, analysis ramp/band, legend, floating UI surface and UI
+  token with `file:line`, each marked **kept / changes / replaced** against the identity matrix
+  (`09-VISUAL-IDENTITY-INTEGRATION.md` §4 R1–R12). Values are quoted from `src/scene/style.ts`,
+  `src/features/analysis/graphics.ts`, `src/styles/tokens.css`, `src/scene/lighting.ts`,
+  `MassLayer.tsx`, `foliage.ts`, `CameraHud.tsx` and the overlay components — nothing invented.
+- **Checks.** lint 0 (docs only).

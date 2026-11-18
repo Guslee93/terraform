@@ -27,7 +27,7 @@ commands the owner must run on the GPU machine.)_
 | T6 | TF-VIS-013 scene style module | done | 6f2a74e | typecheck 0 · eslint 0 · unit 1231 passed / 0 failed · build OK · VISUAL=1 --headed 5/5 passed (zero differing pixels vs pre-refactor baselines) | `parcel`/`section` values recorded in NORDIC but not wired (ParcelLines.tsx out of scope); `grid` field added (04 §3.1 type omits it); `analysisFocus` deferred (no today's value) |
 | T7 | TF-VIS-030 camera and input characterisation tests | done | ded94a5 | typecheck 0 · lint 0 · playwright camera-input.spec.ts 6 passed ×2 in a row | Deviation: reducedMotion "one frame" is not literal — CameraRig snaps with no 0.75 s ease but the view lands a few frames after the click (React re-render); tested the snap, no-animation behaviour. Light preset tests run before the drag tests (software-GL degradation) |
 | T8 | TF-VIS-034 ground-click arbitration | done | 517e3b4 | typecheck 0 · lint 0 · unit 1234 passed / 0 failed · build OK · camera-input e2e 6 passed | None — zero behaviour change; table test pins all 16 input combinations |
-| T9 | TF-VIS-016 design inventory | in progress | | | |
+| T9 | TF-VIS-016 design inventory | done | 57e5436 | lint 0 (docs only) | None — every entry has file:line and a kept/changes/replaced mark citing 09 §4 R1–R12 |
 | T10 | TF-VIS-015 Visual Lab + ADR-0040 (stretch) | done | d2ca2ea | typecheck 0 · lint 0 · unit 1233 passed / 0 failed · build OK · build check (no LabPage in dist) 0 · LAB=1 e2e 1 passed · chunks within ±14 bytes gzip | Reviewer must not be the implementing model (05 roster update); `IDENTITY` style added in TF-VIS-020 (picker leaves room); Lab local-only (D19, no Vercel preview) |
 
 ## Questions for the owner
@@ -60,6 +60,7 @@ _(Add the exact commands for any check that needs a real GPU.)_
 
 ## Session notes
 
+- 2026-11-18 — T9 **done**. `docs/design/visual-inventory.md` quotes every scene colour, line, ramp/band, legend, floating UI surface and token with file:line, marked kept/changes/replaced against 09 §4 R1–R12. Run 1 complete.
 - 2026-11-18 — T9 in progress: design inventory (`docs/design/visual-inventory.md`), docs only.
 - 2026-11-18 — T8 **done**. `src/features/editor/groundClick.ts` (`groundClickIntent`, renderer-free) replaces the inline onGroundClick branching in ViewportCanvas; table test covers all 16 combinations; camera-input e2e unchanged. Next: T9.
 - 2026-11-18 — T8 in progress: ground-click arbitration (`src/features/editor/groundClick.ts`), zero behaviour change.
