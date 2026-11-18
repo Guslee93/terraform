@@ -1547,3 +1547,17 @@ zoom in because the quads are small at the default site camera.
   `LAB=1 npx playwright test e2e/visual-lab.spec.ts` 1 passed (skipped without LAB=1) · production
   chunks within ±14 bytes gzip of before (report: index.js +9, index.css +14, three.js −1,
   SceneComposer.js −3, StudioPage.js −1; all others 0).
+
+## 2026-11-18 — Run 1 T8: ground-click arbitration (TF-VIS-034)
+
+- **Task TF-VIS-034.** Move the ground-click decision out of `ViewportCanvas` into a pure,
+  renderer-free function (04 §5.4), with no behaviour change.
+- **Model.** `src/features/editor/groundClick.ts` exports
+  `groundClickIntent({ picking, parcelLayerOn, drawing, editable }) → 'pick-point' |
+  'pick-parcel-and-deselect' | 'pick-parcel' | 'draw-vertex' | 'deselect' | 'none'`, preserving the
+  priority in `onGroundClick` (point pick wins; parcel pick — plus deselect when editable — while
+  not drawing; draw vertex; deselect; none without editing). `ViewportCanvas.tsx` dispatches on the
+  result in a switch.
+- **Checks.** typecheck 0 · lint 0 · unit 1234 passed / 0 failed (table test covers all 16 input
+  combinations) · build OK · `npx playwright test e2e/camera-input.spec.ts` 6 passed (the ground
+  click/deselect and orbit behaviours unchanged).
