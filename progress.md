@@ -1415,3 +1415,16 @@ zoom in because the quads are small at the default site camera.
 - **Checks.** lint 0 · `npx vitest run src/features/analysis` (456 passed, 4 skipped) · `npm run build`
   OK — all pass.
 
+## 2026-11-18 — Run 4 T1: runoff divergence diagnosis (TF-VIS-007)
+
+- **Task.** Explain every full-tile "unfilled ground" divergence point (Terraform hollow ≤ 1 mm)
+  that Run 3 flagged. Read-only; no `runoff.ts`, threshold, test or wording changed.
+- **Tooling.** `scripts/reference/runoff-whitebox/diagnose.ts` mirrors `computeRunoff`'s fill + D8
+  (cross-check: 0/458,016 hollow mismatches) and reads `tmp/runoff-whitebox/{filled,pointer,accum}.asc`.
+- **Result — all 46 standard points are method differences, no defect:** H4 fill difference **12**
+  (WhiteboxTools over-fills the south-east outlet channel by 5–24 cm, present without `--fix_flats`;
+  a non-ascending flood-fill reaches the edge at −18.68 m, so Terraform drains it), H1 flat/epsilon
+  **17**, H2 near-tie **14**, H3 cell shape **2** (dx=dy removes 2 points; rule 1 stays 92.8 %),
+  edge outlet **1**, unexplained **0**.
+- **Deliverable.** `docs/qa/runoff-divergence-diagnosis.md`.
+
