@@ -256,9 +256,13 @@ On software rendering (CI) only correctness is asserted; budgets apply to the re
 |---|---|---|
 | ADR-0040 | Visual Lab route and build flag | TF-VIS-015 |
 | ADR-0041 | Scene style module, line system, analysis graphic grammar (output classes) | TF-VIS-013/021/042 |
-| ADR-0042 | Display-only lighting atmospheres | TF-VIS-025 |
+| ADR-0042 | Display-only lighting ~~atmospheres~~ — *18 Nov: HDRI ambient, sky hidden, sun untouched* | TF-VIS-025 |
 | ADR-0043 | Camera controller and orthographic plan | TF-VIS-032/033 |
 | ADR-0044 | Deterministic clip export (and mediabunny, if adopted) | TF-VIS-062 |
-| Amendment to ADR-0017 | Only if Direction C is chosen | TF-VIS-026 |
+| ~~Amendment to ADR-0017~~ | ~~Only if Direction C is chosen~~ — replaced by ADR-0045 (18 Nov) | — |
+| ADR-0045 | Identity scene: dark ground, orthophoto layer and source, atmospheric dissolve, point vegetation; supersedes ADR-0017 for the working view | TF-VIS-026/028/029 (09) |
+| ADR-0046 | Horizontal analysis toolbar; amends ADR-0026 (and ADR-0016 tokens for the charcoal theme) | TF-VIS-047/048 (09) |
+
+*18 Nov:* experiments EX-9 (orthophoto registration and cost, TF-VIS-028), EX-10 (point vegetation cost and airiness, TF-VIS-029) and EX-11 (dissolve never inside the halo, TF-VIS-02A) are defined in `09-VISUAL-IDENTITY-INTEGRATION.md` §4 and §7. EX-5's pale-ground premise no longer holds (TF-VIS-050 revised).
 
 Numbers are provisional: the next free number at the time of writing is used, in order.

@@ -399,6 +399,117 @@ Acceptance: production build size unchanged ±0.5 kB gzip per chunk; lint/test/b
 Report: chunk sizes before and after, anything you had to export from StudioShell.
 ```
 
+*18 Nov note:* TF-VIS-013 (`style.ts`) exists only in draft PR #25 (`run1/foundations`). Branch TF-VIS-015 from `run1/foundations` and target it, or wait until the owner merges PR #25 into `build/foundation`. The Lab's style picker must already list `NORDIC` and leave room for `IDENTITY` (TF-VIS-020). Reviewer must not be the implementing model (05 roster update).
+
+---
+
+## Identity handoffs (added 18 Nov 2026)
+
+Context for all four: `docs/plans/terraform-visual-upgrade/09-VISUAL-IDENTITY-INTEGRATION.md` (read §1, §4, §6, §7). The owner's art-direction brief is `Terraform_Visual_Identity_FINAL.md`; ask the owner for it if you need wording beyond 09. Lab only; `NORDIC` stays the production style. Implementer and reviewer are different models.
+
+## TF-VIS-020
+
+**Model:** Claude Opus 5.5 · **Reviewer:** Codex · **Depends on:** TF-VIS-015
+
+```markdown
+Role: gis-3d-scene-developer
+Task TF-VIS-020 — Progressive identity stages in the Visual Lab.
+Branch feat/identity-stages from the Lab branch's base; draft PR. Never push to main, merge, or mark ready.
+
+Read: AGENTS.md §1, §7; 09-VISUAL-IDENTITY-INTEGRATION.md §4–§7; 04 §3.1; src/scene/style.ts and
+style.test.ts; src/app/lab/*; ADR-0017.
+
+Build:
+1. style.ts: add IDENTITY beside NORDIC (id union gains 'identity'). Background #171B19; context
+   matte white; contours pale white; skirt/floor grid hidden flags; leave NORDIC byte-identical.
+2. Lab stage picker: A (ortho-or-fallback + massing + contours on charcoal), B (A + HDRI ambient +
+   dissolve + shadow/AO), C (B + point vegetation + wind on). Stages whose task has not landed show
+   the fallback and say so in the Lab panel.
+Out of scope: production default style; new dependencies; any analysis or sun change.
+Tests: style.test.ts (NORDIC unchanged, IDENTITY complete); Lab renders each stage with no console error.
+Acceptance: captures of A, B, C in docs/screenshots/vis/gate2/ via scripts/capture-reference.mjs;
+production chunks unchanged ±0.5 kB; lint/test/build.
+Report: files, captures, chunk sizes, open questions. Log in docs/agent-log.md and progress.md.
+```
+
+## TF-VIS-028
+
+**Model:** Claude Opus 5.5 · **Reviewer:** Codex (code) and DeepSeek as gis-qa-engineer (registration) · **Depends on:** TF-VIS-028a with D13 cleared, TF-VIS-015
+
+```markdown
+Role: gis-spatial-data-engineer + gis-3d-scene-developer
+Task TF-VIS-028 — Orthophoto terrain pipeline for the curated sites.
+Branch feat/orthophoto from the base branch; draft PR. Never push to main, merge, or mark ready.
+
+Stop first if docs/data/orthophoto-source.md (TF-VIS-028a) does not confirm the licence for the use
+you are about to make (static package, public display, export). Do not commit imagery otherwise.
+
+Read: AGENTS.md; 09 §4 R1, §6.1; ADR-0033 §3; scripts/site-assets/terrain1m.build.ts (the EPSG:4326
+bbox pattern that makes a raster exact in ENU); src/features/sites/{package,manifest,provenance}.ts;
+docs/data/site-package-spec.md; src/scene/landCoverTexture.ts (planToPixel, UV convention);
+ViewportCanvas.tsx TerrainMesh.
+
+Build:
+1. scripts/site-assets/orthophoto.build.ts: fetch for the terrain extent with an EPSG:4326 bbox;
+   write public/sites/<id>/orthophoto.webp + orthophoto.json (extent, px size, source, year, licence,
+   checksum). Resolution chosen from 028a; record size.
+2. Optional layer in package.ts/manifest.ts with validation; site-package-spec updated.
+3. provenance.ts credit line for the imagery.
+4. src/scene/terrainMaterial.ts: map + desaturation uniform (default 0.8) + contrast curve from
+   style.ts; used by TerrainMesh only when the layer exists and the style asks for it.
+Out of scope: import path; analyses reading the image; any change to NORDIC rendering.
+Tests: schema accept/reject; registration (a known ENU point → expected pixel within 1 px);
+credit present in still/white/analysis credits and absent from depth; layer absent → zero-pixel diff
+(VISUAL=1 spec).
+Acceptance: Lab stage A capture; package size, texture memory (renderer.info.memory) and perf run
+recorded with machine and commit; lint/test/build.
+Rollback: optional layer + style flag.
+```
+
+## TF-VIS-029
+
+**Model:** Claude Opus 5.5 · **Reviewer:** Codex · **Depends on:** TF-VIS-015
+
+```markdown
+Role: gis-3d-scene-developer
+Task TF-VIS-029 — Airy point-cloud vegetation prototype (Lab).
+Branch feat/point-vegetation from the base branch; draft PR. Never push to main, merge, or mark ready.
+
+Read: AGENTS.md; 09 §4 R4, §6.2, §6.4; src/scene/{Trees,foliage,treeVariants}.tsx/ts;
+src/features/sites/treePlacement.ts; src/scene/exportPasses.ts; ADR-0021 (tree limitation wording),
+ADR-0023, ADR-0024.
+
+Build:
+1. src/scene/vegetationPoints.ts (pure, seeded): a porous cluster per mapped tree; optional forest
+   fill inside land-cover 'wood' polygons; LOD levels by camera distance. No three.js import.
+2. src/scene/PointVegetation.tsx: THREE.Points (or instanced sprites), DPR-stable size, green-grey
+   from style.ts, static, raycast disabled.
+3. exportPasses.ts: white/depth passes handle Points explicitly (no mesh override material on Points).
+Out of scope: deleting Trees.tsx; tree shadows unless 09 D15 is decided; wind particles.
+Tests: same seed → same output; counts per LOD; camera-input.spec.ts green; export passes run.
+Acceptance: Lab stage C captures near/mid/far; perf against docs/perf baseline with point counts;
+provenance text marks forest density as illustrative; lint/test/build.
+Rollback: style flag back to Trees.tsx.
+```
+
+## TF-VIS-02B
+
+**Model:** Claude Opus 5.5 · **Reviewer:** Codex, then the owner · **Depends on:** TF-VIS-020, 021, 024, 025, 028 (or labelled fallback), 029, 02A, 040 part B
+
+```markdown
+Role: gis-3d-scene-developer + design-ui-finish-gate-reviewer (evidence only)
+Task TF-VIS-02B — Integrated identity prototype: analysis off / wind on.
+No new rendering features. Assemble the landed Lab stages and produce evidence.
+
+Read: 09 §7 (the brief and comparison criteria); 03 §2.3 items 6–8; 04 §7.
+Do: capture State 01 (analysis off) and State 02 (wind on, legend + screening caveat) on Compact
+Infill isometric, 1440×900 @2, 21 Jun 15:00 and 21 Dec 12:00; Sloped Edge as the terrain check;
+NORDIC baseline at the same view; still/white/analysis passes beside the viewport; greyscale and
+CVD versions of State 02; perf windows neutral and wind against the baseline.
+Write docs/design/identity-decision.md: one row per criterion 1–7 with evidence, plus failures.
+Do not judge the critical success test yourself; leave it to the owner.
+```
+
 ---
 
 ## Template for later work packages

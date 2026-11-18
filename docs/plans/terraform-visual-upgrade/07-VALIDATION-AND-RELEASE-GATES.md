@@ -30,6 +30,15 @@ Applies to every PR in this plan, and in full at each gate exit. Builds on AGENT
 | Depth pass: no credits, byte-identical for unchanged scene | e2e opt-in | TF-VIS-063 |
 | Credits on still, white, analysis, every clip frame | e2e opt-in (decode first, middle, last clip frames) | TF-VIS-063 |
 | Runoff reference fixture | `runoff` test | TF-VIS-007 |
+| *18 Nov identity:* orthophoto schema, registration (≤ 1 px), credit in every credited pass and absent from depth; layer absent → zero-pixel diff | unit + opt-in visual | TF-VIS-028, 063 |
+| Seeded point vegetation deterministic; points not raycast; override passes handle `Points` | unit + `camera-input.spec.ts` + export e2e | TF-VIS-029, 060 |
+| Dissolve starts outside the study halo and analysis circle | unit | TF-VIS-02A |
+| Sun direction and shadows identical across styles and HDRI load failure falls back | `lighting.test.ts` | TF-VIS-025 |
+| Toolbar and panel share one analysis state; hover content also on focus | unit + e2e | TF-VIS-048 |
+| Charcoal theme contrast (AA) | `m5-a11y.spec.ts` | TF-VIS-047 |
+| Perf windows for identity neutral / wind-on; texture memory and point counts recorded | `measure-perf.mjs` | TF-VIS-02B, 073 |
+
+*18 Nov:* identity production tasks (027, 047, 048) do not merge before Gate 0 exits (TF-VIS-008). Lab work may proceed.
 
 ## 3. Visual comparison rules
 
