@@ -25,7 +25,7 @@ commands the owner must run on the GPU machine.)_
 | T4 | TF-VIS-010 reference capture script | done | bef462d | node --check OK · eslint(scripts) 0 · build OK · unit 1227 passed / 0 failed · smoke run 24 captures / 0 failures (7 states × 3 presets + 3 passes for neutral) | Full matrix + pixel-diff run by owner (commands below); `analysis` pass fires only with an analysis layer visible (neutral/mass → still+white+depth); `--smoke` bounds the proof run |
 | T5 | TF-VIS-012 opt-in visual regression spec | done | af6a258 | typecheck 0 · eslint 0 · playwright skipped (5 skipped without VISUAL=1) · VISUAL=1 --headed 5/5 passed twice | Snapshots NOT committed (owner writes them on the M1 Pro); `MAX_DIFF_PIXEL_RATIO` 0.02 is a starting point to tighten; must run `--headed` (headless SwiftShader stalls the canvas shot); `openAnalysis` widened to Water/Snow |
 | T6 | TF-VIS-013 scene style module | done | 6f2a74e | typecheck 0 · eslint 0 · unit 1231 passed / 0 failed · build OK · VISUAL=1 --headed 5/5 passed (zero differing pixels vs pre-refactor baselines) | `parcel`/`section` values recorded in NORDIC but not wired (ParcelLines.tsx out of scope); `grid` field added (04 §3.1 type omits it); `analysisFocus` deferred (no today's value) |
-| T7 | TF-VIS-030 camera and input characterisation tests | todo | | | |
+| T7 | TF-VIS-030 camera and input characterisation tests | in progress | | | |
 | T8 | TF-VIS-034 ground-click arbitration | todo | | | |
 | T9 | TF-VIS-016 design inventory | todo | | | |
 | T10 | TF-VIS-015 Visual Lab + ADR-0040 (stretch) | todo | | | |
@@ -60,6 +60,7 @@ _(Add the exact commands for any check that needs a real GPU.)_
 
 ## Session notes
 
+- 2026-11-18 — T7 in progress: camera and input characterisation tests (`e2e/camera-input.spec.ts`), no source change.
 - 2026-11-18 — T6 **done**. `src/scene/style.ts` (`SceneStyle` + `NORDIC`) holds today's exact values; `ViewportCanvas` reads them via a `style` prop (default `NORDIC`), threaded to TerrainMesh/ContextBuildings/Streets/Water/FloorGrid/SceneComposer. Pixel identity proven: VISUAL=1 --headed 5/5, zero differing pixels vs pre-refactor baselines. Next: T7.
 - 2026-11-18 — T6 in progress: scene style module (`src/scene/style.ts` + `NORDIC`), zero-pixel move of today's constants.
 - 2026-11-18 — T5 **done**. `e2e/visual-reference.spec.ts` (gated `VISUAL=1`) pins neutral/Sun/Wind/Noise/Water at the isometric preset with `toHaveScreenshot`; skipped in the normal suite; passes 5/5 twice `--headed`. Next: T6.
