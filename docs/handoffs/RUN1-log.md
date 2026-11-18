@@ -23,7 +23,7 @@ commands the owner must run on the GPU machine.)_
 | T2 | TF-VIS-054 claim guardrail tests | done | b1a8dd4 | typecheck 0 · lint 0 · unit 1223 passed / 4 skipped / 1 todo (0 failed) · build OK | Lawson "Uncomfortable" labels held as `it.todo` (owner decision); required negations ("not … safe/snow load") allowed |
 | T3 | TF-VIS-040 part A legend model | done | 48b1b6c | typecheck 0 · lint 0 · unit 1227 passed / 4 skipped / 1 todo (0 failed) · build OK · no component changed | claim passed via context (caption modules import graphics → cycle); scale carries colours/boundaries, labels attach in MapLegend wiring |
 | T4 | TF-VIS-010 reference capture script | done | bef462d | node --check OK · eslint(scripts) 0 · build OK · unit 1227 passed / 0 failed · smoke run 24 captures / 0 failures (7 states × 3 presets + 3 passes for neutral) | Full matrix + pixel-diff run by owner (commands below); `analysis` pass fires only with an analysis layer visible (neutral/mass → still+white+depth); `--smoke` bounds the proof run |
-| T5 | TF-VIS-012 opt-in visual regression spec | todo | | | |
+| T5 | TF-VIS-012 opt-in visual regression spec | in progress | | | |
 | T6 | TF-VIS-013 scene style module | todo | | | |
 | T7 | TF-VIS-030 camera and input characterisation tests | todo | | | |
 | T8 | TF-VIS-034 ground-click arbitration | todo | | | |
@@ -52,6 +52,7 @@ _(Add the exact commands for any check that needs a real GPU.)_
 
 ## Session notes
 
+- 2026-11-18 — T5 in progress: opt-in visual regression spec (`e2e/visual-reference.spec.ts`, `VISUAL=1`), same frame as capture-reference.mjs.
 - 2026-11-18 — T4 **done**. `scripts/capture-reference.mjs` (server start + GPU check reused from `measure-perf.mjs`; renderPreference recorded as the app's fixed `auto`, never forced) and `scripts/compare-captures.mjs` (Playwright's `getComparator('image/png')`, no new dependency). Smoke run (`--smoke`): 7 states × 3 presets + export passes, 0 failures, manifest written. Next: T5.
 - 2026-11-18 — T4 in progress: reference capture script (`scripts/capture-reference.mjs` + `scripts/compare-captures.mjs`). This session runs on macOS arm64 (not the earlier Linux container); GPU treated as none per owner instruction, so the run is marked softwareRenderer and images are not committed.
 - 2026-11-17 — T3 **done**. Pure `legendFor(id, context)` in `graphics.ts` returns title/class/scale/claim/sources/state; claim supplied from the existing caption functions (never authored in the model). Commit 48b1b6c. Next: T4.
