@@ -6,10 +6,11 @@ import { defineConfig } from 'vitest/config'
 //   npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts export
 //   npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts compare
 //   npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts crop
+//   npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts tolerance
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['scripts/reference/runoff-whitebox/{export,compare,crop}.ts'],
+    include: ['scripts/reference/runoff-whitebox/{export,compare,crop,tolerance}.ts'],
     testTimeout: 600_000,
     fileParallelism: false,
     hookTimeout: 600_000,

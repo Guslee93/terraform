@@ -12,6 +12,7 @@ app's own TypeScript without adding a dependency:
 npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts export
 npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts compare
 npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts crop
+npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts tolerance   # no WhiteboxTools needed
 ```
 
 ## Prerequisites

@@ -98,6 +98,55 @@ The control runs **do not support** the earlier "`runoff.ts` is correct, not bug
   fill/flat-routing difference directly (for example on a bare flat-and-basin fixture), not to tune
   the method to match the reference.
 
+## Tolerance analysis (second review, 2026-11-18)
+
+Exact cell-by-cell Jaccard scores a path that runs one cell to the side as a complete miss, so it
+cannot separate "a slightly different line" from "water going somewhere else". On the committed
+200 × 200 crop (standard burn-in), `scripts/reference/runoff-whitebox/tolerance.ts` measures how
+many of each tool's path cells lie within *k* cells of the other's:
+
+| Class | Direction | exact | ≤ 1 cell | ≤ 2 cells | ≤ 3 cells |
+|---|---|---:|---:|---:|---:|
+| Main flow path (≥ 5000 m²) | Terraform near WhiteboxTools (234 cells) | 91.9 % | 95.3 % | 97.0 % | 97.0 % |
+| | WhiteboxTools near Terraform (317 cells) | 67.8 % | 70.7 % | 72.6 % | 72.6 % |
+| Flow path (≥ 500 m²) | Terraform near WhiteboxTools (1,104 cells) | 67.2 % | 79.7 % | 85.1 % | 86.6 % |
+| | WhiteboxTools near Terraform (1,309 cells) | 56.7 % | 67.4 % | 73.3 % | 79.1 % |
+
+What it shows:
+
+- **Terraform draws almost no main path the reference lacks** (97 % within two cells).
+- **It misses about 27 % of the reference's main-path cells, and not by a shifted cell.** At the 87
+  reference cells missed by more than three cells, Terraform carries a median 0.3 % of the
+  reference flow (max 28 %). 66 of them lie more than three cells from the crop edge, so this is not
+  the edge-outlet difference.
+- **The one clean divergence point found is a flat cell in a filled hollow:** at (99, 90) → (99, 91)
+  both cells are filled 6 cm with dz = 0; the reference carries 7,951 → 7,960 cells on, Terraform
+  7,831 → 9. The two tools leave the same flat by different exits. This is the epsilon vs
+  fixed-flat difference (item 1 above) observed directly, at one point. It does not show that every
+  missed segment has the same cause.
+- At the flow-path threshold the agreement is weaker in both directions (85 % / 73 % within two cells).
+
+Limits: crop only (40,000 cells, one main channel), standard burn-in only. The full-tile and bare
+runs were not re-measured with a tolerance; they need the WhiteboxTools outputs, which are not
+committed.
+
+### Proposed acceptance for IT-7 (owner decision)
+
+The 95 % exact-Jaccard bar asks two independent D8 implementations to agree on one-cell-wide lines
+cell by cell; no change to `runoff.ts` short of copying WhiteboxTools' flat handling would reach it,
+and tuning to the reference is out of bounds. Proposed instead, **for main flow paths**:
+
+1. **No invented paths:** ≥ 95 % of Terraform's main-path cells within 2 cells of a reference main
+   path. *Crop: 97.0 % — met.* To be confirmed on the full tile (standard and bare).
+2. **Missed paths are disclosed, not hidden:** the share of reference main-path cells farther than
+   2 cells from a Terraform main path is reported (crop: 27.4 %) and the Water card's limitations
+   say so, e.g. "Where the ground is flat, water may take a different route than shown; some flow
+   paths may not appear." Wording goes through the claim tests (TF-VIS-054) and is the owner's.
+3. Flow paths (≥ 500 m²) stay a visual aid with no acceptance number.
+
+Until the owner decides, nothing changes: Water stays a Tier 2 screening, the regression guard
+below stays at its 0.6 floor, and `runoff.ts` is not tuned.
+
 ## Regression guard
 
 `src/features/analysis/runoff.reference.test.ts` crops a 200 × 200 cell window on the main channel
