@@ -15,6 +15,7 @@ import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geome
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import { EMPTY_SELECTION } from '../features/massing/types'
 import { cameraLocked, displayedDocument, type EditorEvent, type EditorState } from '../features/editor/interaction'
+import { groundClickIntent } from '../features/editor/groundClick'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
@@ -614,12 +615,26 @@ export function ViewportCanvas({
   )
 
   const onGroundClick = (point: Vec2, elevation: number) => {
-    if (onPickPoint) return onPickPoint(point)
-    // While drawing, a click places a corner; otherwise it also selects the parcel under it.
-    if (onPickParcel && !drawing) onPickParcel(point)
-    if (!editable) return
-    if (drawing) dispatch({ type: 'pointerDown', point, elevation })
-    else dispatch({ type: 'select', selection: EMPTY_SELECTION })
+    switch (groundClickIntent({ picking: onPickPoint !== undefined, parcelLayerOn: onPickParcel !== undefined, drawing, editable })) {
+      case 'pick-point':
+        onPickPoint?.(point)
+        return
+      case 'pick-parcel':
+        onPickParcel?.(point)
+        return
+      case 'pick-parcel-and-deselect':
+        onPickParcel?.(point)
+        dispatch({ type: 'select', selection: EMPTY_SELECTION })
+        return
+      case 'draw-vertex':
+        dispatch({ type: 'pointerDown', point, elevation })
+        return
+      case 'deselect':
+        dispatch({ type: 'select', selection: EMPTY_SELECTION })
+        return
+      case 'none':
+        return
+    }
   }
 
   return (
