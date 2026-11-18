@@ -134,8 +134,8 @@ committed.
 
 **Status:** adopted. Rule 1 is enforced on the crop by `runoff.reference.test.ts` ("draws no main
 flow path the reference lacks"); rule 2's sentence is in `RUNOFF_LIMITS` and shown on the Water
-card. **Still open:** confirming rule 1 on the full tile (standard and bare runs), which needs a
-WhiteboxTools run; until then the evidence is the crop.
+card. **Full-tile confirmation:** rule 1 is **not met** on the full tile (see "Full-tile
+confirmation (Run 3)" below) — the owner decides whether to keep the 2-cell rule.
 
 
 The 95 % exact-Jaccard bar asks two independent D8 implementations to agree on one-cell-wide lines
@@ -152,6 +152,97 @@ and tuning to the reference is out of bounds. Proposed instead, **for main flow 
 
 Water stays a Tier 2 screening. The exact-agreement guard below keeps its 0.6 floor as a
 regression check, and `runoff.ts`'s method is not tuned to the reference.
+
+### Full-tile confirmation (Run 3, 2026-11-18)
+
+`scripts/reference/runoff-whitebox/tolerance.ts` gained `RUNOFF_TOLERANCE_SCOPE=tile`
+(`RUNOFF_VARIANT`), reading the pipeline's WhiteboxTools output from `compare.ts`'s directory and
+masking buildings exactly as `compare.ts` does. WhiteboxTools v2.4.0 (macOS build); the three
+burned-input sha256 match the recorded ones. Terraform main-path cells within *k* cells of a
+reference main path:
+
+| Variant | exact | ≤ 1 cell | ≤ 2 cells | ≤ 3 cells | Rule 1 (≥ 95 % at ≤ 2 cells) |
+|---|---:|---:|---:|---:|---|
+| standard (4,842 cells) | 83.4 % | 89.1 % | **92.8 %** | 95.0 % | **not met** |
+| bare (4,680 cells) | 84.6 % | 90.1 % | **93.3 %** | 94.9 % | **not met** |
+| offset (4,828 cells) | 83.0 % | 88.6 % | **92.3 %** | 94.6 % | **not met** |
+
+The reverse direction (WhiteboxTools near Terraform) is lower still — standard 72.6 % → 87.9 %
+(k 0 → 2), bare 80.5 % → 90.0 %, offset 76.6 % → 86.3 % — so Terraform misses part of the
+reference network, as the crop already showed. Flow paths (≥ 500 m²) sit at 92.5 % / 85.3 %
+(standard, k = 2) and are unchanged as a visual aid.
+
+**Rule 1 is not met on the full tile for any variant** — the crop's 97.0 % does not generalise; the
+full tile reaches 95 % only at 3 cells (standard). No threshold, test, wording or `runoff.ts` was
+changed; the owner decides whether to keep the 2-cell rule.
+
+Divergence points (a reference main-path cell where Terraform still carries > 50 % of the reference
+flow, next to a downstream reference cell where it carries < 5 %), classified by Terraform's hollow
+at the point:
+
+| Variant | in a filled hollow (hollow > 1 mm) | on unfilled ground |
+|---|---:|---:|
+| standard | 56 | **46** |
+| bare | 46 | **44** |
+| offset | 56 | **46** |
+
+The **unfilled-ground** divergences are the important ones — they are *not* the epsilon/flat-fill
+difference (hollow is 0 there): Terraform loses the flow at a downstream junction and sends it
+another way. They cluster at the tile's south-east tributary junctions (rows ≈ 585–640, cols ≈ 80,
+380–390). The full list for the standard variant follows; bare and offset differ only in the flow
+values, not the locations (44 and 46 points):
+
+```text
+(94,50)→(95,50) dz −0.260 m ref 5442→5445 tf 5444→3
+(95,46)→(96,45) dz −0.020 m ref 7954→7957 tf 5786→2
+(113,44)→(114,45) dz −0.060 m ref 8875→8882 tf 8796→3
+(114,44)→(114,45) dz −0.030 m ref 8879→8882 tf 8800→3
+(136,46)→(137,45) dz 0.000 m ref 12530→12763 tf 12457→227
+(156,38)→(157,39) dz −0.010 m ref 13174→13177 tf 13106→3
+(178,44)→(179,43) dz 0.000 m ref 14820→14827 tf 14735→7
+(226,431)→(227,432) dz −0.020 m ref 5415→5416 tf 6033→1
+(250,475)→(251,476) dz −0.010 m ref 10665→10669 tf 9959→4
+(262,379)→(263,380) dz −0.030 m ref 26123→26156 tf 26032→33
+(308,65)→(308,66) dz −0.010 m ref 66888→66906 tf 63759→1
+(367,552)→(368,551) dz −0.050 m ref 42369→42376 tf 42026→3
+(368,552)→(368,551) dz −0.020 m ref 42375→42376 tf 42032→3
+(375,395)→(376,395) dz 0.000 m ref 10963→10964 tf 10993→3
+(386,546)→(387,546) dz 0.000 m ref 46603→46675 tf 46256→76
+(388,544)→(388,543) dz −0.020 m ref 46685→46686 tf 46347→7
+(403,54)→(404,54) dz −0.030 m ref 78916→78917 tf 75727→1
+(414,550)→(415,551) dz −0.010 m ref 49052→49097 tf 48711→40
+(421,552)→(422,553) dz 0.000 m ref 49395→49404 tf 49078→1
+(466,31)→(467,31) dz −0.010 m ref 85171→85174 tf 80025→3
+(495,381)→(496,382) dz −0.020 m ref 48118→48120 tf 48015→2
+(508,3)→(509,4) dz −0.030 m ref 87522→87530 tf 82277→8
+(509,383)→(510,384) dz −0.030 m ref 20793→20800 tf 20764→7
+(512,2)→(513,2) dz 0.010 m ref 87554→87558 tf 82307→4
+(518,32)→(519,32) dz −0.010 m ref 8111→8127 tf 8190→13
+(529,17)→(530,17) dz 0.200 m ref 9627→9630 tf 10053→3
+(538,69)→(539,68) dz −0.010 m ref 9530→9540 tf 9513→10
+(542,27)→(543,27) dz −0.010 m ref 9846→9849 tf 10024→22
+(542,28)→(543,27) dz −0.470 m ref 9845→9849 tf 10023→22
+(552,5)→(553,5) dz 0.010 m ref 20576→20577 tf 25486→10
+(562,7)→(562,8) dz 0.000 m ref 20715→20722 tf 25407→337
+(585,31)→(585,32) dz 0.090 m ref 27851→27891 tf 17946→98
+(585,381)→(586,382) dz −0.030 m ref 49796→71938 tf 70635→1310
+(590,37)→(590,38) dz 0.010 m ref 28289→28304 tf 17512→5
+(626,81)→(627,80) dz 0.010 m ref 10712→40702 tf 10677→66
+(626,81)→(627,81) dz 0.020 m ref 10712→10733 tf 10677→21
+(626,82)→(627,81) dz −0.060 m ref 10662→10733 tf 10676→21
+(629,382)→(630,383) dz −0.020 m ref 72479→72501 tf 72605→16
+(636,383)→(637,382) dz −0.010 m ref 72551→93164 tf 72673→28
+(637,383)→(637,382) dz 0.000 m ref 72553→93164 tf 72675→28
+(637,383)→(638,382) dz −0.010 m ref 72553→93171 tf 72675→35
+(638,383)→(637,382) dz 0.010 m ref 72555→93164 tf 73419→28
+(638,383)→(638,382) dz 0.000 m ref 72555→93171 tf 73419→35
+(642,121)→(643,121) dz −0.090 m ref 6321→6322 tf 6395→1
+(728,496)→(729,496) dz 0.000 m ref 87446→87449 tf 86718→5
+(733,458)→(733,457) dz −0.010 m ref 7847→7872 tf 7863→2
+```
+
+None of these is tuned or "fixed": they are a possible defect for a separate task, reviewed by a
+different model. The bare and offset lists are the same locations with their own flow values.
 
 ## Regression guard
 

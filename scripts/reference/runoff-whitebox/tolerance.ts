@@ -1,18 +1,38 @@
 /**
- * TF-VIS-007 — tolerance analysis on the committed crop. Exact cell-by-cell Jaccard treats a path
- * shifted by one cell as a total miss, so this measures, for main and flow paths, how many of each
- * tool's cells lie within k cells of the other's (k = 0…3), then locates the reference main-path
- * cells Terraform misses and the points where the two flows part. Reads only committed fixtures;
- * needs no WhiteboxTools binary.
+ * TF-VIS-007 — tolerance analysis on the committed crop or the full tile. Exact cell-by-cell
+ * Jaccard treats a path shifted by one cell as a total miss, so this measures, for main and flow
+ * paths, how many of each tool's cells lie within k cells of the other's (k = 0…3), then locates
+ * the reference main-path cells Terraform misses and the points where the two flows part.
+ *
+ * Two scopes:
+ *   - `crop` (default) — reads only committed fixtures; needs no WhiteboxTools.
+ *   - `tile` — reads the full Compact Infill tile and the pipeline's WhiteboxTools output
+ *     (`tmp/runoff-whitebox[/<variant>]/accum.asc`, produced by README step 2), selected with
+ *     `RUNOFF_TOLERANCE_SCOPE=tile` and `RUNOFF_VARIANT` (standard / bare / offset).
  *
  *   npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts tolerance
+ *   RUNOFF_TOLERANCE_SCOPE=tile RUNOFF_VARIANT=standard npx vitest run --config scripts/reference/runoff-whitebox/vitest.config.ts tolerance
  */
 import { readFileSync } from 'node:fs'
 import { it } from 'vitest'
 import type { Vec2 } from '../../../src/lib/coordinates'
-import { computeRunoff, FLOW_PATH_M2, MAIN_FLOW_PATH_M2, runoffClass } from '../../../src/features/analysis/runoff'
+import { computeRunoff, FLOW_PATH_M2, MAIN_FLOW_PATH_M2 } from '../../../src/features/analysis/runoff'
+import {
+  buildVariantGround,
+  classify,
+  loadFootprints,
+  loadTerrainRaster,
+  readAsc,
+  RUNOFF_VARIANTS,
+  type RunoffVariant,
+} from './common'
 
 const FIXTURES = 'src/features/analysis/__fixtures__/runoff-reference'
+const SITE = 'compact-infill'
+const SCOPE = (process.env.RUNOFF_TOLERANCE_SCOPE ?? 'crop') as 'crop' | 'tile'
+const VARIANT = (process.env.RUNOFF_VARIANT ?? 'standard') as RunoffVariant
+/** A Terraform hollow deeper than this is "in a filled hollow", not "on unfilled ground". */
+const HOLLOW_FILLED_M = 0.001
 
 function readAscValues(path: string): number[] {
   const values: number[] = []
@@ -28,14 +48,40 @@ function readAscValues(path: string): number[] {
 }
 
 it('measures Terraform ↔ WhiteboxTools path agreement with a cell tolerance', () => {
-  const header = JSON.parse(readFileSync(`${FIXTURES}/crop-header.json`, 'utf8'))
-  const bytes = readFileSync(`${FIXTURES}/crop-heights.bin`)
-  const heights = new Float32Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
-  const footprints = (JSON.parse(readFileSync(`${FIXTURES}/crop-buildings.json`, 'utf8')) as { footprints: Vec2[][] }).footprints
-  const reference = readAscValues(`${FIXTURES}/crop-reference-accumulation.asc`)
-  const { cols, rows } = header as { cols: number; rows: number }
-  const runoff = computeRunoff({ ...header, heights }, footprints)
+  let cols: number
+  let rows: number
+  let heights: ArrayLike<number>
+  let buildingMask: Uint8Array
+  let reference: ArrayLike<number>
+  let runoff: ReturnType<typeof computeRunoff>
+
+  if (SCOPE === 'tile') {
+    if (!RUNOFF_VARIANTS.includes(VARIANT)) throw new Error(`unknown RUNOFF_VARIANT: ${VARIANT}`)
+    const raster = loadTerrainRaster(SITE)
+    const footprints = loadFootprints(SITE)
+    const baked = buildVariantGround(raster, footprints, VARIANT)
+    // Standard burns inside `computeRunoff`; bare/offset bake the input first, as compare.ts does.
+    runoff = VARIANT === 'standard' ? computeRunoff(raster, footprints) : computeRunoff({ ...raster, heights: baked.heights }, [])
+    const dir = VARIANT === 'standard' ? 'tmp/runoff-whitebox' : `tmp/runoff-whitebox/${VARIANT}`
+    const accum = readAsc(`${dir}/accum.asc`)
+    cols = accum.cols
+    rows = accum.rows
+    heights = baked.ground
+    buildingMask = baked.building
+    reference = accum.values
+  } else {
+    const header = JSON.parse(readFileSync(`${FIXTURES}/crop-header.json`, 'utf8'))
+    const bytes = readFileSync(`${FIXTURES}/crop-heights.bin`)
+    heights = new Float32Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
+    const footprints = (JSON.parse(readFileSync(`${FIXTURES}/crop-buildings.json`, 'utf8')) as { footprints: Vec2[][] }).footprints
+    reference = readAscValues(`${FIXTURES}/crop-reference-accumulation.asc`)
+    cols = (header as { cols: number }).cols
+    rows = (header as { rows: number }).rows
+    runoff = computeRunoff({ ...header, heights }, footprints)
+    buildingMask = runoff.building
+  }
   const count = cols * rows
+  const cellArea = runoff.cellArea
 
   const near = (mask: Uint8Array, index: number, k: number) => {
     const row = Math.floor(index / cols), col = index % cols
@@ -48,15 +94,15 @@ it('measures Terraform ↔ WhiteboxTools path agreement with a cell tolerance', 
   const masks = (minClass: number, area: number) => {
     const terraform = new Uint8Array(count), whitebox = new Uint8Array(count)
     for (let index = 0; index < count; index += 1) {
-      if (runoff.building[index]) continue
-      terraform[index] = runoffClass(runoff, index) >= minClass ? 1 : 0
-      whitebox[index] = reference[index]! * runoff.cellArea >= area ? 1 : 0
+      if (buildingMask[index]) continue
+      terraform[index] = classify(buildingMask, runoff.accumulation, runoff.hollow, cellArea, index) >= minClass ? 1 : 0
+      whitebox[index] = reference[index]! * cellArea >= area ? 1 : 0
     }
     return { terraform, whitebox }
   }
   const pct = (a: number, b: number) => `${((a / b) * 100).toFixed(1)} %`
 
-  console.log(`pits ${runoff.pits}, cells ${count}`)
+  console.log(`scope ${SCOPE}${SCOPE === 'tile' ? ` variant ${VARIANT}` : ''}: pits ${runoff.pits}, cells ${count}`)
   for (const [name, minClass, area] of [['main', 3, MAIN_FLOW_PATH_M2], ['flow', 2, FLOW_PATH_M2]] as const) {
     const { terraform, whitebox } = masks(minClass, area)
     for (const k of [0, 1, 2, 3]) {
@@ -82,12 +128,15 @@ it('measures Terraform ↔ WhiteboxTools path agreement with a cell tolerance', 
     ratios.push(runoff.accumulation[index]! / reference[index]!)
   }
   ratios.sort((a, b) => a - b)
-  console.log('missed by > 3 cells, by distance to the crop edge:', byEdge)
+  console.log('missed by > 3 cells, by distance to the edge:', byEdge)
   console.log(`Terraform / WhiteboxTools accumulation there: median ${ratios[Math.floor(ratios.length / 2)]?.toFixed(3)}, max ${ratios.at(-1)?.toFixed(3)}`)
 
   // Divergence: a reference main-path cell where Terraform still carries the flow, next to a
-  // downstream reference cell where it has lost it.
+  // downstream reference cell where it has lost it. Classified by Terraform's hollow at the
+  // divergence point: "in a filled hollow" (hollow > 1 mm) vs "on unfilled ground".
   const ratio = (index: number) => runoff.accumulation[index]! / reference[index]!
+  const inHollow: string[] = []
+  const unfilled: string[] = []
   for (let index = 0; index < count; index += 1) {
     if (!whitebox[index] || ratio(index) <= 0.5) continue
     const row = Math.floor(index / cols), col = index % cols
@@ -96,7 +145,12 @@ it('measures Terraform ↔ WhiteboxTools path agreement with a cell tolerance', 
       if ((!dr && !dc) || r < 0 || c < 0 || r >= rows || c >= cols) continue
       const next = r * cols + c
       if (!whitebox[next] || ratio(next) >= 0.05 || reference[next]! <= reference[index]!) continue
-      console.log(`divergence at (${row},${col}) → (${r},${c}): hollow ${runoff.hollow[index]!.toFixed(3)} m → ${runoff.hollow[next]!.toFixed(3)} m, dz ${(heights[next]! - heights[index]!).toFixed(3)} m, reference ${reference[index]} → ${reference[next]}, Terraform ${runoff.accumulation[index]!.toFixed(0)} → ${runoff.accumulation[next]!.toFixed(0)}`)
+      const line = `(${row},${col}) → (${r},${c}): hollow ${runoff.hollow[index]!.toFixed(3)} m, dz ${(heights[next]! - heights[index]!).toFixed(3)} m, reference ${reference[index]} → ${reference[next]}, Terraform ${runoff.accumulation[index]!.toFixed(0)} → ${runoff.accumulation[next]!.toFixed(0)}`
+      if (runoff.hollow[index]! > HOLLOW_FILLED_M) inHollow.push(line)
+      else unfilled.push(line)
     }
   }
+  console.log(`divergence points: ${inHollow.length} in a filled hollow, ${unfilled.length} on unfilled ground`)
+  for (const line of inHollow) console.log(`  [filled hollow] ${line}`)
+  for (const line of unfilled) console.log(`  [unfilled ground] ${line}`)
 })
