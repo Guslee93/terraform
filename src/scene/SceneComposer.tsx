@@ -9,8 +9,8 @@ import {
   ToneMappingMode,
 } from 'postprocessing'
 import { Color, HalfFloatType } from 'three'
+import type { SceneStyle } from './style'
 
-const AO_INTENSITY = 1.6
 /** Polish fades back in over this after a drag ends (rendering spec). */
 const FADE_IN_S = 0.3
 
@@ -23,7 +23,7 @@ type Passes = { composer: EffectComposer; ao: N8AOPostPass }
  * drag) AO is off; it fades back in after.
  * Default export so the viewport can lazy-load it: postprocessing + n8ao are ~96 kB gzip.
  */
-export default function SceneComposer({ ao, busy }: { ao: 'full' | 'half'; busy: boolean }) {
+export default function SceneComposer({ ao, busy, style }: { ao: 'full' | 'half'; busy: boolean; style: SceneStyle }) {
   const gl = useThree((state) => state.gl)
   const scene = useThree((state) => state.scene)
   const camera = useThree((state) => state.camera)
@@ -44,11 +44,11 @@ export default function SceneComposer({ ao, busy }: { ao: 'full' | 'half'; busy:
     aoPass.setQualityMode('Medium')
     aoPass.configuration.halfRes = ao === 'half'
     // Metres: contact darkening at wall bases, in courtyards and between close blocks.
-    aoPass.configuration.aoRadius = 4
+    aoPass.configuration.aoRadius = style.ao.radiusM
     aoPass.configuration.distanceFalloff = 1
-    aoPass.configuration.intensity = AO_INTENSITY
+    aoPass.configuration.intensity = style.ao.intensity
     // Cool dark grey, matching the blue-grey hemisphere shade instead of black.
-    aoPass.configuration.color = new Color('#2B3138')
+    aoPass.configuration.color = new Color(style.ao.color)
     composer.addPass(aoPass)
     composer.addPass(new EffectPass(camera, new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL })))
     setPasses({ composer, ao: aoPass })
@@ -56,7 +56,7 @@ export default function SceneComposer({ ao, busy }: { ao: 'full' | 'half'; busy:
       setPasses(null)
       composer.dispose()
     }
-  }, [gl, scene, camera, ao])
+  }, [gl, scene, camera, ao, style.ao])
 
   useEffect(() => passes?.composer.setSize(size.width, size.height), [passes, size.width, size.height, dpr])
 
@@ -66,7 +66,7 @@ export default function SceneComposer({ ao, busy }: { ao: 'full' | 'half'; busy:
     // Interaction beats polish: off at once while busy, eased back in after.
     polish.current = busy ? 0 : Math.min(1, polish.current + delta / FADE_IN_S)
     passes.ao.enabled = polish.current > 0
-    passes.ao.configuration.intensity = AO_INTENSITY * polish.current
+    passes.ao.configuration.intensity = style.ao.intensity * polish.current
     passes.composer.render(delta)
   }, 1)
   return null

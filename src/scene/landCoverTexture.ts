@@ -22,12 +22,6 @@ const LANDCOVER_PAINT: Record<LandCoverKind, string> = {
 }
 
 /**
- * The colour of the water surface (ADR-0025). Water is no longer a tint on the terrain, but it
- * keeps the colour it had, so the studio looks the same where the ground is not modelled.
- */
-export const WATER_COLOR = LANDCOVER_PAINT.water
-
-/**
  * Draw order: broad ground first, then the more specific green kinds over it, then paved areas.
  * Water is not painted: it is a surface of its own, so it cannot take the relief of the ground
  * it covers (ADR-0025).
