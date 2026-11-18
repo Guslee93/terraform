@@ -1478,3 +1478,19 @@ zoom in because the quads are small at the default site camera.
   white + depth).
 - **Checks.** `node --check` OK · eslint (scripts) 0 · `npm run build` OK. The full matrix and the
   two-run pixel comparison are the owner's run on the Apple M1 Pro (exact commands in the ledger).
+
+## 2026-11-18 — Run 1 T5: opt-in visual regression spec (TF-VIS-012)
+
+- **Task TF-VIS-012.** Add `e2e/visual-reference.spec.ts`, skipped unless `VISUAL=1`, so the normal
+  suite and CI are unaffected.
+- **Frame.** Same as `capture-reference.mjs` (TF-VIS-010): 1440×900 @2, `reducedMotion: 'reduce'`,
+  and the app's fixed `renderPreference="auto"` (never forced — run book §6). It pins the neutral,
+  Sun (sun hours), Wind (direction view, 2 m), Noise (Lden) and Water states at the isometric
+  preset, Compact Infill, 21 June 15:00, with
+  `expect(page.locator('canvas').first()).toHaveScreenshot(name, { scale: 'device', maxDiffPixelRatio: 0.02 })`.
+- **Helper.** `e2e/studio-helpers.ts` `openAnalysis` now accepts `Water` and `Snow` (run book §6).
+- **Checks.** typecheck 0 · eslint 0 · `npx playwright test e2e/visual-reference.spec.ts` reports
+  5 skipped without `VISUAL=1` · `VISUAL=1 … --headed` passes 5/5 twice. Snapshots are not
+  committed here; the owner writes them on the M1 Pro (`--update-snapshots` then a plain run, both
+  `--headed`) and tightens `MAX_DIFF_PIXEL_RATIO` from two clean runs. Headless SwiftShader stalls
+  the canvas screenshot, so the spec must run `--headed`.

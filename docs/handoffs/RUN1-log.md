@@ -23,7 +23,7 @@ commands the owner must run on the GPU machine.)_
 | T2 | TF-VIS-054 claim guardrail tests | done | b1a8dd4 | typecheck 0 · lint 0 · unit 1223 passed / 4 skipped / 1 todo (0 failed) · build OK | Lawson "Uncomfortable" labels held as `it.todo` (owner decision); required negations ("not … safe/snow load") allowed |
 | T3 | TF-VIS-040 part A legend model | done | 48b1b6c | typecheck 0 · lint 0 · unit 1227 passed / 4 skipped / 1 todo (0 failed) · build OK · no component changed | claim passed via context (caption modules import graphics → cycle); scale carries colours/boundaries, labels attach in MapLegend wiring |
 | T4 | TF-VIS-010 reference capture script | done | bef462d | node --check OK · eslint(scripts) 0 · build OK · unit 1227 passed / 0 failed · smoke run 24 captures / 0 failures (7 states × 3 presets + 3 passes for neutral) | Full matrix + pixel-diff run by owner (commands below); `analysis` pass fires only with an analysis layer visible (neutral/mass → still+white+depth); `--smoke` bounds the proof run |
-| T5 | TF-VIS-012 opt-in visual regression spec | in progress | | | |
+| T5 | TF-VIS-012 opt-in visual regression spec | done | af6a258 | typecheck 0 · eslint 0 · playwright skipped (5 skipped without VISUAL=1) · VISUAL=1 --headed 5/5 passed twice | Snapshots NOT committed (owner writes them on the M1 Pro); `MAX_DIFF_PIXEL_RATIO` 0.02 is a starting point to tighten; must run `--headed` (headless SwiftShader stalls the canvas shot); `openAnalysis` widened to Water/Snow |
 | T6 | TF-VIS-013 scene style module | todo | | | |
 | T7 | TF-VIS-030 camera and input characterisation tests | todo | | | |
 | T8 | TF-VIS-034 ground-click arbitration | todo | | | |
@@ -49,9 +49,18 @@ _(Add the exact commands for any check that needs a real GPU.)_
   The two runs must differ by 0 pixels on every image, or each non-deterministic image is listed
   with its cause. The viewport captures and `manifest.json` go to `docs/screenshots/vis/<label>/`;
   commit the 4K export PNGs only if each is ≤ 2 MB, otherwise note where the rest are.
+- **T5 (TF-VIS-012) visual regression baselines** — on the M1 Pro, headed (Metal); the snapshots are
+  only valid there:
+  ```bash
+  VISUAL=1 npx playwright test e2e/visual-reference.spec.ts --headed --update-snapshots
+  VISUAL=1 npx playwright test e2e/visual-reference.spec.ts --headed
+  ```
+  The second command must pass twice. Tighten `MAX_DIFF_PIXEL_RATIO` (currently 0.02) from two clean
+  runs, then commit the snapshots only after verifying them on the reference machine.
 
 ## Session notes
 
+- 2026-11-18 — T5 **done**. `e2e/visual-reference.spec.ts` (gated `VISUAL=1`) pins neutral/Sun/Wind/Noise/Water at the isometric preset with `toHaveScreenshot`; skipped in the normal suite; passes 5/5 twice `--headed`. Next: T6.
 - 2026-11-18 — T5 in progress: opt-in visual regression spec (`e2e/visual-reference.spec.ts`, `VISUAL=1`), same frame as capture-reference.mjs.
 - 2026-11-18 — T4 **done**. `scripts/capture-reference.mjs` (server start + GPU check reused from `measure-perf.mjs`; renderPreference recorded as the app's fixed `auto`, never forced) and `scripts/compare-captures.mjs` (Playwright's `getComparator('image/png')`, no new dependency). Smoke run (`--smoke`): 7 states × 3 presets + export passes, 0 failures, manifest written. Next: T5.
 - 2026-11-18 — T4 in progress: reference capture script (`scripts/capture-reference.mjs` + `scripts/compare-captures.mjs`). This session runs on macOS arm64 (not the earlier Linux container); GPU treated as none per owner instruction, so the run is marked softwareRenderer and images are not committed.
