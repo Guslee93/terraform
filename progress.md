@@ -1456,3 +1456,25 @@ zoom in because the quads are small at the default site camera.
   Those modules import `graphics.ts`, so importing them here would create a cycle; `legendFor`
   therefore supplies — never authors — the claim text.
 - **Checks.** typecheck 0 · lint 0 · full unit suite 1227 passed / 4 skipped / 1 todo / 0 failed · build OK · no component file changed.
+
+## 2026-11-18 — Run 1 T4: reference capture script (TF-VIS-010)
+
+- **Task TF-VIS-010.** Add `scripts/capture-reference.mjs` (reference captures of the built app)
+  and `scripts/compare-captures.mjs` (differing-pixel counts per image), following `06` § TF-VIS-010
+  with the run-book §6 corrections.
+- **Capture script.** Starts `vite preview` on the production build, headed Chromium at 1440×900
+  @2 with `reducedMotion: 'reduce'`, and screenshots every site (`compact-infill`, `sloped-edge`) ×
+  date (21 June 15:00, 21 December 12:00) × state (neutral, sun hours, wind direction view 2 m,
+  noise Lden, water, slope on, one drawn mass) across the three presets (isometric/3D, top/Plan,
+  eyeLevel/Street). For the isometric preset it also triggers the Image passes and re-homes the
+  `still`/`depth`/`white`/`analysis` downloads beside the viewport captures. Render quality is
+  **not** forced: the manifest records the app's fixed `renderPreference: 'auto'`.
+- **Compare script.** Compares two labels with Playwright's own `getComparator('image/png')`
+  (pixelmatch, the comparator `toHaveScreenshot` uses) — no new dependency — and prints the
+  differing-pixel count per image plus a summary.
+- **Proof run.** `--smoke` bounds the run to one site/date for a software-rendered check: 7 states
+  × 3 presets + the export passes completed with 0 failures and a written `manifest.json`. The
+  `analysis` pass is emitted only when an analysis layer is on the map (neutral/mass → still +
+  white + depth).
+- **Checks.** `node --check` OK · eslint (scripts) 0 · `npm run build` OK. The full matrix and the
+  two-run pixel comparison are the owner's run on the Apple M1 Pro (exact commands in the ledger).

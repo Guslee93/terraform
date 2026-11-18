@@ -12,6 +12,7 @@ commands the owner must run on the GPU machine.)_
 
 - GPU: none — headless x86_64 container (no `/dev/dri`, no `nvidia-smi`, no `glxinfo`). Pixel checks (T5, T6) will be written but not judged here.
 - Machine / OS: Linux, Node v24.15.0, npm 11.12.1. WhiteboxTools v2.4.0 at `/home/node/whiteboxtools/WhiteboxTools_linux_amd64/WBT/whitebox_tools` (zip sha256 matches the README).
+- T4 session ran elsewhere: macOS arm64 (Node v22.23.1). Headed Chromium reports `ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro)`, headless reports SwiftShader — so captures made in this harness are not committed and pixel checks stay with the owner (commands below).
 
 ## Tasks
 
@@ -21,7 +22,7 @@ commands the owner must run on the GPU machine.)_
 | T1 | TF-VIS-014 analysis graphics registry | done | 61d49f3 | typecheck 0 · lint 0 · unit 1220 passed / 4 skipped / 0 failed · build OK | 11 shared hexes snapshotted (Gate 5 empties); Band omits label (labels stay in modules); WIND_RAMP widened → two `!` in climateView.test.ts |
 | T2 | TF-VIS-054 claim guardrail tests | done | b1a8dd4 | typecheck 0 · lint 0 · unit 1223 passed / 4 skipped / 1 todo (0 failed) · build OK | Lawson "Uncomfortable" labels held as `it.todo` (owner decision); required negations ("not … safe/snow load") allowed |
 | T3 | TF-VIS-040 part A legend model | done | 48b1b6c | typecheck 0 · lint 0 · unit 1227 passed / 4 skipped / 1 todo (0 failed) · build OK · no component changed | claim passed via context (caption modules import graphics → cycle); scale carries colours/boundaries, labels attach in MapLegend wiring |
-| T4 | TF-VIS-010 reference capture script | in progress | | | |
+| T4 | TF-VIS-010 reference capture script | done | bef462d | node --check OK · eslint(scripts) 0 · build OK · smoke run 24 captures / 0 failures (7 states × 3 presets + 3 passes for neutral) | Full matrix + pixel-diff run by owner (commands below); `analysis` pass fires only with an analysis layer visible (neutral/mass → still+white+depth); `--smoke` bounds the proof run |
 | T5 | TF-VIS-012 opt-in visual regression spec | todo | | | |
 | T6 | TF-VIS-013 scene style module | todo | | | |
 | T7 | TF-VIS-030 camera and input characterisation tests | todo | | | |
@@ -37,9 +38,21 @@ commands the owner must run on the GPU machine.)_
 ## Commands the owner must run on the Apple M1 Pro
 
 _(Add the exact commands for any check that needs a real GPU.)_
+- **T4 (TF-VIS-010) reference capture set** — on the M1 Pro, on mains power, headed Chromium:
+  ```bash
+  cd <repo>
+  npm ci && npm run build
+  node scripts/capture-reference.mjs run1
+  node scripts/capture-reference.mjs run2
+  node scripts/compare-captures.mjs run1 run2
+  ```
+  The two runs must differ by 0 pixels on every image, or each non-deterministic image is listed
+  with its cause. The viewport captures and `manifest.json` go to `docs/screenshots/vis/<label>/`;
+  commit the 4K export PNGs only if each is ≤ 2 MB, otherwise note where the rest are.
 
 ## Session notes
 
+- 2026-11-18 — T4 **done**. `scripts/capture-reference.mjs` (server start + GPU check reused from `measure-perf.mjs`; renderPreference recorded as the app's fixed `auto`, never forced) and `scripts/compare-captures.mjs` (Playwright's `getComparator('image/png')`, no new dependency). Smoke run (`--smoke`): 7 states × 3 presets + export passes, 0 failures, manifest written. Next: T5.
 - 2026-11-18 — T4 in progress: reference capture script (`scripts/capture-reference.mjs` + `scripts/compare-captures.mjs`). This session runs on macOS arm64 (not the earlier Linux container); GPU treated as none per owner instruction, so the run is marked softwareRenderer and images are not committed.
 - 2026-11-17 — T3 **done**. Pure `legendFor(id, context)` in `graphics.ts` returns title/class/scale/claim/sources/state; claim supplied from the existing caption functions (never authored in the model). Commit 48b1b6c. Next: T4.
 - 2026-11-17 — T3 in progress: `legendFor(id, context)` added to `graphics.ts` (pure model; claim supplied from existing caption functions to avoid the graphics→module cycle).
