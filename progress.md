@@ -1527,3 +1527,23 @@ zoom in because the quads are small at the default site camera.
   tests before the drag tests to avoid software-GL degradation.
 - **Checks.** typecheck 0 · lint 0 · `npx playwright test e2e/camera-input.spec.ts` 6 passed twice
   in a row.
+
+## 2026-11-18 — Run 1 T10: Visual Lab route + ADR-0040 (TF-VIS-015)
+
+- **Task TF-VIS-015.** Add the local-only Visual Lab route and its ADR (04 §2, 06#tf-vis-015).
+- **Route.** `src/app/LabPage.tsx` is lazy and registered at `/lab/:siteId` only when
+  `import.meta.env.DEV || import.meta.env.VITE_LAB === '1'`. The direct `import.meta.env`
+  expression (not a function call) lets Rollup constant-fold the ternary, so the `LabPage` chunk
+  is tree-shaken out of the production build; `scripts/check-no-lab-chunk.mjs` asserts no shipped
+  JS/CSS references it.
+- **States.** `src/app/lab/states.ts` defines the seven fixed states (neutral, sun hours, wind 2 m
+  direction view, noise Lden, water, slope, one demo mass) and `buildEmptyEditor` /
+  `buildDemoMassEditor` (massing factories, no copied computation). `LabPage.tsx` runs the real
+  hooks (`useCircleSunHours`, `useWindFlow`, `useRunoff`) and assembles the `ViewportCanvas` props.
+  `TweakPanel.tsx` is plain HTML and lists `NORDIC` (with room for `IDENTITY`, TF-VIS-020).
+- **ADR.** `docs/decisions/ADR-0040-visual-lab.md`: purpose, build-flag isolation, what may/may not
+  live in the Lab, removal plan.
+- **Checks.** typecheck 0 · lint 0 · unit 1233 passed / 0 failed · build OK · build check 0 ·
+  `LAB=1 npx playwright test e2e/visual-lab.spec.ts` 1 passed (skipped without LAB=1) · production
+  chunks within ±14 bytes gzip of before (report: index.js +9, index.css +14, three.js −1,
+  SceneComposer.js −3, StudioPage.js −1; all others 0).
