@@ -97,3 +97,39 @@ the attribution; the ADR-0039 correction is applied. Exports carry the layer cre
 ## Notes
 
 - Read-only review; no source, script, config or fixture changed.
+
+---
+
+## Second review — Claude Opus 5.5, 2026-11-18
+
+Independent check of this review (the reviewer did not write `01c514b` or this document).
+
+**Findings 1–4: confirmed.** Read `runoff.ts:84–175` (fill, D8, accumulation): no pit, no cycle,
+accumulation in strictly descending `filled` order. The NW-first tie order, NaN-as-outlet, the
+snow month-mean asymmetry and the `footprints` identity note are accurate and minor.
+
+**Gap: the adversarial grids are too small to support the 67 % conclusion.** 3 × 3 and 5 × 5 grids
+cannot exercise ties on slopes, long filled flats or real terrain, which are where Terraform and
+WhiteboxTools differ. "No correctness bug explains the 67 %" was stated without evidence. It was
+tested afterwards on the committed IT-7 crop (PR #23,
+`src/features/analysis/__fixtures__/runoff-reference/`, 200 × 200 cells, standard burn-in), with a
+cell-distance tolerance (script and full numbers in PR #23,
+`scripts/reference/runoff-whitebox/tolerance.ts`):
+
+| Main flow paths | exact | ≤ 1 cell | ≤ 2 cells |
+|---|---|---|---|
+| Terraform cells near a WhiteboxTools main path | 91.9 % | 95.3 % | 97.0 % |
+| WhiteboxTools cells near a Terraform main path | 67.8 % | 70.7 % | 72.6 % |
+
+- Terraform draws almost no main path the reference lacks.
+- It misses ~27 % of the reference's main-path cells, and not by a shifted cell: at the 87 cells
+  missed by more than 3 cells, Terraform carries a median 0.3 % of the reference flow; 66 of them
+  lie more than 3 cells from the crop edge.
+- The one clean divergence point found is a perfectly flat cell (dz = 0) in a filled 6 cm hollow,
+  where the two tools leave the flat by different exits.
+
+**Verdict on this review: pass, with the 67 % statement narrowed.** The evidence supports "no
+defect found; the largest disagreement found starts in flat routing inside a filled hollow" — a
+method difference. It does not show that every missed segment has that cause. Whether Water's
+acceptance changes is an owner decision recorded in PR #23 (`docs/qa/runoff-reference.md`,
+"Tolerance analysis").
