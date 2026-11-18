@@ -1494,3 +1494,19 @@ zoom in because the quads are small at the default site camera.
   committed here; the owner writes them on the M1 Pro (`--update-snapshots` then a plain run, both
   `--headed`) and tightens `MAX_DIFF_PIXEL_RATIO` from two clean runs. Headless SwiftShader stalls
   the canvas screenshot, so the spec must run `--headed`.
+
+## 2026-11-18 — Run 1 T6: scene style module (TF-VIS-013)
+
+- **Task TF-VIS-013.** Move today's scene style constants into one module with no visual change.
+- **Model.** `src/scene/style.ts` exports the `SceneStyle` type and `NORDIC` (today's exact values).
+  `ViewportCanvas` gains a `style` prop (default `NORDIC`) threaded to `TerrainMesh`,
+  `ContextBuildings`, `Streets`, `Water`, `FloorGrid` and `SceneComposer`; `SceneComposer` reads
+  `style.ao` (intensity 1.6, radius 4 m, colour `#2B3138`). `WATER_COLOR`'s softened value
+  (`soften('#CBE1EE')` = `#D3E0E8`) is recorded as `NORDIC.water` and the export removed from
+  `landCoverTexture.ts`. `style.test.ts` pins every old literal.
+- **Notes.** `lines.parcel`/`lines.section` values are recorded in `NORDIC` but not wired
+  (`ParcelLines.tsx` is outside this task's file list); the `grid` field was added (contract 04 §3.1
+  omits it); `analysisFocus` was deferred (no value today).
+- **Checks.** typecheck 0 · lint 0 · full unit suite 1231 passed / 0 failed · build OK · pixel
+  identity proven — `VISUAL=1 npx playwright test e2e/visual-reference.spec.ts --headed` 5/5 passed
+  with zero differing pixels against pre-refactor baselines.
