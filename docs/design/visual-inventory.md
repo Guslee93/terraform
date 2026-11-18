@@ -17,7 +17,7 @@ Values are quoted from the code; nothing here is invented.
 | background | `#F1F1EF` | style.ts:34 | **replaced** (dark `#171B19`) | R6 |
 | ground (floor grid plane) | `#EBEBE8` | style.ts:35 | **replaced** (dark ground) | R6 |
 | context color / roughness | `#FAF9F6` / `0.9` | style.ts:36 | **kept** (matte white massing; AO/shadows tuned) | R3 |
-| road | `#C1BEB7` | style.ts:37 | **replaced** (orthophoto terrain; roads as a layer) | R1 |
+| road | `#C1BEB7` | style.ts:37 | **changes** (re-tuned to read on the orthophoto; removal not decided — TF-VIS-020) | R1/R6 |
 | water | `#D3E0E8` (= `soften('#CBE1EE')`) | style.ts:39 | **changes** (reads on orthophoto/dark ground) | R1/R6 |
 | skirt | `#DCD8D1` | style.ts:40 | **replaced** (hidden in the identity) | R6 |
 | grid minor / major | `#DDDDD9` / `#D8D8D3` | style.ts:42–43 | **replaced** (floor grid hidden) | R6 |
