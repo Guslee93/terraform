@@ -1510,3 +1510,20 @@ zoom in because the quads are small at the default site camera.
 - **Checks.** typecheck 0 · lint 0 · full unit suite 1231 passed / 0 failed · build OK · pixel
   identity proven — `VISUAL=1 npx playwright test e2e/visual-reference.spec.ts --headed` 5/5 passed
   with zero differing pixels against pre-refactor baselines.
+
+## 2026-11-18 — Run 1 T7: camera and input characterisation tests (TF-VIS-030)
+
+- **Task TF-VIS-030.** Lock today's camera and editing behaviour with tests before anyone changes
+  the controller. No source change.
+- **Spec.** `e2e/camera-input.spec.ts` (not opt-in, 6 tests, serial):
+  1. each preset (3D/Plan/North/South/Street) changes the canvas (`canvasSignature`);
+  2. dragging a mass moves it — not the camera — and is one undo step (undo restores the frame);
+  3. Escape cancels a drag (no move, no undo entry);
+  4. a short ground click deselects; a long ground drag orbits without deselecting;
+  5. a preset change snaps without animation under reduced motion.
+- **Deviation recorded.** The run-book "complete within one frame" is not literal: `CameraRig`
+  skips its 0.75 s ease under reduced motion, but the view lands a few frames after the click
+  (React re-render). The spec tests the snap/no-animation behaviour, and runs the light preset
+  tests before the drag tests to avoid software-GL degradation.
+- **Checks.** typecheck 0 · lint 0 · `npx playwright test e2e/camera-input.spec.ts` 6 passed twice
+  in a row.
