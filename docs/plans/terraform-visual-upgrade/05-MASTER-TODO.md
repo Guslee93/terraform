@@ -17,6 +17,14 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
 | Cline + small model (MiniMax M3.1-Flash is the one wired in `agent-round.yml`) | Copy edits, docs, small components, repetitive fixtures |
 | Owner | Merges, deploys, Vercel access, visual choices, licence questions |
 
+**Roster update (18 Nov 2026, `09-VISUAL-IDENTITY-INTEGRATION.md` §5.3).** Claude Opus 5.5 is now the primary model: it may plan, implement and integrate any task, including those assigned to Fable or Codex above. Self-review is not independent: a task Opus implements needs review by a different model or the owner, and high-risk changes (renderer, input, export, domain, claims) also need automated evidence (tests, zero-pixel diff, perf run). Visual acceptance stays with the owner. The per-task owners below are kept as history; where Opus implements, the listed reviewer must not also be Opus.
+
+**Visual identity (18 Nov 2026).** The approved art direction (`Terraform_Visual_Identity_FINAL.md`, owner's copy) closes the A/B/C direction search. Gate 2 below is revised for it; changed tasks say *Revised 18 Nov*. Reconciliation, evidence and the compatibility matrix are in `09-VISUAL-IDENTITY-INTEGRATION.md`.
+
+## Verified status (18 Nov 2026)
+
+From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004 (#19, #20), 011 (#21). **In draft PR #25, unmerged:** 010 and 012 (owner GPU run and baselines outstanding), 013, 014, 030, 040 part A (model only), 054. **In progress:** 005 (part 1, #22); 007 (PR #23 — 67 % main-path agreement, below the 95 % bar). **Blocked:** 008 (on 001, 002, 006). **Still open:** 001 (production still 404s on 18 Nov), 002, 003, 006, 009, 015, 016, 034 and every later task.
+
 ## File ownership
 
 `src/scene/ViewportCanvas.tsx` and `src/components/studio/StudioShell.tsx` are touched by most visual work. **At most one open task may edit each of these files at a time.** Tasks marked ⚠VC edit `ViewportCanvas.tsx`; ⚠SS edit `StudioShell.tsx`. Schedule them serially. Everything else can run in parallel when dependencies allow.
@@ -63,7 +71,7 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
   - Risk/rollback: none (read-only)
   - Handoff prompt: template
 
-- [ ] **TF-VIS-004** `[FIX]` — Correct the About page's stale noise and wind copy
+- [x] **TF-VIS-004** `[FIX]` — Correct the About page's stale noise and wind copy
   - Priority: P0
   - Owner/model: Cline + small model
   - Reviewer: Opus (claim policy check)
@@ -142,7 +150,7 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
   - Risk/rollback: script only
   - Handoff prompt: `06#tf-vis-010`
 
-- [ ] **TF-VIS-011** `[TEST]` — Performance harness and baseline
+- [x] **TF-VIS-011** `[TEST]` — Performance harness and baseline
   - Priority: P0
   - Owner/model: Codex
   - Reviewer: Opus
@@ -204,42 +212,91 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
   - Output: `docs/design/visual-inventory.md` — every scene colour, line, ramp, legend and floating surface with file and line
   - Handoff prompt: template
 
-## Gate 2 — Scene rendering, material and lighting prototypes
+## Gate 2 — Identity rendering (revised 18 Nov 2026)
 
-**Exit:** the owner has chosen a direction from Lab captures that passed 03 §2.3; the chosen style is in production behind no flag, within the performance budget.
+*Was: "Scene rendering, material and lighting prototypes", exit "the owner has chosen a direction (A/B/C) from Lab captures". The approved identity replaces the direction choice; dependency graph in 09 §5.1.*
 
-- [ ] **TF-VIS-020** `[EXP]` — Direction presets in the Lab (A, B, C)
-  - Priority: P1 · Owner: Opus · Reviewer: Fable · Depends on: TF-VIS-015
-  - Scope/files: `src/scene/style.ts` (add `DIAGRAM`, `ATMOSPHERIC`), `src/app/lab/*`. Production style untouched
-  - Acceptance: all three render every Lab state; captures in `docs/screenshots/vis/gate2/`
+**Exit:** the integrated prototype (TF-VIS-02B) passes 09 §7 at the analysis-off and wind-on states and the owner accepts it; the `IDENTITY` style ships (TF-VIS-027) only after **Gate 0 exit (TF-VIS-008)** and within 04 §7 budgets, or with budget exceptions the owner approves in writing. Lab work does not wait for Gate 0; production work does.
 
-- [ ] **TF-VIS-021** `[EXP]` → `[CAND]` — Fat-line system (EX-1)
+**Common to every Gate 2 task:** Lab only until 027; `NORDIC` stays the production style and the rollback; captures with `scripts/capture-reference.mjs` at the 09 §7 view; perf with `scripts/measure-perf.mjs` against `docs/perf/baseline-build-foundation.json`; `e2e/camera-input.spec.ts` and `claims.test.ts` stay green; implementer and reviewer are different models (roster update above).
+
+- [ ] **TF-VIS-020** `[EXP]` — Progressive identity stages in the Lab *(Revised 18 Nov; was "Direction presets A, B, C" with `DIAGRAM`/`ATMOSPHERIC`)*
   - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-015
-  - Scope/files: new `src/scene/lines.ts`; Lab only at first
-  - Acceptance: 02 §2.2 criteria; owner decision on white-pass edges (08 Q8)
+  - Scope/files: `src/scene/style.ts` (add `IDENTITY` beside `NORDIC`; the `id` union gains `'identity'`, drops nothing until 027), `src/app/lab/*` (stage picker)
+  - Stages: **A** orthophoto (or labelled land-cover fallback) + matte-white massing + white contours on charcoal `#171B19`; **B** A + HDRI ambient + atmospheric dissolve + shadow/AO tuning; **C** B + point-cloud vegetation + wind on
+  - Tests: `style.test.ts` keeps `NORDIC` byte-identical; Lab renders every stage without console errors
+  - Acceptance: captures of A, B, C in `docs/screenshots/vis/gate2/`; production bundle unchanged (Lab excluded)
+  - Risk/rollback: Lab only; delete the stage
+  - Handoff: 06#tf-vis-020
 
-- [ ] **TF-VIS-023** `[OPT]` `[EXP]` — Cartographic hillshade from the 1 m tile (EX-6)
-  - Priority: P2 · Owner: Codex · Reviewer: Opus · Depends on: TF-VIS-015
+- [ ] **TF-VIS-021** `[EXP]` → `[CAND]` — Fat-line system with light-white contours (EX-1) *(Revised 18 Nov: contour colour pale white on dark ground; zoom-based density)*
+  - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-015
+  - Scope/files: new `src/scene/lines.ts`; `style.ts` `lines.contourMinor/Major` for `IDENTITY`; Lab only at first
+  - Adds: minor contours fade out beyond a camera-distance threshold (value proposed from captures, owner approves); majors stay
+  - Acceptance: 02 §2.2 criteria; contours legible at three zooms over the orthophoto; owner decision on white-pass edges (08 D8)
+
+- [ ] **TF-VIS-023** `[OPT]` `[EXP]` — Cartographic hillshade from the 1 m tile (EX-6) *(Revised 18 Nov: demoted — the orthophoto carries relief shading; only for the land-cover fallback)*
+  - Priority: P3 · Owner: Codex · Reviewer: Opus · Depends on: TF-VIS-028 result
   - Scope/files: new renderer-free `src/features/analysis/hillshade.ts` + test; Lab material
 
-- [ ] **TF-VIS-024** `[CAND]` — Export-quality AO and shadows
-  - Priority: P1 · Owner: Codex · Reviewer: Opus · Depends on: TF-VIS-011
-  - Scope/files: `src/scene/SceneComposer.tsx`, `PassExporter.tsx`
-  - Acceptance: 02 §2.3 criteria; depth pass byte-identical
+- [ ] **TF-VIS-024** `[CAND]` — AO and soft shadows on a dark ground, export quality *(Revised 18 Nov: tune for matte white on charcoal/orthophoto)*
+  - Priority: P1 · Owner: Codex · Reviewer: Opus · Depends on: TF-VIS-011, TF-VIS-020 stage A
+  - Scope/files: `src/scene/SceneComposer.tsx`, `PassExporter.tsx`, `style.ts` (`ao` for `IDENTITY`)
+  - Acceptance: 02 §2.3 criteria; depth pass byte-identical; sun shadow positions unchanged
 
-- [ ] **TF-VIS-025** `[EXP]` → `[CAND]` — Display-only lighting atmospheres + ADR-0042 (EX-4)
+- [ ] **TF-VIS-025** `[EXP]` → `[CAND]` — HDRI ambient, no visible sky, sun untouched + ADR-0042 (EX-4) *(Revised 18 Nov: one soft overcast Nordic HDRI for ambient; the three named atmospheres are dropped)*
   - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-015
-  - Scope/files: `src/scene/lighting.ts` + test (`atmosphere` argument); Lab
-  - Tests: unit test that sun position is identical for every atmosphere; Sun-card-active override test
-  - Acceptance: 03 §4 rules met; credit line added when non-default
+  - Scope/files: `ViewportCanvas.tsx` `EnvironmentLight` ⚠VC (load a file into the same PMREM path, keep `RoomEnvironment` as fallback), `lighting.ts` + test (intensities per style), `public/env/<name>.hdr` with licence note (CC0 preferred), ADR-0042
+  - Tests: sun position and shadow direction identical for every style; fallback to Room environment when the file fails to load; background remains the flat style colour
+  - Acceptance: 03 §4 rule ("the sun is the Sun card's time") met; asset size and licence in the ADR; studio chunk +0 kB (file fetched lazily)
+  - Risk/rollback: style flag; Room environment
 
-- [ ] **TF-VIS-026** — Direction comparison board and owner decision
-  - Priority: P0 for Gate 2 exit · Owner: Fable (board) + Owner (choice) · Depends on: TF-VIS-020, 021, 025
-  - Output: `docs/design/direction-decision.md` with captures, perf and checks per 03 §2.3
+- [ ] **TF-VIS-026** — Identity decision board and owner acceptance *(Revised 18 Nov; was a direction choice)*
+  - Priority: P0 for Gate 2 exit · Owner: Opus (board) + Owner (acceptance) · Reviewer: Owner · Depends on: TF-VIS-02B
+  - Output: `docs/design/identity-decision.md` — captures, perf, greyscale/CVD checks per 09 §7; ADR-0045 (identity scene; supersedes ADR-0017 for the working view) drafted with the evidence
 
-- [ ] **TF-VIS-027** `[CAND]` — Ship the chosen style ⚠VC
-  - Priority: P1 · Owner: Codex · Reviewer: Opus · Depends on: TF-VIS-026, ADR-0041
-  - Acceptance: 04 §7 budgets; visual regression baselines re-approved by owner; ADR-0041 accepted
+- [ ] **TF-VIS-027** `[CAND]` — Ship the `IDENTITY` style ⚠VC *(Revised 18 Nov)*
+  - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-026, ADR-0041, ADR-0045, **TF-VIS-008 (Gate 0 exit)**
+  - Acceptance: 04 §7 budgets; visual regression baselines re-approved by owner; ADR-0041 and ADR-0045 accepted; `NORDIC` retained as a selectable rollback for one release
+  - Risk/rollback: switch the default style back to `NORDIC` (one-line revert)
+
+- [ ] **TF-VIS-028a** `[DOC]` — Orthophoto source and licence research *(New 18 Nov)*
+  - Priority: P0 for TF-VIS-028 · Owner: Opus (`research-synthesist`) · Reviewer: Owner · Depends on: —
+  - Scope/files: `docs/data/orthophoto-source.md` (new); no code
+  - Output: for Norge i bilder (Kartverket/Geovekst) and fallbacks (Sentinel-2, others): licence text and URL, permitted use (public web display, caching, redistribution in a static package, export stills/clips), attribution wording, resolution, capture year for both curated sites, endpoint and CRS options
+  - Acceptance: each permission answered with a quoted source or marked "unconfirmed — asked Kundesenter"; recommendation for D13
+  - Risk/rollback: none
+
+- [ ] **TF-VIS-028** `[EXP]` → `[CAND]` — Orthophoto terrain pipeline (curated sites) *(New 18 Nov)*
+  - Priority: P1 · Owner: Opus · Reviewer: Codex (code) + `gis-qa-engineer` role run by DeepSeek (registration) · Depends on: TF-VIS-028a with D13 cleared for the intended use, TF-VIS-015
+  - Scope/files: new `scripts/site-assets/orthophoto.build.ts` (request with an EPSG:4326 bbox equal to the terrain extent, as `terrain1m.build.ts` does, so the image is exact in ENU — ADR-0033 §3); package layer `orthophoto.json` + `orthophoto.webp` (optional; schema in `features/sites/package.ts`, `manifest.ts`, `docs/data/site-package-spec.md`); `features/sites/provenance.ts` (credit); new `src/scene/terrainMaterial.ts` (map + desaturation uniform, default 0.8; dark/contrast curve from `style.ts`); `TerrainMesh` in `ViewportCanvas.tsx` ⚠VC
+  - Out of scope: import path (keeps land cover); analyses never sample the image
+  - Tests: package schema accepts and rejects; registration test (a surveyed corner or building footprint centroid in ENU lands on the expected pixel within 1 px at the stored resolution); credit appears in still/white/analysis credits and not in depth; with the layer absent the scene is pixel-identical to today
+  - Acceptance: Lab stage A capture; package size and GPU texture memory recorded; owner approves resolution (2 048 vs 4 096 px) from measured cost
+  - Risk/rollback: optional layer + style flag → land-cover look. **No imagery committed or deployed before D13 clears**
+  - Handoff: 06#tf-vis-028
+
+- [ ] **TF-VIS-029** `[EXP]` — Airy point-cloud vegetation prototype *(New 18 Nov)*
+  - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-015
+  - Scope/files: new pure `src/scene/vegetationPoints.ts` (seeded cluster per mapped tree; optional forest fill inside land-cover `wood` polygons) + test; new `src/scene/PointVegetation.tsx` (`THREE.Points` or instanced sprites, DPR-stable size, distance LOD, green-grey from `style.ts`, static — never animated); `exportPasses.ts` handling for override passes; `Trees.tsx` untouched (Low tier and rollback)
+  - Tests: same seed → same points; point count per LOD within the proposed budget; points excluded from raycasting (`camera-input.spec.ts` green); white and depth passes per D15
+  - Acceptance: Lab stage C capture near/mid/far reads as porous; forest reads as a body, not a block; perf against baseline with counts recorded; provenance says forest density is illustrative
+  - Risk/rollback: style flag → `Trees.tsx`
+  - Handoff: 06#tf-vis-029
+
+- [ ] **TF-VIS-02A** `[EXP]` → `[CAND]` — Atmospheric terrain dissolve *(New 18 Nov)*
+  - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-020 stage A (028 or land-cover fallback)
+  - Scope/files: `terrainMaterial.ts` (radial fade to the background colour beyond a radius ≥ the study halo), `style.ts` (fade start/end, fog colour), `ViewportCanvas.tsx` ⚠VC (hide skirt and floor grid in `IDENTITY`)
+  - Tests: pure test that the fade start ≥ halo radius and ≥ analysis-circle radius for both sites; overlays drawn above the fade are unaffected; depth pass unchanged
+  - Acceptance: no visible rectangular edge at any preset; site crisp; no spotlight or haze effects
+  - Risk/rollback: style flag
+
+- [ ] **TF-VIS-02B** `[EXP]` — Integrated identity prototype: analysis off / wind on *(New 18 Nov)*
+  - Priority: P0 for Gate 2 exit · Owner: Opus · Reviewer: Codex + Owner · Depends on: TF-VIS-020, 021, 024, 025, 028 (or labelled fallback), 029, 02A, 040 part B (legend component)
+  - Scope/files: Lab only; capture label `identity-02b`
+  - Output: the brief in 09 §7 — same site, camera, crop and lighting; State 01 analysis off; State 02 wind on with legend and screening caveat; reference captures and perf
+  - Acceptance: all seven comparison criteria in 09 §7 recorded; critical success test judged by the owner
+  - Handoff: 06#tf-vis-02b
 
 ## Gate 3 — Camera, navigation and input
 
@@ -300,6 +357,7 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
   - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-040, 041, 042; owner decision D2 (Lawson names)
   - Scope/files: `WindHeatmap.tsx`, `WindParticles.tsx`, `WindStreamlines.tsx`, `ClimatePanel.tsx`, `climateView.ts` (labels only)
   - Acceptance: screening grammar on the map; trails coloured from the map; `e2e/wind*.spec.ts` green; perf budget with wind on
+  - *Revised 18 Nov:* the map and trails must read on the dark orthophoto ground (03 §2.1 column C) and stay visually distinct from the static point vegetation (TF-VIS-029)
 
 - [ ] **TF-VIS-045** `[CAND]` — Water pilot
   - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-040, 041, 042, TF-VIS-002, TF-VIS-007
@@ -310,14 +368,29 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
   - Priority: P1 · Owner: DeepSeek · Reviewer: Opus · Depends on: TF-VIS-041
   - Covers: switching cards during a computation; moving the circle repeatedly; changing date while sun hours compute; dragging a mass with Water open. Asserts the legend says "computing" and the final overlay matches the final inputs
 
+- [ ] **TF-VIS-047** `[CAND]` — Charcoal studio theme *(New 18 Nov)* ⚠SS
+  - Priority: P1 · Owner: Opus · Reviewer: Codex + `engineering-section-508-specialist` role (contrast) · Depends on: TF-VIS-026 (identity accepted); production merge after TF-VIS-008
+  - Scope/files: `src/styles/tokens.css`, `src/styles/global.css` (charcoal `#171B19` / `#252A27`, off-white `#F7F7F2`, secondary `#9DA49F`, divider `#414743`; provisional per the brief); right `aside` as charcoal frosted glass (`--frost`, restrained `backdrop-filter`); `StudioShell.tsx` only for class names; landing and About untouched
+  - Tests: `e2e/m5-a11y.spec.ts` contrast (AA for text; units rule kept); `keyboard.spec.ts`; visual baselines re-approved
+  - Acceptance: every text/background pair ≥ 4.5:1 (≥ 3:1 large); focus ring visible on charcoal; panel never auto-hides; essentials-first order inside each card unchanged or improved
+  - Risk/rollback: token revert (ADR-0016 values kept in git history); records an ADR-0016 amendment
+
+- [ ] **TF-VIS-048** `[CAND]` — Always-visible horizontal analysis toolbar *(New 18 Nov)* ⚠SS
+  - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-047, ADR-0046 (amends ADR-0026)
+  - Scope/files: new `src/components/studio/AnalysisToolbar.tsx` + test; `StudioShell.tsx` (mount; one source of state shared with `AnalysisCards`)
+  - Behaviour: one button per analysis (Sun, Wind, Noise, Water, Snow, Terrain — only those that work on the current site); pressing opens the same card/layer as the panel; extra information on hover **and** keyboard focus; visible label or long-press on touch; no hover-only content
+  - Tests: toolbar and panel stay in sync (unit); keyboard reach and `aria-pressed` (e2e); touch target ≥ 24 × 24 px
+  - Acceptance: no second state path; WCAG 2.2 AA; disclaimers unchanged
+  - Risk/rollback: remove the component
+
 ## Gate 5 — Rollout to Sun, Noise, Snow, Terrain; legends and claim guardrails
 
 **Exit:** every analysis uses the registry, the legend and its class grammar; colour rules enforced by test.
 
-- [ ] **TF-VIS-050** `[CAND]` — Sun ramp and legend (EX-5) · P1 · Codex · Rev Opus · Dep TF-VIS-040
+- [ ] **TF-VIS-050** `[CAND]` — Sun ramp and legend (EX-5) · P1 · Codex · Rev Opus · Dep TF-VIS-040 · *Revised 18 Nov: derive the ramp for the dark orthophoto ground; EX-5's pale-ground premise no longer holds*
 - [ ] **TF-VIS-051** `[CAND]` — Noise mapped grammar and palette · P1 · Codex · Rev Opus · Dep TF-VIS-040, owner D7
 - [ ] **TF-VIS-052** `[OPT]` — Snow winter chart in the panel · P2 · Codex · Rev Opus · Dep —
-- [ ] **TF-VIS-053** `[CAND]` — Terrain: contours from the 1 m tile on curated sites, weights, optional labels · P2 · Opus · Rev Codex · Dep TF-VIS-021 (measure the 458 k-cell marching squares; worker if > 16 ms)
+- [ ] **TF-VIS-053** `[CAND]` — Terrain: contours from the 1 m tile on curated sites, weights, optional labels · P2 · Opus · Rev Codex · Dep TF-VIS-021 (measure the 458 k-cell marching squares; worker if > 16 ms) · *Revised 18 Nov: also a dependency of TF-VIS-02B, so white contours register with the orthophoto*
 - [ ] **TF-VIS-054** `[TEST]` — Claim guardrail tests: no forbidden term (AGENTS.md §7, "safe", "flood depth", "snow load", "comfortable" without "screening") in any legend or caption · P1 · DeepSeek · Rev Opus
 - [ ] **TF-VIS-055** `[DOC]` — Regenerate design contract §8 from `style.ts` and the registry; switch on the shared-hex rule · P1 · Cline · Rev Fable · Dep TF-VIS-050, 051
 
@@ -325,11 +398,11 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
 
 **Exit:** stills and clips match the viewport style, carry credits, and clips are smooth; the landing shows the product.
 
-- [ ] **TF-VIS-060** `[CAND]` — Export parity: style, line resolution, analysis pass contents · P1 · Opus · Rev Codex · Dep TF-VIS-027, 021
+- [ ] **TF-VIS-060** `[CAND]` — Export parity: style, line resolution, analysis pass contents · P1 · Opus · Rev Codex · Dep TF-VIS-027, 021 · *Revised 18 Nov: also orthophoto, dissolve and point vegetation in still and clip; white pass drops the orthophoto map and treats vegetation per 09 D15; `scene.overrideMaterial` must not be applied to `Points` as a mesh material; depth pass unchanged*
 - [ ] **TF-VIS-061** `[CAND]` — Clip camera paths (data + preview) · P1 · Codex · Rev Opus · Dep TF-VIS-032
 - [ ] **TF-VIS-062** `[EXP]` → `[CAND]` — Deterministic MP4 (EX-7) + ADR-0044 · P2 · Opus · Rev Codex · Dep TF-VIS-061 · **Go/no-go:** 02 §2.6 criteria and licence note
-- [ ] **TF-VIS-063** `[TEST]` — Credit and depth invariants across all passes and clip frames · P0 for Gate 6 · DeepSeek · Rev Opus
-- [ ] **TF-VIS-064** `[OPT]` — Landing: a real captured still of the product, static image, no three.js on the landing (I10) · P2 · Codex · Rev Fable
+- [ ] **TF-VIS-063** `[TEST]` — Credit and depth invariants across all passes and clip frames · P0 for Gate 6 · DeepSeek · Rev Opus · *Revised 18 Nov: includes the orthophoto credit on every credited pass and clip frame*
+- [ ] **TF-VIS-064** `[OPT]` — Landing: a real captured still of the product, static image, no three.js on the landing (I10) · P2 · Codex · Rev Fable · *Revised 18 Nov: plus licensed Nordic climate photography (human scale, overcast default), optional muted loop later with a reduced-motion still; no forced intro; depends on owner decision 09 D16 (asset source and AI disclosure); landing chunk size unchanged*
 - [ ] **TF-VIS-065** `[DOC]` — About page full refresh after Gate 5 · P2 · Cline · Rev Opus
 
 ## Gate 7 — Validation and release
@@ -337,9 +410,9 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
 **Exit:** 07's release checklist complete.
 
 - [ ] **TF-VIS-070** `[OPT]` `[TEST]` — Sun-hours point vs Ladybug/Radiance (IT-6) · P2 · DeepSeek · Rev Opus
-- [ ] **TF-VIS-071** `[TEST]` — Accessibility audit of new UI (legend, keyboard camera, Lab excluded) · P1 · Opus (`engineering-section-508-specialist`) · Rev Fable
-- [ ] **TF-VIS-072** `[TEST]` — Browser and device matrix (MP-1): Safari, Firefox, one mid-range Android, one iPhone · P1 · Owner + DeepSeek
-- [ ] **TF-VIS-073** `[TEST]` — Performance regression against Gate 1 baseline · P0 · Codex · Rev Opus
+- [ ] **TF-VIS-071** `[TEST]` — Accessibility audit of new UI (legend, keyboard camera, Lab excluded) · P1 · Opus (`engineering-section-508-specialist`) · Rev Fable · *Revised 18 Nov: plus the analysis toolbar (hover/focus/touch) and text contrast on the charcoal glass panel; reviewer must not be Opus*
+- [ ] **TF-VIS-072** `[TEST]` — Browser and device matrix (MP-1): Safari, Firefox, one mid-range Android, one iPhone · P1 · Owner + DeepSeek · *Revised 18 Nov: check `backdrop-filter`, the orthophoto texture size against each device's max texture size, point-sprite size, and HDRI load fallback*
+- [ ] **TF-VIS-073** `[TEST]` — Performance regression against Gate 1 baseline · P0 · Codex · Rev Opus · *Revised 18 Nov: add windows for identity neutral, identity wind-on, and the denser-vegetation site; record GPU texture memory (`renderer.info.memory`) and point counts*
 - [ ] **TF-VIS-074** — Release acceptance and deploy · P0 · Owner · Fable prepares the record
 
 ## Rejected directions (do not reopen without an owner decision)
@@ -348,7 +421,10 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
 - `@react-three/postprocessing` (ADR-0005).
 - three-geospatial atmosphere in production (36 MB; wrapper conflict).
 - Bloom on the light scene (ADR-0018).
-- A physical sky as the working view (Direction C) — Lab and export only unless the owner decides otherwise.
+- A physical sky as the working view (Direction C) — Lab and export only unless the owner decides otherwise. *18 Nov: the identity also forbids a visible HDRI sky; HDRI is ambient only.*
+- Re-opening the A/B/C direction search (closed by the approved identity, 18 Nov). Light-scene `NORDIC` stays only as the rollback style.
+- Dense photoreal mesh foliage or raw LiDAR point clouds as the default vegetation (18 Nov identity).
+- Spotlights, visible sun beams, bloom haze or other theatrical effects (18 Nov identity; ADR-0018).
 - Any lighting change that moves the sun away from the Sun card's time.
 - Animated water, reflections, snow drapes, or particles not driven by solved flow.
 - A guided tour or forced cinematic intro (ADR-0020 removed the guide).

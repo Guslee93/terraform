@@ -56,6 +56,8 @@ Committed to `build/foundation` on 2026-11-17. The plan reflects the audit of 16
 - In review: TF-VIS-007 (runoff vs WhiteboxTools, PR #23). Main flow paths agree 67 %, below the 95 % bar; a control run without building blocks is pending, so Water stays a Tier 2 screening.
 - The baseline in `docs/perf/` replaces the "re-measure" note in 01 §1.2.
 
+**18 Nov 2026 — visual identity approved.** The owner's art direction (dark 80 %-desaturated orthophoto terrain, white contours and massing, point-cloud vegetation, HDRI ambient with the physical sun, mist dissolve, charcoal glass panel and horizontal analysis toolbar) closes the A/B/C search. The "Strategic recommendation" §3 above (Direction A light white model) is superseded; everything else stands. See `09-VISUAL-IDENTITY-INTEGRATION.md` and the revised Gate 2 in 05. Since 17 Nov: the control runs for TF-VIS-007 finished (bare 69.8 %, offset 66.0 %; "no bug" verdict withdrawn); Run 1 (draft PR #25) implemented 010, 012, 013, 014, 030, 040 part A and 054, unmerged; production still 404s (checked 18 Nov).
+
 ## Index
 
 | File | Contents |
@@ -69,3 +71,4 @@ Committed to `build/foundation` on 2026-11-17. The plan reflects the audit of 16
 | `06-AGENT-HANDOFF-PROMPTS.md` | Copy-paste prompts for the first eleven packages and a template |
 | `07-VALIDATION-AND-RELEASE-GATES.md` | Per-PR checklist, automated checks, visual rules, science, a11y, devices, rollback |
 | `08-OPEN-QUESTIONS-AND-DECISIONS.md` | Owner decisions, ADR conflicts, technical unknowns |
+| `09-VISUAL-IDENTITY-INTEGRATION.md` | 18 Nov: approved identity vs code — verified status, compatibility matrix, revised Gate 2, risks, first prototype brief, decisions, next task |

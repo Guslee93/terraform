@@ -10,9 +10,16 @@ Ranked by impact. Each has a proposed default that is safe to act on until the o
 | D1 | Merge PR #18 after Gate 0 checks | merge / keep as draft | Merge after TF-VIS-001, 002, 004, 006; TF-VIS-007 result available | Gate 1 baseline location |
 | D2 | Lawson activity names in the wind legend (PR #18 decision 3) | keep / drop and show speed bands | Drop, as feasibility 07 recommends ("no comfort or safety classes") | TF-VIS-044 |
 | D3 | Other PR #18 points: heuristic noise deleted; weekly source check in CI; `data/raw/` 21 MB in git; Sloped Edge 95.7 % heights; WP-9 cut/fill; parcels default off; plan file location; NVE licence before commercial use | — | Accept as built; add the weekly check as a separate PR later; leave WP-9 out of this plan | Gate 0 exit |
-| D4 | Visual direction | A / B / C (03 §2) | A with B's line system; C for export atmospheres only | Gate 2 exit (TF-VIS-026) |
-| D5 | Lab on Vercel previews (`VITE_LAB=1` for preview env) | yes / local only | Yes — lets you review on a phone; production stays without it | TF-VIS-015 |
-| D6 | Lighting atmospheres at all | yes (display-only, ADR-0042) / no | Yes in the Lab; ship only if EX-4 passes and you like it | TF-VIS-025 |
+| D4 | ~~Visual direction~~ **Closed 18 Nov 2026** by the approved identity (`09-VISUAL-IDENTITY-INTEGRATION.md`) | — | — | — |
+| D5 | Lab on Vercel previews (`VITE_LAB=1` for preview env) | yes / local only | Yes — lets you review on a phone; production stays without it. *18 Nov: local only while the Lab shows third-party imagery not yet cleared (D19)* | TF-VIS-015 |
+| D6 | ~~Lighting atmospheres at all~~ **Narrowed 18 Nov** to one HDRI ambient (TF-VIS-025 revised) | — | — | — |
+| D13 | **Orthophoto source and licence** | Norge i bilder / Sentinel-2 halo only / land-cover fallback | Norge i bilder if terms allow public display, caching and export with attribution; else fallback. Research in TF-VIS-028a | **blocking** TF-VIS-028 commit/deploy |
+| D14 | ADR-0017 supersession (dark scene, HDRI ambient) and ADR-0026 amendment (horizontal toolbar) | accept / keep | Draft ADR-0045 and ADR-0046 with TF-VIS-02B evidence; keep `NORDIC` as rollback | TF-VIS-027, 048 |
+| D15 | Point vegetation in the white pass; tree shadows | white points / omit; shadows yes / no | White points; no tree shadows until 029 measures cost (keeps ADR-0021 wording) | TF-VIS-029, 060 |
+| D16 | Landing imagery source and AI disclosure | stock only / stock + AI | Licensed stills only for v1 | TF-VIS-064 |
+| D17 | Accent hex | brief `#315CEB` / tokens `#1f3bd6` | Keep `#1f3bd6` until contrast checks on charcoal | TF-VIS-047 |
+| D18 | Type | Geist or Manrope; Geist Mono or IBM Plex Mono | Keep installed Geist and Geist Mono (no new dependency) | — |
+| D19 | Lab on previews with third-party imagery | yes / local only | Local only until D13 clears | TF-VIS-015, 028 |
 | D7 | Noise band colours | keep current swatches / new sequence / match the planning guideline's yellow and red zones | New sequence, **not** styled as guideline zones unless mapped exactly and labelled | TF-VIS-051 |
 | D8 | White export pass with or without edges after fat lines | keep edge-free (today) / add edges | Add edges — the white pass is for presentation and enhancement | TF-VIS-021, 060 |
 | D9 | Orthographic plan view | yes / no | Yes, after the controller decision | TF-VIS-033 |
