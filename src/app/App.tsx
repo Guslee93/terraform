@@ -16,6 +16,16 @@ const ImportedStudioPage = lazy(() =>
 const NewSitePage = lazy(() =>
   import('./NewSitePage').then((module) => ({ default: module.NewSitePage })),
 )
+// The Visual Lab is local-only (ADR-0040): it exists in dev or when VITE_LAB=1, and is
+// tree-shaken out of the production build. The direct `import.meta.env` expression (not a call)
+// lets Rollup constant-fold it to null when both flags are off.
+export function isLabEnabled(env: { DEV: boolean; VITE_LAB?: string }): boolean {
+  return env.DEV || env.VITE_LAB === '1'
+}
+
+const LabPage = import.meta.env.DEV || import.meta.env.VITE_LAB === '1'
+  ? lazy(() => import('./LabPage').then((module) => ({ default: module.LabPage })))
+  : null
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -39,6 +49,7 @@ export function AppRoutes() {
         <Route path="/studio/:siteId" element={<StudioPage />} />
         <Route path="/new" element={<NewSitePage />} />
         <Route path="/about" element={<AboutPage />} />
+        {LabPage && <Route path="/lab/:siteId" element={<LabPage />} />}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
