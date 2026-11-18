@@ -5,8 +5,37 @@ and end of every task, and push it. Statuses: `todo`, `in progress`, `done`, `pa
 
 ## Run summary
 
-_(Written at the end of the run: tasks done, tasks blocked and why, questions for the owner, and
-commands the owner must run on the GPU machine.)_
+**All 11 tasks done (T0–T10); none blocked or partial.** Draft PR #25 (against `build/foundation`) carries the whole run.
+
+- **T0** TF-VIS-007 runoff control runs — `ab1df95` (ledger) + `0f17a24` on `test/runoff-reference` (PR #23). Bare 69.8 % / offset 66.0 % main-path agreement: the "no bug" verdict is withdrawn.
+- **T1** TF-VIS-014 graphics registry — `61d49f3`. **T2** TF-VIS-054 claim guardrails — `b1a8dd4`. **T3** TF-VIS-040 legend model — `48b1b6c`.
+- **T4** TF-VIS-010 capture script — `bef462d` (`scripts/capture-reference.mjs`, `compare-captures.mjs`; smoke run 24 captures / 0 failures).
+- **T5** TF-VIS-012 visual regression spec — `af6a258` (`e2e/visual-reference.spec.ts`, VISUAL=1 gate; passes 5/5 `--headed`).
+- **T6** TF-VIS-013 scene style module — `6f2a74e` (`src/scene/style.ts` + `NORDIC`; zero differing pixels vs pre-refactor baselines).
+- **T7** TF-VIS-030 camera/input characterisation — `ded94a5` (`e2e/camera-input.spec.ts`, 6 passed ×2).
+- **T8** TF-VIS-034 ground-click arbitration — `517e3b4` (`src/features/editor/groundClick.ts`; table test over 16 combinations).
+- **T9** TF-VIS-016 design inventory — `57e5436` (`docs/design/visual-inventory.md`).
+- **T10** TF-VIS-015 Visual Lab + ADR-0040 — `d2ca2ea` (`src/app/LabPage.tsx`, `lab/{states,TweakPanel}.ts`, `ADR-0040-visual-lab.md`, gate tests).
+
+**Checks:** unit suite grew 1212 → 1234 (T0 → T8; 0 failures, 4 skipped, 1 `it.todo`); typecheck, lint and build green after every task; the `wind-validation.test.ts` "case 4" timeout seen in T0 did not recur.
+
+**T10 chunk sizes (gzip, before → after):** index.js `89529 → 89538` (+9), index.css `11188 → 11202` (+14), three.js `244054 → 244053` (−1), SceneComposer.js `96110 → 96107` (−3), StudioPage.js `80606 → 80605` (−1); all other chunks unchanged. The `LabPage` chunk is fully tree-shaken (`scripts/check-no-lab-chunk.mjs`: no reference in 70 shipped files).
+
+**Exported from StudioShell:** nothing. The Lab builds its states from the real hooks (`useCircleSunHours`, `useWindFlow`, `useRunoff`) and the massing factories directly; no private helper had to be moved out.
+
+**Deviations from the handoffs:**
+- T5/T6 pixel checks use `--headed` (Metal); headless SwiftShader stalls the canvas screenshot, so baselines/captures are the owner's to commit.
+- T6 `SceneStyle` gains a `grid` field (04 §3.1 omits it) and defers `analysisFocus`; `parcel`/`section` values are recorded in `NORDIC` but not wired (`ParcelLines.tsx` out of scope).
+- T7 "complete within one frame" is not literal: `CameraRig` snaps with no 0.75 s ease but the view lands a few frames after the click (React re-render).
+- T10 Lab analysis runs over the context buildings only (the demo mass is its own state), and the route gate had to use the direct `import.meta.env.DEV || import.meta.env.VITE_LAB === '1'` expression (a call is not constant-folded, so it would not tree-shake).
+- T0 was executed under Claude (Cline), not DeepSeek V4 Pro (see Questions).
+
+**Questions for the owner:**
+1. T0 attribution is "Claude (Cline)"; keep that, or restate Run 1 as "DeepSeek V4 Pro (Cline)"?
+2. The Lawson wind-activity "Uncomfortable" labels are held as `it.todo` (owner decision to keep the Lawson names or not).
+3. Confirm the T10 Lab is local-only (no Vercel preview, decision D19) until the orthophoto licence (D13) clears.
+
+**Commands the owner must run on the Apple M1 Pro** — see the section below (T4 capture/compare, T5 visual-regression baselines; both `--headed`).
 
 ## Environment
 
