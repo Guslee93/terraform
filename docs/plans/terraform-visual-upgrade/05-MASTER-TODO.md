@@ -23,7 +23,7 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
 
 ## Verified status (18 Nov 2026)
 
-From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004 (#19, #20), 011 (#21). **In draft PR #25, unmerged:** 010 and 012 (owner GPU run and baselines outstanding), 013, 014, 030, 040 part A (model only), 054. **In progress:** 005 (part 1, #22); 007 (PR #23 — 67 % main-path agreement, below the 95 % bar). **Blocked:** 008 (on 001, 002, 006). **Still open:** 001 (production still 404s on 18 Nov), 002, 003, 006, 009, 015, 016, 034 and every later task.
+From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004 (#19, #20), 011 (#21). **In draft PR #25, unmerged:** 010 and 012 (owner GPU run and baselines outstanding), 013, 014, 030, 040 part A (model only), 054. **In progress:** 005 (part 1, #22); 007 (PR #23 — acceptance revised and met on the crop; full-tile confirmation open). **In draft PR, reviewed:** 002 (PR #26, pass with minor follow-ups, second review added), 003 (PR #27, all rows reproduced). **Also in PR #25 since Run 1 T8–T10:** 015, 016, 034 (reviewed). **Blocked:** 008 (on 001, 006, and merging #23/#26/#27). **Still open:** 001 (production still 404s on 18 Nov), 006, 009 and every later task.
 
 ## File ownership
 
@@ -113,7 +113,8 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Scope/files: new `scripts/reference/runoff-whitebox/` (README, export script, comparison script); fixtures under `src/features/analysis/__fixtures__/runoff-reference/`; no change to `runoff.ts`
   - Output: `docs/qa/runoff-reference.md` with agreement on main paths, figures and the tool version
   - Tests: a Vitest test comparing `computeRunoff` on the fixture tile to the stored reference within the stated tolerance
-  - Acceptance: ≥ 95 % main-path cell agreement, or a written explanation of every disagreement class accepted by Opus
+  - ~~Acceptance: ≥ 95 % main-path cell agreement, or a written explanation of every disagreement class accepted by Opus~~
+  - *Revised 18 Nov (owner decision):* acceptance is (1) no invented paths — ≥ 95 % of Terraform main-path cells within 2 cells of a WhiteboxTools main path (crop 97.0 %, enforced in `runoff.reference.test.ts`), and (2) missed paths disclosed in the Water card's limits. Full-tile confirmation of (1) still open. Recorded in ADR-0038 amendment and `docs/qa/runoff-reference.md` (PR #23)
   - Risk/rollback: WhiteboxTools is not added to `package.json`; RichDEM output only if used (GPL, 02 §2.5)
   - Handoff prompt: `06#tf-vis-007`
 

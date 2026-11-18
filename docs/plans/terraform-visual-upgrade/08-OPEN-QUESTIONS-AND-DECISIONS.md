@@ -20,6 +20,7 @@ Ranked by impact. Each has a proposed default that is safe to act on until the o
 | D17 | Accent hex | brief `#315CEB` / tokens `#1f3bd6` | Keep `#1f3bd6` until contrast checks on charcoal | TF-VIS-047 |
 | D18 | Type | Geist or Manrope; Geist Mono or IBM Plex Mono | Keep installed Geist and Geist Mono (no new dependency) | — |
 | D19 | Lab on previews with third-party imagery | yes / local only | Local only until D13 clears | TF-VIS-015, 028 |
+| D20 | **Decided 18 Nov 2026 (owner):** IT-7 runoff acceptance | 95 % exact Jaccard / tolerance rule | Adopted: no invented main paths (≥ 95 % within 2 cells) + missed paths disclosed on the Water card; full-tile confirmation open | TF-VIS-007, 008 |
 | D7 | Noise band colours | keep current swatches / new sequence / match the planning guideline's yellow and red zones | New sequence, **not** styled as guideline zones unless mapped exactly and labelled | TF-VIS-051 |
 | D8 | White export pass with or without edges after fat lines | keep edge-free (today) / add edges | Add edges — the white pass is for presentation and enhancement | TF-VIS-021, 060 |
 | D9 | Orthographic plan view | yes / no | Yes, after the controller decision | TF-VIS-033 |
