@@ -28,7 +28,7 @@ commands the owner must run on the GPU machine.)_
 | T7 | TF-VIS-030 camera and input characterisation tests | done | ded94a5 | typecheck 0 · lint 0 · playwright camera-input.spec.ts 6 passed ×2 in a row | Deviation: reducedMotion "one frame" is not literal — CameraRig snaps with no 0.75 s ease but the view lands a few frames after the click (React re-render); tested the snap, no-animation behaviour. Light preset tests run before the drag tests (software-GL degradation) |
 | T8 | TF-VIS-034 ground-click arbitration | todo | | | |
 | T9 | TF-VIS-016 design inventory | todo | | | |
-| T10 | TF-VIS-015 Visual Lab + ADR-0040 (stretch) | todo | | | |
+| T10 | TF-VIS-015 Visual Lab + ADR-0040 (stretch) | in progress | | | |
 
 ## Questions for the owner
 
@@ -60,6 +60,7 @@ _(Add the exact commands for any check that needs a real GPU.)_
 
 ## Session notes
 
+- 2026-11-18 — T10 in progress: Visual Lab route + ADR-0040 (TF-VIS-015), merged origin/build/foundation (docs only).
 - 2026-11-18 — T7 **done**. `e2e/camera-input.spec.ts` (6 tests, not opt-in) locks presets/drag/Escape/click/deslect/orbit/reducedMotion; passes twice in a row. Next: T8.
 - 2026-11-18 — T7 in progress: camera and input characterisation tests (`e2e/camera-input.spec.ts`), no source change.
 - 2026-11-18 — T6 **done**. `src/scene/style.ts` (`SceneStyle` + `NORDIC`) holds today's exact values; `ViewportCanvas` reads them via a `style` prop (default `NORDIC`), threaded to TerrainMesh/ContextBuildings/Streets/Water/FloorGrid/SceneComposer. Pixel identity proven: VISUAL=1 --headed 5/5, zero differing pixels vs pre-refactor baselines. Next: T7.
