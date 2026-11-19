@@ -9,7 +9,32 @@ All work attributed as **DeepSeek V4 Pro (Cline)** in commit trailers, `docs/age
 
 ## Run summary
 
-_(Filled at the end of the run.)_
+**T1–T4 done; T5 partial; T6 not attempted (stretch).** Everything is on `run7/identity-lab`
+(draft PR #29) and reachable only through the `IDENTITY` style in the Visual Lab. Production
+(`NORDIC`) stayed pixel-identical — the headed Metal safety net passed 5/5 after T1 and T3 (and the
+four deterministic views throughout; the wind view is timing-flaky and fails on the untouched
+Run 7 tip too).
+
+**What to look at in the morning** (`cd ../Terraform-run7 && npm run dev`):
+
+- `/lab/compact-infill?style=identity&stage=B&preset=overview` — the edge dissolve from a whole-tile
+  camera (all four edges fade now).
+- `/lab/compact-infill?style=identity&stage=C` — the airy point-cloud trees.
+- `/lab/compact-infill?style=identity&stage=B` and open **Identity tuning** in the panel — 13 sliders
+  + "Copy values" (pastes the tuned IDENTITY object literal + URL) + "Reset".
+
+**Measurements:** fadeWidth 160 m both sites; point counts unchanged from Run 7 (compact-infill
+42 596 / 17 039 / 6 390); stage C orbit p95 34.2 ms vs stage B 33.8 ms (1.01×) and draw calls 26 vs
+84 (`docs/perf/run8-lab-points.json`); the 1 m contour worker is now a lazy chunk the studio never
+requests (no studio chunk references it).
+
+**Pixel safety net:** available (Apple M1 Pro Metal), passed 5/5 after T1 and T3; the wind view is
+timing-flaky (fails on the Run 7 tip too) — the four deterministic views always pass.
+
+**Blocked/partial:** T5 partial — the Sun-hours stale-result cases are `test.fixme` (worker too slow
+to assert deterministically); the Water and circle cases pass twice consecutively. T6 (fat lines)
+not attempted — stretch, session budget spent; needs `LineSegments2`/`LineMaterial` + DPR/4K width
+handling.
 
 ## Environment
 
@@ -31,7 +56,7 @@ _(Filled at the end of the run.)_
 | T3 | Keep the 1 m contour worker out of production | done | e1a391f | typecheck 0 · lint 0 · unit 1271 / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 | worker reachable only via lazy RasterContours chunk; studio never requests it |
 | T4 | Lab tuning controls for the owner (Lab only) | done | 1da6f9b | typecheck 0 · lint 0 · unit 1276 / 4 skip / 1 todo · build OK · chunk 0 · 13 sliders + Copy/Reset render | applyTuning pure + tested; ?tuning= URL round-trip |
 | T5 | Make the stale-result spec reliable or narrow it (TF-VIS-046) | partial | 19b227e | STALE=1: 2 passed / 2 skipped (fixme) in ~3.4 s, two consecutive passes | Sun-hours date/card cases marked fixme (worker too slow to assert deterministically) |
-| T6 | Stretch: TF-VIS-021 fat lines (Lab only) | todo | — | — | — |
+| T6 | Stretch: TF-VIS-021 fat lines (Lab only) | blocked | — | — | Not attempted: stretch, after T1–T5 the session budget was spent; needs LineSegments2/LineMaterial + DPR/4K width handling |
 
 ## Decisions I made
 
@@ -76,7 +101,15 @@ _(Filled at the end of the run.)_
 
 ## Questions for the owner
 
-_(Only real decisions, added as they arise.)_
+1. **Ground is mid-grey, not dark.** `tintGroundColour` halves lightness in three.js's *linear*
+   colour space, so the Run 7 "dark #2A2F2C" estimate was wrong — the rendered ground is ~#808080.
+   Please tune `groundLightness`/`groundSaturation` (and road/water/contours/trees) in the Lab and
+   press "Copy values"; the paste gives the final IDENTITY literal.
+2. **The 160 m dissolve fades the outer context.** The band is wide enough that the context
+   buildings/trees at the halo edge (~16 m from the tile) fade too. Is that the intended "context is
+   not the site" look, or should the fade be narrower (tune `dissolveMaxFadeWidthM`)?
+3. **T6 (fat lines) not attempted.** Should it be a follow-up run? The contour/crease `widthPx` in
+   `style.ts` is still a placeholder (1) awaiting `LineSegments2`/`LineMaterial`.
 
 ## Session notes
 
