@@ -132,8 +132,9 @@ export const IDENTITY: SceneStyle = {
   id: 'identity',
   // Frame-edge green (vignette). Fog shares the background colour (ViewportCanvas.tsx).
   background: '#1C2320',
-  // The aerial-perspective haze colour the world fades toward (look spec §2 far haze).
-  hazeColour: '#262E2A',
+  // The haze recedes to the frame-edge green (Run 10 T2): the tile edge fades into the background,
+  // never lighter than it. Provisional; Lab-tunable.
+  hazeColour: '#1C2320',
   // The floor-grid plane is hidden (`floorGrid: false`), so `ground` is unused; kept dark.
   ground: '#1C2320',
   // Warm off-white massing (look spec §3 Buildings), crisp on the dark ground.

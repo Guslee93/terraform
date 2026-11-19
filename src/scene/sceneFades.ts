@@ -1,4 +1,4 @@
-import { Vector3, Vector4, type Material } from 'three'
+import { Color, Vector3, Vector4, type Material } from 'three'
 import type { DissolveParams, HazeParams } from './dissolve'
 
 /**
@@ -42,8 +42,11 @@ export const hazeShaderChunk = () => 'uniform vec3 uHazeColor;\nuniform vec4 uHa
 export const hazeMixLine = 'gl_FragColor.rgb = mix(gl_FragColor.rgb, uHazeColor, hazeAmount(vSceneFadeWorld.xz));'
 
 function hexToRgb(hex: string): [number, number, number] {
-  const value = parseInt(hex.replace(/^#/, ''), 16)
-  return [((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255]
+  // Convert through three.js's Color so the haze uniform is in LINEAR working space: the composer's
+  // HalfFloat target skips the sRGB encode, so the material's output (and the haze mix) is linear.
+  // Mixing a raw-sRGB hex here made the haze glow (Run 10 T2 root cause).
+  const color = new Color(hex)
+  return [color.r, color.g, color.b]
 }
 
 /**
