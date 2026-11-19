@@ -9,11 +9,15 @@ import { daySunSamples } from '../features/analysis/shadowRay'
 import { circlePolygon } from '../features/analysis/grid'
 import { useCircleSunHours } from '../features/analysis/useCircleSunHours'
 import { useWindFlow } from '../features/analysis/useWindFlow'
-import { buildClimateView, DEFAULT_WIND } from '../features/analysis/climateView'
+import { buildClimateView, DEFAULT_WIND, windCaption } from '../features/analysis/climateView'
 import { noiseSourceLine, type NoiseMetric } from '../features/analysis/officialNoise'
 import { useRunoff } from '../features/analysis/useRunoff'
 import { RUNOFF_NOTE } from '../features/analysis/runoff'
-import { hornSlopeDeg, type TerrainRaster } from '../features/analysis/terrainTools'
+import { hornSlopeDeg, SLOPE_NOTE, type TerrainRaster } from '../features/analysis/terrainTools'
+import { sunHoursDisclaimer } from '../features/analysis/sunHours'
+import { hasMeasuredHeights } from '../features/sites/provenance'
+import { legendFor } from '../features/analysis/graphics'
+import { MapLegend } from '../components/studio/MapLegend'
 import { loadTerrainRaster } from '../features/sites/terrain1m'
 import { normalizeRing, ringCentroid } from '../lib/polygon'
 import type { CameraPresetId } from '../features/sites/manifest'
@@ -113,6 +117,36 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
   const noise = sitePackage.noise
   const slopeDegrees = useMemo(() => (raster && stateId === 'slope' ? hornSlopeDeg(raster) : null), [raster, stateId])
 
+  // The on-map legend (TF-VIS-040 part B). The claim for each analysis is the exact string the
+  // studio's caption blocks already show for the same inputs — never authored here.
+  const legend = useMemo(() => {
+    if (stateId === 'sun-hours') {
+      return legendFor('sun-hours', {
+        claim: circleSun.computing ? 'Computing hours of direct sun…' : sunHoursDisclaimer(hasMeasuredHeights(sitePackage.manifest)),
+        state: circleSun.computing ? 'computing' : 'ready',
+      })
+    }
+    if (stateId === 'wind') {
+      return legendFor('wind-speed', {
+        claim: windCaption(WIND.heightM, !climateView),
+        state: climateView ? 'ready' : 'computing',
+      })
+    }
+    if (stateId === 'noise' && noise) {
+      return legendFor('noise', { claim: noiseSourceLine('Lden', noise.dataYear) })
+    }
+    if (stateId === 'water') {
+      return legendFor('runoff', {
+        claim: runoffComputing || !runoff ? 'Tracing where the water runs…' : RUNOFF_NOTE,
+        state: runoffComputing || !runoff ? 'computing' : 'ready',
+      })
+    }
+    if (stateId === 'slope' && raster && slopeDegrees) {
+      return legendFor('slope', { claim: SLOPE_NOTE })
+    }
+    return null
+  }, [stateId, circleSun.computing, sitePackage.manifest, climateView, noise, runoffComputing, runoff, raster, slopeDegrees])
+
   const requestPreset = (preset: CameraPresetId) => {
     setPresetId(preset)
     setCameraNonce((value) => value + 1)
@@ -149,6 +183,11 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
           runoff={stateId === 'water' && raster ? { result: runoff, caption: runoffComputing || !runoff ? 'Tracing where the water runs…' : RUNOFF_NOTE } : null}
           slope={raster && slopeDegrees ? { raster, degrees: slopeDegrees } : null}
         />
+        {legend && (
+          <div className="absolute left-3 top-3 z-20">
+            <MapLegend model={legend} />
+          </div>
+        )}
       </section>
       <LabTweakPanel
         stateId={stateId}
