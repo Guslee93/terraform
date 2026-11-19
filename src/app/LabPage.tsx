@@ -91,7 +91,7 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
   // The 1 m tile is loaded the first time Water or Slope needs it (ADR-0037).
   const terrain1mPath = sitePackage.manifest.assetPaths.terrain1m
   const [terrainRaster, setTerrainRaster] = useState<{ siteId: string; raster: TerrainRaster } | null>(null)
-  const terrainWanted = !!terrain1mPath && (stateId === 'water' || stateId === 'slope')
+  const terrainWanted = !!terrain1mPath && (stateId === 'water' || stateId === 'slope' || style.contourSource === 'tile1m')
   useEffect(() => {
     if (!terrainWanted || !terrain1mPath || terrainRaster) return
     const controller = new AbortController()
@@ -137,6 +137,7 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
           editable={false}
           renderPreference={quality === 'auto' ? 'auto' : quality}
           style={style}
+          terrain1m={raster}
           sunHours={stateId === 'sun-hours' ? { circle: windCircle, result: circleSun.result, buildings: circleSun.buildings, computing: circleSun.computing } : null}
           climate={stateId === 'wind' && climateView ? climateView.overlay : null}
           windFlow={stateId === 'wind' ? windFlow : null}

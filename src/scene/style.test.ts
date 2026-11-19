@@ -37,6 +37,7 @@ describe('NORDIC scene style', () => {
     expect(NORDIC.floorGrid).toBe(true)
     expect(NORDIC.groundTint).toBeNull()
     expect(NORDIC.id).toBe('nordic')
+    expect(NORDIC.contourSource).toBe('grid16')
   })
 })
 
@@ -55,6 +56,7 @@ describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
     expect(IDENTITY.lines.contourMajor).toEqual({ color: '#F7F7F2', widthPx: 1, opacity: 0.38 })
     expect(IDENTITY.lines.crease).toEqual({ color: '#9DA49F', widthPx: 1, opacity: 0.6 })
     expect(IDENTITY.ao).toEqual({ intensity: 1.6, radiusM: 4, color: '#0E1110' })
+    expect(IDENTITY.contourSource).toBe('tile1m')
   })
 
   it('keeps NORDIC parcel and section lines', () => {

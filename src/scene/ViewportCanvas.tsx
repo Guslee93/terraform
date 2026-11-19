@@ -6,7 +6,7 @@ import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Grid, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, Float32BufferAttribute, MeshStandardMaterial, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
+import { DoubleSide, EdgesGeometry, Float32BufferAttribute, LineBasicMaterial, MeshStandardMaterial, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
@@ -55,6 +55,7 @@ import { PassExporter } from './PassExporter'
 import { ANALYSIS_OVERLAY_NAME, type PassImages } from './exportPasses'
 import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
+import { useRasterContours } from '../features/sites/useRasterContours'
 import { NORDIC, type SceneStyle } from './style'
 import { createWaterGeometry } from './waterGeometry'
 import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
@@ -62,6 +63,7 @@ import { SceneErrorBoundary, SceneUnavailable } from './SceneErrorBoundary'
 import {
   createContextGeometry,
   createContourGeometry,
+  createRasterContourGeometry,
   createRoadGeometry,
   createTerrainGeometry,
   createTerrainGridGeometry,
@@ -138,6 +140,8 @@ type ViewportProps = {
   onExport?: (result: PassImages | Error) => void
   /** The scene style; defaults to NORDIC (today's look). */
   style?: SceneStyle
+  /** The 1 m terrain tile, loaded once by the host when a style asks for 1 m contours (TF-VIS-053). */
+  terrain1m?: TerrainRaster | null
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
@@ -163,6 +167,8 @@ function TerrainMesh({
   onGroundClick,
   onGroundMove,
   style,
+  raster1m,
+  minorFade,
 }: {
   terrain: SitePackage['terrain']
   landcover: SitePackage['landcover']
@@ -170,6 +176,10 @@ function TerrainMesh({
   /** The land cover tint rides on the terrain mesh, so the toggle drops the texture, not the mesh. */
   showGround: boolean
   style: SceneStyle
+  /** The 1 m tile, when the style draws contours from it (TF-VIS-053). */
+  raster1m: TerrainRaster | null
+  /** World-space fade band for minor contours; null keeps them at full opacity. */
+  minorFade: { readonly start: number; readonly end: number } | null
 } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain, style.groundTint), [terrain, style.groundTint])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
@@ -180,14 +190,38 @@ function TerrainMesh({
     [landcover, terrain, style.groundTint],
   )
   useEffect(() => () => landcoverTexture?.dispose(), [landcoverTexture])
+
+  // Contours: the 16 m grid always exists and is the fallback; a `tile1m` style draws the 1 m tile
+  // once the worker has returned (placed on the drawn 16 m surface, TF-VIS-053).
+  const tile1m = style.contourSource === 'tile1m'
+  const rasterContours = useRasterContours(tile1m ? raster1m : null, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M, tile1m)
+  const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
+
   const contours = useMemo(() => {
     const { min, max } = terrainHeightRange(terrain)
     const { minor, major } =
       max - min < CONTOUR_MIN_RELIEF_M
         ? { minor: [], major: [] }
         : contourSegments(terrain, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M)
+    if (tile1m && rasterContours.minor && rasterContours.major) {
+      return {
+        minor: createRasterContourGeometry(rasterContours.minor, heightAt),
+        major: createRasterContourGeometry(rasterContours.major, heightAt),
+      }
+    }
     return { minor: createContourGeometry(minor), major: createContourGeometry(major) }
-  }, [terrain])
+  }, [terrain, tile1m, rasterContours.minor, rasterContours.major, heightAt])
+
+  // Minor contours fade by camera distance in the identity style; majors keep full opacity.
+  const minorMaterial = useMemo(() => {
+    const material = new LineBasicMaterial({ color: style.lines.contourMinor.color, transparent: true, opacity: style.lines.contourMinor.opacity, depthWrite: false })
+    if (minorFade) fadeByDistance(material, minorFade.start, minorFade.end)
+    return material
+  }, [style.lines.contourMinor, minorFade])
+  const majorMaterial = useMemo(
+    () => new LineBasicMaterial({ color: style.lines.contourMajor.color, transparent: true, opacity: style.lines.contourMajor.opacity, depthWrite: false }),
+    [style.lines.contourMajor],
+  )
 
   useEffect(
     () => () => {
@@ -196,8 +230,10 @@ function TerrainMesh({
       skirt.dispose()
       contours.minor.dispose()
       contours.major.dispose()
+      minorMaterial.dispose()
+      majorMaterial.dispose()
     },
-    [geometry, grid, skirt, contours],
+    [geometry, grid, skirt, contours, minorMaterial, majorMaterial],
   )
 
   return (
@@ -228,12 +264,8 @@ function TerrainMesh({
           <meshStandardMaterial color={style.skirt} roughness={1} metalness={0} side={DoubleSide} />
         </mesh>
       )}
-      <lineSegments geometry={contours.minor}>
-        <lineBasicMaterial color={style.lines.contourMinor.color} transparent opacity={style.lines.contourMinor.opacity} depthWrite={false} />
-      </lineSegments>
-      <lineSegments geometry={contours.major}>
-        <lineBasicMaterial color={style.lines.contourMajor.color} transparent opacity={style.lines.contourMajor.opacity} depthWrite={false} />
-      </lineSegments>
+      <lineSegments geometry={contours.minor} material={minorMaterial} />
+      <lineSegments geometry={contours.major} material={majorMaterial} />
       <lineSegments geometry={grid} visible={showGrid}>
         <lineBasicMaterial color={style.grid.terrain.color} transparent opacity={style.grid.terrain.opacity} depthWrite={false} />
       </lineSegments>
@@ -252,6 +284,28 @@ function fadeShader(material: MeshStandardMaterial, keep: 0 | 1) {
     shader.fragmentShader = 'varying float vFaded;\n' + shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nif (${keep === 1 ? 'vFaded < 0.5' : 'vFaded > 0.5'}) discard;`)
   }
   material.customProgramCacheKey = () => `context-fade-${keep}`
+  return material
+}
+
+/**
+ * Fade a line material out with the vertex's world-space distance from the camera, so minor
+ * contours thin out beyond the isometric view (TF-VIS-053 zoom density). Majors keep a plain
+ * material. `start` and `end` are world metres.
+ */
+function fadeByDistance(material: LineBasicMaterial, start: number, end: number) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uFadeStart = { value: start }
+    shader.uniforms.uFadeEnd = { value: end }
+    shader.vertexShader = 'varying float vFadeDist;\n' + shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      '#include <begin_vertex>\n{ vec4 fadeWorldPos = modelMatrix * vec4(transformed, 1.0); vFadeDist = distance(fadeWorldPos.xyz, cameraPosition); }',
+    )
+    shader.fragmentShader = 'varying float vFadeDist;\nuniform float uFadeStart;\nuniform float uFadeEnd;\n' + shader.fragmentShader.replace(
+      'vec4 diffuseColor = vec4( diffuse, opacity );',
+      'vec4 diffuseColor = vec4( diffuse, opacity * (1.0 - smoothstep(uFadeStart, uFadeEnd, vFadeDist)) );',
+    )
+  }
+  material.customProgramCacheKey = () => `line-fade-${start}-${end}`
   return material
 }
 
@@ -563,6 +617,7 @@ export function ViewportCanvas({
   onPickParcel,
   onExport,
   style = NORDIC,
+  terrain1m = null,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   useEffect(() => {
@@ -598,6 +653,14 @@ export function ViewportCanvas({
   const initialPosition = enuToThreeXyz(initialPreset.position)
   const initialTarget = enuToThreeXyz(initialPreset.target)
   const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
+  // Minor contours fade beyond ~1.5× the isometric preset distance (TF-VIS-053 zoom density;
+  // provisional). Majors keep full opacity.
+  const minorFade = useMemo(() => {
+    if (style.contourSource !== 'tile1m') return null
+    const { position, target } = initialPreset
+    const start = Math.hypot(position[0] - target[0], position[1] - target[1], position[2] - target[2]) * 1.5
+    return { start, end: start * 1.35 }
+  }, [style.contourSource, initialPreset])
   // The wind map, circle and particles follow the terrain at the chosen slice height (ADR-0028).
   // While the lift handle is dragged the disc follows the pointer; the map shows the nearest slice.
   const [liftDrag, setLiftDrag] = useState<number | null>(null)
@@ -705,6 +768,8 @@ export function ViewportCanvas({
                 showGrid={presetId === 'top' || drawing}
                 showGround={layers.ground}
                 style={style}
+                raster1m={terrain1m}
+                minorFade={minorFade}
                 onGroundClick={onGroundClick}
                 onGroundMove={
                   drawing && editor.interaction.kind === 'drawing'

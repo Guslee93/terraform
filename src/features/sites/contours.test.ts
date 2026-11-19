@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TerrainData } from './package'
-import { contourSegments } from './contours'
+import { contourSegments, flattenContours, rasterContourSegments, type ContourSegment, type RasterGrid } from './contours'
 
 function terrain(heights: number[][]): TerrainData {
   return {
@@ -60,5 +60,52 @@ describe('contourSegments', () => {
       [3, 3],
     ])
     expect(contourSegments(flat, 1, 5)).toEqual({ minor: [], major: [] })
+  })
+})
+
+function raster(heights: number[][]): RasterGrid {
+  const rows = heights.length
+  const cols = heights[0]?.length ?? 0
+  const flat = new Float32Array(rows * cols)
+  heights.forEach((row, r) => row.forEach((height, c) => { flat[r * cols + c] = height }))
+  return { cols, rows, minX: 0, maxX: cols * 10, minY: 0, maxY: rows * 10, heights: flat }
+}
+
+describe('rasterContourSegments (1 m tile)', () => {
+  it('splits levels into minor and major on an east-facing ramp', () => {
+    const ramp = raster([
+      [0, 6, 12],
+      [0, 6, 12],
+      [0, 6, 12],
+    ])
+    const { minor, major } = rasterContourSegments(ramp, 1, 5)
+    expect(minor.length).toBeGreaterThan(0)
+    expect(major.length).toBeGreaterThan(0)
+    for (const [a] of major) expect(a[2] % 5).toBeCloseTo(0, 9)
+    for (const [a] of minor) expect(a[2] % 5).not.toBeCloseTo(0, 9)
+  })
+
+  it('keeps the segment level (z) for the caller to re-sample the drawn surface', () => {
+    const ramp = raster([
+      [0, 2, 4],
+      [0, 2, 4],
+    ])
+    const { minor } = rasterContourSegments(ramp, 1, 5)
+    // Every minor vertex carries its contour level in z (the level, not the surface height).
+    for (const [a] of minor) expect([1, 2, 3, 4]).toContain(a[2])
+  })
+
+  it('skips no-data cells without throwing', () => {
+    const withGap = raster([
+      [0, NaN, 4],
+      [0, 2, 4],
+    ])
+    const { minor, major } = rasterContourSegments(withGap, 1, 5)
+    expect(minor.length + major.length).toBeGreaterThan(0)
+  })
+
+  it('flattens a segment to [ax, ay, bx, by]', () => {
+    const segment: ContourSegment = [[1, 2, 3], [4, 5, 6]]
+    expect(Array.from(flattenContours([segment]))).toEqual([1, 2, 4, 5])
   })
 })

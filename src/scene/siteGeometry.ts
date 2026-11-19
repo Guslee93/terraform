@@ -258,6 +258,29 @@ export function createContourGeometry(segments: readonly ContourSegment[]): Buff
   return geometry
 }
 
+/**
+ * The 1 m-tile contours (flat `[ax, ay, bx, by]` per segment from the worker), placed on the drawn
+ * 16 m terrain: each vertex's elevation is re-sampled through `heightAt` (the same height function
+ * the 16 m mesh uses) and lifted by the same `CONTOUR_LIFT` the 16 m contours use, so the finer
+ * lines never float or sink where the 1 m tile differs from the 16 m mesh.
+ */
+export function createRasterContourGeometry(
+  flat: Float32Array,
+  heightAt: (east: number, north: number) => number,
+): BufferGeometry {
+  const positions: number[] = []
+  for (let index = 0; index + 3 < flat.length; index += 4) {
+    const ax = flat[index]!
+    const ay = flat[index + 1]!
+    const bx = flat[index + 2]!
+    const by = flat[index + 3]!
+    positions.push(ax, heightAt(ax, ay) + CONTOUR_LIFT, -ay, bx, heightAt(bx, by) + CONTOUR_LIFT, -by)
+  }
+  const geometry = new BufferGeometry()
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  return geometry
+}
+
 /** Road ribbons sit this far (m) above the sampled ground so they never sink into the terrain. */
 export const ROAD_LIFT = 0.15
 /** Longest ribbon step (m): short enough to follow the terrain between centreline vertices. */

@@ -29,6 +29,8 @@ export type SceneStyle = {
   readonly groundTint: GroundTint | null
   /** The endless floor grid's 1 m / 10 m lines, and the terrain block's own 1 m grid lines. */
   readonly grid: { readonly minor: string; readonly major: string; readonly terrain: LineStyle }
+  /** Where contours come from: the 16 m terrain grid, or the 1 m tile (TF-VIS-053). */
+  readonly contourSource: 'grid16' | 'tile1m'
   readonly lines: {
     readonly crease: LineStyle
     readonly silhouette: LineStyle | null
@@ -57,6 +59,7 @@ export const NORDIC: SceneStyle = {
     major: '#D8D8D3',
     terrain: { color: '#7C8E7D', widthPx: 1, opacity: 0.22 },
   },
+  contourSource: 'grid16',
   lines: {
     // Context edges via EdgesGeometry above EDGE_THRESHOLD_DEG; ≈ 140/255 on white walls.
     crease: { color: '#7E7D7A', widthPx: 1, opacity: 0.85 },
@@ -104,6 +107,8 @@ export const IDENTITY: SceneStyle = {
     // The terrain block's own 1 m grid (top/plan view): a subtle pale line on the dark ground.
     terrain: { color: '#9DA49F', widthPx: 1, opacity: 0.3 },
   },
+  // The identity draws contours from the 1 m tile so they register with real topography.
+  contourSource: 'tile1m',
   lines: {
     // Crease edges kept subtle on the white walls (a little quieter than NORDIC's).
     crease: { color: '#9DA49F', widthPx: 1, opacity: 0.6 },
