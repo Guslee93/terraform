@@ -28,7 +28,8 @@ async function openView(page: Page, site: string) {
 
 /** Screenshot, then analyse the pixels inside the page (no new dependency). */
 async function measure(page: Page, site: string): Promise<EdgeResult> {
-  const screenshot = await page.screenshot()
+  // Canvas only: the Lab panel and page chrome must never enter the measurement.
+  const screenshot = await page.locator('section[aria-label="Studio viewport"] canvas').first().screenshot()
   return page.evaluate(async (pngBase64) => {
     const img = new Image()
     img.src = `data:image/png;base64,${pngBase64}`
@@ -45,13 +46,17 @@ async function measure(page: Page, site: string): Promise<EdgeResult> {
       const i = (cx + cy * img.width) * 4
       return 0.2126 * data[i]! + 0.7152 * data[i + 1]! + 0.0722 * data[i + 2]!
     }
-    const hook = (window as Window & { __terraformEdgeTest?: { bounds: { minX: number; maxX: number; minY: number; maxY: number }; project: (e: number, n: number, h: number) => [number, number] } }).__terraformEdgeTest
+    const hook = (window as Window & { __terraformEdgeTest?: { bounds: { minX: number; maxX: number; minY: number; maxY: number }; heightAt: (e: number, n: number) => number; project: (e: number, n: number, h: number) => [number, number] } }).__terraformEdgeTest
     if (!hook) throw new Error('edge-test hook not exposed')
 
     const { bounds } = hook
     const centreX = (bounds.minX + bounds.maxX) / 2
     const centreY = (bounds.minY + bounds.maxY) / 2
-    const project = (e: number, n: number) => hook.project(e, n, 0)
+    // Project on the ground (not at height 0) so the outline is where the terrain edge is drawn.
+    const project = (e: number, n: number) => hook.project(e, n, hook.heightAt(e, n))
+    const onCanvas = (x: number, y: number) => x >= 8 && y >= 8 && x < img.width - 8 && y < img.height - 8
+    // White massing is not ground: skip samples that land on a building (or any very bright pixel).
+    const BUILDING_LUM = 140
 
     // 1. Edge visibility: sample along the four tile edges (≥ 200 points), 6 px inside vs outside.
     const edgeDiffs: number[] = []
@@ -62,58 +67,60 @@ async function measure(page: Page, site: string): Promise<EdgeResult> {
       project(bounds.maxX, bounds.maxY),
       project(bounds.minX, bounds.maxY),
     ]
-    const edges = [
-      [corners[0]!, corners[1]!],
-      [corners[1]!, corners[2]!],
-      [corners[2]!, corners[3]!],
-      [corners[3]!, corners[0]!],
+    void corners
+    const groundEdges = [
+      [[bounds.minX, bounds.minY], [bounds.maxX, bounds.minY]],
+      [[bounds.maxX, bounds.minY], [bounds.maxX, bounds.maxY]],
+      [[bounds.maxX, bounds.maxY], [bounds.minX, bounds.maxY]],
+      [[bounds.minX, bounds.maxY], [bounds.minX, bounds.minY]],
     ] as const
-    const stepsPerEdge = 50
-    for (const [a, b] of edges) {
+    const stepsPerEdge = 80
+    for (const [a, b] of groundEdges) {
       for (let s = 0; s <= stepsPerEdge; s += 1) {
         const t = s / stepsPerEdge
-        const x = a[0] + (b[0] - a[0]) * t
-        const y = a[1] + (b[1] - a[1]) * t
+        const [x, y] = project(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
         // Away from the tile centre = outside; toward = inside.
         const dx = x - centre[0]
         const dy = y - centre[1]
         const len = Math.hypot(dx, dy) || 1
         const nx = dx / len
         const ny = dy / len
+        if (!onCanvas(x - nx * 6, y - ny * 6) || !onCanvas(x + nx * 6, y + ny * 6)) continue
         const inside = lum(x - nx * 6, y - ny * 6)
         const outside = lum(x + nx * 6, y + ny * 6)
+        if (inside > BUILDING_LUM || outside > BUILDING_LUM) continue
         edgeDiffs.push(Math.abs(inside - outside))
       }
     }
+    if (edgeDiffs.length < 100) throw new Error(`only ${edgeDiffs.length} usable edge samples`)
     const sorted = [...edgeDiffs].sort((p, q) => p - q)
     const edgeMean = edgeDiffs.reduce((sum, d) => sum + d, 0) / edgeDiffs.length
     const edgeP95 = sorted[Math.floor(sorted.length * 0.95)]!
 
-    // 2. Outward profile: 8 rays from the site centre to the frame edge, 10 steps each.
+    // 2. Outward profile: ground rings around the tile centre (world circles at ground height), the
+    // median ground luminance per ring. Single rays jump between grass and road; a ring median follows
+    // the haze. Rings run from 40 % to 100 % of the tile's half-diagonal.
+    const halfDiagonal = Math.hypot(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) / 2
     const profile: number[] = []
-    for (let ray = 0; ray < 8; ray += 1) {
-      const angle = (ray / 8) * Math.PI * 2
-      for (let step = 1; step <= 10; step += 1) {
-        const t = step / 10
-        // Ray endpoint at the frame edge in that direction (screen space).
-        const tx = centre[0] + Math.cos(angle) * Math.hypot(img.width, img.height)
-        const ty = centre[1] + Math.sin(angle) * Math.hypot(img.width, img.height)
-        const x = centre[0] + (tx - centre[0]) * t
-        const y = centre[1] + (ty - centre[1]) * t
-        // Median of a 3×3 patch (skips isolated buildings/roads).
-        const patch: number[] = []
-        for (let oy = -1; oy <= 1; oy += 1) for (let ox = -1; ox <= 1; ox += 1) patch.push(lum(x + ox, y + oy))
-        patch.sort((p, q) => p - q)
-        profile.push(patch[4]!)
+    for (let ring = 4; ring <= 10; ring += 1) {
+      const radius = (ring / 10) * halfDiagonal
+      const samples: number[] = []
+      for (let k = 0; k < 96; k += 1) {
+        const angle = (k / 96) * Math.PI * 2
+        const e = centreX + Math.cos(angle) * radius
+        const n = centreY + Math.sin(angle) * radius
+        if (e < bounds.minX || e > bounds.maxX || n < bounds.minY || n > bounds.maxY) continue
+        const [x, y] = project(e, n)
+        if (!onCanvas(x, y)) continue
+        const value = lum(x, y)
+        if (value <= BUILDING_LUM) samples.push(value)
       }
+      if (samples.length < 12) continue
+      samples.sort((p, q) => p - q)
+      profile.push(samples[Math.floor(samples.length / 2)]!)
     }
     let maxRise = 0
-    for (let ray = 0; ray < 8; ray += 1) {
-      for (let step = 1; step < 10; step += 1) {
-        const rise = profile[ray * 10 + step]! - profile[ray * 10 + (step - 1)]!
-        maxRise = Math.max(maxRise, rise)
-      }
-    }
+    for (let i = 1; i < profile.length; i += 1) maxRise = Math.max(maxRise, profile[i]! - profile[i - 1]!)
     return { site: '', edgeMean, edgeP95, maxRise, profile }
   }, screenshot.toString('base64')).then((r) => ({ ...r, site }))
 }

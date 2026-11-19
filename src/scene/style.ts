@@ -130,13 +130,13 @@ export const IDENTITY_LANDCOVER: Record<LandCoverKind, string> = {
  */
 export const IDENTITY: SceneStyle = {
   id: 'identity',
-  // Frame-edge green (vignette). Fog shares the background colour (ViewportCanvas.tsx).
-  background: '#1C2320',
-  // The haze recedes to the frame-edge green (Run 10 T2): the tile edge fades into the background,
-  // never lighter than it. Provisional; Lab-tunable.
-  hazeColour: '#1C2320',
-  // The floor-grid plane is hidden (`floorGrid: false`), so `ground` is unused; kept dark.
-  ground: '#1C2320',
+  // Background = haze colour = the look spec's far haze (§2), so the tile edge melts into the
+  // background (same colour through the same composer). The darker frame edges (#1B2220–#1D2522 in
+  // the references) come from the vignette, not from a darker haze. Provisional; Lab-tunable.
+  background: '#262E2A',
+  hazeColour: '#262E2A',
+  // The floor-grid plane is hidden (`floorGrid: false`), so `ground` is unused.
+  ground: '#262E2A',
   // Warm off-white massing (look spec §3 Buildings), crisp on the dark ground.
   context: { color: '#E6E4DE', roughness: 0.9 },
   // Roads a step lighter than the field palette (look spec §2), never black.
@@ -145,7 +145,7 @@ export const IDENTITY: SceneStyle = {
   water: '#4A5455',
   waterRoughness: 0.25,
   waterEnvIntensity: 0.6,
-  toneMappingExposure: 1.2,
+  toneMappingExposure: 1.35,
   // The look spec's fallback ground palette by land-cover kind (TF-VIS-028a stand-in).
   landCoverPalette: IDENTITY_LANDCOVER,
   // No skirt: the dissolve (TF-VIS-02A, later) will blend the terrain edge into the mist.
@@ -238,8 +238,8 @@ export const DEFAULT_TUNING: IdentityTuning = {
   treeDensity: 1,
   dissolveSiteMarginM: 40,
   dissolveMaxFadeWidthM: 160,
-  exposure: 1.2,
-  vignetteStrength: 0.55,
+  exposure: 1.35,
+  vignetteStrength: 0.35,
   waterSheen: 0.6,
   contourSlopeMinDeg: 3,
   contourSlopeMaxDeg: 12,

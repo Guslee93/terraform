@@ -9,7 +9,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { DoubleSide, EdgesGeometry, Float32BufferAttribute, LineBasicMaterial, MeshStandardMaterial, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { CameraPreset, CameraPresetId } from '../features/sites/manifest'
-import type { SitePackage } from '../features/sites/package'
+import type { SitePackage, TerrainData } from '../features/sites/package'
 import { contourSegments } from '../features/sites/contours'
 import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
@@ -58,7 +58,6 @@ import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
 import { hazeRange } from './dissolve'
 import { applySceneFades, hazeMixLine, hazeShaderChunk, hazeUniforms, type HazeInput } from './sceneFades'
-import { decimateRaster, rasterToTerrainData } from './rasterTerrain'
 import { NORDIC, type SceneStyle } from './style'
 import { createWaterGeometry } from './waterGeometry'
 import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
@@ -340,15 +339,25 @@ function ContextBuildings({ buildings, faded = NO_FADE, style, haze }: { buildin
     },
     [geometry, edges],
   )
-  useEffect(() => () => { solidMaterial.dispose(); fadedMaterial.dispose() }, [solidMaterial, fadedMaterial])
+  // Identity: the crease lines take the same haze as the faces, or distant buildings float as white
+  // wire outlines once their faces have dissolved. NORDIC keeps the plain JSX material below.
+  const hazedEdgeMaterial = useMemo(
+    () => (haze ? applySceneFades(new LineBasicMaterial({ color: style.lines.crease.color, transparent: true, opacity: style.lines.crease.opacity, depthWrite: false }), { haze }) : null),
+    [haze, style.lines.crease],
+  )
+  useEffect(() => () => { solidMaterial.dispose(); fadedMaterial.dispose(); hazedEdgeMaterial?.dispose() }, [solidMaterial, fadedMaterial, hazedEdgeMaterial])
 
   return (
     <group>
       {/* The solid mesh's shadow pass still includes faded buildings: they still shade the ground. */}
       <mesh geometry={geometry} material={solidMaterial} castShadow receiveShadow />
-      <lineSegments geometry={edges}>
-        <lineBasicMaterial color={style.lines.crease.color} transparent opacity={style.lines.crease.opacity} depthWrite={false} />
-      </lineSegments>
+      {hazedEdgeMaterial ? (
+        <lineSegments geometry={edges} material={hazedEdgeMaterial} />
+      ) : (
+        <lineSegments geometry={edges}>
+          <lineBasicMaterial color={style.lines.crease.color} transparent opacity={style.lines.crease.opacity} depthWrite={false} />
+        </lineSegments>
+      )}
       {faded.size > 0 && <mesh geometry={geometry} material={fadedMaterial} />}
     </group>
   )
@@ -553,6 +562,8 @@ function EdgeTestHook({ terrain }: { terrain: SitePackage['terrain'] }) {
   useEffect(() => {
     const hook = {
       bounds: { minX: terrain.minX, maxX: terrain.maxX, minY: terrain.minY, maxY: terrain.maxY },
+      // Ground height (16 m grid) so the projected tile outline sits on the drawn terrain edge.
+      heightAt: (east: number, north: number): number => sampleTerrainHeight(terrain, east, north),
       project: (east: number, north: number, elevation: number): [number, number] => {
         camera.updateMatrixWorld()
         const p = new Vector3(east, elevation, -north).project(camera)
@@ -656,10 +667,16 @@ export function ViewportCanvas({
   // Water is a surface of its own (ADR-0025): the ground inside a mapped water body is cut down
   // to the water surface, and the water is then drawn flat on top of it.
   // Real relief (Run 9 T4): the identity draws the terrain from the 1 m tile (decimated to a 2 m
-  // step) on curated sites. Water, roads, trees and contours all sample this drawn surface.
-  const drawnTerrain = useMemo(() => {
-    if (style.contourSource !== 'tile1m' || !terrain1m) return null
-    return rasterToTerrainData(decimateRaster(terrain1m, 2), sitePackage.terrain)
+  // step) on curated sites. Water, roads, trees and contours all sample this drawn surface. The
+  // raster helpers are dynamic-imported so they stay out of the studio bundle (Run 10 T6).
+  const [drawnTerrain, setDrawnTerrain] = useState<TerrainData | null>(null)
+  useEffect(() => {
+    if (style.contourSource !== 'tile1m' || !terrain1m) { setDrawnTerrain(null); return }
+    let cancelled = false
+    import('./rasterTerrain').then(({ decimateRaster, rasterToTerrainData }) => {
+      if (!cancelled) setDrawnTerrain(rasterToTerrainData(decimateRaster(terrain1m, 2), sitePackage.terrain))
+    })
+    return () => { cancelled = true }
   }, [style.contourSource, terrain1m, sitePackage.terrain])
   const waterSurfaces = useMemo(
     () => computeWaterSurfaces(drawnTerrain ?? sitePackage.terrain, sitePackage.landcover),
@@ -872,7 +889,7 @@ export function ViewportCanvas({
               presets={cameraPresets}
               controlsRef={controlsRef}
             />
-            <EdgeTestHook terrain={sitePackage.terrain} />
+            {style.id === 'identity' && <EdgeTestHook terrain={sitePackage.terrain} />}
             {onExport && <PassExporter request={exportRequest} controls={controlsRef} onDone={onExport} credits={exportCredits} />}
             <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />

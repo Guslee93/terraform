@@ -126,11 +126,13 @@ try {
     stages: {},
   }
 
-  const targets = [
-    ['NORDIC', '/lab/compact-infill?state=neutral&preset=isometric'],
-    ['B', '/lab/compact-infill?style=identity&stage=B&state=neutral&preset=isometric'],
-    ['C', '/lab/compact-infill?style=identity&stage=C&state=neutral&preset=isometric'],
-  ]
+  // Both curated sites; NORDIC (the production look, in the Lab) against every identity stage.
+  const targets = ['compact-infill', 'sloped-edge'].flatMap((site) => [
+    [`${site} NORDIC`, `/lab/${site}?state=neutral&preset=isometric`],
+    [`${site} A`, `/lab/${site}?style=identity&stage=A&state=neutral&preset=isometric`],
+    [`${site} B`, `/lab/${site}?style=identity&stage=B&state=neutral&preset=isometric`],
+    [`${site} C`, `/lab/${site}?style=identity&stage=C&state=neutral&preset=isometric`],
+  ])
   for (const [stage, url] of targets) {
     console.log(`Measuring ${stage}…`)
     const runs = await measure(browser, url, RUNS)
@@ -147,7 +149,7 @@ try {
   }
 
   await mkdir(new URL('../docs/perf/', import.meta.url), { recursive: true })
-  const output = new URL('../docs/perf/run9-lab-baseline.json', import.meta.url)
+  const output = new URL(`../docs/perf/${process.env.PERF_LABEL ?? 'run9-lab-baseline'}.json`, import.meta.url)
   await writeFile(output, JSON.stringify(report, null, 2) + '\n')
   console.log(`Wrote ${fileURLToPath(output)}`)
   for (const stage of Object.keys(report.stages)) {
