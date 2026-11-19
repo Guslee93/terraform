@@ -12,7 +12,7 @@ import type { LegendEntry } from './climateView'
  */
 
 export const ROOF_SOLAR_DISCLAIMER =
-  'Indicative clear-sky irradiation — upper bound, no weather or cloud data. Not a yield estimate.'
+  'Indicative clear-sky irradiation — upper bound, about 30 % above typical measured weather (PVGIS 2014–2023). No weather or cloud data. Not a yield estimate.'
 
 /** Meinel clear-sky constants: a deliberately simple model, named here so the UI can repeat them. */
 export const SOLAR_CONSTANT_W_M2 = 1353

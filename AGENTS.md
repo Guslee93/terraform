@@ -1,6 +1,6 @@
 # Terraform — Agent Operating Guide
 
-**Status:** Simplified to search → analyse → export (ADR-0020, tag `pre-simplify` for the old scope) · Wind simulator ADR-0014/0015 · rendering spec ADR-0017–0019
+**Status:** Simplified to search → analyse → export (ADR-0020, tag `pre-simplify` for the old scope) · Wind simulator ADR-0014/0015 · rendering spec ADR-0017–0019 · foundation layers ADR-0032–0037 on branch `build/foundation` · ADRs on record: ADR-0001–ADR-0039, all accepted but ADR-0011 (proposed)
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
 **Product type:** architectural portfolio prototype, not a commercial SaaS
 
@@ -20,7 +20,7 @@ Read this file first, then the assigned milestone brief, then only the PRD secti
 8. **Pinned dependencies.** New runtime dependencies need an ADR with bundle-size and licence notes.
 9. **Protect the demo.** No feature displaces geometry correctness, editing stability or visual polish in M0–M5.
 10. **Evidence before “done”.** Tests, build, screenshots at fixed reference views, and a written report.
-11. **No scope drift.** Auth, payments, backend services, multi-tenancy, live GIS, and AI generation are out of scope for v1.
+11. **No scope drift.** Auth, payments, backend services, multi-tenancy, live GIS (Superseded in part: ADR-0006 brought live address import and MapLibre on /new.), and AI generation are out of scope for v1.
 12. **Accessibility is part of the product.** WCAG 2.2 AA target for standard HTML UI; visible focus, keyboard reach, reduced motion.
 
 ---
@@ -54,10 +54,12 @@ src/
     ui/                Button, Icon, IconButton primitives
   features/
     sites/             catalogue + future manifest loader
-    editor/            (M2) tools, pointer state machine, history
-    massing/           (M2) immutable geometry, factories, validation
-    analysis/          (M3) areas, solar, constraints
-    scenarios/         (M4) CRUD, persistence, comparison
+    import/            address import: geocode, frame, assemble, projection
+    editor/            tools, pointer state machine, history
+    massing/           immutable geometry, factories, validation
+    analysis/          areas, solar, constraints; the five workers —
+                       circleSunWorker, roofSolarWorker, flowWorker, runoffWorker, sweepWorker
+    scenarios/         domain kept, UI removed (ADR-0020)
     exports/           (reserved) PNG export dropped from v1 (ADR-0012); JSON backup lives in scenarios/
   scene/               R3F canvas, lighting, camera, future mesh factories
   data/                cached raw source data (OSM XML, elevation responses)
@@ -66,6 +68,9 @@ src/
   test/                Vitest setup
 e2e/                   Playwright specs
 public/sites/          site thumbnails; M1 geometry packages
+scripts/
+  site-assets/         curated asset builders (heights, noise, parcels, hazards, terrain1m, snow)
+  measure-perf.mjs     performance harness
 docs/
   decisions/           ADRs
   milestones/          M0–M6 briefs and gates
@@ -73,6 +78,10 @@ docs/
   data/                site package specification
   qa/                  fixtures and verification protocol
   reviews/             code review and visual gate records
+  feasibility/         the foundation feasibility study (nine parts)
+  perf/                performance harness notes and the baseline
+  plans/               build, import, context-fidelity and visual-upgrade plans
+    terraform-visual-upgrade/  visual upgrade plan
   agent-log.md         which agent did what and whether it was accepted
 ```
 
@@ -181,7 +190,7 @@ Read first, in order:
 Milestone: M<N> only. Do not work ahead.
 Goal: <one paragraph>
 In scope: <3–6 bullets>
-Out of scope: auth, payments, AI, backend, live GIS, MapLibre, new dependencies without an ADR.
+Out of scope: auth, payments, AI, backend, live GIS, MapLibre (Superseded in part: ADR-0006 brought live address import and MapLibre on /new.), new dependencies without an ADR.
 
 Constraints:
 - TypeScript strict; no `any` in domain schemas.
@@ -259,8 +268,26 @@ Update `task_plan.md` after each phase and `progress.md` after each session. Log
 
 ## 10. Current state and next action
 
-**Done:** M0–M5 gates complete — the Vite/React/TypeScript scaffold, design tokens, landing/About, the studio shell and its focus-managed inspector, the coordinate contract, two validated static site packages built from OSM footprints and Kartverket DTM1 terrain, local ENU rendering, terrain/context/boundary layers, camera presets, compass/scale, the massing model with undo/redo, the sun and wind analyses (ADR-0014/0015/0021), measured roofs (ADR-0022), and the search → analyse → export simplification (ADR-0020). On top of that, ADR-0023 gave the curated packages Hektar-grade context: a 200 m halo, 520 and 230 individual context buildings, 926 and 251 mapped trees including street rows, and twelve land-cover kinds on both the curated and the import path. ADR-0024 keeps every tree off the painted water on both paths. ADR-0025 makes water a surface of its own — flat across its width, lying in the ground instead of on it — on both the curated and the import path. ADR-0026 gathers the studio's information in one column: one card per analysis (Sun, Wind, Noise) in the Parameters panel, the open card being the analysis on the map; the bottom analysis dock is gone; Back in the studio returns an imported site to the frame step it came from, on the same spot and frame size; and *Open in 3D* shows a determinate progress bar. ADR-0027 fixes the water's geometry on the import path: a river is recognised as a river (Kartverket's answers spell the elevation-curve source `hoydekurver`, so ADR-0025's rule had never run and every imported river was a 16–20 m wall of ground), and the frame's water outlines and mapped trees come from one OpenStreetMap answer per frame instead of the generalised z14 tiles and the unreachable Overpass instances. ADR-0028 lifts the wind analysis, and ADR-0029 makes the lift reach every whole metre: the solver solves at 2 m and wherever a roof ends near the circle, and every metre between is the covering solve scaled by the wind profile; ADR-0030 lets wakes above 2 m refill with air from above (a flat slice could not, so calm bands lay over buildings lower than the disc), with extra solves where the gap up to the roofs halves — the 2 m field is unchanged; a red handle at the centre of the analysis circle (no dashed rings; the circle outline is solid), or the 1 m slider in the Wind card, lifts the map — terrain-following, m/s above 2 m (comfort classes stay a 2 m statement), buildings below the disc faded, the caption naming the height (`docs/reviews/wind-lift-review.md`). ADR-0031 puts Sun hours in the same analysis circle as the wind map, on every surface: the open ground, and every roof and façade of the buildings touching the circle, for the Sun card's date and a From–To window of the day, from a worker; the separate Façade option is folded into it, and Sun hours is the Sun card's default. CI runs lint, unit tests, build and the Playwright suite in three shards on every pull request; `main` accepts changes only through a pull request with green checks, and every e2e time budget scales with the runner (`e2e/budget.ts`).
+**Done:** M0–M5 gates complete — the Vite/React/TypeScript scaffold, design tokens, landing/About, the studio shell and its focus-managed inspector, the coordinate contract, two validated static site packages built from OSM footprints and Kartverket DTM1 terrain, local ENU rendering, terrain/context/boundary layers, camera presets, compass/scale, the massing model with undo/redo, the sun and wind analyses (ADR-0014/0015/0021), measured roofs (ADR-0022), and the search → analyse → export simplification (ADR-0020). On top of that, ADR-0023 gave the curated packages Hektar-grade context: a 200 m halo, 520 and 230 individual context buildings, 926 and 251 mapped trees including street rows, and twelve land-cover kinds on both the curated and the import path. ADR-0024 keeps every tree off the painted water on both paths. ADR-0025 makes water a surface of its own — flat across its width, lying in the ground instead of on it — on both the curated and the import path. ADR-0026 gathers the studio's information in one column: one card per analysis (Sun, Wind, Noise) in the Parameters panel, the open card being the analysis on the map; the bottom analysis dock is gone; Back in the studio returns an imported site to the frame step it came from, on the same spot and frame size; and *Open in 3D* shows a determinate progress bar. ADR-0027 fixes the water's geometry on the import path: a river is recognised as a river (Kartverket's answers spell the elevation-curve source `hoydekurver`, so ADR-0025's rule had never run and every imported river was a 16–20 m wall of ground), and the frame's water outlines and mapped trees come from one OpenStreetMap answer per frame instead of the generalised z14 tiles and the unreachable Overpass instances.
 
-**Next:** Phase B of `docs/plans/context-fidelity-plan.md` — building **parts** and relations. The curated builder reads building ways only, so a building drawn as a multipolygon relation or with `building:part` still arrives as one plain volume; the import path is capped at z14 by the OpenMapTiles schema. Also open: the `design-ui-finish-gate-reviewer` pass over `docs/screenshots/context-*.png`, `docs/screenshots/water-*.png`, `docs/screenshots/panel-*.png` and `docs/screenshots/wind-lift-*.png`, a sloped import-site capture of the wind lift, an import-path capture of the new land-cover taxonomy, tree shadows (which changes ADR-0021's limitation wording), and the M1/M2 follow-ups in `docs/reviews/M1-code-review.md` and `docs/reviews/M0-code-review.md`.
+ADR-0028 lifts the wind analysis through terrain-following height slices: the slice is drawn at terrain height + slice height at each point, a building blocks a slice when its own height exceeds the slice height, one red handle and one stepped slider drive the height; above 2 m the map shows speed in m/s, and the comfort classes are shown at 2 m only.
+ADR-0029 makes the lift reach every whole metre: the solver solves at 2 m and wherever a roof ends near the circle, and every metre between is the covering solve scaled by the wind profile; the dashed rings are gone, the handle sits at the centre of the circle and the circle outline is drawn solid, buildings below the disc fade and the caption names the height (`docs/reviews/wind-lift-review.md`).
+ADR-0030 lets wakes above 2 m refill with air from above, so calm bands no longer lie over buildings lower than the disc, with extra solves where the gap up to the roofs halves; the 2 m field is unchanged.
+ADR-0031 puts Sun hours in the same analysis circle as the wind map, on every surface: the open ground, and every roof and façade of the buildings touching the circle, for the Sun card's date and a From–To window of the day, from a worker; the separate Façade option is folded into it, and Sun hours is the Sun card's default.
 
-**Watch for:** density is a complexity change. Every analysis that scales with the building count has to be re-measured — the roof-solar scan and the noise screening both did (ADR-0023 §8). A live source is a moving target: read the answer, do not trust a name — Kartverket's source names and OpenStreetMap's endpoints both changed under the studio (ADR-0027).
+On the branch `build/foundation` (pushed; draft PR #18, open and green, not merged; report in `docs/reviews/build-foundation-report.md`), the foundation layers verified by the feasibility study are built, together with the two analyses the owner asked for on 2026-11-16, the runoff screening and the snow climate context:
+
+ADR-0032 gives every layer a provenance record — owner, dataset, licence, attribution, retrieval date — listed in the panel for the layers on screen and burned into the exports: the still, the white-model pass and the analysis pass, never the depth pass.
+ADR-0033 gives the curated packages measured building heights and gables from Kartverket's surface model, as a separate CC BY 4.0 asset beside the ODbL footprints.
+ADR-0034 puts Statens vegvesen's official strategic road-noise map on the map as 5 dB bands, on curated sites and imports alike: a Lden/Lnight switch, a legend giving each mapped band's share of the open ground, and the band with the largest share as the headline.
+ADR-0035 adds a parcel layer from Kartverket's eiendomskart, switched on and off, and clickable for the property number and the area.
+ADR-0036 states NVE's and Kartverket's hazard maps as mapped here, nearby or not mapped — an absence is never "safe" — and adds a source health check for the live services.
+ADR-0037 runs the 1 m terrain tile: a slope overlay in four bands and a section tool with a profile chart, the tile fetched on demand when a tool needs it.
+ADR-0038 adds the Water card: a runoff screening on the 1 m terrain where every building, context and drawn, is a block, showing flow paths and depressions, with no depth, volume, rainfall or return period anywhere.
+ADR-0039 adds the Snow card: the neighbourhood's winter climate from NVE's snow model, for open terrain, and never a snow load.
+
+The wind view lost its safety class and sun hours read in half-hour steps (feasibility 09 §5). CI runs lint, unit tests, build and the Playwright suite in three shards on every pull request; `main` accepts changes only through a pull request with green checks, and every e2e time budget scales with the runner (`e2e/budget.ts`).
+
+**Next:** Gate 0 of `docs/plans/terraform-visual-upgrade/05-MASTER-TODO.md` — production 404 diagnosis, the Water/Snow code review, the runoff reference comparison, and the owner's decisions on PR #18.
+
+**Watch for:** authority data has terms. The noise map is bands only, never a level for a building; a hazard absence is "not mapped", never "safe"; a parcel outline is not a surveyed boundary (feasibility 09 §2a, 08 §1). Curated assets are built by `scripts/site-assets/` from raw caches; rerun those steps after `build_site_packages.py`, and run `node scripts/check-sources.mjs` to see whether a publisher changed its data. Density is a complexity change. Every analysis that scales with the building count has to be re-measured — the roof-solar scan and the noise screening both did (ADR-0023 §8). A live source is a moving target: read the answer, do not trust a name — Kartverket's source names and OpenStreetMap's endpoints both changed under the studio (ADR-0027).

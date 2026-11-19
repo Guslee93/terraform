@@ -1,3 +1,6 @@
+import { geonorgeHazards } from '../features/import/hazards'
+import { kartverketParcels } from '../features/import/parcels'
+import { statensVegvesenNoise } from '../features/import/officialNoise'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -126,7 +129,7 @@ export function NewSitePage() {
     try {
       const result = await importSite(
         framed.frame,
-        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], osm: osmApiArea(), roofs: kartverketSurface() },
+        { tiles: openFreeMapSource(), terrain: [kartverketProvider(), terrariumProvider()], osm: osmApiArea(), roofs: kartverketSurface(), noise: statensVegvesenNoise(), parcels: kartverketParcels(), hazards: geonorgeHazards() },
         {
           signal: current.signal,
           onProgress: (step, state, detail) => setSteps((previous) => ({ ...previous, [step]: { state, detail } })),

@@ -20,10 +20,19 @@ import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
 import type { SunDirection } from '../features/analysis/sun'
 import { ClimateLayer } from './ClimateLayer'
+import { NoiseBands } from './NoiseBands'
+import { ParcelLines, SectionLine } from './ParcelLines'
+import { SlopeOverlay } from './SlopeOverlay'
+import { RunoffOverlay } from './RunoffOverlay'
+import type { Runoff } from '../features/analysis/runoff'
+import type { TerrainRaster } from '../features/analysis/terrainTools'
+import type { Parcel } from '../features/analysis/parcels'
+import type { NoiseMetric, NoisePolygon } from '../features/analysis/officialNoise'
 import { FacadeSun, type FacadeOverlay } from './FacadeSun'
 import { RoofSolar } from './RoofSolar'
 import { SunHoursLayer, SunHoursRampBar } from './SunHoursLayer'
-import { SUN_HOURS_DISCLAIMER } from '../features/analysis/sunHours'
+import { sunHoursDisclaimer } from '../features/analysis/sunHours'
+import { hasMeasuredHeights } from '../features/sites/provenance'
 import type { CircleSunHours } from '../features/analysis/circleSunHours'
 import type { AnalysisCircle as AnalysisCircleShape } from '../features/analysis/circle'
 import { WindStreamlines } from './WindStreamlines'
@@ -64,6 +73,8 @@ export type SceneLayers = {
   trees: boolean
   /** Illustrative ground tints for parks, grass, woods, plazas, protected areas and water. */
   ground: boolean
+  /** Parcel outlines from the eiendomskart (ADR-0035). */
+  parcels: boolean
 }
 
 type ViewportProps = {
@@ -77,8 +88,10 @@ type ViewportProps = {
   editable: boolean
   annotations?: ReadonlyMap<string, MassAnnotation>
   renderPreference: RenderPreference
-  /** Wind or noise screening cells; null when the climate layer is off. */
+  /** Wind screening cells; null when the wind layer is off. */
   climate?: ClimateOverlay | null
+  /** The official road-noise bands (ADR-0034) and the claim shown with them; null when off. */
+  noise?: { readonly polygons: readonly NoisePolygon[]; readonly metric: NoiseMetric; readonly caption: string } | null
   /** Per-roof clear-sky irradiation, aligned with `windBuildings`; null when Roof solar is off. */
   roofSolar?: readonly RoofSolarValue[] | null
   /** Façade sun-hours or VSC quads; null when neither façade layer is showing. */
@@ -110,6 +123,16 @@ type ViewportProps = {
   grid?: boolean
   /** Each new number captures the export passes once (ADR-0019). */
   exportRequest?: number | null
+  /** Terrain tools (ADR-0037): the slope overlay's raster, and the section's picked points. */
+  slope?: { readonly raster: TerrainRaster; readonly degrees: Float32Array } | null
+  section?: readonly Vec2[]
+  /** The runoff screening (ADR-0038) and the claim shown with it; null when the Water card is closed. */
+  runoff?: { readonly result: Runoff | null; readonly caption: string } | null
+  /** The selected parcel, and the ground click that selects one while the parcel layer is on (ADR-0035). */
+  selectedParcel?: Parcel | null
+  onPickParcel?: (point: Vec2) => void
+  /** Attribution lines burned into the exported images (ADR-0032). */
+  exportCredits?: readonly string[]
   onExport?: (result: PassImages | Error) => void
 }
 
@@ -517,6 +540,7 @@ export function ViewportCanvas({
   annotations,
   renderPreference,
   climate = null,
+  noise = null,
   roofSolar = null,
   facade = null,
   sunHours = null,
@@ -534,6 +558,12 @@ export function ViewportCanvas({
   onPickPoint,
   grid = true,
   exportRequest = null,
+  exportCredits,
+  selectedParcel = null,
+  slope = null,
+  runoff = null,
+  section,
+  onPickParcel,
   onExport,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -590,6 +620,8 @@ export function ViewportCanvas({
 
   const onGroundClick = (point: Vec2, elevation: number) => {
     if (onPickPoint) return onPickPoint(point)
+    // While drawing, a click places a corner; otherwise it also selects the parcel under it.
+    if (onPickParcel && !drawing) onPickParcel(point)
     if (!editable) return
     if (drawing) dispatch({ type: 'pointerDown', point, elevation })
     else dispatch({ type: 'select', selection: EMPTY_SELECTION })
@@ -608,11 +640,23 @@ export function ViewportCanvas({
           <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{windCaption(windSettings.heightM, !!windFlow && !windField)}</p>
         </div>
       )}
+      {runoff && (
+        // The screening's claim stays on the map with its layer.
+        <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{runoff.caption}</p>
+        </div>
+      )}
+      {noise && (
+        // The source, year and limitation stay on the map with the bands (feasibility 09 §2a).
+        <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{noise.caption}</p>
+        </div>
+      )}
       {sunHours && (
         // The claim stays on the map with the layer, as the wind caption does.
         <div className="pointer-events-none absolute inset-x-3 bottom-14 z-20 flex flex-col items-end gap-2">
           {sunHours.result && <SunHoursRampBar possibleHours={sunHours.result.possibleHours} />}
-          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{sunHours.computing ? 'Computing hours of direct sun…' : SUN_HOURS_DISCLAIMER}</p>
+          <p className="rounded-chip bg-surface/90 px-2 py-1 text-caption text-ink-secondary">{sunHours.computing ? 'Computing hours of direct sun…' : sunHoursDisclaimer(hasMeasuredHeights(manifest))}</p>
         </div>
       )}
       {webgl === 'none' ? (
@@ -663,8 +707,13 @@ export function ViewportCanvas({
             {layers.streets && layers.terrain && (
               <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} />
             )}
+            {layers.parcels && layers.terrain && sitePackage.parcels.length > 0 && <ParcelLines parcels={sitePackage.parcels} selected={selectedParcel} heightAt={heightAt} />}
+            {section && section.length > 0 && layers.terrain && <SectionLine points={section} heightAt={heightAt} />}
             {/* Analysis layers, also exported alone as the transparent overlay pass (ADR-0019). */}
             <group name={ANALYSIS_OVERLAY_NAME}>
+            {runoff?.result && layers.terrain && <RunoffOverlay runoff={runoff.result} terrain={sitePackage.terrain} />}
+            {slope && layers.terrain && <SlopeOverlay raster={slope.raster} degrees={slope.degrees} terrain={sitePackage.terrain} />}
+            {noise && layers.terrain && <NoiseBands polygons={noise.polygons} metric={noise.metric} terrain={sitePackage.terrain} />}
             {climate && (windCircle
               ? <WindHeatmap overlay={climate} heightAt={windHeightAt} circle={windCircle} />
               : <ClimateLayer overlay={climate} heightAt={heightAt} buildings={windBuildings} />)}
@@ -708,7 +757,7 @@ export function ViewportCanvas({
               presets={manifest.cameraPresets}
               controlsRef={controlsRef}
             />
-            {onExport && <PassExporter request={exportRequest} controls={controlsRef} onDone={onExport} />}
+            {onExport && <PassExporter request={exportRequest} controls={controlsRef} onDone={onExport} credits={exportCredits} />}
             <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />
             {/* Wait for renderer detection so Auto never starts AO on software GL. */}

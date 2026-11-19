@@ -1,0 +1,2412 @@
+{
+ "buildingsTested": 337,
+ "fitKinds": {
+  "flat": 98,
+  "gabled": 194,
+  "complex": 44,
+  "unmeasured": 1
+ },
+ "measuredMinusEstimatedM": {
+  "n": 336,
+  "p10": -3.8,
+  "median": 1.2,
+  "p90": 4.6,
+  "meanAbs": 2.95,
+  "shareWithin3m": 0.563
+ },
+ "sunHoursImpact": {
+  "2026-03-20": {
+   "groundCells": 5321,
+   "meanAbsDiffH": 0.32,
+   "shareCellsChangedAtLeast1h": 0.059,
+   "medianEstimated": {
+    "ground": 5.25,
+    "roofs": 10.75,
+    "facades": 0
+   },
+   "medianMeasured": {
+    "ground": 5,
+    "roofs": 10.75,
+    "facades": 0
+   },
+   "possibleHours": 12
+  },
+  "2026-06-21": {
+   "groundCells": 5321,
+   "meanAbsDiffH": 0.46,
+   "shareCellsChangedAtLeast1h": 0.146,
+   "medianEstimated": {
+    "ground": 8.75,
+    "roofs": 16.75,
+    "facades": 3.75
+   },
+   "medianMeasured": {
+    "ground": 8.5,
+    "roofs": 17.25,
+    "facades": 3
+   },
+   "possibleHours": 18.75
+  }
+ },
+ "rows": [
+  {
+   "id": "111178097",
+   "estimated": 10,
+   "measured": 11.2,
+   "kind": "complex",
+   "baseRel": -5.58
+  },
+  {
+   "id": "111178087",
+   "estimated": 13.2,
+   "measured": 17.1,
+   "kind": "complex",
+   "baseRel": -7.23
+  },
+  {
+   "id": "621782696",
+   "estimated": 13.2,
+   "measured": 19.2,
+   "kind": "complex",
+   "baseRel": -6.52
+  },
+  {
+   "id": "113500974",
+   "estimated": 16.4,
+   "measured": 17.8,
+   "kind": "complex",
+   "baseRel": -3.44
+  },
+  {
+   "id": "108228047",
+   "estimated": 19.6,
+   "measured": 19.2,
+   "kind": "flat",
+   "baseRel": -5.02
+  },
+  {
+   "id": "113047072",
+   "estimated": 16.4,
+   "measured": 19,
+   "kind": "gabled",
+   "baseRel": -5.96
+  },
+  {
+   "id": "70186921",
+   "estimated": 6.8,
+   "measured": 9.4,
+   "kind": "complex",
+   "baseRel": -15.27
+  },
+  {
+   "id": "113504916",
+   "estimated": 16.4,
+   "measured": 14.3,
+   "kind": "complex",
+   "baseRel": 3.01
+  },
+  {
+   "id": "113071894",
+   "estimated": 13.2,
+   "measured": 15.1,
+   "kind": "flat",
+   "baseRel": -5.8
+  },
+  {
+   "id": "762546217",
+   "estimated": 19.6,
+   "measured": 19.5,
+   "kind": "complex",
+   "baseRel": -6.66
+  },
+  {
+   "id": "113878716",
+   "estimated": 10,
+   "measured": 28.5,
+   "kind": "flat",
+   "baseRel": -3.72
+  },
+  {
+   "id": "44044600",
+   "estimated": 58,
+   "measured": 46.7,
+   "kind": "complex",
+   "baseRel": -12.68
+  },
+  {
+   "id": "113067804",
+   "estimated": 16.4,
+   "measured": 16.7,
+   "kind": "flat",
+   "baseRel": -0.19
+  },
+  {
+   "id": "70228018",
+   "estimated": 10,
+   "measured": 12,
+   "kind": "complex",
+   "baseRel": -0.3
+  },
+  {
+   "id": "113080239",
+   "estimated": 13.2,
+   "measured": 18.1,
+   "kind": "flat",
+   "baseRel": -6.26
+  },
+  {
+   "id": "113113973",
+   "estimated": 13.2,
+   "measured": 12,
+   "kind": "gabled",
+   "baseRel": 2.74
+  },
+  {
+   "id": "113048555",
+   "estimated": 13.2,
+   "measured": 17.6,
+   "kind": "flat",
+   "baseRel": -1.61
+  },
+  {
+   "id": "113067701",
+   "estimated": 16.4,
+   "measured": 16.8,
+   "kind": "flat",
+   "baseRel": -3.35
+  },
+  {
+   "id": "113071880",
+   "estimated": 13.2,
+   "measured": 18.4,
+   "kind": "flat",
+   "baseRel": -4.48
+  },
+  {
+   "id": "113486604",
+   "estimated": 10,
+   "measured": 16.1,
+   "kind": "gabled",
+   "baseRel": 0.7
+  },
+  {
+   "id": "113071912",
+   "estimated": 10,
+   "measured": 13.9,
+   "kind": "complex",
+   "baseRel": -4.21
+  },
+  {
+   "id": "113113948",
+   "estimated": 16.4,
+   "measured": 17.1,
+   "kind": "complex",
+   "baseRel": 3.16
+  },
+  {
+   "id": "113067763",
+   "estimated": 16.4,
+   "measured": 17.6,
+   "kind": "flat",
+   "baseRel": -0.92
+  },
+  {
+   "id": "113047067",
+   "estimated": 10,
+   "measured": 18.4,
+   "kind": "gabled",
+   "baseRel": -1.53
+  },
+  {
+   "id": "113048592",
+   "estimated": 16.4,
+   "measured": 21,
+   "kind": "flat",
+   "baseRel": -0.16
+  },
+  {
+   "id": "111178093",
+   "estimated": 16.4,
+   "measured": 16.3,
+   "kind": "gabled",
+   "baseRel": -3.57
+  },
+  {
+   "id": "113504909",
+   "estimated": 10,
+   "measured": 14,
+   "kind": "flat",
+   "baseRel": 4.66
+  },
+  {
+   "id": "113048564",
+   "estimated": 16.4,
+   "measured": 20.8,
+   "kind": "flat",
+   "baseRel": -1.52
+  },
+  {
+   "id": "113048595",
+   "estimated": 16.4,
+   "measured": 19.3,
+   "kind": "flat",
+   "baseRel": -0.48
+  },
+  {
+   "id": "111178090",
+   "estimated": 26,
+   "measured": 22.6,
+   "kind": "flat",
+   "baseRel": -3.91
+  },
+  {
+   "id": "113504906",
+   "estimated": 10,
+   "measured": 10,
+   "kind": "gabled",
+   "baseRel": 4.01
+  },
+  {
+   "id": "1031361953",
+   "estimated": 16.4,
+   "measured": 19,
+   "kind": "gabled",
+   "baseRel": -4.48
+  },
+  {
+   "id": "113067693",
+   "estimated": 16.4,
+   "measured": 17.6,
+   "kind": "flat",
+   "baseRel": -3.57
+  },
+  {
+   "id": "113504912",
+   "estimated": 16.4,
+   "measured": 20.9,
+   "kind": "gabled",
+   "baseRel": 1.96
+  },
+  {
+   "id": "113113954",
+   "estimated": 16.4,
+   "measured": 17.9,
+   "kind": "flat",
+   "baseRel": 2.31
+  },
+  {
+   "id": "113503306",
+   "estimated": 13.2,
+   "measured": 18.3,
+   "kind": "flat",
+   "baseRel": 5.94
+  },
+  {
+   "id": "113048570",
+   "estimated": 13.2,
+   "measured": 17.6,
+   "kind": "flat",
+   "baseRel": -0.41
+  },
+  {
+   "id": "113504947",
+   "estimated": 13.2,
+   "measured": 11.8,
+   "kind": "gabled",
+   "baseRel": 3.44
+  },
+  {
+   "id": "113877734",
+   "estimated": 13.2,
+   "measured": 15.3,
+   "kind": "flat",
+   "baseRel": -5.63
+  },
+  {
+   "id": "113877743",
+   "estimated": 16.4,
+   "measured": 18.1,
+   "kind": "flat",
+   "baseRel": -6.72
+  },
+  {
+   "id": "113067748",
+   "estimated": 16.4,
+   "measured": 18.9,
+   "kind": "flat",
+   "baseRel": 4.14
+  },
+  {
+   "id": "111178088",
+   "estimated": 10,
+   "measured": 5.3,
+   "kind": "complex",
+   "baseRel": -6.18
+  },
+  {
+   "id": "113048581",
+   "estimated": 16.4,
+   "measured": 17.4,
+   "kind": "gabled",
+   "baseRel": -1.61
+  },
+  {
+   "id": "113485502",
+   "estimated": 13.2,
+   "measured": 18.3,
+   "kind": "flat",
+   "baseRel": 5.03
+  },
+  {
+   "id": "113071915",
+   "estimated": 16.4,
+   "measured": 17.8,
+   "kind": "gabled",
+   "baseRel": -5.31
+  },
+  {
+   "id": "113113547",
+   "estimated": 16.4,
+   "measured": 17.8,
+   "kind": "gabled",
+   "baseRel": 4.63
+  },
+  {
+   "id": "113113966",
+   "estimated": 16.4,
+   "measured": 17.8,
+   "kind": "gabled",
+   "baseRel": 4.22
+  },
+  {
+   "id": "113080253",
+   "estimated": 10,
+   "measured": 9.4,
+   "kind": "gabled",
+   "baseRel": -6.24
+  },
+  {
+   "id": "113113969",
+   "estimated": 13.2,
+   "measured": 16.1,
+   "kind": "gabled",
+   "baseRel": 2.62
+  },
+  {
+   "id": "113067801",
+   "estimated": 16.4,
+   "measured": 17.6,
+   "kind": "flat",
+   "baseRel": 3.92
+  },
+  {
+   "id": "113485516",
+   "estimated": 13.2,
+   "measured": 17.3,
+   "kind": "flat",
+   "baseRel": 2.92
+  },
+  {
+   "id": "108228045",
+   "estimated": 29.2,
+   "measured": 11.8,
+   "kind": "gabled",
+   "baseRel": -3.93
+  },
+  {
+   "id": "113067767",
+   "estimated": 16.4,
+   "measured": 18.9,
+   "kind": "flat",
+   "baseRel": 3.71
+  },
+  {
+   "id": "113113554",
+   "estimated": 13.2,
+   "measured": 17.4,
+   "kind": "flat",
+   "baseRel": 4.57
+  },
+  {
+   "id": "113067734",
+   "estimated": 16.4,
+   "measured": 18.2,
+   "kind": "flat",
+   "baseRel": 2.8
+  },
+  {
+   "id": "113485494",
+   "estimated": 13.2,
+   "measured": 17.5,
+   "kind": "flat",
+   "baseRel": 2.85
+  },
+  {
+   "id": "113067699",
+   "estimated": 16.4,
+   "measured": 17.3,
+   "kind": "flat",
+   "baseRel": 1.21
+  },
+  {
+   "id": "113071920",
+   "estimated": 10,
+   "measured": 9.4,
+   "kind": "complex",
+   "baseRel": -4.84
+  },
+  {
+   "id": "113500984",
+   "estimated": 10,
+   "measured": 16,
+   "kind": "complex",
+   "baseRel": -1.12
+  },
+  {
+   "id": "1031362197",
+   "estimated": 10,
+   "measured": 21.8,
+   "kind": "complex",
+   "baseRel": -3.83
+  },
+  {
+   "id": "113067782",
+   "estimated": 16.4,
+   "measured": 17.2,
+   "kind": "flat",
+   "baseRel": 1.45
+  },
+  {
+   "id": "113486635",
+   "estimated": 16.4,
+   "measured": 17.9,
+   "kind": "flat",
+   "baseRel": 2.1
+  },
+  {
+   "id": "113071923",
+   "estimated": 16.4,
+   "measured": 15.6,
+   "kind": "complex",
+   "baseRel": -6.21
+  },
+  {
+   "id": "113048576",
+   "estimated": 13.2,
+   "measured": 17.7,
+   "kind": "flat",
+   "baseRel": 1.74
+  },
+  {
+   "id": "113067736",
+   "estimated": 13.2,
+   "measured": 17.5,
+   "kind": "flat",
+   "baseRel": 1.75
+  },
+  {
+   "id": "113071908",
+   "estimated": 13.2,
+   "measured": 14.4,
+   "kind": "gabled",
+   "baseRel": -4.26
+  },
+  {
+   "id": "113071887",
+   "estimated": 10,
+   "measured": 10.3,
+   "kind": "gabled",
+   "baseRel": -6.26
+  },
+  {
+   "id": "113878730",
+   "estimated": 19.6,
+   "measured": 19.3,
+   "kind": "complex",
+   "baseRel": -5.58
+  },
+  {
+   "id": "113067715",
+   "estimated": 13.2,
+   "measured": 16.7,
+   "kind": "flat",
+   "baseRel": 1.96
+  },
+  {
+   "id": "113067784",
+   "estimated": 13.2,
+   "measured": 14.3,
+   "kind": "flat",
+   "baseRel": 1.86
+  },
+  {
+   "id": "113080258",
+   "estimated": 16.4,
+   "measured": 18.6,
+   "kind": "gabled",
+   "baseRel": -5.9
+  },
+  {
+   "id": "113486596",
+   "estimated": 13.2,
+   "measured": 18.4,
+   "kind": "flat",
+   "baseRel": 2.18
+  },
+  {
+   "id": "113048600",
+   "estimated": 16.4,
+   "measured": 18.1,
+   "kind": "gabled",
+   "baseRel": 1.38
+  },
+  {
+   "id": "111178089",
+   "estimated": 13.2,
+   "measured": 15,
+   "kind": "flat",
+   "baseRel": -6
+  },
+  {
+   "id": "113486628",
+   "estimated": 13.2,
+   "measured": 14,
+   "kind": "flat",
+   "baseRel": 0.13
+  },
+  {
+   "id": "113048586",
+   "estimated": 16.4,
+   "measured": 16.8,
+   "kind": "flat",
+   "baseRel": 0.14
+  },
+  {
+   "id": "113486608",
+   "estimated": 16.4,
+   "measured": 18.1,
+   "kind": "flat",
+   "baseRel": -0.23
+  },
+  {
+   "id": "113071918",
+   "estimated": 13.2,
+   "measured": 17.4,
+   "kind": "flat",
+   "baseRel": -6.51
+  },
+  {
+   "id": "113486639",
+   "estimated": 19.6,
+   "measured": 18.8,
+   "kind": "gabled",
+   "baseRel": 2.57
+  },
+  {
+   "id": "113486611",
+   "estimated": 19.6,
+   "measured": 18.3,
+   "kind": "gabled",
+   "baseRel": 2.67
+  },
+  {
+   "id": "113047064",
+   "estimated": 6.8,
+   "measured": 12.3,
+   "kind": "gabled",
+   "baseRel": -6.13
+  },
+  {
+   "id": "113048575",
+   "estimated": 16.4,
+   "measured": 17.5,
+   "kind": "flat",
+   "baseRel": 0.78
+  },
+  {
+   "id": "113067795",
+   "estimated": 16.4,
+   "measured": 18,
+   "kind": "flat",
+   "baseRel": -1.52
+  },
+  {
+   "id": "113485491",
+   "estimated": 13.2,
+   "measured": 18,
+   "kind": "flat",
+   "baseRel": 5.15
+  },
+  {
+   "id": "113048536",
+   "estimated": 13.2,
+   "measured": 18,
+   "kind": "flat",
+   "baseRel": 0.45
+  },
+  {
+   "id": "113485493",
+   "estimated": 13.2,
+   "measured": 17.7,
+   "kind": "gabled",
+   "baseRel": 3.42
+  },
+  {
+   "id": "113113535",
+   "estimated": 16.4,
+   "measured": 18.7,
+   "kind": "flat",
+   "baseRel": 5.48
+  },
+  {
+   "id": "113485504",
+   "estimated": 13.2,
+   "measured": 17.4,
+   "kind": "gabled",
+   "baseRel": 3.4
+  },
+  {
+   "id": "113047057",
+   "estimated": 13.2,
+   "measured": 16.5,
+   "kind": "gabled",
+   "baseRel": -6.13
+  },
+  {
+   "id": "113048540",
+   "estimated": 16.4,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 1.04
+  },
+  {
+   "id": "113485496",
+   "estimated": 13.2,
+   "measured": 17.2,
+   "kind": "flat",
+   "baseRel": 4.97
+  },
+  {
+   "id": "111178094",
+   "estimated": 22.8,
+   "measured": 24.7,
+   "kind": "flat",
+   "baseRel": -5.5
+  },
+  {
+   "id": "113067709",
+   "estimated": 16.4,
+   "measured": 17,
+   "kind": "gabled",
+   "baseRel": 1.34
+  },
+  {
+   "id": "113067714",
+   "estimated": 13.2,
+   "measured": 17.6,
+   "kind": "flat",
+   "baseRel": -2.18
+  },
+  {
+   "id": "111178096",
+   "estimated": 22.8,
+   "measured": 22.7,
+   "kind": "flat",
+   "baseRel": -3.69
+  },
+  {
+   "id": "113504915",
+   "estimated": 13.2,
+   "measured": 14.8,
+   "kind": "flat",
+   "baseRel": 2.09
+  },
+  {
+   "id": "762975286",
+   "estimated": 13.2,
+   "measured": 20.5,
+   "kind": "complex",
+   "baseRel": 4.02
+  },
+  {
+   "id": "113067766",
+   "estimated": 16.4,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 1.1
+  },
+  {
+   "id": "113113962",
+   "estimated": 16.4,
+   "measured": 17.4,
+   "kind": "flat",
+   "baseRel": 3.86
+  },
+  {
+   "id": "113067794",
+   "estimated": 16.4,
+   "measured": 18.5,
+   "kind": "gabled",
+   "baseRel": -2.84
+  },
+  {
+   "id": "113113963",
+   "estimated": 16.4,
+   "measured": 17.8,
+   "kind": "flat",
+   "baseRel": 4.95
+  },
+  {
+   "id": "70498501",
+   "estimated": 13.2,
+   "measured": 13.8,
+   "kind": "complex",
+   "baseRel": 1.72
+  },
+  {
+   "id": "111178095",
+   "estimated": 26,
+   "measured": 23.2,
+   "kind": "flat",
+   "baseRel": -4.47
+  },
+  {
+   "id": "113504933",
+   "estimated": 10,
+   "measured": 10.6,
+   "kind": "complex",
+   "baseRel": 1.96
+  },
+  {
+   "id": "113504917",
+   "estimated": 10,
+   "measured": 14.1,
+   "kind": "flat",
+   "baseRel": 2.77
+  },
+  {
+   "id": "113485492",
+   "estimated": 13.2,
+   "measured": 17.4,
+   "kind": "flat",
+   "baseRel": 5.1
+  },
+  {
+   "id": "113486619",
+   "estimated": 13.2,
+   "measured": 16.5,
+   "kind": "gabled",
+   "baseRel": 1.34
+  },
+  {
+   "id": "113500993",
+   "estimated": 16.4,
+   "measured": 16.2,
+   "kind": "complex",
+   "baseRel": -2
+  },
+  {
+   "id": "113485499",
+   "estimated": 13.2,
+   "measured": 16.4,
+   "kind": "flat",
+   "baseRel": 2.74
+  },
+  {
+   "id": "113485497",
+   "estimated": 13.2,
+   "measured": 16.7,
+   "kind": "flat",
+   "baseRel": 2.74
+  },
+  {
+   "id": "70228005",
+   "estimated": 10,
+   "measured": 13.7,
+   "kind": "flat",
+   "baseRel": -0.14
+  },
+  {
+   "id": "113113958",
+   "estimated": 16.4,
+   "measured": 17.3,
+   "kind": "gabled",
+   "baseRel": 2.43
+  },
+  {
+   "id": "113047053",
+   "estimated": 13.2,
+   "measured": 13.6,
+   "kind": "gabled",
+   "baseRel": -4.62
+  },
+  {
+   "id": "113067771",
+   "estimated": 13.2,
+   "measured": 17.7,
+   "kind": "flat",
+   "baseRel": -3.05
+  },
+  {
+   "id": "113071892",
+   "estimated": 16.4,
+   "measured": 17.3,
+   "kind": "flat",
+   "baseRel": -4.66
+  },
+  {
+   "id": "113067752",
+   "estimated": 10,
+   "measured": 12.6,
+   "kind": "flat",
+   "baseRel": 0.35
+  },
+  {
+   "id": "113878743",
+   "estimated": 10,
+   "measured": 15.3,
+   "kind": "gabled",
+   "baseRel": -4.87
+  },
+  {
+   "id": "113067819",
+   "estimated": 13.2,
+   "measured": 16.6,
+   "kind": "gabled",
+   "baseRel": 0.38
+  },
+  {
+   "id": "113485495",
+   "estimated": 16.4,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 4.29
+  },
+  {
+   "id": "113485514",
+   "estimated": 16.4,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 3.15
+  },
+  {
+   "id": "113067754",
+   "estimated": 16.4,
+   "measured": 16.6,
+   "kind": "gabled",
+   "baseRel": 0.47
+  },
+  {
+   "id": "113067739",
+   "estimated": 13.2,
+   "measured": 16.1,
+   "kind": "gabled",
+   "baseRel": 0.78
+  },
+  {
+   "id": "113072901",
+   "estimated": 10,
+   "measured": 4.3,
+   "kind": "flat",
+   "baseRel": 0.56
+  },
+  {
+   "id": "113080238",
+   "estimated": 10,
+   "measured": 12.9,
+   "kind": "gabled",
+   "baseRel": -6.07
+  },
+  {
+   "id": "113067678",
+   "estimated": 13.2,
+   "measured": 16.7,
+   "kind": "gabled",
+   "baseRel": 0.87
+  },
+  {
+   "id": "113072907",
+   "estimated": 10,
+   "measured": 8.1,
+   "kind": "gabled",
+   "baseRel": 0.83
+  },
+  {
+   "id": "113067759",
+   "estimated": 13.2,
+   "measured": 17.8,
+   "kind": "gabled",
+   "baseRel": 1.09
+  },
+  {
+   "id": "113485501",
+   "estimated": 13.2,
+   "measured": 16.6,
+   "kind": "gabled",
+   "baseRel": 3.21
+  },
+  {
+   "id": "113113964",
+   "estimated": 6.8,
+   "measured": 7.2,
+   "kind": "flat",
+   "baseRel": 2.72
+  },
+  {
+   "id": "70498509",
+   "estimated": 6.8,
+   "measured": 8.5,
+   "kind": "flat",
+   "baseRel": 0.85
+  },
+  {
+   "id": "113067808",
+   "estimated": 16.4,
+   "measured": 16.9,
+   "kind": "gabled",
+   "baseRel": 1.35
+  },
+  {
+   "id": "113067729",
+   "estimated": 16.4,
+   "measured": 16.8,
+   "kind": "gabled",
+   "baseRel": 2.47
+  },
+  {
+   "id": "113504921",
+   "estimated": 13.2,
+   "measured": 14.6,
+   "kind": "gabled",
+   "baseRel": 3.15
+  },
+  {
+   "id": "113071883",
+   "estimated": 16.4,
+   "measured": 16,
+   "kind": "gabled",
+   "baseRel": -6.02
+  },
+  {
+   "id": "113500977",
+   "estimated": 13.2,
+   "measured": 14,
+   "kind": "gabled",
+   "baseRel": -0.79
+  },
+  {
+   "id": "113504948",
+   "estimated": 13.2,
+   "measured": 14.6,
+   "kind": "gabled",
+   "baseRel": 3.67
+  },
+  {
+   "id": "113067762",
+   "estimated": 19.6,
+   "measured": 20.6,
+   "kind": "gabled",
+   "baseRel": -2.25
+  },
+  {
+   "id": "113504945",
+   "estimated": 13.2,
+   "measured": 18,
+   "kind": "gabled",
+   "baseRel": 3.93
+  },
+  {
+   "id": "113485498",
+   "estimated": 13.2,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 4.22
+  },
+  {
+   "id": "113500973",
+   "estimated": 13.2,
+   "measured": 14.6,
+   "kind": "gabled",
+   "baseRel": -1.41
+  },
+  {
+   "id": "113067681",
+   "estimated": 16.4,
+   "measured": 17.4,
+   "kind": "flat",
+   "baseRel": -0.96
+  },
+  {
+   "id": "113486594",
+   "estimated": 13.2,
+   "measured": 14.4,
+   "kind": "gabled",
+   "baseRel": 0.14
+  },
+  {
+   "id": "70228013",
+   "estimated": 13.2,
+   "measured": 14.4,
+   "kind": "flat",
+   "baseRel": -0.27
+  },
+  {
+   "id": "113071913",
+   "estimated": 13.2,
+   "measured": 15.1,
+   "kind": "flat",
+   "baseRel": -5.63
+  },
+  {
+   "id": "113486587",
+   "estimated": 16.4,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 1.45
+  },
+  {
+   "id": "113067756",
+   "estimated": 13.2,
+   "measured": 16.2,
+   "kind": "gabled",
+   "baseRel": -0.46
+  },
+  {
+   "id": "113500983",
+   "estimated": 16.4,
+   "measured": 16.7,
+   "kind": "gabled",
+   "baseRel": -0.32
+  },
+  {
+   "id": "70228008",
+   "estimated": 13.2,
+   "measured": 14.6,
+   "kind": "flat",
+   "baseRel": 1.83
+  },
+  {
+   "id": "70498505",
+   "estimated": 13.2,
+   "measured": 14.6,
+   "kind": "flat",
+   "baseRel": 2.14
+  },
+  {
+   "id": "1031362542",
+   "estimated": 10,
+   "measured": 5.8,
+   "kind": "flat",
+   "baseRel": 0.89
+  },
+  {
+   "id": "113067812",
+   "estimated": 16.4,
+   "measured": 17.7,
+   "kind": "gabled",
+   "baseRel": -2.84
+  },
+  {
+   "id": "113067720",
+   "estimated": 13.2,
+   "measured": 17.7,
+   "kind": "flat",
+   "baseRel": -3.16
+  },
+  {
+   "id": "113071885",
+   "estimated": 13.2,
+   "measured": 14.6,
+   "kind": "gabled",
+   "baseRel": -4
+  },
+  {
+   "id": "1031362025",
+   "estimated": 13.2,
+   "measured": 7.3,
+   "kind": "complex",
+   "baseRel": 0.86
+  },
+  {
+   "id": "70498502",
+   "estimated": 16.4,
+   "measured": 16.4,
+   "kind": "complex",
+   "baseRel": 0.11
+  },
+  {
+   "id": "113500985",
+   "estimated": 19.6,
+   "measured": 16.8,
+   "kind": "gabled",
+   "baseRel": -0.32
+  },
+  {
+   "id": "113067704",
+   "estimated": 16.4,
+   "measured": 17.7,
+   "kind": "gabled",
+   "baseRel": -3.47
+  },
+  {
+   "id": "113504911",
+   "estimated": 10,
+   "measured": 4.7,
+   "kind": "flat",
+   "baseRel": 3.49
+  },
+  {
+   "id": "70228010",
+   "estimated": 16.4,
+   "measured": 17.4,
+   "kind": "complex",
+   "baseRel": 0.6
+  },
+  {
+   "id": "113113975",
+   "estimated": 16.4,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 2.53
+  },
+  {
+   "id": "113080232",
+   "estimated": 10,
+   "measured": 13.8,
+   "kind": "gabled",
+   "baseRel": -5.65
+  },
+  {
+   "id": "113047054",
+   "estimated": 10,
+   "measured": 8.6,
+   "kind": "gabled",
+   "baseRel": -2.7
+  },
+  {
+   "id": "113486617",
+   "estimated": 16.4,
+   "measured": 17.9,
+   "kind": "gabled",
+   "baseRel": 1.05
+  },
+  {
+   "id": "113500970",
+   "estimated": 13.2,
+   "measured": 14.4,
+   "kind": "flat",
+   "baseRel": -0.93
+  },
+  {
+   "id": "113080241",
+   "estimated": 6.8,
+   "measured": 12.5,
+   "kind": "gabled",
+   "baseRel": -4.47
+  },
+  {
+   "id": "113486637",
+   "estimated": 16.4,
+   "measured": 17.4,
+   "kind": "gabled",
+   "baseRel": 0.94
+  },
+  {
+   "id": "113048552",
+   "estimated": 16.4,
+   "measured": 19.7,
+   "kind": "gabled",
+   "baseRel": -1.59
+  },
+  {
+   "id": "70498508",
+   "estimated": 13.2,
+   "measured": 14.3,
+   "kind": "gabled",
+   "baseRel": 0.45
+  },
+  {
+   "id": "113486589",
+   "estimated": 13.2,
+   "measured": 13.1,
+   "kind": "gabled",
+   "baseRel": 0.53
+  },
+  {
+   "id": "113067690",
+   "estimated": 13.2,
+   "measured": 13.2,
+   "kind": "gabled",
+   "baseRel": 0.86
+  },
+  {
+   "id": "113067780",
+   "estimated": 22.8,
+   "measured": 19.5,
+   "kind": "gabled",
+   "baseRel": 0.93
+  },
+  {
+   "id": "70228007",
+   "estimated": 16.4,
+   "measured": 16,
+   "kind": "gabled",
+   "baseRel": -0.08
+  },
+  {
+   "id": "113080263",
+   "estimated": 13.2,
+   "measured": 13.8,
+   "kind": "gabled",
+   "baseRel": -5.35
+  },
+  {
+   "id": "113486602",
+   "estimated": 10,
+   "measured": 13,
+   "kind": "complex",
+   "baseRel": 1.44
+  },
+  {
+   "id": "113500980",
+   "estimated": 13.2,
+   "measured": 14.9,
+   "kind": "gabled",
+   "baseRel": -2.54
+  },
+  {
+   "id": "113486630",
+   "estimated": 13.2,
+   "measured": 14.3,
+   "kind": "gabled",
+   "baseRel": 0.06
+  },
+  {
+   "id": "113071875",
+   "estimated": 3.6,
+   "measured": 9.1,
+   "kind": "flat",
+   "baseRel": -4.8
+  },
+  {
+   "id": "113500972",
+   "estimated": 13.2,
+   "measured": 14,
+   "kind": "gabled",
+   "baseRel": -1.76
+  },
+  {
+   "id": "70228011",
+   "estimated": 13.2,
+   "measured": 13.8,
+   "kind": "complex",
+   "baseRel": -0.21
+  },
+  {
+   "id": "113500978",
+   "estimated": 10,
+   "measured": 14.2,
+   "kind": "gabled",
+   "baseRel": -3.55
+  },
+  {
+   "id": "70498512",
+   "estimated": 10,
+   "measured": 13.8,
+   "kind": "gabled",
+   "baseRel": 1.23
+  },
+  {
+   "id": "113067779",
+   "estimated": 13.2,
+   "measured": 16.2,
+   "kind": "gabled",
+   "baseRel": -0.87
+  },
+  {
+   "id": "113500969",
+   "estimated": 16.4,
+   "measured": 15.6,
+   "kind": "gabled",
+   "baseRel": -1.7
+  },
+  {
+   "id": "113486613",
+   "estimated": 13.2,
+   "measured": 17.1,
+   "kind": "gabled",
+   "baseRel": 1.23
+  },
+  {
+   "id": "108228048",
+   "estimated": 13.2,
+   "measured": 17.7,
+   "kind": "gabled",
+   "baseRel": -3.95
+  },
+  {
+   "id": "113067683",
+   "estimated": 13.2,
+   "measured": 15.8,
+   "kind": "gabled",
+   "baseRel": -0.26
+  },
+  {
+   "id": "113877726",
+   "estimated": 16.4,
+   "measured": 16.3,
+   "kind": "gabled",
+   "baseRel": -5.88
+  },
+  {
+   "id": "70228020",
+   "estimated": 13.2,
+   "measured": 13.3,
+   "kind": "gabled",
+   "baseRel": 0.42
+  },
+  {
+   "id": "113067691",
+   "estimated": 10,
+   "measured": 14.5,
+   "kind": "gabled",
+   "baseRel": -2.53
+  },
+  {
+   "id": "70498507",
+   "estimated": 16.4,
+   "measured": 17.8,
+   "kind": "gabled",
+   "baseRel": 2.02
+  },
+  {
+   "id": "113504935",
+   "estimated": 16.4,
+   "measured": 17,
+   "kind": "gabled",
+   "baseRel": 2.02
+  },
+  {
+   "id": "113486641",
+   "estimated": 10,
+   "measured": 5.5,
+   "kind": "gabled",
+   "baseRel": 1.49
+  },
+  {
+   "id": "113500990",
+   "estimated": 10,
+   "measured": 14.2,
+   "kind": "gabled",
+   "baseRel": -3
+  },
+  {
+   "id": "70498506",
+   "estimated": 10,
+   "measured": 15.4,
+   "kind": "gabled",
+   "baseRel": 1.67
+  },
+  {
+   "id": "113486618",
+   "estimated": 13.2,
+   "measured": 14.3,
+   "kind": "gabled",
+   "baseRel": 0.64
+  },
+  {
+   "id": "113067786",
+   "estimated": 13.2,
+   "measured": 17,
+   "kind": "gabled",
+   "baseRel": 1.98
+  },
+  {
+   "id": "70498499",
+   "estimated": 16.4,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 2
+  },
+  {
+   "id": "113500975",
+   "estimated": 13.2,
+   "measured": 17.4,
+   "kind": "gabled",
+   "baseRel": -2.27
+  },
+  {
+   "id": "70228017",
+   "estimated": 13.2,
+   "measured": 14.5,
+   "kind": "gabled",
+   "baseRel": 1.35
+  },
+  {
+   "id": "113486590",
+   "estimated": 13.2,
+   "measured": 17,
+   "kind": "gabled",
+   "baseRel": 0.81
+  },
+  {
+   "id": "113048566",
+   "estimated": 13.2,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 0.18
+  },
+  {
+   "id": "113067722",
+   "estimated": 13.2,
+   "measured": 14.5,
+   "kind": "gabled",
+   "baseRel": 0.46
+  },
+  {
+   "id": "113503313",
+   "estimated": 13.2,
+   "measured": 17.1,
+   "kind": "gabled",
+   "baseRel": 6.1
+  },
+  {
+   "id": "113503314",
+   "estimated": 13.2,
+   "measured": 17.1,
+   "kind": "gabled",
+   "baseRel": 6
+  },
+  {
+   "id": "113048548",
+   "estimated": 16.4,
+   "measured": 17.1,
+   "kind": "gabled",
+   "baseRel": 0.33
+  },
+  {
+   "id": "113067697",
+   "estimated": 13.2,
+   "measured": 17.3,
+   "kind": "gabled",
+   "baseRel": 2.61
+  },
+  {
+   "id": "113067676",
+   "estimated": 16.4,
+   "measured": 17.7,
+   "kind": "gabled",
+   "baseRel": 2.31
+  },
+  {
+   "id": "113500988",
+   "estimated": 16.4,
+   "measured": 16.3,
+   "kind": "gabled",
+   "baseRel": -0.38
+  },
+  {
+   "id": "1031362541",
+   "estimated": 13.2,
+   "measured": 17.8,
+   "kind": "gabled",
+   "baseRel": -3.92
+  },
+  {
+   "id": "70228004",
+   "estimated": 16.4,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 1.11
+  },
+  {
+   "id": "1031362586",
+   "estimated": 10,
+   "measured": 11.2,
+   "kind": "gabled",
+   "baseRel": 0.49
+  },
+  {
+   "id": "113113536",
+   "estimated": 13.2,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 4.57
+  },
+  {
+   "id": "113067770",
+   "estimated": 10,
+   "measured": 13.5,
+   "kind": "gabled",
+   "baseRel": 0.18
+  },
+  {
+   "id": "113503325",
+   "estimated": 16.4,
+   "measured": 17,
+   "kind": "gabled",
+   "baseRel": 5.94
+  },
+  {
+   "id": "113113949",
+   "estimated": 16.4,
+   "measured": 16.8,
+   "kind": "gabled",
+   "baseRel": 4.3
+  },
+  {
+   "id": "1031362260",
+   "estimated": 10,
+   "measured": 12.9,
+   "kind": "flat",
+   "baseRel": -6
+  },
+  {
+   "id": "113485513",
+   "estimated": 13.2,
+   "measured": 16.6,
+   "kind": "gabled",
+   "baseRel": 3.66
+  },
+  {
+   "id": "113486588",
+   "estimated": 13.2,
+   "measured": 14.2,
+   "kind": "gabled",
+   "baseRel": -0.09
+  },
+  {
+   "id": "113067800",
+   "estimated": 10,
+   "measured": 12.6,
+   "kind": "gabled",
+   "baseRel": 0.95
+  },
+  {
+   "id": "113072905",
+   "estimated": 16.4,
+   "measured": 16.9,
+   "kind": "gabled",
+   "baseRel": 0.84
+  },
+  {
+   "id": "113113959",
+   "estimated": 13.2,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 4.67
+  },
+  {
+   "id": "70498515",
+   "estimated": 13.2,
+   "measured": 14.3,
+   "kind": "gabled",
+   "baseRel": 2.2
+  },
+  {
+   "id": "113067758",
+   "estimated": 13.2,
+   "measured": 14,
+   "kind": "gabled",
+   "baseRel": 1.09
+  },
+  {
+   "id": "113113951",
+   "estimated": 16.4,
+   "measured": 17,
+   "kind": "gabled",
+   "baseRel": 4.53
+  },
+  {
+   "id": "113113960",
+   "estimated": 16.4,
+   "measured": 17,
+   "kind": "gabled",
+   "baseRel": 4.82
+  },
+  {
+   "id": "113485507",
+   "estimated": 10,
+   "measured": 5,
+   "kind": "gabled",
+   "baseRel": 4.55
+  },
+  {
+   "id": "113486593",
+   "estimated": 13.2,
+   "measured": 16.6,
+   "kind": "gabled",
+   "baseRel": -0.05
+  },
+  {
+   "id": "113486598",
+   "estimated": 13.2,
+   "measured": 17,
+   "kind": "gabled",
+   "baseRel": 1.55
+  },
+  {
+   "id": "113080256",
+   "estimated": 13.2,
+   "measured": 14.7,
+   "kind": "gabled",
+   "baseRel": -5.65
+  },
+  {
+   "id": "113067744",
+   "estimated": 13.2,
+   "measured": 14,
+   "kind": "gabled",
+   "baseRel": 0.77
+  },
+  {
+   "id": "113067740",
+   "estimated": 13.2,
+   "measured": 17.4,
+   "kind": "gabled",
+   "baseRel": -1.59
+  },
+  {
+   "id": "113048560",
+   "estimated": 13.2,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 0.98
+  },
+  {
+   "id": "113048580",
+   "estimated": 13.2,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 0.14
+  },
+  {
+   "id": "113067685",
+   "estimated": 13.2,
+   "measured": 13.7,
+   "kind": "gabled",
+   "baseRel": 1.19
+  },
+  {
+   "id": "113486606",
+   "estimated": 10,
+   "measured": 13.3,
+   "kind": "gabled",
+   "baseRel": 0.3
+  },
+  {
+   "id": "113113965",
+   "estimated": 16.4,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 2.97
+  },
+  {
+   "id": "113877744",
+   "estimated": 13.2,
+   "measured": 16.4,
+   "kind": "gabled",
+   "baseRel": -5.53
+  },
+  {
+   "id": "70498511",
+   "estimated": 16.4,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": 0.58
+  },
+  {
+   "id": "113080252",
+   "estimated": 13.2,
+   "measured": 13.6,
+   "kind": "gabled",
+   "baseRel": -4.84
+  },
+  {
+   "id": "113877749",
+   "estimated": 16.4,
+   "measured": 16.8,
+   "kind": "gabled",
+   "baseRel": -5.52
+  },
+  {
+   "id": "113071917",
+   "estimated": 10,
+   "measured": 13.3,
+   "kind": "gabled",
+   "baseRel": -5.27
+  },
+  {
+   "id": "113113947",
+   "estimated": 16.4,
+   "measured": 17.3,
+   "kind": "gabled",
+   "baseRel": 2.63
+  },
+  {
+   "id": "113113955",
+   "estimated": 13.2,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 3.43
+  },
+  {
+   "id": "113485509",
+   "estimated": 13.2,
+   "measured": 14.1,
+   "kind": "gabled",
+   "baseRel": 4.81
+  },
+  {
+   "id": "113485506",
+   "estimated": 13.2,
+   "measured": 14.8,
+   "kind": "gabled",
+   "baseRel": 4.45
+  },
+  {
+   "id": "113048546",
+   "estimated": 13.2,
+   "measured": 17.6,
+   "kind": "gabled",
+   "baseRel": 1.28
+  },
+  {
+   "id": "113486631",
+   "estimated": 13.2,
+   "measured": 18.2,
+   "kind": "flat",
+   "baseRel": 0.91
+  },
+  {
+   "id": "113072908",
+   "estimated": 10,
+   "measured": 10.8,
+   "kind": "gabled",
+   "baseRel": 0.69
+  },
+  {
+   "id": "113047051",
+   "estimated": 10,
+   "measured": 6.2,
+   "kind": "gabled",
+   "baseRel": -6.9
+  },
+  {
+   "id": "113485510",
+   "estimated": 16.4,
+   "measured": 16.6,
+   "kind": "gabled",
+   "baseRel": 3.63
+  },
+  {
+   "id": "113072910",
+   "estimated": 10,
+   "measured": 13.7,
+   "kind": "gabled",
+   "baseRel": 1.12
+  },
+  {
+   "id": "113067817",
+   "estimated": 13.2,
+   "measured": 12.7,
+   "kind": "gabled",
+   "baseRel": 0.74
+  },
+  {
+   "id": "113071897",
+   "estimated": 13.2,
+   "measured": 17.2,
+   "kind": "gabled",
+   "baseRel": -6.24
+  },
+  {
+   "id": "113113970",
+   "estimated": 16.4,
+   "measured": 17.4,
+   "kind": "gabled",
+   "baseRel": 4.07
+  },
+  {
+   "id": "70228001",
+   "estimated": 13.2,
+   "measured": 13.7,
+   "kind": "gabled",
+   "baseRel": -0.28
+  },
+  {
+   "id": "113878745",
+   "estimated": 13.2,
+   "measured": 14.1,
+   "kind": "gabled",
+   "baseRel": -4.2
+  },
+  {
+   "id": "113486612",
+   "estimated": 13.2,
+   "measured": 16.2,
+   "kind": "gabled",
+   "baseRel": 0.33
+  },
+  {
+   "id": "113080260",
+   "estimated": 6.8,
+   "measured": 7.9,
+   "kind": "complex",
+   "baseRel": -4.34
+  },
+  {
+   "id": "113067788",
+   "estimated": 13.2,
+   "measured": 17.3,
+   "kind": "gabled",
+   "baseRel": -0.52
+  },
+  {
+   "id": "113500991",
+   "estimated": 6.8,
+   "measured": 8.8,
+   "kind": "gabled",
+   "baseRel": -2.09
+  },
+  {
+   "id": "1031362537",
+   "estimated": 13.2,
+   "measured": 14,
+   "kind": "gabled",
+   "baseRel": -4.75
+  },
+  {
+   "id": "113500981",
+   "estimated": 10,
+   "measured": 12.8,
+   "kind": "gabled",
+   "baseRel": -2.12
+  },
+  {
+   "id": "113500994",
+   "estimated": 13.2,
+   "measured": 13.9,
+   "kind": "gabled",
+   "baseRel": -1.2
+  },
+  {
+   "id": "113113546",
+   "estimated": 13.2,
+   "measured": 17.9,
+   "kind": "gabled",
+   "baseRel": 5.11
+  },
+  {
+   "id": "113500986",
+   "estimated": 10,
+   "measured": 10.6,
+   "kind": "gabled",
+   "baseRel": -2.44
+  },
+  {
+   "id": "70228015",
+   "estimated": 13.2,
+   "measured": 13.8,
+   "kind": "gabled",
+   "baseRel": -0.3
+  },
+  {
+   "id": "113504941",
+   "estimated": 13.2,
+   "measured": 13.7,
+   "kind": "gabled",
+   "baseRel": 2.7
+  },
+  {
+   "id": "1031362439",
+   "estimated": 13.2,
+   "measured": 17.1,
+   "kind": "gabled",
+   "baseRel": 3.26
+  },
+  {
+   "id": "113067707",
+   "estimated": 16.4,
+   "measured": 16.6,
+   "kind": "gabled",
+   "baseRel": 3.65
+  },
+  {
+   "id": "113500989",
+   "estimated": 13.2,
+   "measured": 14.6,
+   "kind": "gabled",
+   "baseRel": -0.36
+  },
+  {
+   "id": "113486643",
+   "estimated": 13.2,
+   "measured": 10.1,
+   "kind": "gabled",
+   "baseRel": 0.8
+  },
+  {
+   "id": "70498504",
+   "estimated": 13.2,
+   "measured": 6,
+   "kind": "flat",
+   "baseRel": 0.55
+  },
+  {
+   "id": "113486600",
+   "estimated": 10,
+   "measured": 4.1,
+   "kind": "complex",
+   "baseRel": 0.33
+  },
+  {
+   "id": "113080237",
+   "estimated": 10,
+   "measured": 5.3,
+   "kind": "flat",
+   "baseRel": -5.87
+  },
+  {
+   "id": "113080234",
+   "estimated": 6.8,
+   "measured": 13.8,
+   "kind": "complex",
+   "baseRel": -4.33
+  },
+  {
+   "id": "113500971",
+   "estimated": 10,
+   "measured": 10.8,
+   "kind": "gabled",
+   "baseRel": -3.55
+  },
+  {
+   "id": "113071906",
+   "estimated": 13.2,
+   "measured": 10.1,
+   "kind": "gabled",
+   "baseRel": -5.88
+  },
+  {
+   "id": "113500976",
+   "estimated": 10,
+   "measured": 6.6,
+   "kind": "gabled",
+   "baseRel": -1.43
+  },
+  {
+   "id": "113080244",
+   "estimated": 13.2,
+   "measured": 10.6,
+   "kind": "gabled",
+   "baseRel": -5.85
+  },
+  {
+   "id": "113080243",
+   "estimated": 10,
+   "measured": 7.8,
+   "kind": "flat",
+   "baseRel": -4.18
+  },
+  {
+   "id": "1031362263",
+   "estimated": 13.2,
+   "measured": 14.9,
+   "kind": "gabled",
+   "baseRel": -4.63
+  },
+  {
+   "id": "113067732",
+   "estimated": 6.8,
+   "measured": 7.4,
+   "kind": "flat",
+   "baseRel": -0.94
+  },
+  {
+   "id": "113113972",
+   "estimated": 10,
+   "measured": 6.8,
+   "kind": "flat",
+   "baseRel": 4.74
+  },
+  {
+   "id": "113500979",
+   "estimated": 13.2,
+   "measured": 7.1,
+   "kind": "gabled",
+   "baseRel": -2.09
+  },
+  {
+   "id": "1031361930",
+   "estimated": 10,
+   "measured": 3.9,
+   "kind": "gabled",
+   "baseRel": -4.52
+  },
+  {
+   "id": "673906167",
+   "estimated": 10,
+   "measured": 2.9,
+   "kind": "flat",
+   "baseRel": -3.33
+  },
+  {
+   "id": "132766777",
+   "estimated": 10,
+   "measured": 5.6,
+   "kind": "gabled",
+   "baseRel": -14.66
+  },
+  {
+   "id": "113071925",
+   "estimated": 10,
+   "measured": 6.9,
+   "kind": "flat",
+   "baseRel": -4.56
+  },
+  {
+   "id": "113047049",
+   "estimated": 10,
+   "measured": 7.3,
+   "kind": "gabled",
+   "baseRel": -1.36
+  },
+  {
+   "id": "113113961",
+   "estimated": 10,
+   "measured": 12.8,
+   "kind": "flat",
+   "baseRel": 2.65
+  },
+  {
+   "id": "113080233",
+   "estimated": 3.6,
+   "measured": 5.5,
+   "kind": "gabled",
+   "baseRel": -5.76
+  },
+  {
+   "id": "113486633",
+   "estimated": 13.2,
+   "measured": 7.1,
+   "kind": "gabled",
+   "baseRel": 1.3
+  },
+  {
+   "id": "113113971",
+   "estimated": 10,
+   "measured": 3.9,
+   "kind": "flat",
+   "baseRel": 4.68
+  },
+  {
+   "id": "124634170",
+   "estimated": 3.6,
+   "measured": 4.3,
+   "kind": "gabled",
+   "baseRel": -0.44
+  },
+  {
+   "id": "1031362440",
+   "estimated": 10,
+   "measured": 4.2,
+   "kind": "flat",
+   "baseRel": -6.21
+  },
+  {
+   "id": "113504922",
+   "estimated": 10,
+   "measured": 4.6,
+   "kind": "flat",
+   "baseRel": 2.67
+  },
+  {
+   "id": "113072913",
+   "estimated": 6.8,
+   "measured": 13.3,
+   "kind": "flat",
+   "baseRel": 1.1
+  },
+  {
+   "id": "762546219",
+   "estimated": 6.8,
+   "measured": 7.3,
+   "kind": "gabled",
+   "baseRel": -5.47
+  },
+  {
+   "id": "113113974",
+   "estimated": 10,
+   "measured": 4.7,
+   "kind": "gabled",
+   "baseRel": 4.64
+  },
+  {
+   "id": "113485512",
+   "estimated": 10,
+   "measured": 6.2,
+   "kind": "gabled",
+   "baseRel": 4.21
+  },
+  {
+   "id": "113504934",
+   "estimated": 10,
+   "measured": 5.8,
+   "kind": "flat",
+   "baseRel": 2.29
+  },
+  {
+   "id": "1031362550",
+   "estimated": 3.6,
+   "measured": 10.7,
+   "kind": "complex",
+   "baseRel": 0.69
+  },
+  {
+   "id": "1031362264",
+   "estimated": 10,
+   "measured": 5.6,
+   "kind": "complex",
+   "baseRel": 0.54
+  },
+  {
+   "id": "113048542",
+   "estimated": 3.6,
+   "measured": 9.2,
+   "kind": "complex",
+   "baseRel": 0.93
+  },
+  {
+   "id": "113071922",
+   "estimated": 6.8,
+   "measured": 5.9,
+   "kind": "gabled",
+   "baseRel": -4.06
+  },
+  {
+   "id": "113485500",
+   "estimated": 6.8,
+   "measured": 8.5,
+   "kind": "gabled",
+   "baseRel": 3.61
+  },
+  {
+   "id": "1031361983",
+   "estimated": 10,
+   "measured": 7.1,
+   "kind": "gabled",
+   "baseRel": 1.27
+  },
+  {
+   "id": "113486623",
+   "estimated": 10,
+   "measured": 6.8,
+   "kind": "gabled",
+   "baseRel": 1.24
+  },
+  {
+   "id": "1031362259",
+   "estimated": 10,
+   "measured": 3.7,
+   "kind": "complex",
+   "baseRel": -3.95
+  },
+  {
+   "id": "1031362428",
+   "estimated": 10,
+   "measured": 9.6,
+   "kind": "complex",
+   "baseRel": -3.18
+  },
+  {
+   "id": "113486583",
+   "estimated": 3.6,
+   "measured": 5.8,
+   "kind": "gabled",
+   "baseRel": 0.72
+  },
+  {
+   "id": "621782693",
+   "estimated": 10,
+   "measured": 7.4,
+   "kind": "gabled",
+   "baseRel": -15.4
+  },
+  {
+   "id": "1031362553",
+   "estimated": 10,
+   "measured": 6.8,
+   "kind": "flat",
+   "baseRel": 1.21
+  },
+  {
+   "id": "1185821854",
+   "estimated": 10,
+   "measured": 4,
+   "kind": "flat",
+   "baseRel": -5.58
+  },
+  {
+   "id": "113504925",
+   "estimated": 13.2,
+   "measured": 5.9,
+   "kind": "flat",
+   "baseRel": 3.66
+  },
+  {
+   "id": "113504919",
+   "estimated": 13.2,
+   "measured": 6,
+   "kind": "flat",
+   "baseRel": 3.53
+  },
+  {
+   "id": "1031362489",
+   "estimated": 3.6,
+   "measured": 2.8,
+   "kind": "flat",
+   "baseRel": -4.86
+  },
+  {
+   "id": "621782695",
+   "estimated": 13.2,
+   "measured": 27,
+   "kind": "complex",
+   "baseRel": -5.59
+  },
+  {
+   "id": "1031362561",
+   "estimated": 3.6,
+   "measured": 8.3,
+   "kind": "complex",
+   "baseRel": 4.61
+  },
+  {
+   "id": "1031362543",
+   "estimated": 3.6,
+   "measured": 4.6,
+   "kind": "gabled",
+   "baseRel": 0.53
+  },
+  {
+   "id": "1031362544",
+   "estimated": 6.8,
+   "measured": 15.2,
+   "kind": "complex",
+   "baseRel": -2.27
+  },
+  {
+   "id": "113504910",
+   "estimated": 13.2,
+   "measured": 6,
+   "kind": "flat",
+   "baseRel": 3.63
+  },
+  {
+   "id": "113048591",
+   "estimated": 6.8,
+   "measured": 5.9,
+   "kind": "gabled",
+   "baseRel": 1
+  },
+  {
+   "id": "113113976",
+   "estimated": 10,
+   "measured": 6.6,
+   "kind": "flat",
+   "baseRel": 5.11
+  },
+  {
+   "id": "1031362062",
+   "estimated": 13.2,
+   "measured": 6,
+   "kind": "flat",
+   "baseRel": 3.59
+  },
+  {
+   "id": "1031362585",
+   "estimated": 10,
+   "measured": 4.6,
+   "kind": "gabled",
+   "baseRel": -0.47
+  },
+  {
+   "id": "1031362562",
+   "estimated": 10,
+   "measured": 6.3,
+   "kind": "complex",
+   "baseRel": -5.62
+  },
+  {
+   "id": "1031362538",
+   "estimated": 10,
+   "measured": 4.8,
+   "kind": "complex",
+   "baseRel": -2.61
+  },
+  {
+   "id": "1031362551",
+   "estimated": 10,
+   "measured": 3.1,
+   "kind": "complex",
+   "baseRel": 3.76
+  },
+  {
+   "id": "1031362312",
+   "estimated": 10,
+   "measured": 17.5,
+   "kind": "gabled",
+   "baseRel": 1.04
+  },
+  {
+   "id": "1031362321",
+   "estimated": 10,
+   "measured": 3.6,
+   "kind": "complex",
+   "baseRel": 4.91
+  },
+  {
+   "id": "1031362316",
+   "estimated": 10,
+   "measured": 10.2,
+   "kind": "complex",
+   "baseRel": 0.75
+  },
+  {
+   "id": "113048599",
+   "estimated": 10,
+   "measured": 14,
+   "kind": "complex",
+   "baseRel": 0.46
+  },
+  {
+   "id": "848988125",
+   "estimated": 10,
+   "measured": null,
+   "kind": "unmeasured",
+   "baseRel": -2.7
+  },
+  {
+   "id": "1031362315",
+   "estimated": 10,
+   "measured": 26.1,
+   "kind": "gabled",
+   "baseRel": 1.49
+  },
+  {
+   "id": "113048544",
+   "estimated": 10,
+   "measured": 25.1,
+   "kind": "gabled",
+   "baseRel": 1.79
+  },
+  {
+   "id": "1031362195",
+   "estimated": 10,
+   "measured": 6.3,
+   "kind": "complex",
+   "baseRel": 1.97
+  }
+ ]
+}

@@ -1,3 +1,5 @@
+import { parseLayers, type LayerProvenance } from './provenance'
+
 export type Vec2Tuple = readonly [east: number, north: number]
 export type Vec3Tuple = readonly [east: number, north: number, up: number]
 
@@ -54,6 +56,18 @@ export type SiteManifest = {
     roads?: string
     trees?: string
     landcover?: string
+    /** Optional measured building heights, a separate CC BY 4.0 asset keyed by building id (ADR-0033). */
+    heights?: string
+    /** Optional official road-noise bands (ADR-0034). */
+    noise?: string
+    /** Optional parcel outlines from the eiendomskart (ADR-0035). */
+    parcels?: string
+    /** Optional mapped-hazard facts from NVE and Kartverket (ADR-0036). */
+    hazards?: string
+    /** Optional header of the 1 m terrain tile; its data file has the same name with `.bin` (ADR-0037). */
+    terrain1m?: string
+    /** Optional winter climate context from NVE's snow model (ADR-0039). */
+    snow?: string
   }
   constraints: {
     maxHeightMeters: number
@@ -62,6 +76,8 @@ export type SiteManifest = {
   }
   cameraPresets: Record<CameraPresetId, CameraPreset>
   sources: SiteSource[]
+  /** Per-layer provenance (ADR-0032). Absent in older packages: `siteLayers` reads `sources` instead. */
+  layers?: LayerProvenance[]
   simplified: string[]
   statistics: {
     buildingCount: number
@@ -254,6 +270,24 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       ...(assetPaths.landcover === undefined
         ? {}
         : { landcover: asString(assetPaths.landcover, 'manifest.assetPaths.landcover') }),
+      ...(assetPaths.heights === undefined
+        ? {}
+        : { heights: asString(assetPaths.heights, 'manifest.assetPaths.heights') }),
+      ...(assetPaths.noise === undefined
+        ? {}
+        : { noise: asString(assetPaths.noise, 'manifest.assetPaths.noise') }),
+      ...(assetPaths.parcels === undefined
+        ? {}
+        : { parcels: asString(assetPaths.parcels, 'manifest.assetPaths.parcels') }),
+      ...(assetPaths.hazards === undefined
+        ? {}
+        : { hazards: asString(assetPaths.hazards, 'manifest.assetPaths.hazards') }),
+      ...(assetPaths.terrain1m === undefined
+        ? {}
+        : { terrain1m: asString(assetPaths.terrain1m, 'manifest.assetPaths.terrain1m') }),
+      ...(assetPaths.snow === undefined
+        ? {}
+        : { snow: asString(assetPaths.snow, 'manifest.assetPaths.snow') }),
     },
     constraints: {
       maxHeightMeters,
@@ -268,6 +302,7 @@ export function parseSiteManifest(value: unknown): SiteManifest {
       eyeLevel: parseCameraPreset(cameraPresets.eyeLevel, 'manifest.cameraPresets.eyeLevel'),
     },
     sources,
+    ...(root.layers === undefined ? {} : { layers: parseLayers(root.layers, 'manifest.layers') }),
     simplified: asStringArray(root.simplified, 'manifest.simplified'),
     statistics: {
       buildingCount,

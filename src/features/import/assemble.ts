@@ -1,3 +1,10 @@
+import { HAZARDS, type Hazards } from '../analysis/hazards'
+import type { HazardSource } from './hazards'
+import { PARCEL_NOTE, type Parcel } from '../analysis/parcels'
+import { PARCEL_WFS_URL, type ParcelSource } from './parcels'
+import { NOISE_OWNER, NOISE_USE_LIMITATION, type OfficialNoise } from '../analysis/officialNoise'
+import { NOISE_DATASET_UUID, NOISE_WFS_URL, type NoiseSource } from './officialNoise'
+import { nlodAttribution } from '../sites/provenance'
 import { ringCentroid } from '../../lib/polygon'
 import { sampleTerrainHeight } from '../sites/geometry'
 import { parseSiteManifest, type CameraPreset, type SiteSource, type Vec3Tuple } from '../sites/manifest'
@@ -40,7 +47,7 @@ async function sourceChecksum(parts: Uint8Array[], samples: TerrainSample[], sig
 
 /** No writes or app integration. A package becomes visible only after all parsers
  * and cross-asset checks pass. Timings are elapsed seconds, matching the C3 report. */
-export async function importSite(input: ImportFrame, deps: { tiles: TileSource; terrain: TerrainProvider[]; osm?: OsmAreaSource; roofs?: SurfaceSource }, options: ImportOptions = {}): Promise<ImportResult> {
+export async function importSite(input: ImportFrame, deps: { tiles: TileSource; terrain: TerrainProvider[]; osm?: OsmAreaSource; roofs?: SurfaceSource; noise?: NoiseSource; parcels?: ParcelSource; hazards?: HazardSource }, options: ImportOptions = {}): Promise<ImportResult> {
   const {signal,onProgress} = options
   checkAbort(signal)
   const frame = validateFrame(input)
@@ -179,6 +186,25 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     catch { checkAbort(signal) }
   }
   checkAbort(signal)
+  // Context from the authorities, where they map this place: the official road-noise map
+  // (ADR-0034), parcel outlines (ADR-0035) and mapped-hazard facts (ADR-0036). None is required:
+  // a failed request leaves the site without that layer and says so in the package notes. The
+  // three are independent, so they are asked together.
+  const bounds = frameBounds(frame)
+  const covered = <T extends { covers(lat: number, lon: number): boolean }>(source: T | undefined): T | undefined => (source?.covers(frame.latitude,frame.longitude) ? source : undefined)
+  const failure = (error: unknown) => (error instanceof Error ? error.message : 'request failed')
+  const [noiseResult,parcelResult,hazardResult] = await Promise.all([
+    covered(deps.noise)?.fetchNoise(bounds.lonLat,frame,bounds.enu,signal).then(value=>({value,failure:null as string | null}),error=>({value:null,failure:failure(error)})),
+    covered(deps.parcels)?.fetchParcels(bounds.lonLat,frame,bounds.enu,signal).then(value=>({value,failure:null as string | null}),error=>({value:[] as Parcel[],failure:failure(error)})),
+    covered(deps.hazards)?.fetchHazards(bounds.lonLat,frame,bounds.enu,signal).then(value=>({value:value.hazards as Hazards | null,failures:value.failures}),error=>({value:null,failures:[failure(error)]})),
+  ])
+  checkAbort(signal)
+  const noise: OfficialNoise | null = noiseResult?.value ?? null
+  const noiseFailure = noiseResult?.failure ?? null
+  const parcels: Parcel[] = parcelResult?.value ?? []
+  const parcelFailure = parcelResult?.failure ?? null
+  const hazards: Hazards | null = hazardResult?.value ?? null
+  const hazardFailures = hazardResult?.failures ?? []
   const sitePackage = await step('assemble','SitePackage validation',async()=>{
     const {grid,provider} = sampled
     const absolute = grid?.absolute ?? Array<number>(GRID_SIZE*GRID_SIZE).fill(0)
@@ -231,7 +257,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
       location:{latitude:frame.latitude,longitude:frame.longitude,timeZone:timeZoneFor(frame.latitude,frame.longitude)},
       crs:{sourceEPSG:'EPSG:4326',horizontalDatum:'WGS84',verticalDatum:provider ? provider.verticalDatum ?? 'Provider datum unspecified; not survey data' : 'Unreferenced flat zero plane',originLatitude:frame.latitude,originLongitude:frame.longitude,originElevation:terrain.originElevation,projection:'local-tangent-plane-wgs84'},
       unit:'m',dataStatus:'user-import',
-      assetPaths:{terrain:'terrain.json',buildings:'buildings.json',studyArea:'study-area.json',roads:'roads.json',trees:'trees.json',landcover:'landcover.json'},
+      assetPaths:{terrain:'terrain.json',buildings:'buildings.json',studyArea:'study-area.json',roads:'roads.json',trees:'trees.json',landcover:'landcover.json',...(parcels.length ? {parcels:'parcels.json'} : {})},
       constraints:{maxHeightMeters:18,setbackMeters:4,label:'Illustrative design constraint — not planning advice'},
       cameraPresets:{
         isometric:preset([round(distance/direction),round(-distance*1.15/direction),round(distance/direction)]),
@@ -240,6 +266,15 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
         south:preset([0,round(diagonal*1.35),round(diagonal*0.62)]),
         eyeLevel:preset([round(diagonal*0.8),round(-diagonal*0.9),16],[0,0,8],34),
       },sources,
+      ...(noise || parcels.length || hazards?.layers.length ? {layers:[
+        ...(hazards?.layers ?? []).map(layer=>({id:layer.kind,owner:HAZARDS[layer.kind].owner,dataset:HAZARDS[layer.kind].dataset,url:HAZARDS[layer.kind].service,licence:'NLOD',licenceUrl:'https://data.norge.no/nlod/',
+          attribution:HAZARDS[layer.kind].owner === 'NVE' ? 'Kilde: NVE' : nlodAttribution(HAZARDS[layer.kind].owner),retrieved:hazards!.retrieved,...(layer.updated ? {dataYear:Number(layer.updated.slice(0,4))} : {}),useLimitation:HAZARDS[layer.kind].note})),
+        ...(noise ? [{id:'noise',owner:NOISE_OWNER,dataset:'Strategic road-noise map (Lden, Lnight), CNOSSOS-EU',datasetUuid:NOISE_DATASET_UUID,url:NOISE_WFS_URL,licence:'NLOD 1.0',licenceUrl:'https://data.norge.no/nlod/en/1.0',
+        attribution:nlodAttribution(NOISE_OWNER),retrieved:acquiredAt.slice(0,10),dataYear:noise.dataYear,
+        useLimitation:`${NOISE_USE_LIMITATION} (Not for assessing the need for measures on individual buildings; separate calculations are required.)`}] : []),
+        ...(parcels.length ? [{id:'parcels',owner:'Kartverket',dataset:'Matrikkelen – Eiendomskart Teig',url:PARCEL_WFS_URL,licence:'CC BY 4.0',licenceUrl:'https://creativecommons.org/licenses/by/4.0/',
+          attribution:'© Kartverket',retrieved:acquiredAt.slice(0,10),useLimitation:`${PARCEL_NOTE}. Boundary accuracy varies by parcel.`}] : []),
+      ]} : {}),
       simplified:[
         'OpenMapTiles render_height minus render_min_height; minimum extrusion 2.5 m; all building kinds other.',
         'Outer rings only; holes omitted. Same-ID fragments unioned in local ENU, simplified at 0.3 m, repaired; parts below 12 m² omitted.',
@@ -257,6 +292,10 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
         'Road widths are illustrative; tunnels omitted; buffered road runs deduplicated within 0.5 m by class. Land-cover fragments may overlap; holes omitted.',
         'Time zone uses approximate country bounding boxes; border regions may be misclassified.',
         'Source checksum: SHA-256 of tile bytes followed by normalized terrain samples; not a checksum of provider HTTP responses.',
+        ...(noise ? [`Road-noise bands are Statens vegvesen's strategic noise map (calculated for ${noise.dataYear}), clipped to the frame; shown as published, not calculated here.`] : noiseFailure ? [`The official road-noise map could not be fetched (${noiseFailure}); the site has no noise layer.`] : []),
+        ...(parcels.length ? [`Parcel outlines are Kartverket's eiendomskart (${parcels.length} parcels touching the frame, kept whole); a map of the property register, not surveyed boundaries.`] : parcelFailure ? [`The eiendomskart could not be fetched (${parcelFailure}); the site has no parcel layer.`] : []),
+        ...(hazards ? ['Mapped hazards are presence facts from NVE and Kartverket, clipped to the frame; an absence is "not mapped", never "safe".'] : []),
+        ...hazardFailures.map(failure=>`Hazard map not checked: ${failure}`),
         ...sampled.failures.map(failure=>`Terrain provider fallback: ${failure}`),
         ...warnings.map(warning=>warning.message),
       ],statistics:{buildingCount:buildings.buildings.length,terrainSamples:terrain.rows*terrain.cols,studyAreaM2:round((studyHalf*2)**2,1),sourceChecksum:checksum},
@@ -265,7 +304,7 @@ export async function importSite(input: ImportFrame, deps: { tiles: TileSource; 
     if (manifest.statistics.buildingCount !== buildings.buildings.length || manifest.statistics.terrainSamples !== terrain.heights.flat().length || Math.abs(manifest.statistics.studyAreaM2-ringArea(studyArea.polygon))>0.1) throw new Error('Package statistics mismatch')
     for (const items of [buildings.buildings,roads.roads,landcover.areas]) if (new Set(items.map(item=>item.id)).size !== items.length) throw new Error('Duplicate package feature IDs')
     for (const building of buildings.buildings) if (Math.abs(building.area-ringArea(building.footprint))>0.051) throw new Error('Building area mismatch')
-    return {manifest,terrain,buildings,studyArea,roads:roads.roads,trees:trees.trees,landcover:landcover.areas}
+    return {manifest,terrain,buildings,studyArea,roads:roads.roads,trees:trees.trees,landcover:landcover.areas,noise,parcels,hazards,snow:null}
   })
   checkAbort(signal)
   return {sitePackage,warnings,timings}

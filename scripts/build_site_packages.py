@@ -1228,6 +1228,19 @@ def build_site(site_id: str, offline: bool) -> None:
         },
     }
 
+    # Assets registered by the later build steps (scripts/site-assets, ADR-0033 onwards) stay
+    # registered when the package is rebuilt; rerun those steps afterwards, as building ids may change.
+    previous_manifest = output / "manifest.json"
+    if previous_manifest.exists():
+        previous = json.loads(previous_manifest.read_text())
+        for key, value in previous.get("assetPaths", {}).items():
+            manifest["assetPaths"].setdefault(key, value)
+        if "layers" in previous:
+            manifest["layers"] = previous["layers"]
+        manifest["simplified"] += [
+            line for line in previous.get("simplified", []) if line.startswith("[")
+        ]
+
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     (output / "terrain.json").write_text(json.dumps(terrain, indent=2) + "\n")
     (output / "buildings.json").write_text(

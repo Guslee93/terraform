@@ -64,14 +64,14 @@ test('X5: the streamlines over Compact Infill in the top view', async ({ page })
 test('X5: the comfort bands at 6 m/s on Sloped Edge', async ({ page }) => {
   await openWind(page, 'sloped-edge')
   // Comfort is the default display and the reference speed defaults to 6 m/s.
-  await expect(page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Comfort', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('group', { name: 'Wind map shows' }).getByRole('button', { name: 'Speed classes', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('slider', { name: 'Wind at 10 m height' })).toHaveValue('6')
   await page.getByRole('button', { name: '3D', exact: true }).click()
   await waitForSettled(page)
   // The inspector is taller than the panel: scroll the legend into view so the image shows the
   // comfort bands and the reference speed, not only the direction dial.
-  await page.getByRole('list', { name: 'Wind comfort legend' }).scrollIntoViewIfNeeded()
-  await expect(page.getByRole('list', { name: 'Wind comfort legend' })).toBeVisible()
+  await page.getByRole('list', { name: 'Indicative wind speed classes at the chosen wind' }).scrollIntoViewIfNeeded()
+  await expect(page.getByRole('list', { name: 'Indicative wind speed classes at the chosen wind' })).toBeVisible()
   await page.screenshot({ path: `${OUT_DIR}/wind-comfort-6ms.png` })
 })
 

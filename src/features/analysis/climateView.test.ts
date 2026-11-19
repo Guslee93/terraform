@@ -37,8 +37,10 @@ describe('audit fixes', () => {
   it('#5 Comfort splits at the Lawson 10 m/s threshold', () => {
     const at = (ms: number) => ACTIVITY_BANDS.find((b) => ms < b.below)!.label
     expect(at(9)).toMatch(/^Uncomfortable \(8–10/)
-    expect(at(12)).toMatch(/^Very uncomfortable \(10–15/)
-    expect(at(16)).toMatch(/^Unsafe/)
+    expect(at(12)).toMatch(/^Very uncomfortable \(> 10/)
+    // No safety class: 16 m/s reads as the top speed class (feasibility 09 §5).
+    expect(at(16)).toMatch(/^Very uncomfortable/)
+    expect(ACTIVITY_BANDS.some((b) => /unsafe/i.test(b.label) || /unsafe/i.test(b.band))).toBe(false)
   })
 })
 

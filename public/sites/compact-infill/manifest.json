@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "compact-infill",
   "title": "Compact Infill",
-  "subtitle": "Dense Oslo block \u00b7 strong shadow study",
+  "subtitle": "Dense Oslo block · strong shadow study",
   "description": "A tight urban study area surrounded by mature apartment blocks. The simplified context is derived from OpenStreetMap footprints and the terrain from Kartverket DTM1.",
   "morphology": "Urban infill",
   "location": {
@@ -29,11 +29,17 @@
     "attribution": "attribution.md",
     "roads": "roads.json",
     "trees": "trees.json",
-    "landcover": "landcover.json"
+    "landcover": "landcover.json",
+    "heights": "heights.json",
+    "noise": "noise.json",
+    "parcels": "parcels.json",
+    "hazards": "hazards.json",
+    "terrain1m": "terrain1m.json",
+    "snow": "snow.json"
   },
   "constraints": {
-    "maxHeightMeters": 18.0,
-    "setbackMeters": 4.0,
+    "maxHeightMeters": 18,
+    "setbackMeters": 4,
     "label": "Illustrative design constraint"
   },
   "cameraPresets": {
@@ -44,51 +50,51 @@
         285.49
       ],
       "target": [
-        0.0,
-        0.0,
-        8.0
+        0,
+        0,
+        8
       ],
       "projection": "perspective",
       "fov": 32
     },
     "top": {
       "position": [
-        0.0,
+        0,
         -0.01,
         688.74
       ],
       "target": [
-        0.0,
-        0.0,
-        0.0
+        0,
+        0,
+        0
       ],
       "projection": "perspective",
       "fov": 32
     },
     "north": {
       "position": [
-        0.0,
+        0,
         -413.24,
         189.78
       ],
       "target": [
-        0.0,
-        0.0,
-        8.0
+        0,
+        0,
+        8
       ],
       "projection": "perspective",
       "fov": 32
     },
     "south": {
       "position": [
-        0.0,
+        0,
         413.24,
         189.78
       ],
       "target": [
-        0.0,
-        0.0,
-        8.0
+        0,
+        0,
+        8
       ],
       "projection": "perspective",
       "fov": 32
@@ -97,12 +103,12 @@
       "position": [
         244.88,
         -275.49,
-        16.0
+        16
       ],
       "target": [
-        0.0,
-        0.0,
-        8.0
+        0,
+        0,
+        8
       ],
       "projection": "perspective",
       "fov": 34
@@ -113,30 +119,142 @@
       "title": "OpenStreetMap site extract (buildings, roads, trees, land cover)",
       "url": "https://www.openstreetmap.org/copyright",
       "license": "ODbL 1.0",
-      "attribution": "\u00a9 OpenStreetMap contributors",
+      "attribution": "© OpenStreetMap contributors",
       "acquiredAt": "2026-11-11"
     },
     {
       "title": "Kartverket DTM1 elevation",
       "url": "https://ws.geonorge.no/hoydedata/v1/",
       "license": "CC BY 4.0",
-      "attribution": "\u00a9 Kartverket",
+      "attribution": "© Kartverket",
       "acquiredAt": "2026-10-27"
     }
   ],
   "simplified": [
     "Footprints simplified with a 1.2 m tolerance; building relations omitted",
     "Heights from height, building:levels, or a typology fallback",
-    "Terrain sampled on a 40 \u00d7 47 grid and recentered to the origin",
+    "Terrain sampled on a 40 × 47 grid and recentered to the origin",
     "Study boundary is authored, not a cadastral parcel",
     "Roads are OSM centrelines with illustrative widths by highway class; tunnels omitted",
     "Trees are mapped OSM positions (natural=tree nodes, natural=tree_row lines every 8 m) drawn with illustrative, position-varied sizes and tints",
-    "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m\u00b2 and incomplete rings omitted; multipolygon inner rings ignored"
+    "Land cover is illustrative OSM ground tints clipped to terrain and simplified at 0.5 m; areas below 4 m² and incomplete rings omitted; multipolygon inner rings ignored",
+    "[heights] Building heights and simple gables measured from Kartverket's surface model (282 gabled, 161 flat, 77 other shapes drawn flat at their measured height); 0 not seen in the surface model keep the storey estimate. Not survey data.",
+    "[noise] Road-noise bands are Statens vegvesen's strategic noise map (Lden and Lnight, calculated for 2021, CNOSSOS-EU), clipped to the terrain extent and simplified at 0.4 m; shown as published, not calculated here",
+    "[parcels] Parcel outlines are Kartverket's eiendomskart (matrikkel teig), 375 parcels touching the terrain extent, kept whole; a map of the property register, not surveyed boundaries",
+    "[terrain1m] 1 m terrain is Kartverket DTM1 (bare earth, lidar), 624 × 734 cells over the terrain extent, stored in centimetres; 0 cells without data. Not a survey",
+    "[hazards] Mapped hazards are presence facts from NVE and Kartverket, clipped to the terrain extent (Flood zones: not mapped by NVE; Flood susceptibility areas: 3 mapped area(s) in the extent; Quick-clay susceptibility areas: 5 mapped area(s) in the extent; Storm surge, 200-year level in the 2100 climate: 1 mapped area(s) in the extent); an absence is \"not mapped\", never \"safe\"",
+    "[snow] Winter climate context is NVE's snow model on the seNorge grid (daily snow depth, 1 km cell at 22 m above sea level), winters 1990/91 to 2019/20; modelled for open terrain, not measured at the site"
   ],
   "statistics": {
     "buildingCount": 520,
     "terrainSamples": 1880,
-    "studyAreaM2": 45600.0,
+    "studyAreaM2": 45600,
     "sourceChecksum": "417e1241ba91a643"
-  }
+  },
+  "layers": [
+    {
+      "id": "heights",
+      "owner": "Kartverket",
+      "dataset": "Høyde DOM1 (surface model, NHM), roof fit",
+      "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dom-nhm-25833",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "© Kartverket",
+      "retrieved": "2026-11-15",
+      "useLimitation": "Heights are measured from a lidar surface model, not surveyed. Lidar and map epochs differ."
+    },
+    {
+      "id": "noise",
+      "owner": "Statens vegvesen",
+      "dataset": "Strategic road-noise map (Lden, Lnight), CNOSSOS-EU",
+      "datasetUuid": "4bbae38e-4718-481d-9827-237cd5e115c8",
+      "url": "https://www.vegvesen.no/kart/ogc/norstoy_1_0/ows",
+      "licence": "NLOD 1.0",
+      "licenceUrl": "https://data.norge.no/nlod/en/1.0",
+      "attribution": "Contains data under the Norwegian licence for Open Government data (NLOD) distributed by Statens vegvesen",
+      "retrieved": "2026-11-15",
+      "dataYear": 2021,
+      "useLimitation": "Datasettet skal ikke brukes til å vurdere behov for tiltak på enkeltbygg. Det må utføres egne beregninger for dette. (Not for assessing the need for measures on individual buildings; separate calculations are required.)"
+    },
+    {
+      "id": "parcels",
+      "owner": "Kartverket",
+      "dataset": "Matrikkelen – Eiendomskart Teig",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.matrikkelen-eiendomskart-teig",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "© Kartverket",
+      "retrieved": "2026-11-15",
+      "useLimitation": "Eiendomskart — not a surveyed boundary. Boundary accuracy varies by parcel."
+    },
+    {
+      "id": "terrain1m",
+      "owner": "Kartverket",
+      "dataset": "Høyde DTM1 (terrain model, NHM)",
+      "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm-nhm-25833",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "© Kartverket",
+      "retrieved": "2026-11-16",
+      "useLimitation": "Kartverket DTM1 (1 m bare-earth terrain from lidar) — not a survey"
+    },
+    {
+      "id": "flood-zones",
+      "owner": "NVE",
+      "dataset": "Flomsoner (detailed flood-zone maps)",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.flomsoner",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
+      "attribution": "Kilde: NVE",
+      "retrieved": "2026-11-16",
+      "useLimitation": "Detailed flood-zone maps exist for selected river reaches only; most rivers have none."
+    },
+    {
+      "id": "flood-susceptibility",
+      "owner": "NVE",
+      "dataset": "Flom aktsomhetsområder",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.flomaktsomhetsomrader",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
+      "attribution": "Kilde: NVE",
+      "retrieved": "2026-11-16",
+      "dataYear": 2025,
+      "useLimitation": "A national screening map of where flood hazard must be assessed; not a flood-zone map."
+    },
+    {
+      "id": "quick-clay",
+      "owner": "NVE",
+      "dataset": "Aktsomhetskart for kvikkleireskred",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.aktsomhetskartforkvikkleireskred",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
+      "attribution": "Kilde: NVE",
+      "retrieved": "2026-11-16",
+      "dataYear": 2026,
+      "useLimitation": "A screening map of where quick-clay hazard must be assessed; not a mapped hazard zone."
+    },
+    {
+      "id": "storm-surge",
+      "owner": "Kartverket",
+      "dataset": "Stormflo og havnivå",
+      "url": "https://wfs.geonorge.no/skwms1/wfs.stormflo_havniva",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
+      "attribution": "Contains data under the Norwegian licence for Open Government data (NLOD) distributed by Kartverket",
+      "retrieved": "2026-11-16",
+      "dataYear": 2026,
+      "useLimitation": "Modelled areas, not suited to detailed studies or decisions at detail level (publisher)."
+    },
+    {
+      "id": "snow",
+      "owner": "NVE",
+      "dataset": "Snow depth, grid time series (seNorge grid)",
+      "url": "https://api.nve.no/doc/gridtimeseries-data-gts/",
+      "licence": "NLOD",
+      "licenceUrl": "https://data.norge.no/nlod/",
+      "attribution": "Kilde: NVE",
+      "retrieved": "2026-11-16",
+      "useLimitation": "Winter climate context from a 1 km snow model for open terrain — not a measurement at the site. Not snowdrift, not snow accumulating on or around buildings, and not a snow load. Those need a specialist study. NVE: the data are provided \"as is\" and may contain errors and omissions."
+    }
+  ]
 }

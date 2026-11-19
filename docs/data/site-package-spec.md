@@ -18,8 +18,21 @@ public/sites/<site-id>/
   roads.json               # optional: OSM highway centrelines + illustrative widths (ADR-0005)
   trees.json               # optional: OSM natural=tree points and natural=tree_row lines
   landcover.json           # optional: OSM water/green/vegetation/paved polygons (illustrative ground tints)
+  heights.json             # optional: measured building heights and gables, CC BY 4.0, keyed by building id (ADR-0033)
+  noise.json               # optional: official road-noise bands, NLOD 1.0 (ADR-0034)
   attribution.md
 ```
+
+`heights.json` and `noise.json` are written by the build steps in `scripts/site-assets/`
+(`npx vitest run --config scripts/site-assets/vitest.config.ts`), from raw responses cached in
+`data/raw/` with their checksum, request and retrieval date. Each registers itself in
+`assetPaths` and adds one `layers` entry. Neither rewrites another asset: `buildings.json` keeps
+its storey estimates, and the loader merges the measured heights at load time.
+
+- `heights.json`: `{ schemaVersion: 1, siteId, buildings: [{ id, kind: flat | gabled | complex |
+  unmeasured, height?, roof? }] }`.
+- `noise.json`: `{ schemaVersion: 1, siteId, dataYear, polygons: [{ metric: Lden | Lnight,
+  bandLow, rings }] }`; `rings` are an outline and its holes in local ENU metres, filled even-odd.
 
 `roads.json` and `trees.json` are optional and referenced by `assetPaths.roads` /
 `assetPaths.trees`. Packages without them stay valid and load with empty layers;
@@ -121,6 +134,20 @@ interface SiteManifest {
     license?: string
     attribution?: string
     acquiredAt?: string
+  }>
+  // Per-layer provenance (ADR-0032). Optional: older packages are read from `sources`.
+  layers?: Array<{
+    id: 'terrain' | 'buildings' | 'heights' | 'roads' | 'trees' | 'landcover' | 'noise' | 'parcels' | 'hazards' | 'terrain1m'
+    owner: string
+    dataset: string
+    datasetUuid?: string
+    url: string            // https
+    licence: 'CC BY 4.0' | 'NLOD 1.0' | 'ODbL 1.0' | 'no conditions'
+    licenceUrl: string
+    attribution: string
+    retrieved: string      // YYYY-MM-DD
+    dataYear?: number      // read from the data, never from catalogue prose
+    useLimitation?: string // the publisher's wording
   }>
   simplified: string[]
   statistics: {

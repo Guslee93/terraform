@@ -1,6 +1,7 @@
 import { SUN_HOURS_RAMP, type CircleSunHours } from '../../features/analysis/circleSunHours'
 import { rangeClass } from '../ui/controls'
 import { CircleControls, Section } from './ClimatePanel'
+import { roundToHalf } from './analysisValues'
 import { formatNumber } from './format'
 import { clockLabel, shortDate } from './SunPanel'
 
@@ -9,7 +10,7 @@ export type SunWindow = readonly [from: number, to: number]
 export const FULL_DAY: SunWindow = [0, 1440]
 const WINDOW_STEP_MIN = 30
 
-const hours = (value: number | null) => (value === null ? '—' : `${formatNumber(value, 1)} h`)
+const hours = (value: number | null) => (value === null ? '—' : `${formatNumber(roundToHalf(value), 1)} h`)
 
 /**
  * The Sun card's controls while the map shows hours of direct sun in the analysis circle
@@ -52,7 +53,7 @@ export function SunHoursControls({
           ))}
         </dl>
         <p className="text-caption text-ink-secondary">
-          Median hours of direct sun on {shortDate(date)}, {clockLabel(from)}–{clockLabel(to)}{top === null ? '' : `, of ${formatNumber(top, 1)} h the sun is up`}.
+          Median hours of direct sun, to the nearest half hour, on {shortDate(date)}, {clockLabel(from)}–{clockLabel(to)}{top === null ? '' : `, of ${formatNumber(top, 1)} h the sun is up`}.
         </p>
         {top !== null && (
           <div role="img" aria-label={`Colour scale: 0 to ${formatNumber(top, 1)} hours of direct sun, dark to light`}>

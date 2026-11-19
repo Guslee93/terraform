@@ -3,7 +3,7 @@ import { DirectionRose, ShareBar, type RoseSector } from './DirectionRose'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { demoFrame } from '../../features/analysis/windDemo'
 import { heightText, liftHeights } from '../../features/analysis/windLift'
-import { CIRCLE_RADIUS, DELTA_NOTE, displayAt, flowAtHeight, heightNote, LIFT_SLOPE_NOTE, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
+import { ACTIVITY_VIEW_NAME, CIRCLE_RADIUS, DELTA_NOTE, displayAt, flowAtHeight, heightNote, LIFT_SLOPE_NOTE, localSpeedMs, PEDESTRIAN_HEIGHT_M, ROSE_THRESHOLD_MS, WORST_NOTE, type WindBaseline, type ClimateMode, type ClimateView, type WindDisplay, type WindSettings } from '../../features/analysis/climateView'
 import { cn } from '../../lib/cn'
 import { eyebrowClass, labelClass, pillButtonClass, rangeClass, segmentClass, segmentGroupClass } from '../ui/controls'
 
@@ -114,7 +114,7 @@ type ClimatePanelProps = {
 }
 
 const DISPLAYS: ReadonlyArray<{ id: WindDisplay; label: string }> = [
-  { id: 'activity', label: 'Comfort' },
+  { id: 'activity', label: 'Speed classes' },
   { id: 'ratio', label: 'Direction' },
 ]
 
@@ -229,16 +229,17 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
   const slicesReady = slicesComplete
   // While the demo plays, an edit stops it (restoring the user's settings) and keeps the edit.
   const set = (patch: Partial<WindSettings>) => (demoPlaying && onDemoEdit ? onDemoEdit(patch) : onWindChange({ ...wind, ...patch }))
-  const legend = view && mode !== 'off' && (
+  // The Noise card has its own body (NoisePanel, ADR-0034); this legend is the wind map's.
+  const legend = view && mode === 'wind' && (
     <div>
       {view.assessed === 0 ? (
         <p className="text-body-sm text-ink-secondary">
-          {mode === 'wind' && baselineMismatch && wind.display === 'delta' ? 'Delta unavailable for this circle or direction.' : mode === 'noise' ? 'No mapped roads in this study area, so there is nothing to estimate.' : 'Computing the wind flow…'}
+          {mode === 'wind' && baselineMismatch && wind.display === 'delta' ? 'Delta unavailable for this circle or direction.' : 'Computing the wind flow…'}
         </p>
       ) : (
         <>
-          <ShareBar entries={view.legend} label={mode === 'wind' ? 'Share of open ground by band' : 'Share of the study area by band'} />
-          <ul className="mt-2" aria-label={mode === 'wind' ? (displayAt(wind) === 'delta' ? DELTA_NOTE : displayAt(wind) === 'activity' ? 'Wind comfort legend' : displayAt(wind) === 'worst' ? 'Worst-case comfort legend' : 'Wind direction legend') : 'Noise legend'}>
+          <ShareBar entries={view.legend} label="Share of open ground by band" />
+          <ul className="mt-2" aria-label={displayAt(wind) === 'delta' ? DELTA_NOTE : displayAt(wind) === 'activity' ? ACTIVITY_VIEW_NAME : displayAt(wind) === 'worst' ? 'Worst-case speed classes legend' : 'Wind direction legend'}>
             {view.legend.map((entry) => (
               <li key={entry.label} className="flex min-h-7 items-center justify-between gap-3 text-body-sm text-ink">
                 <span className="flex items-center gap-2">
@@ -277,7 +278,7 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
         <div role="group" aria-label="Wind map shows" className={segmentGroupClass}>
           {[...DISPLAYS, ...(sweep && sweep.sectors.length > 0 ? [{ id: 'worst' as const, label: 'Worst case' }] : []), ...(baseline ? [{ id: 'delta' as const, label: 'Delta' }] : [])].map((option) => (
             <button key={option.id} type="button" aria-pressed={displayAt(wind) === option.id}
-              // Comfort classes are pedestrian criteria (2 m); the worst case is a 2 m screen.
+              // Speed classes are pedestrian criteria (2 m); the worst case is a 2 m screen.
               disabled={option.id === 'activity' && wind.heightM > PEDESTRIAN_HEIGHT_M}
               aria-describedby={option.id === 'activity' && wind.heightM > PEDESTRIAN_HEIGHT_M ? 'wind-height-note' : undefined}
               onClick={() => set({ display: option.id, ...(option.id === 'worst' ? { heightM: PEDESTRIAN_HEIGHT_M } : {}) })} className={segmentClass}>
@@ -301,13 +302,13 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
           {sweepOn && sweep && <>
             <DirectionRose sectors={sweep.sectors} worstFrom={sweep.worstFrom} currentFrom={wind.from} thresholdMs={ROSE_THRESHOLD_MS} msPerRatio={localSpeedMs(1, wind.refSpeed)} total={sweep.total}
               onSelect={(from) => set({ from, display: wind.display === 'worst' ? 'activity' : wind.display })} />
-            <p className="text-caption text-ink-secondary">{WORST_NOTE} Wedge length: mean wind on open ground for each direction, at {wind.refSpeed} m/s (10 m). Worst = largest share at or above {ROSE_THRESHOLD_MS} m/s (too windy to stand), then highest mean. Select a wedge to view that direction.</p>
+            <p className="text-caption text-ink-secondary">{WORST_NOTE} Wedge length: mean wind on open ground for each direction, at {wind.refSpeed} m/s (10 m). Worst = largest share at or above {ROSE_THRESHOLD_MS} m/s, then highest mean. Select a wedge to view that direction.</p>
           </>}
           {sweepOn && !sweep && <p className="text-caption text-ink-secondary">Solving directions…</p>}
         </Section>
 
         <CircleControls radius={wind.radius} onRadiusChange={(radius) => set({ radius })} placing={placingCircle} onPlace={onPlaceCircle}
-          note={`The flow is solved only around this circle, at about ${Math.round((wind.radius * 2 * 1.4) / 160 * 10) / 10} m resolution.`} />
+          note={`The flow is solved only around this circle. Grid spacing ${Math.round((wind.radius * 2 * 1.4) / 160 * 10) / 10} m (not accuracy).`} />
 
         <Section title="Streamlines" action={
           <label className="grid size-8 cursor-pointer place-items-center">
@@ -358,8 +359,7 @@ export function ClimatePanel({ terrainReliefM = 0, showQuick = true, showModes =
         </Section>
       </>}
 
-      {mode === 'off' && <p className="text-body-sm text-ink-secondary">Choose Wind or Noise to colour the ground.</p>}
-      {mode === 'noise' && legend}
+      {mode === 'off' && <p className="text-body-sm text-ink-secondary">Choose Wind or Noise to show a layer.</p>}
     </div>
   )
 }

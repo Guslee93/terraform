@@ -269,7 +269,7 @@ export function SunBand({ time, onChange, state, location, playback, analysis, o
 }
 
 /** The panel's Sun group: readout, date and time controls, playback speed, notes and the sun path. */
-export function SunDetails({ time, onChange, state, location, playback, resolved, analysis, onAnalysisChange, roofSolar }: SunProps & { resolved: ResolvedLocalTime }) {
+export function SunDetails({ time, onChange, state, location, playback, resolved, analysis, onAnalysisChange, roofSolar, sunHoursNote }: SunProps & { resolved: ResolvedLocalTime; /** The sun-hours claim for this package's height source (ADR-0033). */ sunHoursNote?: string }) {
   const { latitude, longitude, timeZone } = location
   const day = useMemo(() => dayModel(time.date, latitude, longitude, timeZone), [time.date, latitude, longitude, timeZone])
   const dayLabel = day.kind === 'normal'
@@ -282,7 +282,7 @@ export function SunDetails({ time, onChange, state, location, playback, resolved
         <div className="space-y-1.5">
           <p className="text-caption text-ink-secondary">Analysis</p>
           <SunAnalysisSwitch value={analysis} onChange={onAnalysisChange} />
-          {analysis !== 'shadows' && <p className="text-caption text-ink-secondary">{SUN_ANALYSIS_NOTE[analysis]}</p>}
+          {analysis !== 'shadows' && <p className="text-caption text-ink-secondary">{analysis === 'sun-hours' && sunHoursNote ? sunHoursNote : SUN_ANALYSIS_NOTE[analysis]}</p>}
         </div>
       )}
       {analysis === 'roof-solar' && roofSolar && (

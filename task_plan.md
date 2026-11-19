@@ -314,3 +314,55 @@ geometry, and a river is recognised as a river (ADR-0027).
       `docs/reviews/water-geometry-review.md`.
 - [x] The curated packages are byte-identical: the rule is applied when the studio loads a package.
 - [ ] The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.
+
+## Foundation layers — build/foundation (2026-11-15/16)
+
+Plan: `docs/plans/fable-build-plan.md` (from the closed feasibility study). Report:
+`docs/reviews/build-foundation-report.md`. Branch `build/foundation`, pushed; draft PR #18.
+
+- [x] WP-0 baseline (1078 tests; perf baseline) and WP-1 label corrections.
+- [x] WP-2 layer provenance, attribution panel, export credits (ADR-0032).
+- [x] WP-3 measured heights for the curated sites (ADR-0033).
+- [x] WP-4 official road-noise map; heuristic deleted (ADR-0034). Registration and perf gates pass.
+- [x] WP-5 parcel layer (ADR-0035).
+- [x] WP-6 hazard facts and source health check (ADR-0036).
+- [x] WP-7 1 m terrain tools: slope and section (ADR-0037). Not for imports; no 1 m contours.
+- [x] WP-8 DEM runoff screening (stretch): the owner's request for a stormwater analysis.
+      Priority-Flood+Epsilon and D8 on the 1 m tile, buildings as blocks, in a worker
+      (ADR-0038). A Water card beside Sun, Wind and Noise; the only figure is the share of
+      open ground in depressions or enclosed courtyards.
+- [ ] WP-9 cut/fill pad (stretch): not started.
+- [ ] Independent review of the branch (owner: Opus or Codex), then merge on the owner's yes.
+      The draft PR #18 is open and green; it is deliberately not merged.
+- [x] `/code-review` of WP-5 to WP-7: 8 findings, all fixed (report §10); 1172 tests pass.
+- [x] `npm run lint`, `npm run test` (1171 passed / 4 skipped) and `npm run build` pass at b05454a.
+
+## Stormwater and winter climate — the owner's request (2026-11-16)
+
+Not a plan package: the owner asked for a stormwater analysis and a snow analysis. Both are
+built on the foundation layers (ADR-0037's 1 m tile, ADR-0036's hazards).
+
+- [x] Runoff screening (ADR-0038): `src/features/analysis/runoff.ts` (renderer-free),
+      `runoffWorker.ts`, `useRunoff.ts` (250 ms debounce), `src/scene/RunoffOverlay.tsx`,
+      `src/components/studio/WaterPanel.tsx`. A Water card in the Parameters panel.
+      Curated sites only: an imported site has no 1 m tile, and the card says so.
+- [x] Snow as winter climate context (ADR-0039): `scripts/site-assets/snow.build.ts` reads
+      NVE's grid time series (`sd` theme only, never `snowload`) at build time;
+      `src/features/analysis/snowClimate.ts` (renderer-free); `SnowPanel.tsx`; a Snow card.
+      Curated sites only: the API sends no CORS header.
+- [x] The `NLOD` licence value without a version, because NVE names the licence without one.
+      The hazard layers' "NLOD 1.0" is corrected to "NLOD" for the same reason.
+- [x] `npm run lint` (0), `npm run test` (1196 passed, 4 skipped) and `npm run build` pass.
+- [x] Playwright, full suite, production build: **49 passed, 12 opt-in skipped, 0 failed**.
+- [x] Captures: `docs/screenshots/build-water-{compact-infill,sloped-edge}.png` and
+      `docs/screenshots/build-snow-{compact-infill,sloped-edge}.png`.
+- [ ] The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over the change.
+- [ ] Owner: confirm the NVE licence with NVE before any commercial use (ADR-0039).
+
+## TF-VIS-011 — frozen performance harness (2026-11-17)
+
+- [x] Verified supplied plan SHA256 `653d9bfa001590a35d0af35efb8e323ff92fdc4b56b3ebfaa3121289cb457fc4`; read required source references in this checkout.
+- [x] Added standalone headed harness and metric/options documentation; no production-source or dependency changes.
+- [x] Syntax check and agreed lint proof pass (initial redundant global declarations corrected).
+- [ ] Coordinator: run headed baseline on owner's machine; independent provider: review final changes.
+- Pointer latency uses the explicitly permitted null/reason fallback; no timing is fabricated.

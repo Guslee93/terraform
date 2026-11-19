@@ -1,0 +1,134 @@
+{
+ "Oslo Compact Infill": [
+  [
+   "rpomrade_vn2",
+   false,
+   "no features were found | "
+  ],
+  [
+   "arealformal_vn2",
+   false,
+   "no features were found | "
+  ],
+  [
+   "rpomrade_vn1",
+   false,
+   "no features were found | "
+  ],
+  [
+   "arealformal_vn1",
+   false,
+   "no features were found | "
+  ]
+ ],
+ "Oslo Bjørvika": [
+  [
+   "rpomrade_vn2",
+   false,
+   "no features were found | "
+  ],
+  [
+   "arealformal_vn2",
+   false,
+   "no features were found | "
+  ],
+  [
+   "rpomrade_vn1",
+   false,
+   "no features were found | "
+  ],
+  [
+   "arealformal_vn1",
+   false,
+   "no features were found | "
+  ]
+ ],
+ "Bergen sentrum": [
+  [
+   "rpomrade_vn2",
+   true,
+   "Results for FeatureType 'http://dibk.no/reguleringsplaner:rpomrade_vn2': | -------------------------------------------- | objid = 72537 | objekttypenavn = RpOmråde | om"
+  ],
+  [
+   "arealformal_vn2",
+   false,
+   "no features were found | "
+  ],
+  [
+   "rpomrade_vn1",
+   false,
+   "no features were found | "
+  ],
+  [
+   "arealformal_vn1",
+   false,
+   "no features were found | "
+  ]
+ ],
+ "Trondheim sentrum": [
+  [
+   "rpomrade_vn2",
+   true,
+   "Results for FeatureType 'http://dibk.no/reguleringsplaner:rpomrade_vn2': | -------------------------------------------- | objid = 85050 | objekttypenavn = RpOmråde | om"
+  ],
+  [
+   "arealformal_vn2",
+   true,
+   "Results for FeatureType 'http://dibk.no/reguleringsplaner:rparealformalomrade_vn2': | -------------------------------------------- | objid = 706589 | objekttypenavn ="
+  ],
+  [
+   "rpomrade_vn1",
+   false,
+   "no features were found | "
+  ],
+  [
+   "arealformal_vn1",
+   false,
+   "no features were found | "
+  ]
+ ],
+ "Lillestrøm": [
+  [
+   "rpomrade_vn2",
+   true,
+   "Results for FeatureType 'http://dibk.no/reguleringsplaner:rpomrade_vn2': | -------------------------------------------- | objid = 33637 | objekttypenavn = RpOmråde | om"
+  ],
+  [
+   "arealformal_vn2",
+   true,
+   "Results for FeatureType 'http://dibk.no/reguleringsplaner:rparealformalomrade_vn2': | -------------------------------------------- | objid = 222026 | objekttypenavn ="
+  ],
+  [
+   "rpomrade_vn1",
+   true,
+   "Results for FeatureType 'http://dibk.no/reguleringsplaner:rpomrade_vn1': | -------------------------------------------- | objid = 882 | objekttypenavn = RpOmråde | områ"
+  ],
+  [
+   "arealformal_vn1",
+   true,
+   "Results for FeatureType 'http://dibk.no/reguleringsplaner:rparealformalomrade_vn1': | -------------------------------------------- | objid = 1572 | objekttypenavn = R"
+  ]
+ ],
+ "Drammen": [
+  [
+   "rpomrade_vn2",
+   false,
+   "no features were found | "
+  ],
+  [
+   "arealformal_vn2",
+   false,
+   "no features were found | "
+  ],
+  [
+   "rpomrade_vn1",
+   false,
+   "no features were found | "
+  ],
+  [
+   "arealformal_vn1",
+   false,
+   "no features were found | "
+  ]
+ ]
+}

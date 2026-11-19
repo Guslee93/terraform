@@ -30,7 +30,9 @@ export function downloadPasses(images: PassImages, siteId: string): number {
  * Rendering spec Phase 3 (ADR-0019): image passes for offline enhancement, and a short clip.
  * The passes are captured by the viewport (`onExportPasses`); the clip records the live canvas.
  */
-export function ExportVisuals({ siteId, onExportPasses, exporting, message }: {
+export function ExportVisuals({ siteId, onExportPasses, exporting, message, credits = [] }: {
+  /** Attribution lines burned into the clip's frames (ADR-0032). */
+  credits?: readonly string[]
   siteId: string
   onExportPasses: () => void
   exporting: boolean
@@ -46,7 +48,7 @@ export function ExportVisuals({ siteId, onExportPasses, exporting, message }: {
     setRecording(true)
     setClipMessage('Recording 6 s…')
     try {
-      const { blob, extension } = await recordCanvas(canvas, CLIP_MS)
+      const { blob, extension } = await recordCanvas(canvas, CLIP_MS, credits)
       const url = URL.createObjectURL(blob)
       download(url, passFileName(siteId, 'clip', extension))
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
@@ -66,7 +68,7 @@ export function ExportVisuals({ siteId, onExportPasses, exporting, message }: {
         <button type="button" disabled={busy} onClick={() => void recordClip()} className={pillButtonClass}>Record 6 s clip</button>
       </div>
       <p className="mt-2 text-caption text-ink-secondary">
-        4K still plus depth, white-model and analysis-overlay passes for offline enhancement. Label enhanced images as visualisations.
+        4K still plus depth, white-model and analysis-overlay passes for offline enhancement. Label enhanced images as visualisations. The data credits of the visible layers are written into the still, the white model, the analysis pass and the clip; keep them when you share the images.
       </p>
       {(clipMessage ?? message) && <p role="status" className="mt-1 text-caption text-ink-secondary">{clipMessage ?? message}</p>}
     </div>

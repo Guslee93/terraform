@@ -8,7 +8,7 @@ import { budget } from './budget'
 test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
 test.setTimeout(budget(120_000))
 
-const DISCLAIMER = 'Indicative sun hours — geometric, clear sky, buildings only. Not a daylight assessment.'
+const DISCLAIMER = 'Indicative sun hours — geometric, clear sky, buildings only (heights from Kartverket surface model); terrain and trees do not shade. Not a daylight assessment.'
 
 test('ADR-0031: the Sun card opens on sun hours, which fill the analysis circle, follow the window and the circle, and leave with Shadows', async ({ page }) => {
   await page.goto('/studio/compact-infill')
