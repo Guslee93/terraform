@@ -46,7 +46,8 @@ describe('NORDIC scene style', () => {
 describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
   it('is a complete style with the provisional first-look values', () => {
     expect(IDENTITY.id).toBe('identity')
-    expect(IDENTITY.background).toBe('#171B19')
+    expect(IDENTITY.background).toBe('#1C2320')
+    expect(IDENTITY.hazeColour).toBe('#262E2A')
     expect(IDENTITY.context).toEqual({ color: '#EEEDE8', roughness: 0.92 })
     expect(IDENTITY.road).toBe('#2C312E')
     expect(IDENTITY.water).toBe('#26302F')
@@ -95,7 +96,7 @@ describe('identityStage (TF-VIS-020 stages)', () => {
   it('keeps the identity charcoal palette in every stage', () => {
     for (const stage of ['A', 'B', 'C'] as const) {
       const style = identityStage(stage)
-      expect(style.background).toBe('#171B19')
+      expect(style.background).toBe('#1C2320')
       expect(style.context).toEqual({ color: '#EEEDE8', roughness: 0.92 })
       expect(style.floorGrid).toBe(false)
       expect(style.skirt).toBeNull()

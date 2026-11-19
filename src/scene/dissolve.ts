@@ -38,6 +38,54 @@ export function dissolveAmount(east: number, north: number, params: DissolvePara
   return 1 - Math.min(Math.max(edgeDistance / params.fadeWidth, 0), 1)
 }
 
+/** Aerial-perspective haze parameters (Run 9 T2): the tile bounds, the edge fade and the haze band. */
+export type HazeParams = DissolveParams & {
+  readonly hazeStart: number
+  readonly hazeEnd: number
+}
+
+/**
+ * The atmospheric haze amount at a world point (0 = crisp, 1 = fully hazed to the haze colour).
+ * Combines aerial perspective (horizontal distance from the site, from `hazeStart` to `hazeEnd`)
+ * with the tile-edge fade (the rounded rectangle), so the site and the analysis circle stay crisp
+ * and every tile edge reaches the haze colour. Mirrored exactly in the scene shader.
+ */
+export function hazeAmount(east: number, north: number, params: HazeParams): number {
+  const edge = dissolveAmount(east, north, params)
+  const distance = Math.hypot(east, north)
+  const aerial = distance <= params.hazeStart
+    ? 0
+    : distance >= params.hazeEnd
+      ? 1
+      : (distance - params.hazeStart) / (params.hazeEnd - params.hazeStart)
+  return Math.min(1, Math.max(edge, aerial))
+}
+
+/**
+ * Derive the full haze band for a site. Aerial perspective starts just past the crisp zone — the
+ * farthest study corner + margin (per-axis) and the analysis circle + margin — and reaches full at
+ * twice that radius (provisional), while the edge fade guarantees the tile edge is fully hazed.
+ */
+export function hazeRange(
+  studyArea: readonly (readonly [number, number])[],
+  analysisCircleRadiusM: number,
+  terrain: { readonly minX: number; readonly maxX: number; readonly minY: number; readonly maxY: number },
+  siteMarginM = SITE_MARGIN_M,
+  maxFadeWidthM = MAX_FADE_WIDTH_M,
+): HazeParams {
+  const params = dissolveRange(studyArea, analysisCircleRadiusM, terrain, siteMarginM, maxFadeWidthM)
+  let maxAbsX = 0
+  let maxAbsY = 0
+  for (const [east, north] of studyArea) {
+    maxAbsX = Math.max(maxAbsX, Math.abs(east))
+    maxAbsY = Math.max(maxAbsY, Math.abs(north))
+  }
+  const studyCorner = Math.hypot(maxAbsX + siteMarginM, maxAbsY + siteMarginM)
+  const circleReach = analysisCircleRadiusM + siteMarginM
+  const hazeStart = Math.max(studyCorner, circleReach)
+  return { ...params, hazeStart, hazeEnd: hazeStart * 2 }
+}
+
 /**
  * The fade band for a site. The fully-crisp zone must contain the study area plus `SITE_MARGIN_M`
  * and the largest analysis circle plus the same margin, so the fade never touches the site or an

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dissolveAmount, dissolveRange, MAX_FADE_WIDTH_M, MIN_FADE_WIDTH_M, SITE_MARGIN_M, type DissolveParams } from './dissolve'
+import { dissolveAmount, dissolveRange, hazeAmount, hazeRange, MAX_FADE_WIDTH_M, MIN_FADE_WIDTH_M, SITE_MARGIN_M, type DissolveParams } from './dissolve'
 
 const COMPACT = {
   studyArea: [[-95, -120], [95, -120], [95, 120], [-95, 120], [-95, -120]] as const,
@@ -91,5 +91,65 @@ describe('dissolveRange (TF-VIS-02A Run 8, edge-distance)', () => {
     const range = dissolveRange(COMPACT.studyArea, 100, COMPACT.terrain)
     expect(dissolveAmount(1000, 1000, range)).toBe(1)
     expect(dissolveAmount(0, 0, range)).toBe(0)
+  })
+})
+
+describe('hazeAmount (Run 9 T2, aerial perspective + edge fade)', () => {
+  const withHaze = (site: typeof COMPACT | typeof SLOPED) => hazeRange(site.studyArea, 100, site.terrain)
+
+  it('is fully crisp inside the study area + margin and the analysis circle + margin', () => {
+    for (const site of [COMPACT, SLOPED]) {
+      const params = withHaze(site)
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+      for (const [east, north] of site.studyArea) {
+        minX = Math.min(minX, east); maxX = Math.max(maxX, east)
+        minY = Math.min(minY, north); maxY = Math.max(maxY, north)
+      }
+      const crisp = { minX: minX - SITE_MARGIN_M, maxX: maxX + SITE_MARGIN_M, minY: minY - SITE_MARGIN_M, maxY: maxY + SITE_MARGIN_M }
+      for (const [east, north] of gridInside(crisp)) {
+        expect(hazeAmount(east, north, params)).toBe(0)
+      }
+      for (let r = 0; r <= 140; r += 20) {
+        for (let angle = 0; angle < 360; angle += 45) {
+          const east = r * Math.cos((angle * Math.PI) / 180)
+          const north = r * Math.sin((angle * Math.PI) / 180)
+          expect(hazeAmount(east, north, params)).toBe(0)
+        }
+      }
+    }
+  })
+
+  it('reaches 1 at every tile edge', () => {
+    for (const site of [COMPACT, SLOPED]) {
+      const params = withHaze(site)
+      for (const [east, north] of boundaryPoints(params)) {
+        expect(hazeAmount(east, north, params)).toBeCloseTo(1, 5)
+      }
+    }
+  })
+
+  it('is monotonic outward and grows from aerial perspective before the edge', () => {
+    const params = withHaze(COMPACT)
+    const centreX = (params.minX + params.maxX) / 2
+    const centreY = (params.minY + params.maxY) / 2
+    let previous = -1
+    for (let t = 0; t <= 1.0001; t += 0.025) {
+      const east = centreX + (params.maxX - centreX) * t
+      const amount = hazeAmount(east, centreY, params)
+      expect(amount).toBeGreaterThanOrEqual(previous)
+      previous = amount
+    }
+    // Between hazeStart and hazeEnd the amount is driven by aerial perspective (already > 0 well
+    // inside the tile, before the edge fade takes over).
+    const inside = hazeAmount(params.hazeStart + 10, 0, params)
+    expect(inside).toBeGreaterThan(0)
+    expect(inside).toBeLessThan(1)
+    expect(hazeAmount(0, 0, params)).toBe(0)
+  })
+
+  it('is bounded to [0, 1]', () => {
+    const params = withHaze(COMPACT)
+    expect(hazeAmount(1000, 1000, params)).toBe(1)
+    expect(hazeAmount(0, 0, params)).toBe(0)
   })
 })

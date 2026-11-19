@@ -9,7 +9,7 @@ import type { SitePackage } from '../features/sites/package'
 import { treeVariant } from './treeVariants'
 import { buildVegetationPoints, VEGETATION_COLOUR, type VegetationShape } from './vegetationPoints'
 import { applySceneFades } from './sceneFades'
-import type { DissolveParams } from './dissolve'
+import type { HazeInput } from './sceneFades'
 
 /** Fixed seed: the same trees always give the same points (TF-VIS-029 determinism). */
 const SEED = 0x51f1c3
@@ -54,7 +54,7 @@ export function PointVegetation({
   sitePackage,
   exclude,
   colour = VEGETATION_COLOUR,
-  dissolve = null,
+  haze = null,
   pointSizeMinPx = POINT_SIZE_MIN_PX,
   pointSizeMaxPx = POINT_SIZE_MAX_PX,
   density = 1,
@@ -62,7 +62,7 @@ export function PointVegetation({
   sitePackage: SitePackage
   exclude?: readonly (readonly Vec2[])[]
   colour?: string
-  dissolve?: DissolveParams | null
+  haze?: HazeInput | null
   pointSizeMinPx?: number
   pointSizeMaxPx?: number
   density?: number
@@ -102,9 +102,9 @@ export function PointVegetation({
       depthWrite: false,
     })
     // Dissolve the points toward the tile edge (TF-VIS-02A Run 8).
-    applySceneFades(pointsMaterial, { dissolve })
+    applySceneFades(pointsMaterial, { haze })
     return pointsMaterial
-  }, [sprite, dissolve, dpr, pointSizeMinPx, pointSizeMaxPx])
+  }, [sprite, haze, dpr, pointSizeMinPx, pointSizeMaxPx])
   useEffect(() => () => material.dispose(), [material])
 
   const geometry = useMemo(() => {

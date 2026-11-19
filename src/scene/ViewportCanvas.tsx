@@ -56,8 +56,8 @@ import { PassExporter } from './PassExporter'
 import { ANALYSIS_OVERLAY_NAME, type PassImages } from './exportPasses'
 import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
-import { dissolveRange, type DissolveParams } from './dissolve'
-import { applySceneFades, dissolveFactor, dissolveShaderChunk, dissolveUniforms } from './sceneFades'
+import { hazeRange } from './dissolve'
+import { applySceneFades, hazeMixLine, hazeShaderChunk, hazeUniforms, type HazeInput } from './sceneFades'
 import { NORDIC, type SceneStyle } from './style'
 import { createWaterGeometry } from './waterGeometry'
 import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
@@ -172,7 +172,7 @@ function TerrainMesh({
   style,
   raster1m,
   minorFade,
-  dissolve,
+  haze,
 }: {
   terrain: SitePackage['terrain']
   landcover: SitePackage['landcover']
@@ -185,7 +185,7 @@ function TerrainMesh({
   /** World-space fade band for minor contours; null keeps them at full opacity. */
   minorFade: { readonly start: number; readonly end: number } | null
   /** Atmospheric dissolve band; null keeps the terrain opaque. */
-  dissolve: DissolveParams | null
+  haze: HazeInput | null
 } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain, style.groundTint), [terrain, style.groundTint])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
@@ -215,19 +215,19 @@ function TerrainMesh({
   // also dissolve toward the tile edge (Run 8).
   const minorMaterial = useMemo(() => {
     const material = new LineBasicMaterial({ color: style.lines.contourMinor.color, transparent: true, opacity: style.lines.contourMinor.opacity, depthWrite: false })
-    return applySceneFades(material, { cameraFade: minorFade, dissolve })
-  }, [style.lines.contourMinor, minorFade, dissolve])
+    return applySceneFades(material, { cameraFade: minorFade, haze })
+  }, [style.lines.contourMinor, minorFade, haze])
   const majorMaterial = useMemo(() => {
     const material = new LineBasicMaterial({ color: style.lines.contourMajor.color, transparent: true, opacity: style.lines.contourMajor.opacity, depthWrite: false })
-    return applySceneFades(material, { dissolve })
-  }, [style.lines.contourMajor, dissolve])
+    return applySceneFades(material, { haze })
+  }, [style.lines.contourMajor, haze])
   // The terrain material is rebuilt when `showGround` toggles (dropping `map` on a live material
   // leaves the tint compiled in), and dissolves toward the background when the style asks.
   const terrainMaterial = useMemo(() => {
     const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.97, metalness: 0 })
     if (showGround && landcoverTexture) material.map = landcoverTexture
-    return applySceneFades(material, { dissolve })
-  }, [showGround, landcoverTexture, dissolve])
+    return applySceneFades(material, { haze })
+  }, [showGround, landcoverTexture, haze])
 
   useEffect(
     () => () => {
@@ -266,7 +266,7 @@ function TerrainMesh({
       <lineSegments geometry={contours.major} material={majorMaterial} />
       {tile1m && raster1m && (
         <Suspense fallback={null}>
-          <RasterContoursLazy raster={raster1m} terrain={terrain} style={style} minorFade={minorFade} dissolve={dissolve} />
+          <RasterContoursLazy raster={raster1m} terrain={terrain} style={style} minorFade={minorFade} haze={haze} />
         </Suspense>
       )}
       <lineSegments geometry={grid} visible={showGrid}>
@@ -281,29 +281,29 @@ const NO_FADE: ReadonlySet<number> = new Set()
 const FADED_OPACITY = 0.22
 
 /** One shader switch per material: draw only the faded (`keep` 1) or only the solid (`keep` 0) buildings. */
-function fadeShader(material: MeshStandardMaterial, keep: 0 | 1, dissolve: DissolveParams | null) {
+function fadeShader(material: MeshStandardMaterial, keep: 0 | 1, haze: HazeInput | null) {
   material.onBeforeCompile = (shader) => {
-    if (dissolve) {
-      // Wind-lift fade + tile-edge dissolve, combined.
-      Object.assign(shader.uniforms, dissolveUniforms(dissolve))
+    if (haze) {
+      // Wind-lift fade + aerial-perspective haze, combined.
+      Object.assign(shader.uniforms, hazeUniforms(haze))
       shader.vertexShader = 'attribute float faded;\nvarying float vFaded;\nvarying vec3 vSceneFadeWorld;\n' + shader.vertexShader.replace(
         '#include <begin_vertex>',
         '#include <begin_vertex>\nvFaded = faded;\n{ vec4 fadeWorldPos = modelMatrix * vec4(transformed, 1.0); vSceneFadeWorld = fadeWorldPos.xyz; }',
       )
-      shader.fragmentShader = 'varying float vFaded;\nvarying vec3 vSceneFadeWorld;\n' + dissolveShaderChunk(true) + shader.fragmentShader
+      shader.fragmentShader = 'varying float vFaded;\nvarying vec3 vSceneFadeWorld;\n' + hazeShaderChunk() + shader.fragmentShader
         .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nif (${keep === 1 ? 'vFaded < 0.5' : 'vFaded > 0.5'}) discard;`)
-        .replace('vec4 diffuseColor = vec4( diffuse, opacity );', `vec4 diffuseColor = vec4( diffuse, opacity * (${dissolveFactor}) );`)
+        .replace('#include <fog_fragment>', `#include <fog_fragment>\n${hazeMixLine}`)
     } else {
       // Wind-lift only — byte-identical to Run 7 so NORDIC stays pixel-identical.
       shader.vertexShader = 'attribute float faded;\nvarying float vFaded;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvFaded = faded;')
       shader.fragmentShader = 'varying float vFaded;\n' + shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nif (${keep === 1 ? 'vFaded < 0.5' : 'vFaded > 0.5'}) discard;`)
     }
   }
-  material.customProgramCacheKey = () => `context-fade-${keep}-${dissolve?.fadeWidth ?? 0}`
+  material.customProgramCacheKey = () => `context-fade-${keep}-${haze?.params.fadeWidth ?? 0}`
   return material
 }
 
-function ContextBuildings({ buildings, faded = NO_FADE, style, dissolve }: { buildings: SitePackage['buildings']['buildings']; faded?: ReadonlySet<number>; style: SceneStyle; dissolve: DissolveParams | null }) {
+function ContextBuildings({ buildings, faded = NO_FADE, style, haze }: { buildings: SitePackage['buildings']['buildings']; faded?: ReadonlySet<number>; style: SceneStyle; haze: HazeInput | null }) {
   // Built once. While the wind disc is lifted (ADR-0028 phase 3) the buildings it passes over are
   // flagged in a per-vertex attribute: the solid material skips them and a faint material draws
   // them. Rebuilding the merged mesh instead cost 65–100 ms per height step on Compact Infill
@@ -314,8 +314,8 @@ function ContextBuildings({ buildings, faded = NO_FADE, style, dissolve }: { bui
     return merged
   }, [buildings])
   const edges = useMemo(() => new EdgesGeometry(geometry, EDGE_THRESHOLD_DEG), [geometry])
-  const solidMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), 0, dissolve), [style.context, dissolve])
-  const fadedMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, transparent: true, opacity: FADED_OPACITY, depthWrite: false }), 1, dissolve), [style.context, dissolve])
+  const solidMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), 0, haze), [style.context, haze])
+  const fadedMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, transparent: true, opacity: FADED_OPACITY, depthWrite: false }), 1, haze), [style.context, haze])
 
   useEffect(() => {
     const attribute = geometry.getAttribute('faded') as Float32BufferAttribute
@@ -351,13 +351,13 @@ function ContextBuildings({ buildings, faded = NO_FADE, style, dissolve }: { bui
  * Warm mid-grey, without a hue. The lit ribbon renders much paler than this value, so it has to
  * sit well below the ground colour to read as a street at site scale.
  */
-function Streets({ roads, terrain, style, dissolve }: { roads: SitePackage['roads']; terrain: SitePackage['terrain']; style: SceneStyle; dissolve: DissolveParams | null }) {
+function Streets({ roads, terrain, style, haze }: { roads: SitePackage['roads']; terrain: SitePackage['terrain']; style: SceneStyle; haze: HazeInput | null }) {
   const geometry = useMemo(
     () => createRoadGeometry(roads, terrain),
     [roads, terrain],
   )
   useEffect(() => () => geometry.dispose(), [geometry])
-  const material = useMemo(() => applySceneFades(new MeshStandardMaterial({ color: style.road, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), { dissolve }), [style.road, dissolve])
+  const material = useMemo(() => applySceneFades(new MeshStandardMaterial({ color: style.road, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), { haze }), [style.road, haze])
   useEffect(() => () => material.dispose(), [material])
 
   return (
@@ -372,10 +372,10 @@ function Streets({ roads, terrain, style, dissolve }: { roads: SitePackage['road
  * relief of the ground underneath it. The ground inside a mapped water body is cut down to the
  * water surface, so the water lies in the landscape instead of on top of it.
  */
-function Water({ surfaces, style, dissolve }: { surfaces: readonly WaterSurface[]; style: SceneStyle; dissolve: DissolveParams | null }) {
+function Water({ surfaces, style, haze }: { surfaces: readonly WaterSurface[]; style: SceneStyle; haze: HazeInput | null }) {
   const geometry = useMemo(() => createWaterGeometry(surfaces), [surfaces])
   useEffect(() => () => geometry.dispose(), [geometry])
-  const material = useMemo(() => applySceneFades(new MeshStandardMaterial({ color: style.water, roughness: style.waterRoughness, metalness: 0 }), { dissolve }), [style.water, style.waterRoughness, dissolve])
+  const material = useMemo(() => applySceneFades(new MeshStandardMaterial({ color: style.water, roughness: style.waterRoughness, metalness: 0 }), { haze }), [style.water, style.waterRoughness, haze])
   useEffect(() => () => material.dispose(), [material])
   if (!surfaces.length) return null
   return (
@@ -655,11 +655,12 @@ export function ViewportCanvas({
     const start = Math.hypot(position[0] - target[0], position[1] - target[1], position[2] - target[2]) * factor
     return { start, end: start * 1.35 }
   }, [style.contourSource, initialPreset, style.tuning?.minorFadeDistanceM])
-  // The identity's terrain dissolve is computed from the site (study area, terrain, wind circle).
-  const dissolve = useMemo(() => {
+  // The identity's aerial haze is computed from the site (study area, terrain, wind circle).
+  const haze = useMemo(() => {
     if (style.dissolve !== 'auto') return null
-    return dissolveRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM)
-  }, [style.dissolve, sitePackage, windSettings.radius, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM])
+    const params = hazeRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM)
+    return { params, colour: style.hazeColour }
+  }, [style.dissolve, sitePackage, windSettings.radius, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM, style.hazeColour])
   // The camera presets, with the Lab-only "overview" preset merged in (falls back to isometric).
   const cameraPresets = useMemo(() => ({
     ...manifest.cameraPresets,
@@ -774,7 +775,7 @@ export function ViewportCanvas({
                 style={style}
                 raster1m={terrain1m}
                 minorFade={minorFade}
-                dissolve={dissolve}
+                haze={haze}
                 onGroundClick={onGroundClick}
                 onGroundMove={
                   drawing && editor.interaction.kind === 'drawing'
@@ -783,12 +784,12 @@ export function ViewportCanvas({
                 }
               />
             </group>
-            {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} style={style} dissolve={dissolve} />}
-            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} dissolve={dissolve} />}
+            {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} style={style} haze={haze} />}
+            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} haze={haze} />}
             {/* The streets keep the ground the package was built on, so they bridge the cut the
                 water makes in the ground beneath them (ADR-0025). */}
             {layers.streets && layers.terrain && (
-              <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} style={style} dissolve={dissolve} />
+              <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} style={style} haze={haze} />
             )}
             {layers.parcels && layers.terrain && sitePackage.parcels.length > 0 && <ParcelLines parcels={sitePackage.parcels} selected={selectedParcel} heightAt={heightAt} />}
             {section && section.length > 0 && layers.terrain && <SectionLine points={section} heightAt={heightAt} />}
@@ -818,7 +819,7 @@ export function ViewportCanvas({
 
             <group name="live-scenario">
             {layers.trees && (style.vegetation === 'points'
-              ? <PointVegetation sitePackage={sitePackage} exclude={treeExclude} colour={style.vegetationColour} dissolve={dissolve} pointSizeMinPx={style.tuning?.pointSizeMinPx} pointSizeMaxPx={style.tuning?.pointSizeMaxPx} density={style.tuning?.treeDensity} />
+              ? <PointVegetation sitePackage={sitePackage} exclude={treeExclude} colour={style.vegetationColour} haze={haze} pointSizeMinPx={style.tuning?.pointSizeMinPx} pointSizeMaxPx={style.tuning?.pointSizeMaxPx} density={style.tuning?.treeDensity} />
               : <Trees sitePackage={sitePackage} exclude={treeExclude} detail={profile === 'low' ? 'simple' : 'full'} />
             )}
             <MassLayer

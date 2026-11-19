@@ -13,6 +13,8 @@ export type LineStyle = { readonly color: string; readonly widthPx: number; read
 export type SceneStyle = {
   readonly id: 'nordic' | 'diagram' | 'atmospheric' | 'identity'
   readonly background: string
+  /** The aerial-perspective haze colour (Run 9 T2); identity materials mix toward this. */
+  readonly hazeColour: string
   readonly ground: string
   readonly context: { readonly color: string; readonly roughness: number }
   readonly road: string
@@ -58,6 +60,7 @@ export type SceneStyle = {
 export const NORDIC: SceneStyle = {
   id: 'nordic',
   background: '#F1F1EF',
+  hazeColour: '#262E2A',
   ground: '#EBEBE8',
   context: { color: '#FAF9F6', roughness: 0.9 },
   road: '#C1BEB7',
@@ -98,11 +101,12 @@ export const NORDIC: SceneStyle = {
  */
 export const IDENTITY: SceneStyle = {
   id: 'identity',
-  // Charcoal world. Fog shares the background colour (ViewportCanvas.tsx), so the horizon fades
-  // into this without a separate fog field.
-  background: '#171B19',
+  // Frame-edge green (vignette). Fog shares the background colour (ViewportCanvas.tsx).
+  background: '#1C2320',
+  // The aerial-perspective haze colour the world fades toward (look spec §2 far haze).
+  hazeColour: '#262E2A',
   // The floor-grid plane is hidden (`floorGrid: false`), so `ground` is unused; kept dark.
-  ground: '#171B19',
+  ground: '#1C2320',
   // Matte-white massing, slightly less rough than NORDIC so it reads crisply on the dark ground.
   context: { color: '#EEEDE8', roughness: 0.92 },
   // A dark neutral just above the ground, so streets read but stay quiet.

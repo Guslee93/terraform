@@ -4,7 +4,7 @@ import { useRasterContours } from '../features/sites/useRasterContours'
 import { createRasterContourGeometry } from './rasterContourGeometry'
 import { applySceneFades } from './sceneFades'
 import { sampleTerrainHeight } from '../features/sites/geometry'
-import type { DissolveParams } from './dissolve'
+import type { HazeInput } from './sceneFades'
 import type { TerrainRaster } from '../features/analysis/terrainTools'
 import type { TerrainData } from '../features/sites/package'
 import type { SceneStyle } from './style'
@@ -21,13 +21,13 @@ export function RasterContours({
   terrain,
   style,
   minorFade,
-  dissolve,
+  haze,
 }: {
   raster: TerrainRaster
   terrain: TerrainData
   style: SceneStyle
   minorFade: { readonly start: number; readonly end: number } | null
-  dissolve: DissolveParams | null
+  haze: HazeInput | null
 }) {
   const contours = useRasterContours(raster, INTERVAL_M, MAJOR_INTERVAL_M, true)
   const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
@@ -36,12 +36,12 @@ export function RasterContours({
   const majorGeometry = useMemo(() => (contours.major ? createRasterContourGeometry(contours.major, heightAt) : null), [contours.major, heightAt])
 
   const minorMaterial = useMemo(
-    () => applySceneFades(new LineBasicMaterial({ color: style.lines.contourMinor.color, transparent: true, opacity: style.lines.contourMinor.opacity, depthWrite: false }), { cameraFade: minorFade, dissolve }),
-    [style.lines.contourMinor, minorFade, dissolve],
+    () => applySceneFades(new LineBasicMaterial({ color: style.lines.contourMinor.color, transparent: true, opacity: style.lines.contourMinor.opacity, depthWrite: false }), { cameraFade: minorFade, haze }),
+    [style.lines.contourMinor, minorFade, haze],
   )
   const majorMaterial = useMemo(
-    () => applySceneFades(new LineBasicMaterial({ color: style.lines.contourMajor.color, transparent: true, opacity: style.lines.contourMajor.opacity, depthWrite: false }), { dissolve }),
-    [style.lines.contourMajor, dissolve],
+    () => applySceneFades(new LineBasicMaterial({ color: style.lines.contourMajor.color, transparent: true, opacity: style.lines.contourMajor.opacity, depthWrite: false }), { haze }),
+    [style.lines.contourMajor, haze],
   )
 
   useEffect(() => () => {
