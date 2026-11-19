@@ -63,12 +63,14 @@ export function LabTweakPanel({
   onResetTuning: () => void
 }) {
   const setTuning = (key: keyof IdentityTuning, value: number) => onTuning({ ...tuning, [key]: value })
-  const slider = (key: keyof IdentityTuning, label: string, min: number, max: number, step: number) => (
-    <label key={key} className={labelClass}>
-      {label}
-      <input type="range" min={min} max={max} step={step} value={tuning[key]} aria-label={`Tune ${label}`} className={`${rangeClass} mt-1`} onChange={(event) => setTuning(key, Number(event.currentTarget.value))} />
-      <span className="ml-2 tabular-nums">{tuning[key]}</span>
-    </label>
+  const slider = (key: keyof IdentityTuning, label: string, min: number, max: number, step: number, unit = '') => (
+    <div key={key} className="space-y-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className={labelClass}>{label}</span>
+        <span className="tabular-nums text-xs text-ink/70">{tuning[key]}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={tuning[key]} aria-label={`Tune ${label}`} className={rangeClass} onChange={(event) => setTuning(key, Number(event.currentTarget.value))} />
+    </div>
   )
   return (
     <aside aria-label="Visual Lab" className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto rounded-panel border border-card-line bg-card p-4 text-ink">
@@ -102,19 +104,20 @@ export function LabTweakPanel({
         <div className="space-y-2 rounded-panel border border-card-line bg-app p-3">
           <p className={labelClass}>Identity tuning</p>
           <div className="space-y-2">
-            {slider('groundSaturation', 'Ground saturation', 0, 1, 0.05)}
-            {slider('groundLightness', 'Ground lightness', 0, 1, 0.05)}
-            {slider('roadLightness', 'Road lightness', 0, 2, 0.05)}
-            {slider('waterLightness', 'Water lightness', 0, 2, 0.05)}
+            {slider('exposure', 'Exposure', 0.5, 2, 0.05, '×')}
+            {slider('vignetteStrength', 'Vignette', 0, 1, 0.05)}
+            {slider('waterSheen', 'Water sheen', 0, 1, 0.05)}
+            {slider('roadLightness', 'Road lightness', 0, 2, 0.05, '×')}
+            {slider('waterLightness', 'Water lightness', 0, 2, 0.05, '×')}
             {slider('contourMinorOpacity', 'Contour minor opacity', 0, 1, 0.02)}
             {slider('contourMajorOpacity', 'Contour major opacity', 0, 1, 0.02)}
-            {slider('minorFadeDistanceM', 'Minor fade distance (×)', 0.5, 3, 0.1)}
-            {slider('pointSizeMinPx', 'Point size min (px)', 0.5, 3, 0.1)}
-            {slider('pointSizeMaxPx', 'Point size max (px)', 1, 8, 0.5)}
-            {slider('treeColourLightness', 'Tree colour lightness', 0.5, 2, 0.05)}
-            {slider('treeDensity', 'Tree density (×)', 0.25, 1.5, 0.05)}
-            {slider('dissolveSiteMarginM', 'Dissolve site margin (m)', 0, 120, 5)}
-            {slider('dissolveMaxFadeWidthM', 'Dissolve max width (m)', 40, 300, 10)}
+            {slider('contourSlopeMinDeg', 'Contour slope min', 0, 20, 1, '°')}
+            {slider('contourSlopeMaxDeg', 'Contour slope max', 5, 45, 1, '°')}
+            {slider('minorFadeDistanceM', 'Minor fade distance', 0.5, 3, 0.1, '×')}
+            {slider('treeColourLightness', 'Tree colour lightness', 0.5, 2, 0.05, '×')}
+            {slider('treeDensity', 'Tree density', 0.25, 1.5, 0.05, '×')}
+            {slider('dissolveSiteMarginM', 'Haze site margin', 0, 120, 5, ' m')}
+            {slider('dissolveMaxFadeWidthM', 'Haze max width', 40, 300, 10, ' m')}
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={onCopyTuning} className={segmentClass}>Copy values</button>

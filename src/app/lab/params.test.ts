@@ -41,7 +41,7 @@ describe('parseLabParams (T7 reproducible URLs)', () => {
   })
 
   it('round-trips the tuning through the URL', () => {
-    const tuning = { ...DEFAULT_TUNING, groundSaturation: 0.4, treeDensity: 1.25 }
+    const tuning = { ...DEFAULT_TUNING, exposure: 1.5, vignetteStrength: 0.7, waterSheen: 0.3, contourSlopeMinDeg: 5, contourSlopeMaxDeg: 15 }
     const params = parseLabParams(`style=identity&tuning=${encodeURIComponent(serializeTuning(tuning))}`)
     expect(params.tuning).toEqual(tuning)
   })

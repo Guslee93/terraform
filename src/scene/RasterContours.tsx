@@ -15,7 +15,6 @@ const MAJOR_INTERVAL_M = 5
 // Contours show only on slopes (look spec §3): hidden below, full above (provisional, tunable).
 const SLOPE_MIN_DEG = 3
 const SLOPE_MAX_DEG = 12
-const SLOPE_FADE = { min: SLOPE_MIN_DEG, max: SLOPE_MAX_DEG }
 
 /**
  * The 1 m-tile contours, rendered lazily so the worker and loader stay out of production (Run 8 T3).
@@ -43,13 +42,14 @@ export function RasterContours({
   const minorGeometry = useMemo(() => (contours.minor ? createRasterContourGeometry(contours.minor, heightAt, slopeAt) : null), [contours.minor, heightAt, slopeAt])
   const majorGeometry = useMemo(() => (contours.major ? createRasterContourGeometry(contours.major, heightAt, slopeAt) : null), [contours.major, heightAt, slopeAt])
 
+  const slopeFade = useMemo(() => ({ min: style.tuning?.contourSlopeMinDeg ?? SLOPE_MIN_DEG, max: style.tuning?.contourSlopeMaxDeg ?? SLOPE_MAX_DEG }), [style.tuning?.contourSlopeMinDeg, style.tuning?.contourSlopeMaxDeg])
   const minorMaterial = useMemo(
-    () => applySceneFades(new LineBasicMaterial({ color: style.lines.contourMinor.color, transparent: true, opacity: style.lines.contourMinor.opacity, depthWrite: false }), { cameraFade: minorFade, haze, slopeFade: SLOPE_FADE }),
-    [style.lines.contourMinor, minorFade, haze],
+    () => applySceneFades(new LineBasicMaterial({ color: style.lines.contourMinor.color, transparent: true, opacity: style.lines.contourMinor.opacity, depthWrite: false }), { cameraFade: minorFade, haze, slopeFade }),
+    [style.lines.contourMinor, minorFade, haze, slopeFade],
   )
   const majorMaterial = useMemo(
-    () => applySceneFades(new LineBasicMaterial({ color: style.lines.contourMajor.color, transparent: true, opacity: style.lines.contourMajor.opacity, depthWrite: false }), { haze, slopeFade: SLOPE_FADE }),
-    [style.lines.contourMajor, haze],
+    () => applySceneFades(new LineBasicMaterial({ color: style.lines.contourMajor.color, transparent: true, opacity: style.lines.contourMajor.opacity, depthWrite: false }), { haze, slopeFade }),
+    [style.lines.contourMajor, haze, slopeFade],
   )
 
   useEffect(() => () => {

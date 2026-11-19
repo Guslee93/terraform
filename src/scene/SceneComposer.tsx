@@ -57,14 +57,15 @@ export default function SceneComposer({ ao, busy, style }: { ao: 'full' | 'half'
     // mapping. Only the composer applies it, so the depth / white / analysis export passes — which
     // render the scene directly — never see it. Provisional strength, Lab-tunable in T6.
     if (style.id === 'identity') {
-      composer.addPass(new EffectPass(camera, new VignetteEffect({ eskil: false, offset: 0.35, darkness: 0.55 })))
+      const darkness = style.tuning?.vignetteStrength ?? 0.55
+      composer.addPass(new EffectPass(camera, new VignetteEffect({ eskil: false, offset: 0.35, darkness })))
     }
     setPasses({ composer, ao: aoPass, toneMapping })
     return () => {
       setPasses(null)
       composer.dispose()
     }
-  }, [gl, scene, camera, ao, style.ao, style.id])
+  }, [gl, scene, camera, ao, style.ao, style.id, style.tuning?.vignetteStrength])
 
   useEffect(() => passes?.composer.setSize(size.width, size.height), [passes, size.width, size.height, dpr])
 

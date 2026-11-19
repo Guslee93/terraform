@@ -211,6 +211,15 @@ export type IdentityTuning = {
   readonly treeDensity: number
   readonly dissolveSiteMarginM: number
   readonly dissolveMaxFadeWidthM: number
+  /** Overall exposure (toneMappingExposure). */
+  readonly exposure: number
+  /** Vignette darkness (postprocessing). */
+  readonly vignetteStrength: number
+  /** Water environment-reflection strength (envMapIntensity). */
+  readonly waterSheen: number
+  /** Contour slope fade: hidden below, full above (degrees). */
+  readonly contourSlopeMinDeg: number
+  readonly contourSlopeMaxDeg: number
 }
 
 /** The tuning that reproduces IDENTITY exactly (all identity defaults). */
@@ -228,6 +237,11 @@ export const DEFAULT_TUNING: IdentityTuning = {
   treeDensity: 1,
   dissolveSiteMarginM: 40,
   dissolveMaxFadeWidthM: 160,
+  exposure: 1.2,
+  vignetteStrength: 0.55,
+  waterSheen: 0.6,
+  contourSlopeMinDeg: 3,
+  contourSlopeMaxDeg: 12,
 }
 
 /**
@@ -242,6 +256,8 @@ export function applyTuning(base: SceneStyle, tuning: IdentityTuning): SceneStyl
     groundTint: base.groundTint,
     road: adjustLightness(base.road, tuning.roadLightness),
     water: adjustLightness(base.water, tuning.waterLightness),
+    waterEnvIntensity: tuning.waterSheen,
+    toneMappingExposure: tuning.exposure,
     vegetationColour: adjustLightness(base.vegetationColour, tuning.treeColourLightness),
     lines: {
       ...base.lines,
