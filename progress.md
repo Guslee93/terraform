@@ -1392,3 +1392,63 @@ zoom in because the quads are small at the default site camera.
   planning advice" (`SiteChrome.tsx`), which now has no counterpart on the About page: the
   constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
   string, so it was left alone.
+---
+
+## 2026-11-16 (evening) — Runoff screening checked against WhiteboxTools (IT-7)
+
+- **Task TF-VIS-007.** Independently check `runoff.ts` against the WhiteboxTools reference on the
+  Compact Infill 1 m tile (624 × 734) with its 520 footprints burned in (+10 m), no drawn blocks.
+- **Reference.** WhiteboxTools v2.4.0 (MIT, run outside the repo):
+  `FillDepressions --fix_flats --flat_increment=0.00001` → `D8Pointer` →
+  `D8FlowAccumulation --pntr --out_type=cells`.
+- **Result (agreement, Jaccard):** depression 81.5 % · flow path 55.2 % · **main flow path 67.0 %**.
+  Full 4-class label agrees on 97.1 % of cells. Main-path agreement is below the IT-7 95 % bar and
+  is explained rather than tuned: the disagreement concentrates in building-enclosed courtyards
+  (Priority-Flood+Epsilon vs fixed-flat fill route the flats differently) with secondary edge-outlet
+  and threshold effects. **Verdict: no bug.**
+- **Artifacts.** `scripts/reference/runoff-whitebox/*` (export/compare/crop + README), a committed
+  regression test + fixtures (`src/features/analysis/__fixtures__/runoff-reference/*`), and
+  `docs/qa/runoff-reference.md` with the agreement table and diff image.
+- **Two WhiteboxTools v2.4.0 defects worked around** (documented in the README): the auto
+  flat-increment in `--fix_flats` produced `~10¹⁴` elevations, and its own `.asc` writer emits a
+  trailing space that its own reader cannot re-parse.
+- **Checks.** lint 0 · `npx vitest run src/features/analysis` (456 passed, 4 skipped) · `npm run build`
+  OK — all pass.
+
+## 2026-11-18 — Run 4 T1: runoff divergence diagnosis (TF-VIS-007)
+
+- **Task.** Explain every full-tile "unfilled ground" divergence point (Terraform hollow ≤ 1 mm)
+  that Run 3 flagged. Read-only; no `runoff.ts`, threshold, test or wording changed.
+- **Tooling.** `scripts/reference/runoff-whitebox/diagnose.ts` mirrors `computeRunoff`'s fill + D8
+  (cross-check: 0/458,016 hollow mismatches) and reads `tmp/runoff-whitebox/{filled,pointer,accum}.asc`.
+- **Result — all 46 standard points are method differences, no defect:** H4 fill difference **12**
+  (WhiteboxTools over-fills the south-east outlet channel by 5–24 cm, present without `--fix_flats`;
+  a non-ascending flood-fill reaches the edge at −18.68 m, so Terraform drains it), H1 flat/epsilon
+  **17**, H2 near-tie **14**, H3 cell shape **2** (dx=dy removes 2 points; rule 1 stays 92.8 %),
+  edge outlet **1**, unexplained **0**.
+- **Deliverable.** `docs/qa/runoff-divergence-diagnosis.md`.
+
+## 2026-11-19 — Run 5 T1: H4 root cause (TF-VIS-007)
+
+- **Task.** Find why WhiteboxTools fills the west outlet channel (H4). Read-only.
+- **Result — (b) WhiteboxTools behaviour.** The exported `.asc` is bit-identical to Terraform's
+  ground (max |diff| 0). Terraform drains (626,81) north-west to the **west**-edge cell (550,0) at
+  −18.68 m; WhiteboxTools fills that whole path — edge mouth included — to −18.44 m. A minimal crop
+  reproduces −18.44 m with/without `--fix_flats`, rounded-to-cm, 6-decimal, and a NoData fence. Not
+  an input mismatch; not a `runoff.ts` defect.
+- **Bare/offset H4 counts** (via `diagnose.ts` + `RUNOFF_VARIANT`): standard 12, bare 11, offset 11.
+- **Corrections.** "south-east" → "south-west" in the diagnosis doc, RUN4-log and agent-log; clarified
+  the −18.68 m (west edge) vs −19.01 m (south edge, a different channel) statement. Rule-1 %s unchanged.
+- **Deliverable.** `docs/qa/runoff-divergence-diagnosis.md` §"H4 root cause (Run 5)".
+
+## 2026-11-19 — Run 6 T1: rule 1 vs a textbook-fill reference (TF-VIS-007)
+
+- **Task.** Re-measure rule 1 against a reference without the WhiteboxTools fill. Read-only.
+- **Result.** `textbookFill.ts` (Barnes 2014 Alg 1, no epsilon, edge-seeded) raises **none** of the
+  four H4 cells, confirming WhiteboxTools' fill is the outlier. But the textbook fill leaves flats
+  flat, so D8Pointer assigns "no flow" to 71,523 cells (15.6 %); the accumulation peaks at 3,845
+  cells (< 5,002) and the reference has **no main path**. Rule 1 reads 0.0 % — **not measurable**;
+  all divergence classes 0 (H4 = 0). A flat-resolution step (epsilon or `--fix_flats`) is a
+  prerequisite for D8 routing — removing it removes the H4 difference but also stops the flow.
+- **Deliverable.** `docs/qa/runoff-reference.md` §"Reference without the WhiteboxTools fill (Run 6)".
+

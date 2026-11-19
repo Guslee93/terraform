@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "siteId": "compact-infill",
+  "cols": 200,
+  "rows": 200,
+  "minX": -27.987435897435887,
+  "minY": -367.1200000000001,
+  "maxX": 171.92282051282052,
+  "maxY": -167.05460490463224,
+  "sourceCol0": 284,
+  "sourceRow0": 534,
+  "cellArea": 0.9998781108083562
+}

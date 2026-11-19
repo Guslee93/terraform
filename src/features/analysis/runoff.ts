@@ -11,7 +11,7 @@ import type { TerrainRaster } from './terrainTools'
  */
 
 export const RUNOFF_NOTE = 'Screening: flow paths and depressions on bare-earth terrain with buildings as blocks. No rainfall, drainage or depths.'
-export const RUNOFF_LIMITS = 'The edge of the terrain tile is treated as an outlet, so water arriving from outside it is not included. Kerbs, culverts, drains and pipes are not in the model.'
+export const RUNOFF_LIMITS = 'The edge of the terrain tile is treated as an outlet, so water arriving from outside it is not included. Kerbs, culverts, drains and pipes are not in the model. Where the ground is flat, water may take a different route than shown, and some flow paths may not appear.'
 /** Buildings are solid blocks, so a courtyard they close in has no way out: the model has no gateways or drains. */
 export const RUNOFF_COURTYARDS = 'A courtyard closed in by buildings shows as a depression, because the model has no gateways or drains.'
 
