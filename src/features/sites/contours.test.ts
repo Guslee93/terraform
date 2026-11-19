@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TerrainData } from './package'
-import { contourSegments, flattenContours, rasterContourSegments, type ContourSegment, type RasterGrid } from './contours'
+import { chainContours, contourSegments, flattenContours, gaussianBlur, rasterContourSegments, type ContourSegment, type RasterGrid } from './contours'
 
 function terrain(heights: number[][]): TerrainData {
   return {
@@ -107,5 +107,50 @@ describe('rasterContourSegments (1 m tile)', () => {
   it('flattens a segment to [ax, ay, bx, by]', () => {
     const segment: ContourSegment = [[1, 2, 3], [4, 5, 6]]
     expect(Array.from(flattenContours([segment]))).toEqual([1, 2, 4, 5])
+  })
+})
+
+describe('gaussianBlur (Run 10 T5)', () => {
+  it('is unchanged on a constant raster', () => {
+    const flat = raster([[3, 3, 3], [3, 3, 3], [3, 3, 3]])
+    const blurred = gaussianBlur(flat, 3)
+    for (const value of blurred.heights) expect(value).toBeCloseTo(3, 5)
+  })
+
+  it('spreads an impulse symmetrically', () => {
+    const size = 13
+    const impulse = raster(Array.from({ length: size }, () => Array(size).fill(0)))
+    impulse.heights[6 * size + 6] = 1
+    const blurred = gaussianBlur(impulse, 3)
+    // Symmetric around the centre: mirrored cells match.
+    for (let row = 0; row < size; row += 1) {
+      for (let col = 0; col < size; col += 1) {
+        expect(blurred.heights[row * size + col]).toBeCloseTo(blurred.heights[(size - 1 - row) * size + (size - 1 - col)]!, 5)
+      }
+    }
+    // The centre is the peak.
+    expect(blurred.heights[6 * size + 6]).toBeGreaterThan(blurred.heights[6 * size + 4]!)
+  })
+})
+
+describe('chainContours (Run 10 T5)', () => {
+  it('joins a square ring into one polyline and keeps it', () => {
+    const ring: ContourSegment[] = [
+      [[0, 0, 1], [10, 0, 1]],
+      [[10, 0, 1], [10, 10, 1]],
+      [[10, 10, 1], [0, 10, 1]],
+      [[0, 10, 1], [0, 0, 1]],
+    ]
+    const chained = chainContours(ring, 20)
+    expect(chained.length).toBe(4) // the whole 40 m ring survives
+  })
+
+  it('drops a polyline shorter than the minimum length', () => {
+    const short: ContourSegment[] = [
+      [[0, 0, 1], [5, 0, 1]],
+      [[5, 0, 1], [10, 0, 1]],
+    ]
+    expect(chainContours(short, 20)).toEqual([])
+    expect(chainContours(short, 5).length).toBe(2)
   })
 })

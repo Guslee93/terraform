@@ -19,6 +19,8 @@ export function useRasterContours(
   interval: number,
   majorInterval: number,
   enabled: boolean,
+  sigmaM = 3,
+  minLengthM = 25,
 ): RasterContours {
   const [state, setState] = useState<{ raster: RasterGrid; minor: Float32Array; major: Float32Array } | null>(null)
 
@@ -32,11 +34,11 @@ export function useRasterContours(
         if (!cancelled) setState({ raster, minor: event.data.minor, major: event.data.major })
         active?.terminate()
       }
-      const request: RasterContourRequest = { raster, interval, majorInterval }
+      const request: RasterContourRequest = { raster, interval, majorInterval, sigmaM, minLengthM }
       active.postMessage(request)
     }, 0)
     return () => { cancelled = true; clearTimeout(timer); active?.terminate() }
-  }, [enabled, raster, interval, majorInterval])
+  }, [enabled, raster, interval, majorInterval, sigmaM, minLengthM])
 
   if (!enabled || !state || state.raster !== raster) return { minor: null, major: null, computing: enabled && !!raster }
   return { minor: state.minor, major: state.major, computing: false }

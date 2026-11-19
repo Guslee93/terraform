@@ -1,11 +1,13 @@
 /// <reference lib="webworker" />
 import type { RasterGrid } from './contours'
-import { flattenContours, rasterContourSegments } from './contours'
+import { flattenContours, smoothRasterContours } from './contours'
 
 export type RasterContourRequest = {
   readonly raster: RasterGrid
   readonly interval: number
   readonly majorInterval: number
+  readonly sigmaM: number
+  readonly minLengthM: number
 }
 export type RasterContourResponse = {
   readonly minor: Float32Array
@@ -16,7 +18,8 @@ export type RasterContourResponse = {
 // thread. The typed arrays move to the main thread instead of being copied.
 if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
   self.onmessage = (event: MessageEvent<RasterContourRequest>) => {
-    const { minor, major } = rasterContourSegments(event.data.raster, event.data.interval, event.data.majorInterval)
+    const { raster, interval, majorInterval, sigmaM, minLengthM } = event.data
+    const { minor, major } = smoothRasterContours(raster, interval, majorInterval, sigmaM, minLengthM)
     const minorFlat = flattenContours(minor)
     const majorFlat = flattenContours(major)
     const response: RasterContourResponse = { minor: minorFlat, major: majorFlat }
