@@ -1428,3 +1428,16 @@ zoom in because the quads are small at the default site camera.
   edge outlet **1**, unexplained **0**.
 - **Deliverable.** `docs/qa/runoff-divergence-diagnosis.md`.
 
+## 2026-11-19 — Run 5 T1: H4 root cause (TF-VIS-007)
+
+- **Task.** Find why WhiteboxTools fills the west outlet channel (H4). Read-only.
+- **Result — (b) WhiteboxTools behaviour.** The exported `.asc` is bit-identical to Terraform's
+  ground (max |diff| 0). Terraform drains (626,81) north-west to the **west**-edge cell (550,0) at
+  −18.68 m; WhiteboxTools fills that whole path — edge mouth included — to −18.44 m. A minimal crop
+  reproduces −18.44 m with/without `--fix_flats`, rounded-to-cm, 6-decimal, and a NoData fence. Not
+  an input mismatch; not a `runoff.ts` defect.
+- **Bare/offset H4 counts** (via `diagnose.ts` + `RUNOFF_VARIANT`): standard 12, bare 11, offset 11.
+- **Corrections.** "south-east" → "south-west" in the diagnosis doc, RUN4-log and agent-log; clarified
+  the −18.68 m (west edge) vs −19.01 m (south edge, a different channel) statement. Rule-1 %s unchanged.
+- **Deliverable.** `docs/qa/runoff-divergence-diagnosis.md` §"H4 root cause (Run 5)".
+

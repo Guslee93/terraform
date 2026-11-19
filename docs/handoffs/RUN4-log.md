@@ -9,7 +9,7 @@ TF-VIS-007). Statuses: `todo`, `in progress`, `done`, `partial`, `blocked`.
 divergence points are method differences:
 
 - **H4 fill difference — 12 points (dominant).** WhiteboxTools' `FillDepressions` (with **and**
-  without `--fix_flats`) raises the south-east outlet-channel flat by 5–24 cm to −18.44 m where
+  without `--fix_flats`) raises the south-west outlet-channel flat by 5–24 cm to −18.44 m where
   Terraform's Priority-Flood+Epsilon raises it by ≤ 1 mm. A non-ascending flood-fill reaches the
   tile edge at −18.68 m, so Terraform drains these cells and WhiteboxTools over-fills them.
 - **H1 flat/epsilon — 17 points.** Routed by the 1e-5 epsilon gradient (below the 1 mm cut-off).

@@ -11,10 +11,11 @@
  */
 import { it } from 'vitest'
 import { computeRunoff, MAIN_FLOW_PATH_M2 } from '../../../src/features/analysis/runoff'
-import { buildVariantGround, loadFootprints, loadTerrainRaster, readAsc } from './common'
+import { buildVariantGround, loadFootprints, loadTerrainRaster, readAsc, RUNOFF_VARIANTS, type RunoffVariant } from './common'
 
 const SITE = 'compact-infill'
-const DIR = 'tmp/runoff-whitebox'
+const VARIANT = (process.env.RUNOFF_VARIANT ?? 'standard') as RunoffVariant
+const DIR = VARIANT === 'standard' ? 'tmp/runoff-whitebox' : `tmp/runoff-whitebox/${VARIANT}`
 /** Mirror of runoff.ts's `EPSILON_M`. */
 const EPSILON_M = 1e-5
 
@@ -105,7 +106,8 @@ const POINTER: Record<number, readonly [number, number]> = {
   128: [-1, 0], 1: [-1, 1], 2: [0, 1], 4: [1, 1], 8: [1, 0], 16: [1, -1], 32: [0, -1], 64: [-1, -1],
 }
 
-it('diagnoses the standard-variant unfilled-ground divergence points', () => {
+it('diagnoses the unfilled-ground divergence points', () => {
+  if (!RUNOFF_VARIANTS.includes(VARIANT)) throw new Error(`unknown RUNOFF_VARIANT: ${VARIANT}`)
   const raster = loadTerrainRaster(SITE)
   const footprints = loadFootprints(SITE)
   const { cols, rows } = raster
@@ -114,8 +116,8 @@ it('diagnoses the standard-variant unfilled-ground divergence points', () => {
   const cellArea = dx * dy
   const count = cols * rows
 
-  const baked = buildVariantGround(raster, footprints, 'standard')
-  const runoff = computeRunoff(raster, footprints)
+  const baked = buildVariantGround(raster, footprints, VARIANT)
+  const runoff = VARIANT === 'standard' ? computeRunoff(raster, footprints) : computeRunoff({ ...raster, heights: baked.heights }, [])
   const { filled: tfFilled, receiver: tfReceiver } = fillAndD8(baked.ground, cols, rows, dx, dy)
 
   // Cross-check the mirror against computeRunoff's hollow (which is filled − ground).
