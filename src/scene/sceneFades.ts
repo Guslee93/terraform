@@ -20,7 +20,7 @@ float hazeEdgeDistance(vec2 p) {
 float hazeAmount(vec2 p) {
   float edge = hazeEdgeDistance(p);
   float dist = length(p);
-  float aerial = dist <= uHazeStart ? 0.0 : (dist >= uHazeEnd ? 1.0 : (dist - uHazeStart) / (uHazeEnd - uHazeStart));
+  float aerial = smoothstep(uHazeStart, uHazeEnd, dist);
   return min(1.0, max(edge, aerial));
 }
 `

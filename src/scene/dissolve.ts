@@ -53,11 +53,9 @@ export type HazeParams = DissolveParams & {
 export function hazeAmount(east: number, north: number, params: HazeParams): number {
   const edge = dissolveAmount(east, north, params)
   const distance = Math.hypot(east, north)
-  const aerial = distance <= params.hazeStart
-    ? 0
-    : distance >= params.hazeEnd
-      ? 1
-      : (distance - params.hazeStart) / (params.hazeEnd - params.hazeStart)
+  // Smoothstep, not a straight ramp: the mist thickens gently and settles (owner, 2026-11-19).
+  const t = Math.min(1, Math.max(0, (distance - params.hazeStart) / (params.hazeEnd - params.hazeStart)))
+  const aerial = t * t * (3 - 2 * t)
   return Math.min(1, Math.max(edge, aerial))
 }
 
@@ -83,7 +81,8 @@ export function hazeRange(
   const studyCorner = Math.hypot(maxAbsX + siteMarginM, maxAbsY + siteMarginM)
   const circleReach = analysisCircleRadiusM + siteMarginM
   const hazeStart = Math.max(studyCorner, circleReach)
-  return { ...params, hazeStart, hazeEnd: hazeStart * 2 }
+  // A long band (2.6×) so things sink into the mist gradually instead of meeting a wall. Provisional.
+  return { ...params, hazeStart, hazeEnd: hazeStart * 2.6 }
 }
 
 /**

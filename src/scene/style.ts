@@ -133,10 +133,11 @@ export const IDENTITY: SceneStyle = {
   // Background = haze colour = the look spec's far haze (§2), so the tile edge melts into the
   // background (same colour through the same composer). The darker frame edges (#1B2220–#1D2522 in
   // the references) come from the vignette, not from a darker haze. Provisional; Lab-tunable.
-  background: '#262E2A',
-  hazeColour: '#262E2A',
+  // Owner, 2026-11-19: about 50 % brighter than the references' far haze, and misty.
+  background: '#3A4540',
+  hazeColour: '#3A4540',
   // The floor-grid plane is hidden (`floorGrid: false`), so `ground` is unused.
-  ground: '#262E2A',
+  ground: '#3A4540',
   // Warm off-white massing (look spec §3 Buildings), crisp on the dark ground.
   context: { color: '#E6E4DE', roughness: 0.9 },
   // Roads a step lighter than the field palette (look spec §2), never black.
@@ -239,7 +240,7 @@ export const DEFAULT_TUNING: IdentityTuning = {
   dissolveSiteMarginM: 40,
   dissolveMaxFadeWidthM: 160,
   exposure: 1.35,
-  vignetteStrength: 0.35,
+  vignetteStrength: 0.25,
   waterSheen: 0.6,
   contourSlopeMinDeg: 3,
   contourSlopeMaxDeg: 12,

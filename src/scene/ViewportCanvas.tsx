@@ -59,6 +59,7 @@ import { createLandCoverTexture } from './landCoverTexture'
 import { hazeRange } from './dissolve'
 import { applySceneFades, hazeMixLine, hazeShaderChunk, hazeUniforms, type HazeInput } from './sceneFades'
 import { NORDIC, type SceneStyle } from './style'
+import { sceneColourForDisplay } from './styleColour'
 import { createWaterGeometry } from './waterGeometry'
 import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
 import { SceneErrorBoundary, SceneUnavailable } from './SceneErrorBoundary'
@@ -709,8 +710,12 @@ export function ViewportCanvas({
   const haze = useMemo(() => {
     if (style.dissolve !== 'auto') return null
     const params = hazeRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM)
-    return { params, colour: style.hazeColour }
-  }, [style.dissolve, sitePackage, windSettings.radius, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM, style.hazeColour])
+    // Pre-compensated for exposure + neutral tone mapping, so the haze DISPLAYS as the chosen colour.
+    return { params, colour: sceneColourForDisplay(style.hazeColour, style.toneMappingExposure) }
+  }, [style.dissolve, sitePackage, windSettings.radius, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM, style.hazeColour, style.toneMappingExposure])
+  // The background (and fog) of the identity displays as the chosen colour, matching the haze
+  // exactly; NORDIC keeps its colour as is.
+  const backgroundColour = style.id === 'identity' ? sceneColourForDisplay(style.background, style.toneMappingExposure) : style.background
   // The camera presets, with the Lab-only "overview" preset merged in (falls back to isometric).
   const cameraPresets = useMemo(() => ({
     ...manifest.cameraPresets,
@@ -809,8 +814,8 @@ export function ViewportCanvas({
               far: 2600 * viewScale,
             }}
           >
-            <color attach="background" args={[style.background]} />
-            <fog attach="fog" args={[style.background, 600 * viewScale, 1400 * viewScale]} />
+            <color attach="background" args={[backgroundColour]} />
+            <fog attach="fog" args={[backgroundColour, 600 * viewScale, 1400 * viewScale]} />
             <SiteLights sitePackage={sitePackage} sun={sun} profile={profile} />
             {grid && style.floorGrid && <FloorGrid terrain={terrain} viewScale={viewScale} style={style} />}
 

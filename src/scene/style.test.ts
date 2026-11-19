@@ -46,7 +46,7 @@ describe('NORDIC scene style', () => {
 describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
   it('is a complete style with the provisional first-look values', () => {
     expect(IDENTITY.id).toBe('identity')
-    expect(IDENTITY.background).toBe('#262E2A')
+    expect(IDENTITY.background).toBe('#3A4540')
     expect(IDENTITY.hazeColour).toBe(IDENTITY.background)
     expect(IDENTITY.context).toEqual({ color: '#E6E4DE', roughness: 0.9 })
     expect(IDENTITY.road).toBe('#5A5C57')
