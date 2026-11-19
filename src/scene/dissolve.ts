@@ -49,6 +49,8 @@ export function dissolveRange(
   studyArea: readonly (readonly [number, number])[],
   analysisCircleRadiusM: number,
   terrain: { readonly minX: number; readonly maxX: number; readonly minY: number; readonly maxY: number },
+  siteMarginM = SITE_MARGIN_M,
+  maxFadeWidthM = MAX_FADE_WIDTH_M,
 ): DissolveParams {
   let studyMinX = Infinity
   let studyMaxX = -Infinity
@@ -60,19 +62,19 @@ export function dissolveRange(
     if (north < studyMinY) studyMinY = north
     if (north > studyMaxY) studyMaxY = north
   }
-  const circleReach = analysisCircleRadiusM + SITE_MARGIN_M
+  const circleReach = analysisCircleRadiusM + siteMarginM
 
   const minEdgeDistance = Math.min(
-    studyMinX - SITE_MARGIN_M - terrain.minX,
-    terrain.maxX - (studyMaxX + SITE_MARGIN_M),
-    studyMinY - SITE_MARGIN_M - terrain.minY,
-    terrain.maxY - (studyMaxY + SITE_MARGIN_M),
+    studyMinX - siteMarginM - terrain.minX,
+    terrain.maxX - (studyMaxX + siteMarginM),
+    studyMinY - siteMarginM - terrain.minY,
+    terrain.maxY - (studyMaxY + siteMarginM),
     -circleReach - terrain.minX,
     terrain.maxX - circleReach,
     -circleReach - terrain.minY,
     terrain.maxY - circleReach,
   )
 
-  const fadeWidth = Math.max(MIN_FADE_WIDTH_M, Math.min(MAX_FADE_WIDTH_M, minEdgeDistance))
+  const fadeWidth = Math.max(MIN_FADE_WIDTH_M, Math.min(maxFadeWidthM, minEdgeDistance))
   return { minX: terrain.minX, maxX: terrain.maxX, minY: terrain.minY, maxY: terrain.maxY, fadeWidth }
 }

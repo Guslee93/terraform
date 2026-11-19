@@ -18,3 +18,15 @@ export function tintGroundColour(hex: string, tint: GroundTint | null): string {
   color.setHSL(hsl.h, hsl.s * tint.saturation, hsl.l * tint.lightness)
   return `#${color.getHexString().toUpperCase()}`
 }
+
+/**
+ * Scale a colour's HSL lightness by `factor` (1 = unchanged, <1 darker, >1 lighter), keeping hue and
+ * saturation. Pure; used by the identity tuning controls (Run 8 T4).
+ */
+export function adjustLightness(hex: string, factor: number): string {
+  const color = new Color(hex)
+  const hsl = { h: 0, s: 0, l: 0 }
+  color.getHSL(hsl)
+  color.setHSL(hsl.h, hsl.s, hsl.l * factor)
+  return `#${color.getHexString().toUpperCase()}`
+}

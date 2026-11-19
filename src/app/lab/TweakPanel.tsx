@@ -1,6 +1,6 @@
 import { inputClass, labelClass, rangeClass, segmentClass, segmentGroupClass } from '../../components/ui/controls'
 import { LAB_STATES, LAB_STYLES, type LabStateId } from './states'
-import type { IdentityStage } from '../../scene/style'
+import type { IdentityStage, IdentityTuning } from '../../scene/style'
 import type { LabPresetId } from './params'
 
 const PRESETS: ReadonlyArray<{ id: LabPresetId; label: string }> = [
@@ -38,6 +38,10 @@ export function LabTweakPanel({
   onDate,
   onMinute,
   onQuality,
+  tuning,
+  onTuning,
+  onCopyTuning,
+  onResetTuning,
 }: {
   stateId: LabStateId
   styleId: 'nordic' | 'identity'
@@ -46,6 +50,7 @@ export function LabTweakPanel({
   date: string
   minute: number
   quality: LabQuality
+  tuning: IdentityTuning
   onState: (state: LabStateId) => void
   onStyle: (style: 'nordic' | 'identity') => void
   onStage: (stage: IdentityStage) => void
@@ -53,7 +58,18 @@ export function LabTweakPanel({
   onDate: (date: string) => void
   onMinute: (minute: number) => void
   onQuality: (quality: LabQuality) => void
+  onTuning: (tuning: IdentityTuning) => void
+  onCopyTuning: () => void
+  onResetTuning: () => void
 }) {
+  const setTuning = (key: keyof IdentityTuning, value: number) => onTuning({ ...tuning, [key]: value })
+  const slider = (key: keyof IdentityTuning, label: string, min: number, max: number, step: number) => (
+    <label key={key} className={labelClass}>
+      {label}
+      <input type="range" min={min} max={max} step={step} value={tuning[key]} aria-label={`Tune ${label}`} className={`${rangeClass} mt-1`} onChange={(event) => setTuning(key, Number(event.currentTarget.value))} />
+      <span className="ml-2 tabular-nums">{tuning[key]}</span>
+    </label>
+  )
   return (
     <aside aria-label="Visual Lab" className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto rounded-panel border border-card-line bg-card p-4 text-ink">
       <h2 className="text-title text-ink">Visual Lab</h2>
@@ -78,6 +94,31 @@ export function LabTweakPanel({
                 {option}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {styleId === 'identity' && (
+        <div className="space-y-2 rounded-panel border border-card-line bg-app p-3">
+          <p className={labelClass}>Identity tuning</p>
+          <div className="space-y-2">
+            {slider('groundSaturation', 'Ground saturation', 0, 1, 0.05)}
+            {slider('groundLightness', 'Ground lightness', 0, 1, 0.05)}
+            {slider('roadLightness', 'Road lightness', 0, 2, 0.05)}
+            {slider('waterLightness', 'Water lightness', 0, 2, 0.05)}
+            {slider('contourMinorOpacity', 'Contour minor opacity', 0, 1, 0.02)}
+            {slider('contourMajorOpacity', 'Contour major opacity', 0, 1, 0.02)}
+            {slider('minorFadeDistanceM', 'Minor fade distance (×)', 0.5, 3, 0.1)}
+            {slider('pointSizeMinPx', 'Point size min (px)', 0.5, 3, 0.1)}
+            {slider('pointSizeMaxPx', 'Point size max (px)', 1, 8, 0.5)}
+            {slider('treeColourLightness', 'Tree colour lightness', 0.5, 2, 0.05)}
+            {slider('treeDensity', 'Tree density (×)', 0.25, 1.5, 0.05)}
+            {slider('dissolveSiteMarginM', 'Dissolve site margin (m)', 0, 120, 5)}
+            {slider('dissolveMaxFadeWidthM', 'Dissolve max width (m)', 40, 300, 10)}
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={onCopyTuning} className={segmentClass}>Copy values</button>
+            <button type="button" onClick={onResetTuning} className={segmentClass}>Reset</button>
           </div>
         </div>
       )}

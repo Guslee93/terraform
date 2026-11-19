@@ -6,6 +6,7 @@
  * fat-line work (TF-VIS-021) gives it meaning.
  */
 import type { GroundTint } from './styleColour'
+import { adjustLightness } from './styleColour'
 
 export type LineStyle = { readonly color: string; readonly widthPx: number; readonly opacity: number }
 
@@ -41,6 +42,8 @@ export type SceneStyle = {
   readonly vegetation: 'mesh' | 'points'
   /** The point-cloud vegetation colour (unused while `vegetation` is 'mesh'). */
   readonly vegetationColour: string
+  /** The identity tuning overrides, when a Lab session tuned the style (Run 8 T4). */
+  readonly tuning?: IdentityTuning
   readonly lines: {
     readonly crease: LineStyle
     readonly silhouette: LineStyle | null
@@ -154,4 +157,59 @@ export function identityStage(stage: IdentityStage): SceneStyle {
   if (stage === 'A') return { ...IDENTITY, dissolve: null, vegetation: 'mesh' }
   if (stage === 'B') return { ...IDENTITY, vegetation: 'mesh' }
   return IDENTITY
+}
+
+/** The identity tuning overrides the owner adjusts in the Lab (Run 8 T4). */
+export type IdentityTuning = {
+  readonly groundSaturation: number
+  readonly groundLightness: number
+  readonly roadLightness: number
+  readonly waterLightness: number
+  readonly contourMinorOpacity: number
+  readonly contourMajorOpacity: number
+  readonly minorFadeDistanceM: number
+  readonly pointSizeMinPx: number
+  readonly pointSizeMaxPx: number
+  readonly treeColourLightness: number
+  readonly treeDensity: number
+  readonly dissolveSiteMarginM: number
+  readonly dissolveMaxFadeWidthM: number
+}
+
+/** The tuning that reproduces IDENTITY exactly (all identity defaults). */
+export const DEFAULT_TUNING: IdentityTuning = {
+  groundSaturation: 0.2,
+  groundLightness: 0.5,
+  roadLightness: 1,
+  waterLightness: 1,
+  contourMinorOpacity: 0.16,
+  contourMajorOpacity: 0.38,
+  minorFadeDistanceM: 1.5, // × the isometric preset distance
+  pointSizeMinPx: 1.5,
+  pointSizeMaxPx: 4,
+  treeColourLightness: 1,
+  treeDensity: 1,
+  dissolveSiteMarginM: 40,
+  dissolveMaxFadeWidthM: 160,
+}
+
+/**
+ * Derive a tuned IDENTITY variant. `tuning` overrides the style-level colours/opacities (ground
+ * tint, road, water, contour opacity, vegetation colour) and is carried on the style for the
+ * runtime parameters (dissolve, minor-contour fade, point size/density). Pure.
+ */
+export function applyTuning(base: SceneStyle, tuning: IdentityTuning): SceneStyle {
+  return {
+    ...base,
+    groundTint: { saturation: tuning.groundSaturation, lightness: tuning.groundLightness },
+    road: adjustLightness(base.road, tuning.roadLightness),
+    water: adjustLightness(base.water, tuning.waterLightness),
+    vegetationColour: adjustLightness(base.vegetationColour, tuning.treeColourLightness),
+    lines: {
+      ...base.lines,
+      contourMinor: { ...base.lines.contourMinor, opacity: tuning.contourMinorOpacity },
+      contourMajor: { ...base.lines.contourMajor, opacity: tuning.contourMajorOpacity },
+    },
+    tuning,
+  }
 }

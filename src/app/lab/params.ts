@@ -1,5 +1,5 @@
 import { CAMERA_PRESET_IDS, type CameraPresetId } from '../../features/sites/manifest'
-import type { IdentityStage } from '../../scene/style'
+import { DEFAULT_TUNING, type IdentityStage, type IdentityTuning } from '../../scene/style'
 import type { LabStateId } from './states'
 
 /** The Lab's camera presets: the site presets plus the Lab-only "overview" view (T1 Run 8). */
@@ -19,6 +19,7 @@ export type LabParams = {
   readonly presetId: LabPresetId
   readonly date: string
   readonly minute: number
+  readonly tuning: IdentityTuning
 }
 
 const LAB_STATE_IDS: readonly LabStateId[] = ['neutral', 'sun-hours', 'wind', 'noise', 'water', 'slope', 'mass']
@@ -47,6 +48,29 @@ function minuteOf(value: string | null): number | null {
   return Number.isInteger(number) && number >= 0 && number <= 1439 ? number : null
 }
 
+const TUNING_KEYS = Object.keys(DEFAULT_TUNING) as readonly (keyof IdentityTuning)[]
+
+/** Parse a `?tuning=<json>` value, falling back to the identity defaults on any invalid field. */
+function parseTuning(value: string | null): IdentityTuning {
+  if (value === null) return DEFAULT_TUNING
+  try {
+    const parsed = JSON.parse(value) as Record<string, unknown>
+    const tuning = { ...DEFAULT_TUNING }
+    for (const key of TUNING_KEYS) {
+      const entry = parsed[key]
+      if (typeof entry === 'number' && Number.isFinite(entry)) (tuning as Record<string, number>)[key] = entry
+    }
+    return tuning
+  } catch {
+    return DEFAULT_TUNING
+  }
+}
+
+/** A compact JSON encoding of the tuning, for the `?tuning=` URL parameter. */
+export function serializeTuning(tuning: IdentityTuning): string {
+  return JSON.stringify(tuning)
+}
+
 export function parseLabParams(search: string): LabParams {
   const params = new URLSearchParams(search)
   const style = params.get('style')
@@ -60,5 +84,6 @@ export function parseLabParams(search: string): LabParams {
     presetId: isPreset(preset) ? preset : 'isometric',
     date: isDate(params.get('date')) ? (params.get('date') as string) : DEFAULT_DATE,
     minute: minuteOf(params.get('minute')) ?? DEFAULT_MINUTE,
+    tuning: parseTuning(params.get('tuning')),
   }
 }

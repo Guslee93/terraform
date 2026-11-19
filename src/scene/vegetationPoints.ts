@@ -100,9 +100,12 @@ export function buildVegetationPoints(
   trees: readonly VegetationTree[],
   seed: number,
   baseColourHex: string = VEGETATION_COLOUR,
+  density = 1,
 ): VegetationPoints {
   const random = mulberry32(seed)
   const base = hexToRgb(baseColourHex)
+  const canopyPoints = Math.max(1, Math.round(CANOPY_POINTS * density))
+  const trunkPoints = Math.max(1, Math.round(TRUNK_POINTS * density))
   const positions: number[] = []
   const colors: number[] = []
   const dir: [number, number, number] = [0, 0, 0]
@@ -115,7 +118,7 @@ export function buildVegetationPoints(
     // Canopy centre sits above the ground the same way Trees.tsx places it.
     const centreY = tree.ground + (TRUNK_HEIGHT_M + CANOPY_RADIUS_M * 0.75) * tree.scale
 
-    for (let point = 0; point < CANOPY_POINTS; point += 1) {
+    for (let point = 0; point < canopyPoints; point += 1) {
       direction(random, dir)
       // Bias strongly toward the surface (porous shell, sparse interior): radius in the outer ~20 %.
       const shell = 0.8 + 0.2 * random()
@@ -127,8 +130,8 @@ export function buildVegetationPoints(
       const jitter = 0.9 + 0.2 * random()
       colors.push(base[0] * jitter, base[1] * jitter, base[2] * jitter)
     }
-    for (let point = 0; point < TRUNK_POINTS; point += 1) {
-      const t = (point + 0.5) / TRUNK_POINTS
+    for (let point = 0; point < trunkPoints; point += 1) {
+      const t = (point + 0.5) / trunkPoints
       positions.push(tree.east, tree.ground + TRUNK_HEIGHT_M * tree.scale * t, -tree.north)
       const jitter = 0.82 + 0.12 * random()
       colors.push(base[0] * jitter * 0.9, base[1] * jitter * 0.85, base[2] * jitter * 0.85)

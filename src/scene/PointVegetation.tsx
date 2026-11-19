@@ -55,11 +55,17 @@ export function PointVegetation({
   exclude,
   colour = VEGETATION_COLOUR,
   dissolve = null,
+  pointSizeMinPx = POINT_SIZE_MIN_PX,
+  pointSizeMaxPx = POINT_SIZE_MAX_PX,
+  density = 1,
 }: {
   sitePackage: SitePackage
   exclude?: readonly (readonly Vec2[])[]
   colour?: string
   dissolve?: DissolveParams | null
+  pointSizeMinPx?: number
+  pointSizeMaxPx?: number
+  density?: number
 }) {
   const { trees, terrain, landcover } = sitePackage
   const sprite = useMemo(makeRoundSprite, [])
@@ -79,15 +85,15 @@ export function PointVegetation({
         shape: variant.shape as VegetationShape,
       }
     })
-    return buildVegetationPoints(placed, SEED, colour)
-  }, [trees, terrain, landcover, exclude, colour])
+    return buildVegetationPoints(placed, SEED, colour, density)
+  }, [trees, terrain, landcover, exclude, colour, density])
 
   const gl = useThree((state) => state.gl)
   const dpr = gl.getPixelRatio()
   const material = useMemo(() => {
     const pointsMaterial = new PointsMaterial({
       // Screen-stable: a constant size in device pixels (CSS px × DPR), no distance attenuation.
-      size: Math.min(POINT_SIZE_MAX_PX, Math.max(POINT_SIZE_MIN_PX, POINT_SIZE_PX)) * dpr,
+      size: Math.min(pointSizeMaxPx, Math.max(pointSizeMinPx, POINT_SIZE_PX)) * dpr,
       sizeAttenuation: false,
       map: sprite,
       vertexColors: true,
@@ -98,7 +104,7 @@ export function PointVegetation({
     // Dissolve the points toward the tile edge (TF-VIS-02A Run 8).
     applySceneFades(pointsMaterial, { dissolve })
     return pointsMaterial
-  }, [sprite, dissolve, dpr])
+  }, [sprite, dissolve, dpr, pointSizeMinPx, pointSizeMaxPx])
   useEffect(() => () => material.dispose(), [material])
 
   const geometry = useMemo(() => {

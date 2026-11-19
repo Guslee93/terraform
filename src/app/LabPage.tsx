@@ -24,8 +24,8 @@ import type { SitePackage } from '../features/sites/package'
 import type { SiteSummary } from '../features/sites/siteCatalog'
 import { buildDemoMassEditor, buildEmptyEditor, type LabStateId } from './lab/states'
 import { LabTweakPanel, type LabQuality } from './lab/TweakPanel'
-import { parseLabParams, type LabPresetId } from './lab/params'
-import { NORDIC, identityStage, type IdentityStage } from '../scene/style'
+import { parseLabParams, serializeTuning, type LabPresetId } from './lab/params'
+import { NORDIC, applyTuning, DEFAULT_TUNING, identityStage, type IdentityStage, type IdentityTuning } from '../scene/style'
 
 const noop = () => {}
 const WIND = { ...DEFAULT_WIND, display: 'ratio' as const, heightM: 2 }
@@ -68,8 +68,16 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
   const [date, setDate] = useState<LocalDate>(initialParams.date as LocalDate)
   const [minute, setMinute] = useState(initialParams.minute)
   const [quality, setQuality] = useState<LabQuality>('auto')
+  const [tuning, setTuning] = useState<IdentityTuning>(initialParams.tuning)
 
-  const style = styleId === 'identity' ? identityStage(stage) : NORDIC
+  const style = styleId === 'identity' ? applyTuning(identityStage(stage), tuning) : NORDIC
+
+  const copyTuning = async () => {
+    const tuned = applyTuning(identityStage(stage), tuning)
+    const url = `${window.location.origin}/lab/${site.id}?style=identity&stage=${stage}&state=${stateId}&preset=${presetId}&date=${date}&minute=${minute}&tuning=${encodeURIComponent(serializeTuning(tuning))}`
+    const text = `// IDENTITY tuned in the Visual Lab (Run 8)\n${JSON.stringify(tuned, null, 2)}\n\n// Reproduce: ${url}`
+    try { await navigator.clipboard.writeText(text) } catch { /* clipboard unavailable */ }
+  }
 
   // A Lab-only camera that frames the whole terrain tile from a 45° elevation (Run 8 T1), so the
   // owner can judge the dissolve on all four edges.
@@ -219,6 +227,7 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
         date={date}
         minute={minute}
         quality={quality}
+        tuning={tuning}
         onState={setStateId}
         onStyle={setStyleId}
         onStage={setStage}
@@ -226,6 +235,9 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
         onDate={(value) => { if (isLocalDate(value)) setDate(value) }}
         onMinute={setMinute}
         onQuality={setQuality}
+        onTuning={setTuning}
+        onCopyTuning={copyTuning}
+        onResetTuning={() => setTuning({ ...DEFAULT_TUNING })}
       />
     </main>
   )

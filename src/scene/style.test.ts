@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { IDENTITY, identityStage, NORDIC } from './style'
+import { applyTuning, DEFAULT_TUNING, IDENTITY, identityStage, NORDIC } from './style'
 
 // Pins every value NORDIC moved out of the old inline constants/literals. If one of these changes,
 // the refactor changed the picture; revert it (TF-VIS-013 acceptance is pixel identity).
@@ -100,5 +100,29 @@ describe('identityStage (TF-VIS-020 stages)', () => {
       expect(style.floorGrid).toBe(false)
       expect(style.skirt).toBeNull()
     }
+  })
+})
+
+describe('applyTuning (Run 8 T4)', () => {
+  it('reproduces IDENTITY exactly with the default tuning', () => {
+    const tuned = applyTuning(IDENTITY, DEFAULT_TUNING)
+    expect(tuned.groundTint).toEqual(IDENTITY.groundTint)
+    expect(tuned.road).toBe(IDENTITY.road)
+    expect(tuned.water).toBe(IDENTITY.water)
+    expect(tuned.vegetationColour).toBe(IDENTITY.vegetationColour)
+    expect(tuned.lines.contourMinor.opacity).toBe(IDENTITY.lines.contourMinor.opacity)
+  })
+
+  it('overrides ground, road, contours and vegetation from the tuning', () => {
+    const tuned = applyTuning(IDENTITY, { ...DEFAULT_TUNING, groundSaturation: 0.4, groundLightness: 0.6, contourMinorOpacity: 0.3, treeDensity: 1.5 })
+    expect(tuned.groundTint).toEqual({ saturation: 0.4, lightness: 0.6 })
+    expect(tuned.lines.contourMinor.opacity).toBe(0.3)
+    expect(tuned.tuning?.treeDensity).toBe(1.5)
+    expect(tuned.road).not.toBe('#000000')
+  })
+
+  it('carries the tuning for the runtime parameters', () => {
+    const tuning = { ...DEFAULT_TUNING, dissolveSiteMarginM: 60, minorFadeDistanceM: 2 }
+    expect(applyTuning(IDENTITY, tuning).tuning).toEqual(tuning)
   })
 })

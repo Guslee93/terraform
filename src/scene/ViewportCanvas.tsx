@@ -647,14 +647,15 @@ export function ViewportCanvas({
   const minorFade = useMemo(() => {
     if (style.contourSource !== 'tile1m') return null
     const { position, target } = initialPreset
-    const start = Math.hypot(position[0] - target[0], position[1] - target[1], position[2] - target[2]) * 1.5
+    const factor = style.tuning?.minorFadeDistanceM ?? 1.5
+    const start = Math.hypot(position[0] - target[0], position[1] - target[1], position[2] - target[2]) * factor
     return { start, end: start * 1.35 }
-  }, [style.contourSource, initialPreset])
+  }, [style.contourSource, initialPreset, style.tuning?.minorFadeDistanceM])
   // The identity's terrain dissolve is computed from the site (study area, terrain, wind circle).
   const dissolve = useMemo(() => {
     if (style.dissolve !== 'auto') return null
-    return dissolveRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain)
-  }, [style.dissolve, sitePackage, windSettings.radius])
+    return dissolveRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM)
+  }, [style.dissolve, sitePackage, windSettings.radius, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM])
   // The camera presets, with the Lab-only "overview" preset merged in (falls back to isometric).
   const cameraPresets = useMemo(() => ({
     ...manifest.cameraPresets,
@@ -813,7 +814,7 @@ export function ViewportCanvas({
 
             <group name="live-scenario">
             {layers.trees && (style.vegetation === 'points'
-              ? <PointVegetation sitePackage={sitePackage} exclude={treeExclude} colour={style.vegetationColour} dissolve={dissolve} />
+              ? <PointVegetation sitePackage={sitePackage} exclude={treeExclude} colour={style.vegetationColour} dissolve={dissolve} pointSizeMinPx={style.tuning?.pointSizeMinPx} pointSizeMaxPx={style.tuning?.pointSizeMaxPx} density={style.tuning?.treeDensity} />
               : <Trees sitePackage={sitePackage} exclude={treeExclude} detail={profile === 'low' ? 'simple' : 'full'} />
             )}
             <MassLayer

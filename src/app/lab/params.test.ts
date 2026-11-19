@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { parseLabParams } from './params'
+import { parseLabParams, serializeTuning } from './params'
+import { DEFAULT_TUNING } from '../../scene/style'
 
 describe('parseLabParams (T7 reproducible URLs)', () => {
   it('parses a full URL to its values', () => {
     const params = parseLabParams('style=identity&stage=C&state=wind&preset=isometric&date=2026-06-21&minute=900')
-    expect(params).toEqual({ styleId: 'identity', stage: 'C', stateId: 'wind', presetId: 'isometric', date: '2026-06-21', minute: 900 })
+    expect(params).toEqual({ styleId: 'identity', stage: 'C', stateId: 'wind', presetId: 'isometric', date: '2026-06-21', minute: 900, tuning: DEFAULT_TUNING })
   })
 
   it('falls back to defaults when the query is empty', () => {
-    expect(parseLabParams('')).toEqual({ styleId: 'nordic', stage: 'C', stateId: 'neutral', presetId: 'isometric', date: '2026-06-21', minute: 900 })
+    expect(parseLabParams('')).toEqual({ styleId: 'nordic', stage: 'C', stateId: 'neutral', presetId: 'isometric', date: '2026-06-21', minute: 900, tuning: DEFAULT_TUNING })
   })
 
   it('falls back per-field on invalid values', () => {
@@ -37,5 +38,15 @@ describe('parseLabParams (T7 reproducible URLs)', () => {
     expect(parseLabParams('minute=-1').minute).toBe(900)
     expect(parseLabParams('minute=1440').minute).toBe(900)
     expect(parseLabParams('minute=15.5').minute).toBe(900)
+  })
+
+  it('round-trips the tuning through the URL', () => {
+    const tuning = { ...DEFAULT_TUNING, groundSaturation: 0.4, treeDensity: 1.25 }
+    const params = parseLabParams(`style=identity&tuning=${encodeURIComponent(serializeTuning(tuning))}`)
+    expect(params.tuning).toEqual(tuning)
+  })
+
+  it('falls back to the default tuning on invalid tuning JSON', () => {
+    expect(parseLabParams('style=identity&tuning=not-json').tuning).toEqual(DEFAULT_TUNING)
   })
 })
