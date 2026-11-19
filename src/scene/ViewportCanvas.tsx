@@ -690,11 +690,13 @@ export function ViewportCanvas({
     const start = Math.hypot(position[0] - target[0], position[1] - target[1], position[2] - target[2]) * 1.5
     return { start, end: start * 1.35 }
   }, [style.contourSource, initialPreset])
-  // The identity's terrain dissolve is computed from the site (study area, terrain, wind circle).
+  // The identity's terrain dissolve is computed from the site (study area, terrain, wind circle),
+  // unless the style resolves it (null = none, an object = explicit radii).
   const dissolve = useMemo(() => {
-    if (style.id !== 'identity') return null
-    return dissolveRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain)
-  }, [style.id, sitePackage, windSettings.radius])
+    if (style.dissolve === null) return null
+    if (style.dissolve === 'auto') return dissolveRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain)
+    return style.dissolve
+  }, [style.dissolve, sitePackage, windSettings.radius])
   // The wind map, circle and particles follow the terrain at the chosen slice height (ADR-0028).
   // While the lift handle is dragged the disc follows the pointer; the map shows the nearest slice.
   const [liftDrag, setLiftDrag] = useState<number | null>(null)

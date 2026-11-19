@@ -1,6 +1,7 @@
 import { inputClass, labelClass, rangeClass, segmentClass, segmentGroupClass } from '../../components/ui/controls'
 import { LAB_STATES, LAB_STYLES, type LabStateId } from './states'
 import type { CameraPresetId } from '../../features/sites/manifest'
+import type { IdentityStage } from '../../scene/style'
 
 const PRESETS: ReadonlyArray<{ id: CameraPresetId; label: string }> = [
   { id: 'isometric', label: '3D' },
@@ -9,6 +10,8 @@ const PRESETS: ReadonlyArray<{ id: CameraPresetId; label: string }> = [
   { id: 'south', label: 'South' },
   { id: 'eyeLevel', label: 'Street' },
 ]
+
+const STAGES: readonly IdentityStage[] = ['A', 'B', 'C']
 
 const TIERS = [
   { id: 'auto', label: 'Auto' },
@@ -22,25 +25,29 @@ export type LabQuality = (typeof TIERS)[number]['id']
 export function LabTweakPanel({
   stateId,
   styleId,
+  stage,
   presetId,
   date,
   minute,
   quality,
   onState,
   onStyle,
+  onStage,
   onPreset,
   onDate,
   onMinute,
   onQuality,
 }: {
   stateId: LabStateId
-  styleId: string
+  styleId: 'nordic' | 'identity'
+  stage: IdentityStage
   presetId: CameraPresetId
   date: string
   minute: number
   quality: LabQuality
   onState: (state: LabStateId) => void
-  onStyle: (style: string) => void
+  onStyle: (style: 'nordic' | 'identity') => void
+  onStage: (stage: IdentityStage) => void
   onPreset: (preset: CameraPresetId) => void
   onDate: (date: string) => void
   onMinute: (minute: number) => void
@@ -60,6 +67,19 @@ export function LabTweakPanel({
           ))}
         </div>
       </div>
+
+      {styleId === 'identity' && (
+        <div>
+          <p className={labelClass}>Stage</p>
+          <div role="group" aria-label="Stage" className={`${segmentGroupClass} mt-1`}>
+            {STAGES.map((option) => (
+              <button key={option} type="button" aria-pressed={stage === option} onClick={() => onStage(option)} className={segmentClass}>
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <p className={labelClass}>State</p>

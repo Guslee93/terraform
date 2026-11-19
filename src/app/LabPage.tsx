@@ -23,8 +23,10 @@ import { normalizeRing, ringCentroid } from '../lib/polygon'
 import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import type { SiteSummary } from '../features/sites/siteCatalog'
-import { LAB_STYLES, buildDemoMassEditor, buildEmptyEditor, type LabStateId } from './lab/states'
+import { buildDemoMassEditor, buildEmptyEditor, type LabStateId } from './lab/states'
 import { LabTweakPanel, type LabQuality } from './lab/TweakPanel'
+import { parseLabParams } from './lab/params'
+import { NORDIC, identityStage, type IdentityStage } from '../scene/style'
 
 const noop = () => {}
 const WIND = { ...DEFAULT_WIND, display: 'ratio' as const, heightM: 2 }
@@ -58,15 +60,17 @@ function LabFallback({ heading, body }: { heading: string; body: string }) {
 }
 
 function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SitePackage }) {
-  const [stateId, setStateId] = useState<LabStateId>('neutral')
-  const [styleId, setStyleId] = useState('nordic')
-  const [presetId, setPresetId] = useState<CameraPresetId>('isometric')
+  const [initialParams] = useState(() => parseLabParams(window.location.search))
+  const [stateId, setStateId] = useState<LabStateId>(initialParams.stateId)
+  const [styleId, setStyleId] = useState<'nordic' | 'identity'>(initialParams.styleId)
+  const [stage, setStage] = useState<IdentityStage>(initialParams.stage)
+  const [presetId, setPresetId] = useState<CameraPresetId>(initialParams.presetId)
   const [cameraNonce, setCameraNonce] = useState(0)
-  const [date, setDate] = useState<LocalDate>('2026-06-21')
-  const [minute, setMinute] = useState(900)
+  const [date, setDate] = useState<LocalDate>(initialParams.date as LocalDate)
+  const [minute, setMinute] = useState(initialParams.minute)
   const [quality, setQuality] = useState<LabQuality>('auto')
 
-  const style = LAB_STYLES.find((option) => option.id === styleId)?.style ?? LAB_STYLES[0]!.style
+  const style = styleId === 'identity' ? identityStage(stage) : NORDIC
 
   // The demo mass is part of the editor only in the "mass" state; every other state is mass-less.
   const editor = useMemo(
@@ -192,12 +196,14 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
       <LabTweakPanel
         stateId={stateId}
         styleId={styleId}
+        stage={stage}
         presetId={presetId}
         date={date}
         minute={minute}
         quality={quality}
         onState={setStateId}
         onStyle={setStyleId}
+        onStage={setStage}
         onPreset={requestPreset}
         onDate={(value) => { if (isLocalDate(value)) setDate(value) }}
         onMinute={setMinute}

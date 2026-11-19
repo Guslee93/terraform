@@ -32,10 +32,10 @@ export type SceneStyle = {
   /** Where contours come from: the 16 m terrain grid, or the 1 m tile (TF-VIS-053). */
   readonly contourSource: 'grid16' | 'tile1m'
   /**
-   * Atmospheric dissolve radii (TF-VIS-02A). NORDIC is null (no dissolve); IDENTITY computes its
-   * band from `dissolveRange` at mount, so the static object keeps null as a placeholder.
+   * Atmospheric dissolve (TF-VIS-02A). `null` = none; `'auto'` = compute the band from
+   * `dissolveRange` at mount; an object = explicit radii.
    */
-  readonly dissolve: { readonly start: number; readonly end: number } | null
+  readonly dissolve: { readonly start: number; readonly end: number } | 'auto' | null
   /** Vegetation rendering: instanced mesh (today) or airy point cloud (TF-VIS-029). */
   readonly vegetation: 'mesh' | 'points'
   /** The point-cloud vegetation colour (unused while `vegetation` is 'mesh'). */
@@ -121,8 +121,8 @@ export const IDENTITY: SceneStyle = {
   },
   // The identity draws contours from the 1 m tile so they register with real topography.
   contourSource: 'tile1m',
-  // Filled from `dissolveRange` at mount (the static object keeps null); NORDIC has none.
-  dissolve: null,
+  // Computed from `dissolveRange` at mount (TF-VIS-02A); stage A overrides this to null.
+  dissolve: 'auto',
   vegetation: 'points',
   vegetationColour: '#8C9A8A',
   lines: {
@@ -138,4 +138,18 @@ export const IDENTITY: SceneStyle = {
   },
   // Today's intensity, darker tint so the contact shadows read on the charcoal ground.
   ao: { intensity: 1.6, radiusM: 4, color: '#0E1110' },
+}
+
+/** The three progressive identity stages (TF-VIS-020). */
+export type IdentityStage = 'A' | 'B' | 'C'
+
+/**
+ * The derived IDENTITY variant for a stage. A = contours only (no dissolve, mesh trees); B = A +
+ * dissolve (and the identity AO/shadow tuning already in IDENTITY); C = B + point vegetation. The
+ * base IDENTITY object already carries C's look, so C is IDENTITY itself. Pure — no site data.
+ */
+export function identityStage(stage: IdentityStage): SceneStyle {
+  if (stage === 'A') return { ...IDENTITY, dissolve: null, vegetation: 'mesh' }
+  if (stage === 'B') return { ...IDENTITY, vegetation: 'mesh' }
+  return IDENTITY
 }

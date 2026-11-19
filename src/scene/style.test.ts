@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { IDENTITY, NORDIC } from './style'
+import { IDENTITY, identityStage, NORDIC } from './style'
 
 // Pins every value NORDIC moved out of the old inline constants/literals. If one of these changes,
 // the refactor changed the picture; revert it (TF-VIS-013 acceptance is pixel identity).
@@ -59,7 +59,7 @@ describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
     expect(IDENTITY.lines.crease).toEqual({ color: '#9DA49F', widthPx: 1, opacity: 0.6 })
     expect(IDENTITY.ao).toEqual({ intensity: 1.6, radiusM: 4, color: '#0E1110' })
     expect(IDENTITY.contourSource).toBe('tile1m')
-    expect(IDENTITY.dissolve).toBeNull() // filled from dissolveRange at mount
+    expect(IDENTITY.dissolve).toBe('auto') // computed from dissolveRange at mount
     expect(IDENTITY.vegetation).toBe('points')
     expect(IDENTITY.vegetationColour).toBe('#8C9A8A')
   })
@@ -67,5 +67,38 @@ describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
   it('keeps NORDIC parcel and section lines', () => {
     expect(IDENTITY.lines.parcel).toEqual(NORDIC.lines.parcel)
     expect(IDENTITY.lines.section).toEqual(NORDIC.lines.section)
+  })
+})
+
+describe('identityStage (TF-VIS-020 stages)', () => {
+  it('A has no dissolve and mesh trees', () => {
+    const a = identityStage('A')
+    expect(a.dissolve).toBeNull()
+    expect(a.vegetation).toBe('mesh')
+    expect(a.contourSource).toBe('tile1m')
+  })
+
+  it('B adds the dissolve but keeps mesh trees', () => {
+    const b = identityStage('B')
+    expect(b.dissolve).toBe('auto')
+    expect(b.vegetation).toBe('mesh')
+    expect(b.contourSource).toBe('tile1m')
+  })
+
+  it('C is the full identity (dissolve + point vegetation)', () => {
+    const c = identityStage('C')
+    expect(c.dissolve).toBe('auto')
+    expect(c.vegetation).toBe('points')
+    expect(c.contourSource).toBe('tile1m')
+  })
+
+  it('keeps the identity charcoal palette in every stage', () => {
+    for (const stage of ['A', 'B', 'C'] as const) {
+      const style = identityStage(stage)
+      expect(style.background).toBe('#171B19')
+      expect(style.context).toEqual({ color: '#EEEDE8', roughness: 0.92 })
+      expect(style.floorGrid).toBe(false)
+      expect(style.skirt).toBeNull()
+    }
   })
 })

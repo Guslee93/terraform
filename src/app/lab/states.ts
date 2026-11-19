@@ -24,14 +24,14 @@ export const LAB_STATES: readonly LabState[] = [
   { id: 'mass', label: 'One demo mass' },
 ]
 
-export type LabStyleOption = { readonly id: string; readonly label: string; readonly style: SceneStyle }
+export type LabStyleOption = { readonly id: 'nordic' | 'identity'; readonly label: string; readonly style: SceneStyle }
 
 /**
  * The style picker's list. Adding `IDENTITY` (TF-VIS-020) is one new entry here, nothing else.
  */
 export const LAB_STYLES: readonly LabStyleOption[] = [
   { id: 'nordic', label: 'NORDIC', style: NORDIC },
-  { id: 'identity', label: 'IDENTITY (stage A)', style: IDENTITY },
+  { id: 'identity', label: 'IDENTITY', style: IDENTITY },
 ]
 
 /** An empty editor (no masses): the analysis states show the site without a proposal. */
