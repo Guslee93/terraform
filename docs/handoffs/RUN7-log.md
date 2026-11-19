@@ -8,7 +8,36 @@ All work attributed as **DeepSeek V4 Pro (Cline)** in commit trailers, `docs/age
 
 ## Run summary
 
-_(Filled at the end of the run.)_
+**T1–T7 done; T8 partial; T9 not attempted (stretch, out of time).** Everything is on
+`run7/identity-lab` (draft PR #29 against `run1/foundations`) and reachable only through the
+`IDENTITY` style in the Visual Lab. Production (`NORDIC`) stayed pixel-identical throughout — the
+headed Metal pixel safety net passed 5/5 after every `src/scene/` task (T2, T3, T4, T6).
+
+**What to look at in the morning** (run `cd ../Terraform-run7 && npm run dev`, then open):
+
+- `/lab/compact-infill` — NORDIC (today's look, now with the blank-first-view fix).
+- `/lab/compact-infill?style=identity&stage=A` — contours only.
+- `/lab/compact-infill?style=identity&stage=B` — + dissolve.
+- `/lab/compact-infill?style=identity&stage=C` — + point vegetation.
+- `/lab/compact-infill?style=identity&stage=C&state=wind` — + wind with the legend.
+
+Preview screenshots (headed, Metal, preview-not-baseline): `docs/screenshots/vis/run7/`
+(`nordic`, `stage-a`, `stage-b`, `stage-c-neutral`, `stage-c-wind` + `README.md`).
+
+**Measurements:** contour pass (1 m tile) median 128.6 ms / max 135.5 ms → worker; point counts
+compact-infill 42 596 full / 17 039 mid / 6 390 far, sloped-edge 11 546 / 4 619 / 1 734; production
+chunk delta +81 B (T2) then +~1.5 kB (T3 worker, dead for NORDIC). Orbit frame-time p95 with/without
+points was **not measured** (time budget; the perf harness is `node scripts/measure-perf.mjs`).
+
+**Pixel safety net:** available (Apple M1 Pro Metal), passed after T2, T3, T4, T6.
+
+**Blocked/partial:** T8 partial — the opt-in `STALE=1` spec is written; the Water "computing" and
+circle tests pass, but the Sun-hours date/card tests are timing-sensitive and the analysis workers
+take ~30 min per pass on this machine, so two clean consecutive passes were not achieved. T9 (fat
+lines) not attempted — it needs `LineSegments2`/`LineMaterial` plus DPR/4K width handling, and the
+session budget was spent after T8.
+
+See "Decisions I made" and "Questions for the owner" below.
 
 ## Environment
 
@@ -33,8 +62,8 @@ _(Filled at the end of the run.)_
 | T5 | TF-VIS-040 part B: `MapLegend` component (Lab only) | done | deba3c0 | typecheck 0 · lint 0 · unit 1253 passed / 4 skip / 1 todo · build OK · chunk 0 · Lab noise legend renders | claim text = existing caption functions; studio caption blocks untouched |
 | T6 | TF-VIS-029: airy point-cloud vegetation (Lab only) | done | 24cbc98 | typecheck 0 · lint 0 · unit 1258 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+points renders | Points hidden in depth/white passes; forest fill skipped (optional) |
 | T7 | Lab stage picker A/B/C + reproducible URLs | done | 70f39e3, f2784c5 | typecheck 0 · lint 0 · unit 1267 passed / 4 skip / 1 todo · build OK · chunk 0 · LAB=1 e2e 3 passed · 5 screenshots captured | Screenshots in docs/screenshots/vis/run7/ (preview, not baseline) |
-| T8 | Stretch: TF-VIS-046 stale-result / rapid-change tests | todo | — | — | — |
-| T9 | Stretch: TF-VIS-021 fat-line system (Lab only) | todo | — | — | — |
+| T8 | Stretch: TF-VIS-046 stale-result / rapid-change tests | partial | d6f38e7 | typecheck 0 · lint 0 · STALE=1 spec: Water "computing" + circle pass; Sun-hours date/card tests timing-sensitive | Analysis workers slow (~30 min/pass); two clean consecutive passes not achieved on this machine |
+| T9 | Stretch: TF-VIS-021 fat-line system (Lab only) | blocked | — | — | Not attempted: stretch, after T8's ~30 min/pass runtime the session budget was spent; needs LineSegments2/LineMaterial + DPR/4K width handling |
 
 ## Decisions I made
 
@@ -83,10 +112,26 @@ _(Filled at the end of the run.)_
 
 ## Questions for the owner
 
-_(Only real decisions, added as they arise.)_
+1. **T3 production chunk (+~1.5 kB).** The 1 m-tile worker adds a 728 B `rasterContourWorker` chunk
+   plus the 1 m rendering code to production (dead for `NORDIC`). It follows the existing worker
+   pattern, and the pixel output is identical. If you want a strict ±0.5 kB bar on every task, the
+   1 m hook/worker can move into the Lab chunk — is the current state acceptable, or should I move it?
+2. **T4 dissolve is radial.** `dissolveRange` uses `start = study-area radius + 200 m`, `end =
+   terrain bounding radius`, so the terrain's *corners* dissolve while the closer east/west
+   mid-edges stay crisp. Is that the look you want, or should the fade be distance-to-nearest-edge
+   (rectangular) instead of radial?
+3. **Provisional identity values** (all marked in code + ledger): `groundTint { saturation: 0.2,
+   lightness: 0.5 }`, contour minor fade at 1.5× the isometric distance, point size 0.9 m, and the
+   dissolve band. Please tune them in the Lab.
+4. **T9 (fat lines) was not attempted.** Should it be a follow-up run, and is the contour line
+   colour (`#F7F7F2`) what you want for fat lines too?
 
 ## Session notes
 
+- 2026-11-19 — T8 **partial** (`d6f38e7`). Opt-in `STALE=1` spec (`e2e/stale-results.spec.ts`)
+  covers the four stale-result scenarios; the Water "computing" and circle tests pass, but the
+  Sun-hours tests are timing-sensitive and the analysis workers run ~30 min/pass here, so two clean
+  consecutive passes were not achieved. T9 (fat lines) not attempted.
 - 2026-11-19 — T7 **done** (`70f39e3`, `f2784c5`). Stage picker A/B/C (via `identityStage`) and
   reproducible URLs (`parseLabParams` with per-field fallback). Five headed preview screenshots
   (NORDIC, A, B, C neutral, C wind) in `docs/screenshots/vis/run7/` with a README.
