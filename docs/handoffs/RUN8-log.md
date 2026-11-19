@@ -28,7 +28,7 @@ _(Filled at the end of the run.)_
 |---|---|---|---|---|---|
 | T1 | Dissolve: every edge fades, the site never does (TF-VIS-02A fix) | done | 61d59fd | typecheck 0 · lint 0 · unit 1269 / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 4/4 deterministic (wind flaky, fails on Run 7 tip too) | fadeWidth 160 m both sites (provisional); overview preset added |
 | T2 | Point-cloud trees that read as airy canopies (TF-VIS-029 tuning) | done | bacca4e, a9f2008 | typecheck 0 · lint 0 · unit 1271 / 4 skip / 1 todo · build OK · stage C renders | screen-stable 2.5 px (1.5–4 px) points, shell-biased, #D4DED4 (1.64:1); perf p95 C/B = 1.01×, draw calls 26 vs 84 |
-| T3 | Keep the 1 m contour worker out of production | todo | — | — | — |
+| T3 | Keep the 1 m contour worker out of production | done | e1a391f | typecheck 0 · lint 0 · unit 1271 / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 | worker reachable only via lazy RasterContours chunk; studio never requests it |
 | T4 | Lab tuning controls for the owner (Lab only) | todo | — | — | — |
 | T5 | Make the stale-result spec reliable or narrow it (TF-VIS-046) | todo | — | — | — |
 | T6 | Stretch: TF-VIS-021 fat lines (Lab only) | todo | — | — | — |
@@ -59,6 +59,11 @@ _(Filled at the end of the run.)_
   against the lightest ground; the owner can tune both via the T4 controls.
 - **T2 — perf.** Stage C p95 34.2 ms vs stage B 33.8 ms (1.01×, within the 1.10× budget); draw calls
   26 vs 84. `docs/perf/run8-lab-points.json`.
+- **T3 — 1 m contours are lazy.** The worker/loader moved into a `React.lazy` `RasterContours`
+  component (+ `rasterContourGeometry.ts`), so Vite emits them as a separate chunk the studio never
+  requests. Verified no studio chunk references the worker; the Lab still fetches the raster chunks
+  for the identity style. The worker chunk stays in `dist/assets/` (Vite always emits lazy chunks)
+  but is not part of the studio's load path.
 
 ## Questions for the owner
 
@@ -66,6 +71,8 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T3 **done** (`e1a391f`). 1 m contour worker/loader moved behind `React.lazy`
+  `RasterContours`; the studio no longer bundles or requests it. Safety net 5/5.
 - 2026-11-19 — T2 **done** (`bacca4e`, `a9f2008`). Screen-stable shell-biased points, pale green-grey
   #D4DED4 (1.64:1 contrast), LOD thresholds so isometric shows the full set. Perf: stage C p95 1.01×
   stage B, draw calls 26 vs 84.
