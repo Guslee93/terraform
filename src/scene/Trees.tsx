@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Color, Object3D, type BufferGeometry, type InstancedMesh } from 'three'
+import { useEffect, useCallback, useMemo, useRef } from 'react'
+import { Color, MeshStandardMaterial, Object3D, type BufferGeometry, type InstancedMesh } from 'three'
 import { sampleTerrainHeight } from '../features/sites/geometry'
 import type { SitePackage } from '../features/sites/package'
 import { dropTreesOnWater } from '../features/sites/treePlacement'
@@ -7,6 +7,7 @@ import { createBranchGeometry, createCanopyGeometry, createSimpleCanopyGeometry,
 import { TREE_TINTS, treeVariant, type TreeShape, type TreeVariant } from './treeVariants'
 import { pointsOutsideRings } from '../lib/cullPoints'
 import { createSpeckleAlphaTexture } from './speckleTexture'
+import { applySceneFades, type HazeInput } from './sceneFades'
 import type { Vec2 } from '../lib/coordinates'
 
 /** Illustrative sizes (m) before the per-tree scale; OSM gives positions only. */
@@ -33,17 +34,34 @@ function TreeInstances({
   trees,
   branches: withBranches = true,
   speckled = false,
+  haze = null,
 }: {
   geometry: GeometryPair
   trees: readonly Placed[]
   branches?: boolean
   speckled?: boolean
+  haze?: HazeInput | null
 }) {
   const canopyRef = useRef<InstancedMesh>(null)
   const branchRef = useRef<InstancedMesh>(null)
   const speckleMap = useMemo(() => (speckled ? createSpeckleAlphaTexture() : null), [speckled])
   useEffect(() => () => { speckleMap?.dispose() }, [speckleMap])
   const tintHex = useCallback((tint: number) => speckled ? (SPECKLE_TINTS[tint % SPECKLE_TINTS.length] ?? SPECKLE_TINTS[0]) : (TREE_TINTS[tint] ?? TREE_TINTS[0]), [speckled])
+  const canopyMaterial = useMemo(() => {
+    const material = new MeshStandardMaterial({
+      vertexColors: true,
+      flatShading: true,
+      roughness: 0.9,
+      transparent: true,
+      opacity: speckled ? 1 : 0.9,
+      alphaHash: speckled,
+      depthWrite: !speckled,
+    })
+    if (speckleMap) material.alphaMap = speckleMap
+    // Haze the crowns with the shared function (Run 10 T3): onBeforeCompile + alphaHash coexist.
+    return applySceneFades(material, { haze })
+  }, [speckled, speckleMap, haze])
+  useEffect(() => () => { canopyMaterial.dispose() }, [canopyMaterial])
 
   useEffect(() => {
     const canopy = canopyRef.current
@@ -94,18 +112,7 @@ function TreeInstances({
   if (trees.length === 0) return null
   return (
     <group>
-      <instancedMesh ref={canopyRef} args={[geometry.canopy, undefined, trees.length]} castShadow receiveShadow>
-        <meshStandardMaterial
-          vertexColors
-          flatShading
-          roughness={0.9}
-          transparent
-          opacity={speckled ? 1 : 0.9}
-          alphaHash={speckled}
-          alphaMap={speckleMap ?? undefined}
-          depthWrite={!speckled}
-        />
-      </instancedMesh>
+      <instancedMesh ref={canopyRef} args={[geometry.canopy, undefined, trees.length]} castShadow receiveShadow material={canopyMaterial} />
       {withBranches && (
         <instancedMesh ref={branchRef} args={[geometry.branches, undefined, trees.length]} castShadow>
           <meshStandardMaterial color="#A39A8C" roughness={1} metalness={0} />
@@ -121,12 +128,15 @@ export function Trees({
   exclude,
   detail = 'full',
   speckled = false,
+  haze = null,
 }: {
   sitePackage: SitePackage
   exclude?: readonly (readonly Vec2[])[]
   detail?: TreeDetail
   /** Run 9 T5: see-through muted-green crowns via alphaHash + a speckle alpha map. */
   speckled?: boolean
+  /** Run 10 T3: aerial-perspective haze, identity only. */
+  haze?: HazeInput | null
 }) {
   const { trees, terrain, landcover } = sitePackage
   const geometries = useMemo(
@@ -182,6 +192,7 @@ export function Trees({
           trees={group}
           branches={detail === 'full'}
           speckled={speckled}
+          haze={haze}
         />
       ))}
     </group>

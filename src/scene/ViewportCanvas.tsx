@@ -855,7 +855,7 @@ export function ViewportCanvas({
             <group name="live-scenario">
             {layers.trees && (style.vegetation === 'points'
               ? <PointVegetation sitePackage={visualPackage} exclude={treeExclude} colour={style.vegetationColour} haze={haze} pointSizeMinPx={style.tuning?.pointSizeMinPx} pointSizeMaxPx={style.tuning?.pointSizeMaxPx} density={style.tuning?.treeDensity} />
-              : <Trees sitePackage={visualPackage} exclude={treeExclude} detail={profile === 'low' ? 'simple' : 'full'} speckled={style.vegetation === 'speckled'} />
+              : <Trees sitePackage={visualPackage} exclude={treeExclude} detail={profile === 'low' ? 'simple' : 'full'} speckled={style.vegetation === 'speckled'} haze={haze} />
             )}
             <MassLayer
               editor={editor}
