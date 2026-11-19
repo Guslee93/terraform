@@ -56,7 +56,6 @@ import { PassExporter } from './PassExporter'
 import { ANALYSIS_OVERLAY_NAME, type PassImages } from './exportPasses'
 import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
-import { useRasterContours } from '../features/sites/useRasterContours'
 import { dissolveRange, type DissolveParams } from './dissolve'
 import { applySceneFades, dissolveFactor, dissolveShaderChunk, dissolveUniforms } from './sceneFades'
 import { NORDIC, type SceneStyle } from './style'
@@ -66,7 +65,6 @@ import { SceneErrorBoundary, SceneUnavailable } from './SceneErrorBoundary'
 import {
   createContextGeometry,
   createContourGeometry,
-  createRasterContourGeometry,
   createRoadGeometry,
   createTerrainGeometry,
   createTerrainGridGeometry,
@@ -199,11 +197,10 @@ function TerrainMesh({
   )
   useEffect(() => () => landcoverTexture?.dispose(), [landcoverTexture])
 
-  // Contours: the 16 m grid always exists and is the fallback; a `tile1m` style draws the 1 m tile
-  // once the worker has returned (placed on the drawn 16 m surface, TF-VIS-053).
+  // Contours: the 16 m grid always exists (and is the fallback while the 1 m worker runs). A
+  // `tile1m` style additionally mounts the lazy 1 m contours (TF-VIS-053; Run 8 keeps that code out
+  // of production).
   const tile1m = style.contourSource === 'tile1m'
-  const rasterContours = useRasterContours(tile1m ? raster1m : null, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M, tile1m)
-  const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
 
   const contours = useMemo(() => {
     const { min, max } = terrainHeightRange(terrain)
@@ -211,14 +208,8 @@ function TerrainMesh({
       max - min < CONTOUR_MIN_RELIEF_M
         ? { minor: [], major: [] }
         : contourSegments(terrain, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M)
-    if (tile1m && rasterContours.minor && rasterContours.major) {
-      return {
-        minor: createRasterContourGeometry(rasterContours.minor, heightAt),
-        major: createRasterContourGeometry(rasterContours.major, heightAt),
-      }
-    }
     return { minor: createContourGeometry(minor), major: createContourGeometry(major) }
-  }, [terrain, tile1m, rasterContours.minor, rasterContours.major, heightAt])
+  }, [terrain])
 
   // Minor contours fade by camera distance in the identity style; majors keep full opacity. Both
   // also dissolve toward the tile edge (Run 8).
@@ -273,6 +264,11 @@ function TerrainMesh({
       )}
       <lineSegments geometry={contours.minor} material={minorMaterial} />
       <lineSegments geometry={contours.major} material={majorMaterial} />
+      {tile1m && raster1m && (
+        <Suspense fallback={null}>
+          <RasterContoursLazy raster={raster1m} terrain={terrain} style={style} minorFade={minorFade} dissolve={dissolve} />
+        </Suspense>
+      )}
       <lineSegments geometry={grid} visible={showGrid}>
         <lineBasicMaterial color={style.grid.terrain.color} transparent opacity={style.grid.terrain.opacity} depthWrite={false} />
       </lineSegments>
@@ -514,6 +510,7 @@ function SiteLights({ sitePackage, sun, profile }: {
 }
 
 const SceneComposer = lazy(() => import('./SceneComposer'))
+const RasterContoursLazy = lazy(() => import('./RasterContours'))
 
 /** Below this canvas width the scene renders without ambient occlusion (ADR-0005 §3). */
 const AO_MIN_WIDTH_PX = 640
