@@ -26,7 +26,7 @@ _(Filled at the end of the run.)_
 |---|---|---|---|---|---|
 | T1 | Measure honestly first (30 fps cap, GPU, tier) | done | a33956a | typecheck 0 · lint 0 · baseline recorded (Metal, tier high) | 30 fps cap = background-tab throttling; fixed with bringToFront + throttle flags |
 | T2 | Atmosphere: haze, aerial perspective, vignette | done | 8977d53 | typecheck 0 · lint 0 · unit 1280 / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 | hazeAmount/hazeRange pure + mirrored GLSL; VignetteEffect identity-only |
-| T3 | Exposure and palette (ground/water/buildings/contours) | todo | — | — | — |
+| T3 | Exposure and palette (ground/water/buildings/contours) | done | dcb8f93, 1659458 | typecheck 0 · lint 0 · unit 1280 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | land-cover palette + exposure + warm buildings + slate water + slope-only contours |
 | T4 | Real relief: draw terrain from the 1 m tile | todo | — | — | — |
 | T5 | Trees: tree shapes with speckled crowns | todo | — | — | — |
 | T6 | Lab panel fixes and new controls | todo | — | — | — |
@@ -48,6 +48,13 @@ _(Filled at the end of the run.)_
   strength are provisional and Lab-tunable in T6.
 - **T2 — I cannot view the reference images** (this run's model has no image input), so the visual
   match is judged from the look spec's prose + sampled palette, not by eye.
+- **T3 — the ground is the land-cover palette now, not a tint.** IDENTITY_LANDCOVER maps each
+  land-cover kind to the spec's forest/field/rock/plaza colours, `groundTint` is null, and the
+  terrain vertex colours stay near-white so the palette reads through. Exposure is applied on the
+  composer's ToneMappingEffect uniform (the renderer's tone mapping is bypassed); NORDIC stays 1.0.
+  Contour slope fade thresholds 3° / 12° provisional.
+- **T3 — water sheen is static** (ADR-0025 geometry unchanged): lower roughness 0.25 + envMapIntensity
+  0.6 on the existing Room environment, no animation, no reflections of buildings.
 
 ## Questions for the owner
 
@@ -55,6 +62,8 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T3 **done** (`dcb8f93`, `1659458`). Exposure + land-cover palette + warm buildings +
+  slate water + slope-only contours; safety net 5/5.
 - 2026-11-19 — T2 **done** (`8977d53`). Aerial-perspective haze (mix toward #262E2A) + identity
   vignette; NORDIC byte-identical, safety net 5/5.
 - 2026-11-19 — T1 **done** (`a33956a`). 30 fps cap diagnosed (background throttling) and the perf
