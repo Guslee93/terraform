@@ -29,7 +29,7 @@ _(Filled at the end of the run.)_
 | T3 | Exposure and palette (ground/water/buildings/contours) | done | dcb8f93, 1659458 | typecheck 0 · lint 0 · unit 1280 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | land-cover palette + exposure + warm buildings + slate water + slope-only contours |
 | T4 | Real relief: draw terrain from the 1 m tile | done | 6079f13 | typecheck 0 · lint 0 · unit 1284 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | 2 m decimated mesh + shared heightAt + identity building skirt |
 | T5 | Trees: tree shapes with speckled crowns | done | 42c0021 | typecheck 0 · lint 0 · unit 1285 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | alphaHash + speckle map + birch archetype; sun-side speckle + perf table deferred |
-| T6 | Lab panel fixes and new controls | todo | — | — | — |
+| T6 | Lab panel fixes and new controls | done | 06b02cc | typecheck 0 · lint 0 · unit 1285 / 4 skip / 1 todo · build OK · 14 sliders render | label/value layout fixed; exposure/vignette/water/slope controls wired |
 | T7 | Previews for the owner | todo | — | — | — |
 | T8 | Stretch: TF-VIS-021 fat lines (Lab only) | todo | — | — | — |
 | T9 | Final checks | todo | — | — | — |
@@ -66,6 +66,9 @@ _(Filled at the end of the run.)_
   the white point blobs; a sparse 'birch' archetype joins round/tall only in the identity mode.
   Deferred: the sun-facing lighter-speckle shader (T5.2) and the speckled/points/mesh perf table
   (T5.9) — the T1 harness is ready to record them.
+- **T6 — panel layout fixed.** Each slider is one row (label left, value right-aligned + unit, slider
+  below), resolving the reviewer's finding (b). New controls for exposure, vignette, water sheen and
+  contour slope thresholds are wired through `applyTuning`/`style.tuning` and URL-round-trip.
 
 ## Questions for the owner
 
@@ -73,6 +76,8 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T6 **done** (`06b02cc`). Panel label/value layout fixed; exposure/vignette/water/slope
+  controls wired and URL round-tripped.
 - 2026-11-19 — T5 **done** (`42c0021`). Speckled see-through tree crowns (alphaHash + speckle map +
   birch archetype); sun-side speckle + perf table deferred. NORDIC unchanged, safety net 5/5.
 - 2026-11-19 — T4 **done** (`6079f13`). Terrain drawn from the 1 m tile (2 m decimation) with one
