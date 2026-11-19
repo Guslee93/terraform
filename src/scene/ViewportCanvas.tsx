@@ -622,6 +622,10 @@ export function ViewportCanvas({
   const [slow, setSlow] = useState({ preference: renderPreference, steps: 0 })
   const steps = renderPreference === 'auto' && slow.preference === 'auto' ? slow.steps : 0
   const profile = downgrade(resolveProfile(renderPreference, rendererName ?? ''), steps)
+  // Expose the resolved tier for the Lab perf harness (Run 9 T1); pixel-neutral.
+  useEffect(() => {
+    ;(window as Window & { __terraformRenderTier?: string }).__terraformRenderTier = profile
+  }, [profile])
   const onSlow = useCallback(() => setSlow((current) => ({ preference: 'auto', steps: current.preference === 'auto' ? current.steps + 1 : 1 })), [])
   const { manifest, buildings } = sitePackage
   // Water is a surface of its own (ADR-0025): the ground inside a mapped water body is cut down

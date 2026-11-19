@@ -5,8 +5,10 @@ import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
 
-// Run 8 T2: measure the Lab orbit frame cost with mesh trees (stage B) vs point-cloud trees
-// (stage C), reusing measure-perf.mjs's draw-call probe and window statistics.
+// Run 9 T1: an honest Lab orbit baseline. Records the unmasked GPU renderer and the resolved render
+// tier (window.__terraformRenderTier), brings the page to the front and disables Chromium's
+// background throttling, and refuses to call a run valid without a GPU. Reuses measure-perf.mjs's
+// draw-call probe and window statistics.
 const root = fileURLToPath(new URL('../', import.meta.url))
 const BASE = 'http://127.0.0.1:5173'
 const RUNS = Number(process.argv[2] ?? 3)
@@ -78,10 +80,24 @@ async function measure(browser, url, runs) {
     await page.addInitScript(probe)
     await page.goto(BASE + url, { waitUntil: 'commit', timeout })
     await page.getByRole('region', { name: /3D site viewport/ }).waitFor({ timeout })
-    await page.waitForTimeout(7000) // settle: 1 m tile worker + points
+    await page.waitForTimeout(7000) // settle: 1 m tile worker + points / haze
+    await page.bringToFront()
+    await page.waitForTimeout(500)
+    const meta = await page.evaluate(() => {
+      const canvas = document.querySelector('canvas')
+      const gl = canvas?.getContext('webgl2') ?? canvas?.getContext('webgl')
+      const extension = gl?.getExtension('WEBGL_debug_renderer_info')
+      const gpu = extension ? gl.getParameter(extension.UNMASKED_RENDERER_WEBGL) : null
+      return {
+        gpu,
+        renderTier: window.__terraformRenderTier ?? null,
+        devicePixelRatio: window.devicePixelRatio,
+      }
+    })
+    if (!meta.gpu) throw new Error(`Invalid run: no unmasked GPU renderer (${url} run ${run})`)
     const stats = await windowStats(page)
-    results.push(stats)
-    console.log(`  ${url} run ${run}:`, JSON.stringify(stats))
+    results.push({ ...stats, ...meta })
+    console.log(`  ${url} run ${run}:`, JSON.stringify(stats), 'tier', meta.renderTier, 'gpu', meta.gpu)
     await page.close()
   }
   return results
@@ -94,36 +110,29 @@ function medianOf(results, key) {
 }
 
 try {
-  const browser = await chromium.launch({ headless: false })
-  const gpu = await (async () => {
-    const page = await browser.newPage()
-    await page.goto(`${BASE}/lab/compact-infill`, { waitUntil: 'commit', timeout })
-    const name = await page.evaluate(() => {
-      const c = document.querySelector('canvas'); const gl = c?.getContext('webgl2') ?? c?.getContext('webgl')
-      const e = gl?.getExtension('WEBGL_debug_renderer_info'); return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : null
-    })
-    await page.close()
-    return name
-  })()
+  const browser = await chromium.launch({
+    headless: false,
+    args: ['--disable-background-timer-throttling', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding'],
+  })
 
   const report = {
     machine: os.cpus()[0]?.model ?? 'unknown',
     os: { platform: os.platform(), release: os.release(), arch: os.arch() },
     browser: browser.version(),
-    gpu,
     commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     recordedAt: new Date().toISOString(),
     viewport: { width: 1440, height: 900, deviceScaleFactor: 2 },
     windowMs: WINDOW_MS,
-    pointCountCompactInfill: 42596, // full set (Run 7 measurement)
     stages: {},
   }
 
-  for (const [stage, url] of [
+  const targets = [
+    ['NORDIC', '/lab/compact-infill?state=neutral&preset=isometric'],
     ['B', '/lab/compact-infill?style=identity&stage=B&state=neutral&preset=isometric'],
     ['C', '/lab/compact-infill?style=identity&stage=C&state=neutral&preset=isometric'],
-  ]) {
-    console.log(`Measuring stage ${stage}…`)
+  ]
+  for (const [stage, url] of targets) {
+    console.log(`Measuring ${stage}…`)
     const runs = await measure(browser, url, RUNS)
     report.stages[stage] = {
       runs,
@@ -138,10 +147,13 @@ try {
   }
 
   await mkdir(new URL('../docs/perf/', import.meta.url), { recursive: true })
-  const output = new URL('../docs/perf/run8-lab-points.json', import.meta.url)
+  const output = new URL('../docs/perf/run9-lab-baseline.json', import.meta.url)
   await writeFile(output, JSON.stringify(report, null, 2) + '\n')
   console.log(`Wrote ${fileURLToPath(output)}`)
-  console.log('median p95: B', report.stages.B.median.frameMsP95, 'C', report.stages.C.median.frameMsP95)
+  for (const stage of Object.keys(report.stages)) {
+    const m = report.stages[stage].median
+    console.log(`${stage}: fps ${m.fps} p95 ${m.frameMsP95} ms drawCalls ${m.drawCallsPerFrameP50}`)
+  }
 } catch (error) {
   console.error(message(error))
   process.exitCode = 1
