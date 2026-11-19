@@ -27,7 +27,7 @@ _(Filled at the end of the run.)_
 | T1 | Measure honestly first (30 fps cap, GPU, tier) | done | a33956a | typecheck 0 · lint 0 · baseline recorded (Metal, tier high) | 30 fps cap = background-tab throttling; fixed with bringToFront + throttle flags |
 | T2 | Atmosphere: haze, aerial perspective, vignette | done | 8977d53 | typecheck 0 · lint 0 · unit 1280 / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 | hazeAmount/hazeRange pure + mirrored GLSL; VignetteEffect identity-only |
 | T3 | Exposure and palette (ground/water/buildings/contours) | done | dcb8f93, 1659458 | typecheck 0 · lint 0 · unit 1280 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | land-cover palette + exposure + warm buildings + slate water + slope-only contours |
-| T4 | Real relief: draw terrain from the 1 m tile | todo | — | — | — |
+| T4 | Real relief: draw terrain from the 1 m tile | done | 6079f13 | typecheck 0 · lint 0 · unit 1284 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | 2 m decimated mesh + shared heightAt + identity building skirt |
 | T5 | Trees: tree shapes with speckled crowns | todo | — | — | — |
 | T6 | Lab panel fixes and new controls | todo | — | — | — |
 | T7 | Previews for the owner | todo | — | — | — |
@@ -55,6 +55,12 @@ _(Filled at the end of the run.)_
   Contour slope fade thresholds 3° / 12° provisional.
 - **T3 — water sheen is static** (ADR-0025 geometry unchanged): lower roughness 0.25 + envMapIntensity
   0.6 on the existing Room environment, no animation, no reflections of buildings.
+- **T4 — the terrain mesh is now the 1 m tile (2 m decimation).** `rasterToTerrainData` + the existing
+  `createTerrainGeometry` reuse one code path, so water, roads, trees and contours all sample the same
+  drawn surface via one `heightAt`. Buildings keep their package base elevations and gain a 4 m skirt
+  (identity only). The 2 m decimation has a ~half-cell horizontal offset (step 2 has no centre cell);
+  all consumers share the grid, so it is imperceptible. Build time not yet measured off the main
+  thread — a one-time ~200 ms hitch on switching to identity (recorded, could move to a worker).
 
 ## Questions for the owner
 
@@ -62,6 +68,8 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T4 **done** (`6079f13`). Terrain drawn from the 1 m tile (2 m decimation) with one
+  shared height function + identity building skirt; NORDIC unchanged, safety net 5/5.
 - 2026-11-19 — T3 **done** (`dcb8f93`, `1659458`). Exposure + land-cover palette + warm buildings +
   slate water + slope-only contours; safety net 5/5.
 - 2026-11-19 — T2 **done** (`8977d53`). Aerial-perspective haze (mix toward #262E2A) + identity
