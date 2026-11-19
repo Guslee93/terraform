@@ -21,6 +21,8 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
 
 **Visual identity (18 Nov 2026).** The approved art direction (`Terraform_Visual_Identity_FINAL.md`, owner's copy) closes the A/B/C direction search. Gate 2 below is revised for it; changed tasks say *Revised 18 Nov*. Reconciliation, evidence and the compatibility matrix are in `09-VISUAL-IDENTITY-INTEGRATION.md`.
 
+**Visuals first (19 Nov 2026, D23).** Work now follows `10-VISUALS-FIRST.md` (steps V1–V8). Gate 3–7 tasks are parked, not cancelled.
+
 ## Verified status (18 Nov 2026)
 
 From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004 (#19, #20), 011 (#21). **In draft PR #25, unmerged:** 010 and 012 (owner GPU run and baselines outstanding), 013, 014, 030, 040 part A (model only), 054. **In progress:** 005 (part 1, #22). **Closed, awaiting merge:** 007 (PR #23 — no defect; closed 19 Nov). **In draft PR, reviewed:** 002 (PR #26, pass with minor follow-ups, second review added), 003 (PR #27, all rows reproduced). **Also in PR #25 since Run 1 T8–T10:** 015, 016, 034 (reviewed). **Blocked:** 008 (on 001, 006, and merging #23/#26/#27). **Still open:** 001 (production still 404s on 18 Nov), 006, 009 and every later task.
