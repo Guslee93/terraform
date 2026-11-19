@@ -120,7 +120,12 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
 
   return (
     <main className="grid min-h-dvh gap-3 bg-canvas p-3 text-ink lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section aria-label="Studio viewport" className="relative flex min-h-[480px] min-w-0 flex-col overflow-hidden rounded-panel border border-card-line bg-viewport shadow-card">
+      {/* The viewport needs a definite height, not just a min-height: ViewportCanvas's root is
+          h-full, and `height: 100%` cannot resolve against a min-height-only parent in strict
+          engines (Safari), collapsing the R3F canvas to 0 px — the blank first view (TF-VIS-015
+          follow-up). The studio solves the same problem with a definite h-[min(720px,70dvh)] and
+          grid rows; the Lab grid has no row tracks, so the height is stated per breakpoint. */}
+      <section aria-label="Studio viewport" className="relative flex h-[min(720px,70dvh)] min-h-[480px] min-w-0 flex-col overflow-hidden rounded-panel border border-card-line bg-viewport shadow-card lg:h-[calc(100dvh_-_1.5rem)]">
         <ViewportCanvas
           sitePackage={sitePackage}
           sun={solar.state}
