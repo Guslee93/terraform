@@ -31,7 +31,7 @@ _(Filled at the end of the run.)_
 | T3 | TF-VIS-053: contours from the 1 m tile, selected by style | done | ed55abc | typecheck 0 · lint 0 · unit 1245 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+1 m renders (no errors) | 1 m pass median 128.6 ms / max 135.5 ms → worker; minor fade ≈1.5× isometric (provisional); prod chunk +~1.5 kB (dead for NORDIC) |
 | T4 | TF-VIS-02A: atmospheric terrain dissolve (Lab only) | done | b73f592 | typecheck 0 · lint 0 · unit 1249 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+dissolve renders | dissolve values provisional; overlays not faded, depth pass unchanged |
 | T5 | TF-VIS-040 part B: `MapLegend` component (Lab only) | done | deba3c0 | typecheck 0 · lint 0 · unit 1253 passed / 4 skip / 1 todo · build OK · chunk 0 · Lab noise legend renders | claim text = existing caption functions; studio caption blocks untouched |
-| T6 | TF-VIS-029: airy point-cloud vegetation (Lab only) | todo | — | — | — |
+| T6 | TF-VIS-029: airy point-cloud vegetation (Lab only) | done | 24cbc98 | typecheck 0 · lint 0 · unit 1258 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+points renders | Points hidden in depth/white passes; forest fill skipped (optional) |
 | T7 | Lab stage picker A/B/C + reproducible URLs | todo | — | — | — |
 | T8 | Stretch: TF-VIS-046 stale-result / rapid-change tests | todo | — | — | — |
 | T9 | Stretch: TF-VIS-021 fat-line system (Lab only) | todo | — | — | — |
@@ -73,6 +73,13 @@ _(Filled at the end of the run.)_
   stay crisp while the corners dissolve — the owner will tune the exact radii. Fades the terrain
   material to transparent (the flat background shows through); roads/water/context sit inside the
   halo and are not faded.
+- **T6 — point counts.** compact-infill: 926 trees → 42 596 points (full), 17 039 (mid), 6 390
+  (far); sloped-edge: 251 trees → 11 546 / 4 619 / 1 734. 46 points per tree (42 canopy + 4 trunk).
+- **T6 — export passes.** Points are **hidden** in the depth, white and analysis passes (never given
+  a mesh override material); the still pass (composer frame) shows them. The depth pass for a scene
+  without points is unchanged. Forest-fill points inside `wood` polygons were **skipped** (the
+  prompt marks them optional), so no "Forest density is illustrative" text is needed; tree positions
+  remain mapped OpenStreetMap (same provenance as the mesh trees).
 
 ## Questions for the owner
 
@@ -80,6 +87,9 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T6 **done** (`24cbc98`). Point-cloud vegetation (`vegetation: 'points'`) for IDENTITY
+  via a seeded pure builder + `THREE.Points` with a generated sprite; NORDIC keeps the mesh trees.
+  Points hidden in the depth/white passes. Safety net 5/5.
 - 2026-11-19 — T5 **done** (`deba3c0`). `MapLegend` renders the `legendFor` model (title, class,
   ramp/band scale, claim, sources, computing) and is mounted in the Lab over the viewport for Sun
   hours, Wind, Noise, Water and Slope. Claims come from the existing caption functions; the studio's
