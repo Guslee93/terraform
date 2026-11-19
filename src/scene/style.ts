@@ -7,6 +7,7 @@
  */
 import type { GroundTint } from './styleColour'
 import { adjustLightness } from './styleColour'
+import type { LandCoverKind } from '../features/sites/package'
 
 export type LineStyle = { readonly color: string; readonly widthPx: number; readonly opacity: number }
 
@@ -21,6 +22,12 @@ export type SceneStyle = {
   readonly water: string
   /** Water surface roughness: 0.55 (soft reflections) today; 1 flattens to no reflections. */
   readonly waterRoughness: number
+  /** Water environment-reflection strength (envMapIntensity); lower = a fainter static sheen. */
+  readonly waterEnvIntensity: number
+  /** Overall exposure (toneMappingExposure); NORDIC stays 1.0. */
+  readonly toneMappingExposure: number
+  /** Per-kind land-cover colours (identity palette); null keeps the NORDIC paint + tint. */
+  readonly landCoverPalette: Record<LandCoverKind, string> | null
   /** The terrain block's side skirt colour; null hides the skirt (the identity dissolves it). */
   readonly skirt: string | null
   /** The endless floor grid (1 m / 10 m lines) under the site block. */
@@ -67,6 +74,9 @@ export const NORDIC: SceneStyle = {
   // soften('#CBE1EE') with the palette's 0.6 saturation (water keeps the colour it had, ADR-0025).
   water: '#D3E0E8',
   waterRoughness: 0.55,
+  waterEnvIntensity: 1,
+  toneMappingExposure: 1,
+  landCoverPalette: null,
   skirt: '#DCD8D1',
   floorGrid: true,
   groundTint: null,
@@ -94,10 +104,29 @@ export const NORDIC: SceneStyle = {
 }
 
 /**
+ * The identity fallback ground palette (look spec §2, TF-VIS-028a stand-in until the orthophoto
+ * licence is cleared). Muted moss/field/granite greens, grouped by land-cover kind.
+ */
+export const IDENTITY_LANDCOVER: Record<LandCoverKind, string> = {
+  water: '#4A5455',
+  park: '#353B34',
+  grass: '#353B34',
+  wood: '#2E352D',
+  scrub: '#2E352D',
+  wetland: '#3A4039',
+  field: '#353B34',
+  pitch: '#353B34',
+  cemetery: '#353B34',
+  bare: '#43463F',
+  plaza: '#4A4C47',
+  nature: '#2E352D',
+}
+
+/**
  * The approved visual identity's first look (TF-VIS-020 stage A), reachable only through the Lab.
  * Every value here is PROVISIONAL and will be tuned by the owner in the Lab; the NORDIC style
  * above stays the production look and the pixel-identical rollback. No orthophoto yet (licence not
- * cleared), so the ground is the land-cover fallback desaturated and darkened by `groundTint`.
+ * cleared), so the ground is the land-cover palette above.
  */
 export const IDENTITY: SceneStyle = {
   id: 'identity',
@@ -107,19 +136,22 @@ export const IDENTITY: SceneStyle = {
   hazeColour: '#262E2A',
   // The floor-grid plane is hidden (`floorGrid: false`), so `ground` is unused; kept dark.
   ground: '#1C2320',
-  // Matte-white massing, slightly less rough than NORDIC so it reads crisply on the dark ground.
-  context: { color: '#EEEDE8', roughness: 0.92 },
-  // A dark neutral just above the ground, so streets read but stay quiet.
-  road: '#2C312E',
-  // Flat, dark water — no reflections (roughness 1).
-  water: '#26302F',
-  waterRoughness: 1,
+  // Warm off-white massing (look spec §3 Buildings), crisp on the dark ground.
+  context: { color: '#E6E4DE', roughness: 0.9 },
+  // Roads a step lighter than the field palette (look spec §2), never black.
+  road: '#5A5C57',
+  // Slate water with a faint static sheen (lower roughness + small environment reflection).
+  water: '#4A5455',
+  waterRoughness: 0.25,
+  waterEnvIntensity: 0.6,
+  toneMappingExposure: 1.2,
+  // The look spec's fallback ground palette by land-cover kind (TF-VIS-028a stand-in).
+  landCoverPalette: IDENTITY_LANDCOVER,
   // No skirt: the dissolve (TF-VIS-02A, later) will blend the terrain edge into the mist.
   skirt: null,
   floorGrid: false,
-  // Desaturate the land-cover paint to ~20 % chroma and halve its lightness; applied to both the
-  // paint and the (near-white) terrain vertex colours, whose product reads ≈ #2A2F2C–#3A403C.
-  groundTint: { saturation: 0.2, lightness: 0.5 },
+  // The palette carries the ground colour now; no extra tint (Run 9 T3).
+  groundTint: null,
   grid: {
     // Unused while `floorGrid` is false; dark so nothing leaks if the flag is re-enabled.
     minor: '#232826',
@@ -205,7 +237,8 @@ export const DEFAULT_TUNING: IdentityTuning = {
 export function applyTuning(base: SceneStyle, tuning: IdentityTuning): SceneStyle {
   return {
     ...base,
-    groundTint: { saturation: tuning.groundSaturation, lightness: tuning.groundLightness },
+    // The ground colour is carried by the land-cover palette now (Run 9 T3); keep the base tint.
+    groundTint: base.groundTint,
     road: adjustLightness(base.road, tuning.roadLightness),
     water: adjustLightness(base.water, tuning.waterLightness),
     vegetationColour: adjustLightness(base.vegetationColour, tuning.treeColourLightness),

@@ -48,13 +48,13 @@ describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
     expect(IDENTITY.id).toBe('identity')
     expect(IDENTITY.background).toBe('#1C2320')
     expect(IDENTITY.hazeColour).toBe('#262E2A')
-    expect(IDENTITY.context).toEqual({ color: '#EEEDE8', roughness: 0.92 })
-    expect(IDENTITY.road).toBe('#2C312E')
-    expect(IDENTITY.water).toBe('#26302F')
-    expect(IDENTITY.waterRoughness).toBe(1)
+    expect(IDENTITY.context).toEqual({ color: '#E6E4DE', roughness: 0.9 })
+    expect(IDENTITY.road).toBe('#5A5C57')
+    expect(IDENTITY.water).toBe('#4A5455')
+    expect(IDENTITY.waterRoughness).toBe(0.25)
     expect(IDENTITY.skirt).toBeNull()
     expect(IDENTITY.floorGrid).toBe(false)
-    expect(IDENTITY.groundTint).toEqual({ saturation: 0.2, lightness: 0.5 })
+    expect(IDENTITY.groundTint).toBeNull()
     expect(IDENTITY.lines.contourMinor).toEqual({ color: '#F7F7F2', widthPx: 1, opacity: 0.16 })
     expect(IDENTITY.lines.contourMajor).toEqual({ color: '#F7F7F2', widthPx: 1, opacity: 0.38 })
     expect(IDENTITY.lines.crease).toEqual({ color: '#9DA49F', widthPx: 1, opacity: 0.6 })
@@ -97,7 +97,7 @@ describe('identityStage (TF-VIS-020 stages)', () => {
     for (const stage of ['A', 'B', 'C'] as const) {
       const style = identityStage(stage)
       expect(style.background).toBe('#1C2320')
-      expect(style.context).toEqual({ color: '#EEEDE8', roughness: 0.92 })
+      expect(style.context).toEqual({ color: '#E6E4DE', roughness: 0.9 })
       expect(style.floorGrid).toBe(false)
       expect(style.skirt).toBeNull()
     }
@@ -114,9 +114,10 @@ describe('applyTuning (Run 8 T4)', () => {
     expect(tuned.lines.contourMinor.opacity).toBe(IDENTITY.lines.contourMinor.opacity)
   })
 
-  it('overrides ground, road, contours and vegetation from the tuning', () => {
-    const tuned = applyTuning(IDENTITY, { ...DEFAULT_TUNING, groundSaturation: 0.4, groundLightness: 0.6, contourMinorOpacity: 0.3, treeDensity: 1.5 })
-    expect(tuned.groundTint).toEqual({ saturation: 0.4, lightness: 0.6 })
+  it('overrides road, contours and vegetation from the tuning, keeping the palette ground', () => {
+    const tuned = applyTuning(IDENTITY, { ...DEFAULT_TUNING, contourMinorOpacity: 0.3, treeDensity: 1.5 })
+    expect(tuned.groundTint).toBeNull()
+    expect(tuned.landCoverPalette).toEqual(IDENTITY.landCoverPalette)
     expect(tuned.lines.contourMinor.opacity).toBe(0.3)
     expect(tuned.tuning?.treeDensity).toBe(1.5)
     expect(tuned.road).not.toBe('#000000')

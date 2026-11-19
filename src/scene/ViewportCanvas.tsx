@@ -192,8 +192,8 @@ function TerrainMesh({
   const skirt = useMemo(() => createTerrainSkirtGeometry(terrain), [terrain])
   // Parks green, water blue, painted in plan and draped by the terrain UVs (ADR-0005 §5).
   const landcoverTexture = useMemo(
-    () => createLandCoverTexture(landcover, terrain, 2048, style.groundTint),
-    [landcover, terrain, style.groundTint],
+    () => createLandCoverTexture(landcover, terrain, 2048, style.groundTint, style.landCoverPalette),
+    [landcover, terrain, style.groundTint, style.landCoverPalette],
   )
   useEffect(() => () => landcoverTexture?.dispose(), [landcoverTexture])
 
@@ -375,7 +375,7 @@ function Streets({ roads, terrain, style, haze }: { roads: SitePackage['roads'];
 function Water({ surfaces, style, haze }: { surfaces: readonly WaterSurface[]; style: SceneStyle; haze: HazeInput | null }) {
   const geometry = useMemo(() => createWaterGeometry(surfaces), [surfaces])
   useEffect(() => () => geometry.dispose(), [geometry])
-  const material = useMemo(() => applySceneFades(new MeshStandardMaterial({ color: style.water, roughness: style.waterRoughness, metalness: 0 }), { haze }), [style.water, style.waterRoughness, haze])
+  const material = useMemo(() => applySceneFades(new MeshStandardMaterial({ color: style.water, roughness: style.waterRoughness, metalness: 0, envMapIntensity: style.waterEnvIntensity }), { haze }), [style.water, style.waterRoughness, style.waterEnvIntensity, haze])
   useEffect(() => () => material.dispose(), [material])
   if (!surfaces.length) return null
   return (

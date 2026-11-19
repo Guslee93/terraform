@@ -56,6 +56,7 @@ export function createLandCoverTexture(
   terrain: TerrainData,
   size = 2048,
   tint: GroundTint | null = null,
+  palette: Record<LandCoverKind, string> | null = null,
 ): CanvasTexture | null {
   if (areas.length === 0) return null
   const canvas = document.createElement('canvas')
@@ -64,12 +65,13 @@ export function createLandCoverTexture(
   const context = canvas.getContext('2d')
   if (!context) return null
 
-  // The identity style re-tints the white base and every paint swatch (groundTint); NORDIC's null
-  // leaves them byte-identical to today.
-  context.fillStyle = tintGroundColour('#FFFFFF', tint)
+  // The identity style paints each kind its palette colour (Run 9 T3); NORDIC re-tints the white
+  // base and every paint swatch (groundTint) and stays byte-identical to today.
+  const paint = (kind: LandCoverKind): string => palette?.[kind] ?? tintGroundColour(LANDCOVER_PAINT[kind], tint)
+  context.fillStyle = palette ? palette.bare : tintGroundColour('#FFFFFF', tint)
   context.fillRect(0, 0, size, size)
   for (const kind of PAINT_ORDER) {
-    context.fillStyle = tintGroundColour(LANDCOVER_PAINT[kind], tint)
+    context.fillStyle = paint(kind)
     for (const area of areas) {
       if (area.kind !== kind) continue
       context.beginPath()

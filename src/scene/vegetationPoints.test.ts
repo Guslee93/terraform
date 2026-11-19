@@ -10,7 +10,6 @@ import {
   VEGETATION_COLOUR,
   type VegetationTree,
 } from './vegetationPoints'
-import { tintGroundColour } from './styleColour'
 import { IDENTITY } from './style'
 
 describe('buildVegetationPoints (TF-VIS-029)', () => {
@@ -73,9 +72,12 @@ describe('buildVegetationPoints (TF-VIS-029)', () => {
     expect(relativeLuminance('#000000')).toBeCloseTo(0, 5)
   })
 
-  it('contrasts at least 1.6:1 against the tinted ground', () => {
-    // The tinted terrain vertex colour is the lightest ground the trees sit on (worst case).
-    const ground = tintGroundColour('#EEEAE3', IDENTITY.groundTint!)
-    expect(contrastRatio(VEGETATION_COLOUR, ground)).toBeGreaterThanOrEqual(1.6)
+  it('contrasts at least 1.6:1 against the forest palette ground', () => {
+    // The trees sit on the identity land-cover palette (forest is the darkest of the green kinds;
+    // field is the lightest). Both must contrast with the point colour.
+    const forest = IDENTITY.landCoverPalette?.wood ?? '#2E352D'
+    const field = IDENTITY.landCoverPalette?.grass ?? '#353B34'
+    expect(contrastRatio(VEGETATION_COLOUR, forest)).toBeGreaterThanOrEqual(1.6)
+    expect(contrastRatio(VEGETATION_COLOUR, field)).toBeGreaterThanOrEqual(1.6)
   })
 })
