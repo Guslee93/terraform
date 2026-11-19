@@ -47,6 +47,7 @@ import type { RoofSolarValue } from '../features/analysis/roofSolar'
 import { DEFAULT_WIND, displayAt, flowAtHeight, windCaption, windDrawLift, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
+import { PointVegetation } from './PointVegetation'
 import { visibleTierFootprints } from './massFootprints'
 import { webglRendererName } from './rendererTier'
 import { createFrameBudget, downgrade, RENDER_PROFILES, resolveProfile, type RenderPreference, type RenderProfile } from './renderQuality'
@@ -846,12 +847,9 @@ export function ViewportCanvas({
             </group>
 
             <group name="live-scenario">
-            {layers.trees && (
-              <Trees
-                sitePackage={sitePackage}
-                exclude={treeExclude}
-                detail={profile === 'low' ? 'simple' : 'full'}
-              />
+            {layers.trees && (style.vegetation === 'points'
+              ? <PointVegetation sitePackage={sitePackage} exclude={treeExclude} colour={style.vegetationColour} />
+              : <Trees sitePackage={sitePackage} exclude={treeExclude} detail={profile === 'low' ? 'simple' : 'full'} />
             )}
             <MassLayer
               editor={editor}

@@ -144,6 +144,11 @@ function isFatLine(object: Object3D): boolean {
   return material?.isLineMaterial === true
 }
 
+/** Point clouds must not take a mesh override material (TF-VIS-029); they are hidden per pass. */
+function isPoints(object: Object3D): boolean {
+  return (object as Object3D & { isPoints?: boolean }).isPoints === true
+}
+
 /**
  * Renders the depth, white-model and analysis passes of the current view with `gl`, returning
  * PNG data URLs. Scene state (override material, background, fog, visibility, clear colour,
@@ -162,7 +167,7 @@ export function renderPasses(gl: WebGLRenderer, scene: Scene, camera: Camera, fo
   }
   const hidden: Object3D[] = []
   scene.traverse((object) => {
-    if (object.visible && isFatLine(object)) {
+    if (object.visible && (isFatLine(object) || isPoints(object))) {
       object.visible = false
       hidden.push(object)
     }

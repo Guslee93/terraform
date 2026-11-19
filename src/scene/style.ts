@@ -36,6 +36,10 @@ export type SceneStyle = {
    * band from `dissolveRange` at mount, so the static object keeps null as a placeholder.
    */
   readonly dissolve: { readonly start: number; readonly end: number } | null
+  /** Vegetation rendering: instanced mesh (today) or airy point cloud (TF-VIS-029). */
+  readonly vegetation: 'mesh' | 'points'
+  /** The point-cloud vegetation colour (unused while `vegetation` is 'mesh'). */
+  readonly vegetationColour: string
   readonly lines: {
     readonly crease: LineStyle
     readonly silhouette: LineStyle | null
@@ -66,6 +70,8 @@ export const NORDIC: SceneStyle = {
   },
   contourSource: 'grid16',
   dissolve: null,
+  vegetation: 'mesh',
+  vegetationColour: '#8C9A8A',
   lines: {
     // Context edges via EdgesGeometry above EDGE_THRESHOLD_DEG; ≈ 140/255 on white walls.
     crease: { color: '#7E7D7A', widthPx: 1, opacity: 0.85 },
@@ -117,6 +123,8 @@ export const IDENTITY: SceneStyle = {
   contourSource: 'tile1m',
   // Filled from `dissolveRange` at mount (the static object keeps null); NORDIC has none.
   dissolve: null,
+  vegetation: 'points',
+  vegetationColour: '#8C9A8A',
   lines: {
     // Crease edges kept subtle on the white walls (a little quieter than NORDIC's).
     crease: { color: '#9DA49F', widthPx: 1, opacity: 0.6 },

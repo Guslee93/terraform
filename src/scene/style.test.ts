@@ -39,6 +39,7 @@ describe('NORDIC scene style', () => {
     expect(NORDIC.id).toBe('nordic')
     expect(NORDIC.contourSource).toBe('grid16')
     expect(NORDIC.dissolve).toBeNull()
+    expect(NORDIC.vegetation).toBe('mesh')
   })
 })
 
@@ -59,6 +60,8 @@ describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
     expect(IDENTITY.ao).toEqual({ intensity: 1.6, radiusM: 4, color: '#0E1110' })
     expect(IDENTITY.contourSource).toBe('tile1m')
     expect(IDENTITY.dissolve).toBeNull() // filled from dissolveRange at mount
+    expect(IDENTITY.vegetation).toBe('points')
+    expect(IDENTITY.vegetationColour).toBe('#8C9A8A')
   })
 
   it('keeps NORDIC parcel and section lines', () => {
