@@ -125,7 +125,8 @@ export const IDENTITY: SceneStyle = {
   // Computed from `dissolveRange` at mount (TF-VIS-02A); stage A overrides this to null.
   dissolve: 'auto',
   vegetation: 'points',
-  vegetationColour: '#8C9A8A',
+  // Light enough to stand out from the dark tinted ground (≥ 1.6:1 contrast, provisional).
+  vegetationColour: '#D4DED4',
   lines: {
     // Crease edges kept subtle on the white walls (a little quieter than NORDIC's).
     crease: { color: '#9DA49F', widthPx: 1, opacity: 0.6 },

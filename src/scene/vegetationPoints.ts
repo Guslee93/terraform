@@ -41,8 +41,9 @@ export const CANOPY_RADII: Readonly<Record<VegetationShape, readonly [number, nu
 /** Points per tree: canopy + trunk. */
 const CANOPY_POINTS = 42
 const TRUNK_POINTS = 4
-/** The provisional green-grey fallback, used when a caller passes none. */
-export const VEGETATION_COLOUR = '#8C9A8A'
+/** The provisional green-grey fallback, used when a caller passes none. Light enough to stand out
+ *  from the dark tinted ground (≥ 1.6:1 contrast, see vegetationPoints.test.ts). */
+export const VEGETATION_COLOUR = '#D4DED4'
 
 /** Small seeded PRNG (same as foliage.ts's mulberry32). */
 function mulberry32(seed: number): () => number {
@@ -59,6 +60,21 @@ function mulberry32(seed: number): () => number {
 export function hexToRgb(hex: string): [number, number, number] {
   const value = parseInt(hex.replace(/^#/, ''), 16)
   return [((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255]
+}
+
+/** WCAG 2.x relative luminance of an sRGB hex colour (0–1). */
+export function relativeLuminance(hex: string): number {
+  const [r, g, b] = hexToRgb(hex)
+  const channel = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+}
+
+/** WCAG contrast ratio of two hex colours (≥ 1, higher = more contrast). */
+export function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a)
+  const lb = relativeLuminance(b)
+  const [hi, lo] = la >= lb ? [la, lb] : [lb, la]
+  return (hi + 0.05) / (lo + 0.05)
 }
 
 /** A random direction on the unit sphere. */
@@ -101,8 +117,8 @@ export function buildVegetationPoints(
 
     for (let point = 0; point < CANOPY_POINTS; point += 1) {
       direction(random, dir)
-      // Bias toward the surface (sparse interior): radius in the outer ~35 % shell.
-      const shell = 0.65 + 0.35 * random()
+      // Bias strongly toward the surface (porous shell, sparse interior): radius in the outer ~20 %.
+      const shell = 0.8 + 0.2 * random()
       positions.push(
         tree.east + dir[0] * radiusX * shell,
         centreY + dir[1] * radiusY * shell,

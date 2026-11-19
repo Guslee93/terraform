@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { BufferGeometry, CanvasTexture, Float32BufferAttribute, PointsMaterial, SRGBColorSpace } from 'three'
 import { sampleTerrainHeight } from '../features/sites/geometry'
 import { dropTreesOnWater } from '../features/sites/treePlacement'
@@ -13,8 +13,10 @@ import type { DissolveParams } from './dissolve'
 
 /** Fixed seed: the same trees always give the same points (TF-VIS-029 determinism). */
 const SEED = 0x51f1c3
-/** Point size in world metres, attenuated with distance. */
-const POINT_SIZE_M = 0.9
+/** Point size in CSS pixels (screen-stable, provisional), clamped to this range. */
+const POINT_SIZE_PX = 2.5
+const POINT_SIZE_MIN_PX = 1.5
+const POINT_SIZE_MAX_PX = 4
 
 /** A soft round dot sprite, generated in code (no asset). */
 function makeRoundSprite(): CanvasTexture {
@@ -36,10 +38,11 @@ function makeRoundSprite(): CanvasTexture {
   return texture
 }
 
-/** One LOD band, keyed on horizontal camera distance from the site origin. */
+/** One LOD band, keyed on horizontal camera distance from the site origin. The isometric preset
+ *  sits at ~516 m, so it stays in the full band. */
 function lodBand(distance: number): 0 | 1 | 2 {
-  if (distance > 800) return 2
-  if (distance > 480) return 1
+  if (distance > 1200) return 2
+  if (distance > 600) return 1
   return 0
 }
 
@@ -79,30 +82,23 @@ export function PointVegetation({
     return buildVegetationPoints(placed, SEED, colour)
   }, [trees, terrain, landcover, exclude, colour])
 
+  const gl = useThree((state) => state.gl)
+  const dpr = gl.getPixelRatio()
   const material = useMemo(() => {
     const pointsMaterial = new PointsMaterial({
-      size: POINT_SIZE_M,
-      sizeAttenuation: true,
+      // Screen-stable: a constant size in device pixels (CSS px × DPR), no distance attenuation.
+      size: Math.min(POINT_SIZE_MAX_PX, Math.max(POINT_SIZE_MIN_PX, POINT_SIZE_PX)) * dpr,
+      sizeAttenuation: false,
       map: sprite,
       vertexColors: true,
       transparent: true,
       alphaTest: 0.05,
       depthWrite: false,
     })
-    // Dissolve the points toward the tile edge (TF-VIS-02A Run 8), keeping the attenuated-size
-    // clamp (DPR-stable: the drawing buffer scales with the device pixel ratio, so CSS size is
-    // constant).
+    // Dissolve the points toward the tile edge (TF-VIS-02A Run 8).
     applySceneFades(pointsMaterial, { dissolve })
-    const fadeCompile = pointsMaterial.onBeforeCompile
-    pointsMaterial.onBeforeCompile = (shader, renderer) => {
-      shader.vertexShader = shader.vertexShader.replace(
-        'gl_PointSize *= ( scale / - mvPosition.z );',
-        'gl_PointSize = clamp( gl_PointSize * ( scale / - mvPosition.z ), 1.0, 24.0 );',
-      )
-      if (fadeCompile) fadeCompile(shader, renderer)
-    }
     return pointsMaterial
-  }, [sprite, dissolve])
+  }, [sprite, dissolve, dpr])
   useEffect(() => () => material.dispose(), [material])
 
   const geometry = useMemo(() => {

@@ -61,7 +61,7 @@ describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
     expect(IDENTITY.contourSource).toBe('tile1m')
     expect(IDENTITY.dissolve).toBe('auto') // computed from dissolveRange at mount
     expect(IDENTITY.vegetation).toBe('points')
-    expect(IDENTITY.vegetationColour).toBe('#8C9A8A')
+    expect(IDENTITY.vegetationColour).toBe('#D4DED4')
   })
 
   it('keeps NORDIC parcel and section lines', () => {

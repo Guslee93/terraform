@@ -3,10 +3,15 @@ import {
   buildVegetationPoints,
   CANOPY_RADIUS_M,
   CANOPY_RADII,
+  contrastRatio,
   hexToRgb,
+  relativeLuminance,
   TRUNK_HEIGHT_M,
+  VEGETATION_COLOUR,
   type VegetationTree,
 } from './vegetationPoints'
+import { tintGroundColour } from './styleColour'
+import { IDENTITY } from './style'
 
 describe('buildVegetationPoints (TF-VIS-029)', () => {
   const trees: VegetationTree[] = [
@@ -61,5 +66,16 @@ describe('buildVegetationPoints (TF-VIS-029)', () => {
     expect(hexToRgb('#FFFFFF')).toEqual([1, 1, 1])
     expect(hexToRgb('#000000')).toEqual([0, 0, 0])
     expect(hexToRgb('#8C9A8A')[0]).toBeCloseTo(0x8c / 255, 5)
+  })
+
+  it('computes WCAG relative luminance', () => {
+    expect(relativeLuminance('#FFFFFF')).toBeCloseTo(1, 5)
+    expect(relativeLuminance('#000000')).toBeCloseTo(0, 5)
+  })
+
+  it('contrasts at least 1.6:1 against the tinted ground', () => {
+    // The tinted terrain vertex colour is the lightest ground the trees sit on (worst case).
+    const ground = tintGroundColour('#EEEAE3', IDENTITY.groundTint!)
+    expect(contrastRatio(VEGETATION_COLOUR, ground)).toBeGreaterThanOrEqual(1.6)
   })
 })
