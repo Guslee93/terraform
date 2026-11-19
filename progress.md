@@ -1392,3 +1392,20 @@ zoom in because the quads are small at the default site camera.
   planning advice" (`SiteChrome.tsx`), which now has no counterpart on the About page: the
   constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
   string, so it was left alone.
+
+## 2026-11-18 — Run 2 T1: independent water/snow review (TF-VIS-002)
+
+- **Task TF-VIS-002.** Read-only review of commit `01c514b` (runoff + snow), Gate 0 P0.
+- **Verdict.** Pass with follow-ups; no correctness bug.
+- **Check 1.** Priority-Flood+Epsilon and D8 are correct. Five adversarial grids (flat, single
+  pit, NaN centre, building over a pit, flat 5×5) all conserve and leave 0 pits. The 67 %
+  main-path disagreement with WhiteboxTools is the documented method difference (epsilon vs
+  `--fix_flats` fill, NW-first tie-break, edge outlets) — a modelling choice, not a defect.
+- **Other checks.** Worker lifecycle correct (debounce, cancel, terminate, buffer transfer);
+  claims clean (no depth/volume/rainfall/return-period/snow-load); snow statistics correct for the
+  30-whole-winter build and `snowload` never read; provenance `NLOD` (no version); heavy work is in
+  the worker, main-thread is one memoised O(cells) pass.
+- **Follow-ups (minor).** Document the D8 tie-break and no-data-as-outlet; `winterStatistics`
+  monthly means use all days while `winters` drop partial winters; `useRunoff` compares
+  `footprints` by reference (caller must memoise).
+- **Deliverable.** `docs/reviews/water-snow-code-review.md`, draft PR `review/water-snow`.
