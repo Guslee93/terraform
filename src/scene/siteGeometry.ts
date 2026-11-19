@@ -150,12 +150,27 @@ function pushVertex(positions: number[], east: number, up: number, north: number
   positions.push(east, up, -north)
 }
 
+/** Side walls around a footprint contour from `fromY` up to `toY` (a skirt band or the walls). */
+function pushWalls(positions: number[], contour: readonly Vector2[], fromY: number, toY: number) {
+  for (let index = 0; index < contour.length; index += 1) {
+    const a = contour[index]
+    const b = contour[(index + 1) % contour.length]
+    if (!a || !b) continue
+    pushVertex(positions, a.x, fromY, a.y)
+    pushVertex(positions, b.x, fromY, b.y)
+    pushVertex(positions, b.x, toY, b.y)
+    pushVertex(positions, a.x, fromY, a.y)
+    pushVertex(positions, b.x, toY, b.y)
+    pushVertex(positions, a.x, toY, a.y)
+  }
+}
+
 /**
  * The context buildings as one merged, non-indexed mesh. `userData.buildingStarts[i]` is the first
  * vertex of building `i` (its vertices run to `buildingStarts[i + 1]`), so per-building state such
  * as the wind lift's fading (ADR-0028) can be written into an attribute without rebuilding.
  */
-export function createContextGeometry(buildings: readonly ContextBuilding[]): BufferGeometry {
+export function createContextGeometry(buildings: readonly ContextBuilding[], skirtDepth = 0): BufferGeometry {
   const positions: number[] = []
   const starts = new Int32Array(buildings.length + 1)
 
@@ -180,6 +195,9 @@ export function createContextGeometry(buildings: readonly ContextBuilding[]): Bu
         ),
     )
     if (signedArea(contour) < 0) contour.reverse()
+    // Identity skirt (Run 9 T4): extend the walls a few metres below the base so a building never
+    // floats over a lower 1 m surface. No skirt by default (NORDIC unchanged).
+    if (skirtDepth > 0) pushWalls(positions, contour, base - skirtDepth, base)
 
     if (building.roof) {
       // Measured gable (ADR-0022): walls rise to the roof surface, which is split along the ridge.

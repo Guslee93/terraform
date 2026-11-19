@@ -104,6 +104,24 @@ export function hornSlopeDeg(raster: TerrainRaster): Float32Array {
 }
 
 /**
+ * A coarser raster sampled every `step` cells (Run 9 T4: 1 m → 2 m). Keeps the same bounds and the
+ * same cell conventions so `elevationAt` / `sampleGrid` still work on the result.
+ */
+export function decimateRaster(raster: TerrainRaster, step: number): TerrainRaster {
+  const cols = Math.max(2, Math.ceil(raster.cols / step))
+  const rows = Math.max(2, Math.ceil(raster.rows / step))
+  const heights = new Float32Array(cols * rows)
+  for (let row = 0; row < rows; row += 1) {
+    const srcRow = Math.min(raster.rows - 1, row * step)
+    for (let col = 0; col < cols; col += 1) {
+      const srcCol = Math.min(raster.cols - 1, col * step)
+      heights[row * cols + col] = raster.heights[srcRow * raster.cols + srcCol]!
+    }
+  }
+  return { ...raster, cols, rows, heights }
+}
+
+/**
  * Bilinear sample of a per-cell grid (e.g. `hornSlopeDeg` output) at a local ENU position, mirroring
  * `elevationAt`. Null outside the raster or beside a cell without data.
  */

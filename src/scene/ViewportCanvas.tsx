@@ -58,6 +58,8 @@ import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
 import { hazeRange } from './dissolve'
 import { applySceneFades, hazeMixLine, hazeShaderChunk, hazeUniforms, type HazeInput } from './sceneFades'
+import { decimateRaster } from '../features/analysis/terrainTools'
+import { rasterToTerrainData } from './rasterTerrain'
 import { NORDIC, type SceneStyle } from './style'
 import { createWaterGeometry } from './waterGeometry'
 import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
@@ -164,6 +166,7 @@ type GroundHandlers = {
 
 function TerrainMesh({
   terrain,
+  gridTerrain,
   landcover,
   showGrid,
   showGround,
@@ -175,6 +178,8 @@ function TerrainMesh({
   haze,
 }: {
   terrain: SitePackage['terrain']
+  /** The 16 m grid, kept for the contour fallback, grid lines and skirt while `terrain` is 1 m. */
+  gridTerrain: SitePackage['terrain']
   landcover: SitePackage['landcover']
   showGrid: boolean
   /** The land cover tint rides on the terrain mesh, so the toggle drops the texture, not the mesh. */
@@ -188,8 +193,8 @@ function TerrainMesh({
   haze: HazeInput | null
 } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain, style.groundTint), [terrain, style.groundTint])
-  const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
-  const skirt = useMemo(() => createTerrainSkirtGeometry(terrain), [terrain])
+  const grid = useMemo(() => createTerrainGridGeometry(gridTerrain), [gridTerrain])
+  const skirt = useMemo(() => createTerrainSkirtGeometry(gridTerrain), [gridTerrain])
   // Parks green, water blue, painted in plan and draped by the terrain UVs (ADR-0005 §5).
   const landcoverTexture = useMemo(
     () => createLandCoverTexture(landcover, terrain, 2048, style.groundTint, style.landCoverPalette),
@@ -203,13 +208,13 @@ function TerrainMesh({
   const tile1m = style.contourSource === 'tile1m'
 
   const contours = useMemo(() => {
-    const { min, max } = terrainHeightRange(terrain)
+    const { min, max } = terrainHeightRange(gridTerrain)
     const { minor, major } =
       max - min < CONTOUR_MIN_RELIEF_M
         ? { minor: [], major: [] }
-        : contourSegments(terrain, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M)
+        : contourSegments(gridTerrain, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M)
     return { minor: createContourGeometry(minor), major: createContourGeometry(major) }
-  }, [terrain])
+  }, [gridTerrain])
 
   // Minor contours fade by camera distance in the identity style; majors keep full opacity. Both
   // also dissolve toward the tile edge (Run 8).
@@ -266,8 +271,7 @@ function TerrainMesh({
       <lineSegments geometry={contours.major} material={majorMaterial} />
       {tile1m && raster1m && (
         <Suspense fallback={null}>
-          <RasterContoursLazy raster={raster1m} terrain={terrain} style={style} minorFade={minorFade} haze={haze} />
-        </Suspense>
+          <RasterContoursLazy raster={raster1m} terrain={terrain} style={style} minorFade={minorFade} haze={haze} />        </Suspense>
       )}
       <lineSegments geometry={grid} visible={showGrid}>
         <lineBasicMaterial color={style.grid.terrain.color} transparent opacity={style.grid.terrain.opacity} depthWrite={false} />
@@ -279,6 +283,8 @@ function TerrainMesh({
 const NO_FADE: ReadonlySet<number> = new Set()
 /** Buildings below the lifted wind disc no longer block the wind there; they are drawn faint. */
 const FADED_OPACITY = 0.22
+/** Identity building skirt depth (m) below the base, so walls reach a lower 1 m surface. */
+const CONTEXT_SKIRT_M = 4
 
 /** One shader switch per material: draw only the faded (`keep` 1) or only the solid (`keep` 0) buildings. */
 function fadeShader(material: MeshStandardMaterial, keep: 0 | 1, haze: HazeInput | null) {
@@ -309,10 +315,12 @@ function ContextBuildings({ buildings, faded = NO_FADE, style, haze }: { buildin
   // them. Rebuilding the merged mesh instead cost 65–100 ms per height step on Compact Infill
   // (code review 2026-11-13, finding 6); writing the flags is a fill over a few vertex ranges.
   const geometry = useMemo(() => {
-    const merged = createContextGeometry(buildings)
+    // Identity extends the walls below the base (a skirt) so buildings never float over a lower 1 m
+    // surface; NORDIC keeps the base-exact walls (skirtDepth 0).
+    const merged = createContextGeometry(buildings, style.id === 'identity' ? CONTEXT_SKIRT_M : 0)
     merged.setAttribute('faded', new Float32BufferAttribute(new Float32Array(merged.getAttribute('position').count), 1))
     return merged
-  }, [buildings])
+  }, [buildings, style.id])
   const edges = useMemo(() => new EdgesGeometry(geometry, EDGE_THRESHOLD_DEG), [geometry])
   const solidMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), 0, haze), [style.context, haze])
   const fadedMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, transparent: true, opacity: FADED_OPACITY, depthWrite: false }), 1, haze), [style.context, haze])
@@ -630,14 +638,22 @@ export function ViewportCanvas({
   const { manifest, buildings } = sitePackage
   // Water is a surface of its own (ADR-0025): the ground inside a mapped water body is cut down
   // to the water surface, and the water is then drawn flat on top of it.
+  // Real relief (Run 9 T4): the identity draws the terrain from the 1 m tile (decimated to a 2 m
+  // step) on curated sites. Water, roads, trees and contours all sample this drawn surface.
+  const drawnTerrain = useMemo(() => {
+    if (style.contourSource !== 'tile1m' || !terrain1m) return null
+    return rasterToTerrainData(decimateRaster(terrain1m, 2), sitePackage.terrain)
+  }, [style.contourSource, terrain1m, sitePackage.terrain])
   const waterSurfaces = useMemo(
-    () => computeWaterSurfaces(sitePackage.terrain, sitePackage.landcover),
-    [sitePackage],
+    () => computeWaterSurfaces(drawnTerrain ?? sitePackage.terrain, sitePackage.landcover),
+    [drawnTerrain, sitePackage],
   )
   const terrain = useMemo(
-    () => carveTerrainForWater(sitePackage.terrain, waterSurfaces),
-    [sitePackage, waterSurfaces],
+    () => carveTerrainForWater(drawnTerrain ?? sitePackage.terrain, waterSurfaces),
+    [drawnTerrain, sitePackage, waterSurfaces],
   )
+  // Trees/points sample the drawn surface's height; buildings keep their package base elevations.
+  const visualPackage = useMemo(() => (drawnTerrain ? { ...sitePackage, terrain } : sitePackage), [drawnTerrain, sitePackage, terrain])
   const initialPreset = manifest.cameraPresets.isometric
   // Fog, orbit limit and far plane were tuned for the curated sites (farthest preset ≈ 870 m).
   // Large imports put presets farther out: scale up so they stay reachable and out of the fog.
@@ -769,6 +785,7 @@ export function ViewportCanvas({
             <group visible={layers.terrain}>
               <TerrainMesh
                 terrain={terrain}
+                gridTerrain={sitePackage.terrain}
                 landcover={sitePackage.landcover}
                 showGrid={presetId === 'top' || drawing}
                 showGround={layers.ground}
@@ -789,7 +806,7 @@ export function ViewportCanvas({
             {/* The streets keep the ground the package was built on, so they bridge the cut the
                 water makes in the ground beneath them (ADR-0025). */}
             {layers.streets && layers.terrain && (
-              <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} style={style} haze={haze} />
+              <Streets roads={sitePackage.roads} terrain={terrain} style={style} haze={haze} />
             )}
             {layers.parcels && layers.terrain && sitePackage.parcels.length > 0 && <ParcelLines parcels={sitePackage.parcels} selected={selectedParcel} heightAt={heightAt} />}
             {section && section.length > 0 && layers.terrain && <SectionLine points={section} heightAt={heightAt} />}
@@ -819,8 +836,8 @@ export function ViewportCanvas({
 
             <group name="live-scenario">
             {layers.trees && (style.vegetation === 'points'
-              ? <PointVegetation sitePackage={sitePackage} exclude={treeExclude} colour={style.vegetationColour} haze={haze} pointSizeMinPx={style.tuning?.pointSizeMinPx} pointSizeMaxPx={style.tuning?.pointSizeMaxPx} density={style.tuning?.treeDensity} />
-              : <Trees sitePackage={sitePackage} exclude={treeExclude} detail={profile === 'low' ? 'simple' : 'full'} />
+              ? <PointVegetation sitePackage={visualPackage} exclude={treeExclude} colour={style.vegetationColour} haze={haze} pointSizeMinPx={style.tuning?.pointSizeMinPx} pointSizeMaxPx={style.tuning?.pointSizeMaxPx} density={style.tuning?.treeDensity} />
+              : <Trees sitePackage={visualPackage} exclude={treeExclude} detail={profile === 'low' ? 'simple' : 'full'} />
             )}
             <MassLayer
               editor={editor}
