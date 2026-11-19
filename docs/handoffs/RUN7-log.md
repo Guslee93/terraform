@@ -27,7 +27,7 @@ _(Filled at the end of the run.)_
 | # | Task | Status | Commit(s) | Checks (last lines) | Open items |
 |---|---|---|---|---|---|
 | T1 | Fix the Visual Lab's blank first view (TF-VIS-015 follow-up) | done | a1682ea | typecheck 0 · lint 0 · unit 1234 passed / 4 skipped / 1 todo · build OK (903 ms) · chunk 0 · LAB=1 e2e 3 passed | Root cause: min-height-only section (Safari %-height collapse); fixed per breakpoint in LabPage.tsx only |
-| T2 | TF-VIS-020 stage A: the `IDENTITY` style (Lab only) | todo | — | — | — |
+| T2 | TF-VIS-020 stage A: the `IDENTITY` style (Lab only) | done | e87fe15 | typecheck 0 · lint 0 · unit 1241 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 (NORDIC pixel-identical) · Lab IDENTITY renders | All identity values provisional (owner tunes); chunk delta StudioPage.js +81 B gzip |
 | T3 | TF-VIS-053: contours from the 1 m tile, selected by style | todo | — | — | — |
 | T4 | TF-VIS-02A: atmospheric terrain dissolve (Lab only) | todo | — | — | — |
 | T5 | TF-VIS-040 part B: `MapLegend` component (Lab only) | todo | — | — | — |
@@ -38,7 +38,18 @@ _(Filled at the end of the run.)_
 
 ## Decisions I made
 
-_(Provisional values and implementation choices are listed here as they are made, with the reason.)_
+- **T2 — `IDENTITY` provisional values** (all will be tuned by the owner in the Lab): background
+  `#171B19`; context `#EEEDE8` @ roughness 0.92; road `#2C312E`; water `#26302F` @ roughness 1
+  (flat, no reflections); contour minor/major `#F7F7F2` @ 0.16/0.38; crease `#9DA49F` @ 0.6; AO
+  `#0E1110` @ intensity 1.6; parcel/section keep NORDIC. `groundTint = { saturation: 0.2,
+  lightness: 0.5 }` — `saturation` is the *kept* chroma fraction (0.2 = "desaturated by 0.8") and
+  `lightness` a multiplicative factor, applied to **both** the land-cover paint and the near-white
+  terrain vertex colours; the terrain material multiplies them, so 0.5² lands the ground near the
+  `#2A2F2C`–`#3A403C` target. Marked provisional in the code comment.
+- **T2 — no separate `fog` field.** Fog colour already equals the background (ViewportCanvas.tsx
+  `fog args`), and the identity fog colour is the background, so a separate field was unnecessary.
+- **T2 — `waterRoughness` added** to carry the "flat, no reflections" water without a second
+  material path (NORDIC stays 0.55).
 
 ## Questions for the owner
 
@@ -46,6 +57,11 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T2 **done** (`e87fe15`). `IDENTITY` style (stage A) added beside an unchanged
+  `NORDIC`; wired skirt hiding, floor-grid flag, `groundTint` (pure `tintGroundColour`) and water
+  roughness into the terrain/land-cover/water paths. Pixel safety net (VISUAL=1 --headed) passed
+  5/5 → NORDIC pixel-identical; production chunk delta +81 B gzip (StudioPage.js). Lab renders the
+  IDENTITY style without JS errors.
 - 2026-11-19 — T1 **done**. The Lab's viewport `<section>` had only `min-h-[480px]`, so
   `ViewportCanvas`'s `h-full` root (and the R3F canvas) could collapse to 0 px in strict engines —
   the blank first view. Fixed in `LabPage.tsx` only with a definite `h-[min(720px,70dvh)]`
