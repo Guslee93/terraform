@@ -30,7 +30,7 @@ _(Filled at the end of the run.)_
 | T2 | TF-VIS-020 stage A: the `IDENTITY` style (Lab only) | done | e87fe15 | typecheck 0 · lint 0 · unit 1241 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 (NORDIC pixel-identical) · Lab IDENTITY renders | All identity values provisional (owner tunes); chunk delta StudioPage.js +81 B gzip |
 | T3 | TF-VIS-053: contours from the 1 m tile, selected by style | done | ed55abc | typecheck 0 · lint 0 · unit 1245 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+1 m renders (no errors) | 1 m pass median 128.6 ms / max 135.5 ms → worker; minor fade ≈1.5× isometric (provisional); prod chunk +~1.5 kB (dead for NORDIC) |
 | T4 | TF-VIS-02A: atmospheric terrain dissolve (Lab only) | done | b73f592 | typecheck 0 · lint 0 · unit 1249 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+dissolve renders | dissolve values provisional; overlays not faded, depth pass unchanged |
-| T5 | TF-VIS-040 part B: `MapLegend` component (Lab only) | todo | — | — | — |
+| T5 | TF-VIS-040 part B: `MapLegend` component (Lab only) | done | deba3c0 | typecheck 0 · lint 0 · unit 1253 passed / 4 skip / 1 todo · build OK · chunk 0 · Lab noise legend renders | claim text = existing caption functions; studio caption blocks untouched |
 | T6 | TF-VIS-029: airy point-cloud vegetation (Lab only) | todo | — | — | — |
 | T7 | Lab stage picker A/B/C + reproducible URLs | todo | — | — | — |
 | T8 | Stretch: TF-VIS-046 stale-result / rapid-change tests | todo | — | — | — |
@@ -80,6 +80,10 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T5 **done** (`deba3c0`). `MapLegend` renders the `legendFor` model (title, class,
+  ramp/band scale, claim, sources, computing) and is mounted in the Lab over the viewport for Sun
+  hours, Wind, Noise, Water and Slope. Claims come from the existing caption functions; the studio's
+  caption blocks are untouched. Tree-shaken from production (chunk check clean).
 - 2026-11-19 — T4 **done** (`b73f592`). `dissolveRange` (pure) + a terrain fade shader dissolve the
   IDENTITY terrain toward the background; overlays and the depth pass are untouched. Safety net 5/5.
 - 2026-11-19 — T3 **done** (`ed55abc`). 1 m-tile contours (`contourSource: 'tile1m'`) computed in a
