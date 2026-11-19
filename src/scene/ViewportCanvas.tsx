@@ -547,8 +547,26 @@ function FrameBudgetWatch({ onSlow }: { onSlow: () => void }) {
   return null
 }
 
-function WindDemoCamera({ orbitDeg, controlsRef }: { orbitDeg: number | null; controlsRef: RefObject<OrbitControlsHandle | null> }) {
-  const { camera } = useThree()
+/** Lab-only test hook (Run 10 T1): projects ENU points to screen pixels for the edge test. */
+function EdgeTestHook({ terrain }: { terrain: SitePackage['terrain'] }) {
+  const camera = useThree((state) => state.camera)
+  const size = useThree((state) => state.size)
+  useEffect(() => {
+    const hook = {
+      bounds: { minX: terrain.minX, maxX: terrain.maxX, minY: terrain.minY, maxY: terrain.maxY },
+      project: (east: number, north: number, elevation: number): [number, number] => {
+        camera.updateMatrixWorld()
+        const p = new Vector3(east, elevation, -north).project(camera)
+        return [((p.x + 1) / 2) * size.width, ((1 - p.y) / 2) * size.height]
+      },
+    }
+    ;(window as Window & { __terraformEdgeTest?: typeof hook }).__terraformEdgeTest = hook
+    return () => { delete (window as Window & { __terraformEdgeTest?: typeof hook }).__terraformEdgeTest }
+  }, [camera, size, terrain])
+  return null
+}
+
+function WindDemoCamera({ orbitDeg, controlsRef }: { orbitDeg: number | null; controlsRef: RefObject<OrbitControlsHandle | null> }) {  const { camera } = useThree()
   const saved = useRef<{ position: Vector3; target: Vector3 } | null>(null)
   const playing = orbitDeg !== null
   useLayoutEffect(() => {
@@ -855,6 +873,7 @@ export function ViewportCanvas({
               presets={cameraPresets}
               controlsRef={controlsRef}
             />
+            <EdgeTestHook terrain={sitePackage.terrain} />
             {onExport && <PassExporter request={exportRequest} controls={controlsRef} onDone={onExport} credits={exportCredits} />}
             <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />
