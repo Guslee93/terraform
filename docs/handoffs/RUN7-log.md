@@ -29,7 +29,7 @@ _(Filled at the end of the run.)_
 | T1 | Fix the Visual Lab's blank first view (TF-VIS-015 follow-up) | done | a1682ea | typecheck 0 · lint 0 · unit 1234 passed / 4 skipped / 1 todo · build OK (903 ms) · chunk 0 · LAB=1 e2e 3 passed | Root cause: min-height-only section (Safari %-height collapse); fixed per breakpoint in LabPage.tsx only |
 | T2 | TF-VIS-020 stage A: the `IDENTITY` style (Lab only) | done | e87fe15 | typecheck 0 · lint 0 · unit 1241 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 (NORDIC pixel-identical) · Lab IDENTITY renders | All identity values provisional (owner tunes); chunk delta StudioPage.js +81 B gzip |
 | T3 | TF-VIS-053: contours from the 1 m tile, selected by style | done | ed55abc | typecheck 0 · lint 0 · unit 1245 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+1 m renders (no errors) | 1 m pass median 128.6 ms / max 135.5 ms → worker; minor fade ≈1.5× isometric (provisional); prod chunk +~1.5 kB (dead for NORDIC) |
-| T4 | TF-VIS-02A: atmospheric terrain dissolve (Lab only) | todo | — | — | — |
+| T4 | TF-VIS-02A: atmospheric terrain dissolve (Lab only) | done | b73f592 | typecheck 0 · lint 0 · unit 1249 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+dissolve renders | dissolve values provisional; overlays not faded, depth pass unchanged |
 | T5 | TF-VIS-040 part B: `MapLegend` component (Lab only) | todo | — | — | — |
 | T6 | TF-VIS-029: airy point-cloud vegetation (Lab only) | todo | — | — | — |
 | T7 | Lab stage picker A/B/C + reproducible URLs | todo | — | — | — |
@@ -66,6 +66,13 @@ _(Filled at the end of the run.)_
   rendering code in `StudioPage`/`SceneComposer`). It is dead code for `NORDIC` (never invoked) and
   the pixel safety net passes 5/5; it follows the existing worker pattern. If the owner wants a
   strict ±0.5 kB bar on every task, the 1 m hook/worker can move into the Lab chunk (deferred).
+- **T4 — dissolve band (provisional).** `dissolveRange` = `start = max(study-area bounding radius
+  + 200 m halo, analysis-circle radius)`, `end = terrain bounding radius`. On compact-infill that is
+  ≈353 m → ≈482 m; on sloped-edge ≈393 m → ≈512 m. It is a **radial** fade by horizontal distance
+  from the site origin, so on the rectangular terrain the east/west mid-edges (closer than `start`)
+  stay crisp while the corners dissolve — the owner will tune the exact radii. Fades the terrain
+  material to transparent (the flat background shows through); roads/water/context sit inside the
+  halo and are not faded.
 
 ## Questions for the owner
 
@@ -73,6 +80,8 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T4 **done** (`b73f592`). `dissolveRange` (pure) + a terrain fade shader dissolve the
+  IDENTITY terrain toward the background; overlays and the depth pass are untouched. Safety net 5/5.
 - 2026-11-19 — T3 **done** (`ed55abc`). 1 m-tile contours (`contourSource: 'tile1m'`) computed in a
   worker and drawn on the 16 m surface in the IDENTITY style, with a provisional distance fade for
   minor contours; NORDIC keeps `grid16`. Measured the pass at 128.6 ms median → worker. Safety net
