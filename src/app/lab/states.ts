@@ -4,7 +4,7 @@ import { createRectangleFootprint, createScenario, createTier, createVolume } fr
 import { sampleTerrainHeight } from '../../features/sites/geometry'
 import type { SitePackage } from '../../features/sites/package'
 import { normalizeRing, ringCentroid } from '../../lib/polygon'
-import { NORDIC, type SceneStyle } from '../../scene/style'
+import { IDENTITY, NORDIC, type SceneStyle } from '../../scene/style'
 
 /**
  * The Visual Lab's fixed states (TF-VIS-015, 03 §7 / 04 §2). One builder per state; the hooks and
@@ -31,6 +31,7 @@ export type LabStyleOption = { readonly id: string; readonly label: string; read
  */
 export const LAB_STYLES: readonly LabStyleOption[] = [
   { id: 'nordic', label: 'NORDIC', style: NORDIC },
+  { id: 'identity', label: 'IDENTITY (stage A)', style: IDENTITY },
 ]
 
 /** An empty editor (no masses): the analysis states show the site without a proposal. */

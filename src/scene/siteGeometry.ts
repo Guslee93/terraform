@@ -10,18 +10,22 @@ import { ringWithRidgeVertices, roofHeightAt } from '../features/sites/roof'
 import { roofTriangles } from './roofGeometry'
 import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import type { ContourSegment } from '../features/sites/contours'
+import { tintGroundColour, type GroundTint } from './styleColour'
 
-// Near-white ground; elevation tint stays under 4% so separation comes from light, not hue.
-const LOW_TERRAIN = new Color('#F7F4EF')
-const HIGH_TERRAIN = new Color('#EEEAE3')
+// Near-white ground; elevation tint stays under 4% so separation comes from light, not hue. The
+// identity style re-tints these through `tintGroundColour` (groundTint) to a dark, desaturated fallback.
+const LOW_TERRAIN_HEX = '#F7F4EF'
+const HIGH_TERRAIN_HEX = '#EEEAE3'
 
-export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
+export function createTerrainGeometry(terrain: TerrainData, tint: GroundTint | null = null): BufferGeometry {
   const positions: number[] = []
   const colors: number[] = []
   const uvs: number[] = []
   const indices: number[] = []
   const { min, max } = terrainHeightRange(terrain)
   const span = max - min || 1
+  const low = new Color(tintGroundColour(LOW_TERRAIN_HEX, tint))
+  const high = new Color(tintGroundColour(HIGH_TERRAIN_HEX, tint))
   const color = new Color()
 
   for (let row = 0; row < terrain.rows; row += 1) {
@@ -32,7 +36,7 @@ export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
       positions.push(east, height, -north)
       // u runs east, v runs north, so a plan-view texture (north up) drapes without flipping.
       uvs.push(col / (terrain.cols - 1), row / (terrain.rows - 1))
-      color.copy(LOW_TERRAIN).lerp(HIGH_TERRAIN, (height - min) / span)
+      color.copy(low).lerp(high, (height - min) / span)
       colors.push(color.r, color.g, color.b)
     }
   }

@@ -171,13 +171,13 @@ function TerrainMesh({
   showGround: boolean
   style: SceneStyle
 } & GroundHandlers) {
-  const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
+  const geometry = useMemo(() => createTerrainGeometry(terrain, style.groundTint), [terrain, style.groundTint])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
   const skirt = useMemo(() => createTerrainSkirtGeometry(terrain), [terrain])
   // Parks green, water blue, painted in plan and draped by the terrain UVs (ADR-0005 §5).
   const landcoverTexture = useMemo(
-    () => createLandCoverTexture(landcover, terrain),
-    [landcover, terrain],
+    () => createLandCoverTexture(landcover, terrain, 2048, style.groundTint),
+    [landcover, terrain, style.groundTint],
   )
   useEffect(() => () => landcoverTexture?.dispose(), [landcoverTexture])
   const contours = useMemo(() => {
@@ -223,9 +223,11 @@ function TerrainMesh({
           metalness={0}
         />
       </mesh>
-      <mesh geometry={skirt} receiveShadow>
-        <meshStandardMaterial color={style.skirt} roughness={1} metalness={0} side={DoubleSide} />
-      </mesh>
+      {style.skirt !== null && (
+        <mesh geometry={skirt} receiveShadow>
+          <meshStandardMaterial color={style.skirt} roughness={1} metalness={0} side={DoubleSide} />
+        </mesh>
+      )}
       <lineSegments geometry={contours.minor}>
         <lineBasicMaterial color={style.lines.contourMinor.color} transparent opacity={style.lines.contourMinor.opacity} depthWrite={false} />
       </lineSegments>
@@ -335,7 +337,7 @@ function Water({ surfaces, style }: { surfaces: readonly WaterSurface[]; style: 
   if (!surfaces.length) return null
   return (
     <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color={style.water} roughness={0.55} metalness={0} />
+      <meshStandardMaterial color={style.water} roughness={style.waterRoughness} metalness={0} />
     </mesh>
   )
 }
@@ -692,7 +694,7 @@ export function ViewportCanvas({
             <color attach="background" args={[style.background]} />
             <fog attach="fog" args={[style.background, 600 * viewScale, 1400 * viewScale]} />
             <SiteLights sitePackage={sitePackage} sun={sun} profile={profile} />
-            {grid && <FloorGrid terrain={terrain} viewScale={viewScale} style={style} />}
+            {grid && style.floorGrid && <FloorGrid terrain={terrain} viewScale={viewScale} style={style} />}
 
             {/* Hidden, not unmounted, when the Terrain layer is off: it is the ground the draw tool,
                 deselect and Move circle click on (three's raycaster ignores visibility). */}
