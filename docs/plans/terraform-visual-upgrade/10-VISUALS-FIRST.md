@@ -35,7 +35,8 @@ Performance is measured at V1, V4 and V7 (orbit p95 within 10 % of `NORDIC`); id
 | Step | State | Evidence |
 |---|---|---|
 | V1 Haze | **done, owner tuning** — tile edge invisible, mist builds gradually, background ≈ 2.4× brighter and a neutral grey-green (tone-mapping compensated) | PR #29 `1da9105`, `fc86e97`; `e2e/identity-edge.spec.ts` passes on both sites |
-| V2 Photo ground | **next** — waiting for the owner's screenshots (local preview) | — |
+| V2 Photo ground | **V2a/V2b built** — local preview with alignment sliders, greying and credit; never published (git-ignored, .vercelignore, CI build check). Waiting for the owner's screenshots | PR #29 `81b7045`; placement verified with a footprint test image |
+| Performance | identity stage C vs NORDIC: p95 +2 %, p99 +1–2 %, draw calls +11 | `docs/perf/run10-identity.json` (PR #29) |
 | V3 Terrain and contours | built in Run 10 (centre-aligned relief, smoothed contours on slopes only); owner to judge | DeepSeek `138c5c8`, `3090064` |
 | V4 Trees | partly: hazed, speckled crowns; still read as dark blobs at the city view | DeepSeek `93a463e` |
 | V5–V8 | not started | — |
