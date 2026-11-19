@@ -32,7 +32,7 @@ _(Filled at the end of the run.)_
 | T4 | TF-VIS-02A: atmospheric terrain dissolve (Lab only) | done | b73f592 | typecheck 0 · lint 0 · unit 1249 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+dissolve renders | dissolve values provisional; overlays not faded, depth pass unchanged |
 | T5 | TF-VIS-040 part B: `MapLegend` component (Lab only) | done | deba3c0 | typecheck 0 · lint 0 · unit 1253 passed / 4 skip / 1 todo · build OK · chunk 0 · Lab noise legend renders | claim text = existing caption functions; studio caption blocks untouched |
 | T6 | TF-VIS-029: airy point-cloud vegetation (Lab only) | done | 24cbc98 | typecheck 0 · lint 0 · unit 1258 passed / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 · Lab identity+points renders | Points hidden in depth/white passes; forest fill skipped (optional) |
-| T7 | Lab stage picker A/B/C + reproducible URLs | todo | — | — | — |
+| T7 | Lab stage picker A/B/C + reproducible URLs | done | 70f39e3, f2784c5 | typecheck 0 · lint 0 · unit 1267 passed / 4 skip / 1 todo · build OK · chunk 0 · LAB=1 e2e 3 passed · 5 screenshots captured | Screenshots in docs/screenshots/vis/run7/ (preview, not baseline) |
 | T8 | Stretch: TF-VIS-046 stale-result / rapid-change tests | todo | — | — | — |
 | T9 | Stretch: TF-VIS-021 fat-line system (Lab only) | todo | — | — | — |
 
@@ -87,6 +87,9 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T7 **done** (`70f39e3`, `f2784c5`). Stage picker A/B/C (via `identityStage`) and
+  reproducible URLs (`parseLabParams` with per-field fallback). Five headed preview screenshots
+  (NORDIC, A, B, C neutral, C wind) in `docs/screenshots/vis/run7/` with a README.
 - 2026-11-19 — T6 **done** (`24cbc98`). Point-cloud vegetation (`vegetation: 'points'`) for IDENTITY
   via a seeded pure builder + `THREE.Points` with a generated sprite; NORDIC keeps the mesh trees.
   Points hidden in the depth/white passes. Safety net 5/5.
