@@ -1,0 +1,85 @@
+{
+  "machine": "Apple M1 Pro",
+  "os": {
+    "platform": "darwin",
+    "release": "24.6.0",
+    "arch": "arm64"
+  },
+  "browser": "156.0.8078.4",
+  "gpu": null,
+  "commit": "bacca4e425eb8fe8c366b3f9d8dd6657dfdee9be",
+  "recordedAt": "2026-11-19T11:00:18.014Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "deviceScaleFactor": 2
+  },
+  "windowMs": 4000,
+  "pointCountCompactInfill": 42596,
+  "stages": {
+    "B": {
+      "runs": [
+        {
+          "fps": 30,
+          "frameMsP50": 33.30000000000109,
+          "frameMsP95": 34.19999999999891,
+          "frameMsP99": 34.29999999999927,
+          "drawCallsPerFrameP50": 84
+        },
+        {
+          "fps": 30,
+          "frameMsP50": 33.30000000000109,
+          "frameMsP95": 33.70000000000073,
+          "frameMsP99": 34.100000000000364,
+          "drawCallsPerFrameP50": 84
+        },
+        {
+          "fps": 30,
+          "frameMsP50": 33.30000000000109,
+          "frameMsP95": 33.80000000000109,
+          "frameMsP99": 34,
+          "drawCallsPerFrameP50": 84
+        }
+      ],
+      "median": {
+        "fps": 30,
+        "frameMsP50": 33.3,
+        "frameMsP95": 33.8,
+        "frameMsP99": 34.1,
+        "drawCallsPerFrameP50": 84
+      }
+    },
+    "C": {
+      "runs": [
+        {
+          "fps": 29.999250018749528,
+          "frameMsP50": 33.30000000000109,
+          "frameMsP95": 34.20000000000073,
+          "frameMsP99": 34.30000000000109,
+          "drawCallsPerFrameP50": 26
+        },
+        {
+          "fps": 30.000750018750473,
+          "frameMsP50": 33.30000000000109,
+          "frameMsP95": 33.5,
+          "frameMsP99": 34.100000000000364,
+          "drawCallsPerFrameP50": 26
+        },
+        {
+          "fps": 30.030781551089863,
+          "frameMsP50": 33.30000000000109,
+          "frameMsP95": 34.20000000000073,
+          "frameMsP99": 34.30000000000018,
+          "drawCallsPerFrameP50": 26
+        }
+      ],
+      "median": {
+        "fps": 30,
+        "frameMsP50": 33.3,
+        "frameMsP95": 34.2,
+        "frameMsP99": 34.3,
+        "drawCallsPerFrameP50": 26
+      }
+    }
+  }
+}
