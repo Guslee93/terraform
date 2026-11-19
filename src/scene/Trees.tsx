@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Color, Object3D, type BufferGeometry, type InstancedMesh } from 'three'
 import { sampleTerrainHeight } from '../features/sites/geometry'
 import type { SitePackage } from '../features/sites/package'
@@ -6,12 +6,16 @@ import { dropTreesOnWater } from '../features/sites/treePlacement'
 import { createBranchGeometry, createCanopyGeometry, createSimpleCanopyGeometry, FOLIAGE_VARIANTS } from './foliage'
 import { TREE_TINTS, treeVariant, type TreeShape, type TreeVariant } from './treeVariants'
 import { pointsOutsideRings } from '../lib/cullPoints'
+import { createSpeckleAlphaTexture } from './speckleTexture'
 import type { Vec2 } from '../lib/coordinates'
 
 /** Illustrative sizes (m) before the per-tree scale; OSM gives positions only. */
 const CANOPY_RADIUS = 2.3
 const TRUNK_HEIGHT = 2.8
-const SHAPES: readonly TreeShape[] = ['round', 'tall']
+const SHAPES: readonly TreeShape[] = ['round', 'tall', 'birch']
+
+/** Muted identity greens (look spec §3) that multiply the canopy's per-face greens. */
+const SPECKLE_TINTS = ['#3A4034', '#2E352D', '#353B34'] as const
 
 type Placed = TreeVariant & { east: number; north: number; ground: number }
 type GeometryPair = {
@@ -28,13 +32,18 @@ function TreeInstances({
   geometry,
   trees,
   branches: withBranches = true,
+  speckled = false,
 }: {
   geometry: GeometryPair
   trees: readonly Placed[]
   branches?: boolean
+  speckled?: boolean
 }) {
   const canopyRef = useRef<InstancedMesh>(null)
   const branchRef = useRef<InstancedMesh>(null)
+  const speckleMap = useMemo(() => (speckled ? createSpeckleAlphaTexture() : null), [speckled])
+  useEffect(() => () => { speckleMap?.dispose() }, [speckleMap])
+  const tintHex = useCallback((tint: number) => speckled ? (SPECKLE_TINTS[tint % SPECKLE_TINTS.length] ?? SPECKLE_TINTS[0]) : (TREE_TINTS[tint] ?? TREE_TINTS[0]), [speckled])
 
   useEffect(() => {
     const canopy = canopyRef.current
@@ -49,7 +58,7 @@ function TreeInstances({
         placer.scale.setScalar(CANOPY_RADIUS * tree.scale)
         placer.updateMatrix()
         canopy.setMatrixAt(index, placer.matrix)
-        canopy.setColorAt(index, color.set(TREE_TINTS[tree.tint] ?? TREE_TINTS[0]))
+        canopy.setColorAt(index, color.set(tintHex(tree.tint)))
       })
       canopy.instanceMatrix.needsUpdate = true
       if (canopy.instanceColor) canopy.instanceColor.needsUpdate = true
@@ -68,7 +77,7 @@ function TreeInstances({
       placer.scale.setScalar(CANOPY_RADIUS * tree.scale)
       placer.updateMatrix()
       canopy.setMatrixAt(index, placer.matrix)
-      canopy.setColorAt(index, color.set(TREE_TINTS[tree.tint] ?? TREE_TINTS[0]))
+      canopy.setColorAt(index, color.set(tintHex(tree.tint)))
 
       placer.position.set(tree.east, tree.ground, -tree.north)
       placer.scale.setScalar(TRUNK_HEIGHT * tree.scale)
@@ -80,7 +89,7 @@ function TreeInstances({
     branches.instanceMatrix.needsUpdate = true
     canopy.computeBoundingSphere()
     branches.computeBoundingSphere()
-  }, [trees])
+  }, [trees, tintHex])
 
   if (trees.length === 0) return null
   return (
@@ -91,8 +100,10 @@ function TreeInstances({
           flatShading
           roughness={0.9}
           transparent
-          opacity={0.9}
-          depthWrite
+          opacity={speckled ? 1 : 0.9}
+          alphaHash={speckled}
+          alphaMap={speckleMap ?? undefined}
+          depthWrite={!speckled}
         />
       </instancedMesh>
       {withBranches && (
@@ -109,10 +120,13 @@ export function Trees({
   sitePackage,
   exclude,
   detail = 'full',
+  speckled = false,
 }: {
   sitePackage: SitePackage
   exclude?: readonly (readonly Vec2[])[]
   detail?: TreeDetail
+  /** Run 9 T5: see-through muted-green crowns via alphaHash + a speckle alpha map. */
+  speckled?: boolean
 }) {
   const { trees, terrain, landcover } = sitePackage
   const geometries = useMemo(
@@ -148,7 +162,7 @@ export function Trees({
       east,
       north,
       ground: sampleTerrainHeight(terrain, east, north),
-      ...treeVariant(east, north),
+      ...treeVariant(east, north, speckled),
     }))
     return geometries.map((geometry) => ({
       geometry,
@@ -156,7 +170,7 @@ export function Trees({
       trees: placed.filter((tree) =>
         tree.shape === geometry.shape && (detail === 'simple' || tree.variant === geometry.variant)),
     }))
-  }, [trees, terrain, landcover, geometries, exclude, detail])
+  }, [trees, terrain, landcover, geometries, exclude, detail, speckled])
 
   if (trees.length === 0) return null
   return (
@@ -167,6 +181,7 @@ export function Trees({
           geometry={geometry}
           trees={group}
           branches={detail === 'full'}
+          speckled={speckled}
         />
       ))}
     </group>

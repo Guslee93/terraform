@@ -17,6 +17,8 @@ const GREENS = ['#A9CBA0', '#8FBB8A', '#C3DAB5', '#7FAE7E'].map((green) => softe
 const RADII: Record<TreeShape, readonly [number, number, number]> = {
   round: [1, 0.8, 1],
   tall: [0.65, 1.45, 0.65],
+  // Sparse birch: taller and thinner, a looser crown (look spec §3).
+  birch: [0.5, 1.75, 0.5],
 }
 
 function mulberry32(seed: number): () => number {

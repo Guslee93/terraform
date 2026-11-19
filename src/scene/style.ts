@@ -47,8 +47,8 @@ export type SceneStyle = {
    * in this static object).
    */
   readonly dissolve: 'auto' | null
-  /** Vegetation rendering: instanced mesh (today) or airy point cloud (TF-VIS-029). */
-  readonly vegetation: 'mesh' | 'points'
+  /** Vegetation rendering: instanced mesh, airy point cloud, or speckled see-through crowns. */
+  readonly vegetation: 'mesh' | 'points' | 'speckled'
   /** The point-cloud vegetation colour (unused while `vegetation` is 'mesh'). */
   readonly vegetationColour: string
   /** The identity tuning overrides, when a Lab session tuned the style (Run 8 T4). */
@@ -163,8 +163,9 @@ export const IDENTITY: SceneStyle = {
   contourSource: 'tile1m',
   // Computed from `dissolveRange` at mount (TF-VIS-02A); stage A overrides this to null.
   dissolve: 'auto',
-  vegetation: 'points',
-  // Light enough to stand out from the dark tinted ground (≥ 1.6:1 contrast, provisional).
+  // Speckled see-through crowns (Run 9 T5); `points` and `mesh` stay for comparison.
+  vegetation: 'speckled',
+  // Unused while vegetation is 'speckled'; kept for the point-cloud comparison.
   vegetationColour: '#D4DED4',
   lines: {
     // Crease edges kept subtle on the white walls (a little quieter than NORDIC's).

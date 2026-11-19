@@ -61,7 +61,7 @@ describe('IDENTITY scene style (TF-VIS-020 stage A)', () => {
     expect(IDENTITY.ao).toEqual({ intensity: 1.6, radiusM: 4, color: '#0E1110' })
     expect(IDENTITY.contourSource).toBe('tile1m')
     expect(IDENTITY.dissolve).toBe('auto') // computed from dissolveRange at mount
-    expect(IDENTITY.vegetation).toBe('points')
+    expect(IDENTITY.vegetation).toBe('speckled')
     expect(IDENTITY.vegetationColour).toBe('#D4DED4')
   })
 
@@ -86,10 +86,10 @@ describe('identityStage (TF-VIS-020 stages)', () => {
     expect(b.contourSource).toBe('tile1m')
   })
 
-  it('C is the full identity (dissolve + point vegetation)', () => {
+  it('C is the full identity (dissolve + speckled vegetation)', () => {
     const c = identityStage('C')
     expect(c.dissolve).toBe('auto')
-    expect(c.vegetation).toBe('points')
+    expect(c.vegetation).toBe('speckled')
     expect(c.contourSource).toBe('tile1m')
   })
 
