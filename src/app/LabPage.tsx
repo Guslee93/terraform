@@ -20,12 +20,11 @@ import { legendFor } from '../features/analysis/graphics'
 import { MapLegend } from '../components/studio/MapLegend'
 import { loadTerrainRaster } from '../features/sites/terrain1m'
 import { normalizeRing, ringCentroid } from '../lib/polygon'
-import type { CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage } from '../features/sites/package'
 import type { SiteSummary } from '../features/sites/siteCatalog'
 import { buildDemoMassEditor, buildEmptyEditor, type LabStateId } from './lab/states'
 import { LabTweakPanel, type LabQuality } from './lab/TweakPanel'
-import { parseLabParams } from './lab/params'
+import { parseLabParams, type LabPresetId } from './lab/params'
 import { NORDIC, identityStage, type IdentityStage } from '../scene/style'
 
 const noop = () => {}
@@ -64,13 +63,31 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
   const [stateId, setStateId] = useState<LabStateId>(initialParams.stateId)
   const [styleId, setStyleId] = useState<'nordic' | 'identity'>(initialParams.styleId)
   const [stage, setStage] = useState<IdentityStage>(initialParams.stage)
-  const [presetId, setPresetId] = useState<CameraPresetId>(initialParams.presetId)
+  const [presetId, setPresetId] = useState<LabPresetId>(initialParams.presetId)
   const [cameraNonce, setCameraNonce] = useState(0)
   const [date, setDate] = useState<LocalDate>(initialParams.date as LocalDate)
   const [minute, setMinute] = useState(initialParams.minute)
   const [quality, setQuality] = useState<LabQuality>('auto')
 
   const style = styleId === 'identity' ? identityStage(stage) : NORDIC
+
+  // A Lab-only camera that frames the whole terrain tile from a 45° elevation (Run 8 T1), so the
+  // owner can judge the dissolve on all four edges.
+  const overviewPreset = useMemo(() => {
+    const t = sitePackage.terrain
+    const radius = Math.hypot((t.maxX - t.minX) / 2, (t.maxY - t.minY) / 2)
+    const fov = (40 * Math.PI) / 180
+    const elevation = (45 * Math.PI) / 180
+    const azimuth = (45 * Math.PI) / 180
+    const distance = (radius * 1.2) / Math.tan(fov / 2)
+    const horizontal = distance * Math.cos(elevation)
+    return {
+      position: [horizontal * Math.cos(azimuth), horizontal * Math.sin(azimuth), distance * Math.sin(elevation)] as [number, number, number],
+      target: [0, 0, 0] as [number, number, number],
+      projection: 'perspective' as const,
+      fov: 40,
+    }
+  }, [sitePackage])
 
   // The demo mass is part of the editor only in the "mass" state; every other state is mass-less.
   const editor = useMemo(
@@ -151,7 +168,7 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
     return null
   }, [stateId, circleSun.computing, sitePackage.manifest, climateView, noise, runoffComputing, runoff, raster, slopeDegrees])
 
-  const requestPreset = (preset: CameraPresetId) => {
+  const requestPreset = (preset: LabPresetId) => {
     setPresetId(preset)
     setCameraNonce((value) => value + 1)
   }
@@ -176,6 +193,7 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
           renderPreference={quality === 'auto' ? 'auto' : quality}
           style={style}
           terrain1m={raster}
+          overviewPreset={overviewPreset}
           sunHours={stateId === 'sun-hours' ? { circle: windCircle, result: circleSun.result, buildings: circleSun.buildings, computing: circleSun.computing } : null}
           climate={stateId === 'wind' && climateView ? climateView.overlay : null}
           windFlow={stateId === 'wind' ? windFlow : null}

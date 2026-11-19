@@ -33,9 +33,10 @@ export type SceneStyle = {
   readonly contourSource: 'grid16' | 'tile1m'
   /**
    * Atmospheric dissolve (TF-VIS-02A). `null` = none; `'auto'` = compute the band from
-   * `dissolveRange` at mount; an object = explicit radii.
+   * `dissolveRange` at mount (the params carry the terrain bounds, so they live on the scene, not
+   * in this static object).
    */
-  readonly dissolve: { readonly start: number; readonly end: number } | 'auto' | null
+  readonly dissolve: 'auto' | null
   /** Vegetation rendering: instanced mesh (today) or airy point cloud (TF-VIS-029). */
   readonly vegetation: 'mesh' | 'points'
   /** The point-cloud vegetation colour (unused while `vegetation` is 'mesh'). */

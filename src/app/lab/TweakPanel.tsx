@@ -1,14 +1,15 @@
 import { inputClass, labelClass, rangeClass, segmentClass, segmentGroupClass } from '../../components/ui/controls'
 import { LAB_STATES, LAB_STYLES, type LabStateId } from './states'
-import type { CameraPresetId } from '../../features/sites/manifest'
 import type { IdentityStage } from '../../scene/style'
+import type { LabPresetId } from './params'
 
-const PRESETS: ReadonlyArray<{ id: CameraPresetId; label: string }> = [
+const PRESETS: ReadonlyArray<{ id: LabPresetId; label: string }> = [
   { id: 'isometric', label: '3D' },
   { id: 'top', label: 'Plan' },
   { id: 'north', label: 'North' },
   { id: 'south', label: 'South' },
   { id: 'eyeLevel', label: 'Street' },
+  { id: 'overview', label: 'Overview' },
 ]
 
 const STAGES: readonly IdentityStage[] = ['A', 'B', 'C']
@@ -41,14 +42,14 @@ export function LabTweakPanel({
   stateId: LabStateId
   styleId: 'nordic' | 'identity'
   stage: IdentityStage
-  presetId: CameraPresetId
+  presetId: LabPresetId
   date: string
   minute: number
   quality: LabQuality
   onState: (state: LabStateId) => void
   onStyle: (style: 'nordic' | 'identity') => void
   onStage: (stage: IdentityStage) => void
-  onPreset: (preset: CameraPresetId) => void
+  onPreset: (preset: LabPresetId) => void
   onDate: (date: string) => void
   onMinute: (minute: number) => void
   onQuality: (quality: LabQuality) => void

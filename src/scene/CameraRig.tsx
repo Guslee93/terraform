@@ -8,9 +8,9 @@ import { enuToThreeXyz } from '../lib/coordinates'
 export type OrbitControlsHandle = ComponentRef<typeof OrbitControls>
 
 type CameraRigProps = {
-  presetId: CameraPresetId
+  presetId: CameraPresetId | 'overview'
   nonce: number
-  presets: Record<CameraPresetId, CameraPreset>
+  presets: Record<CameraPresetId | 'overview', CameraPreset>
   controlsRef: RefObject<OrbitControlsHandle | null>
 }
 

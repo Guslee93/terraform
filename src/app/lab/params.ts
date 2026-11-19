@@ -2,6 +2,9 @@ import { CAMERA_PRESET_IDS, type CameraPresetId } from '../../features/sites/man
 import type { IdentityStage } from '../../scene/style'
 import type { LabStateId } from './states'
 
+/** The Lab's camera presets: the site presets plus the Lab-only "overview" view (T1 Run 8). */
+export type LabPresetId = CameraPresetId | 'overview'
+
 /**
  * The Lab's reproducible-view URL parameters (TF-VIS-020 / T7). Unknown or invalid values fall back
  * to the Lab's defaults, so any copied URL still opens a valid view.
@@ -13,7 +16,7 @@ export type LabParams = {
   readonly styleId: 'nordic' | 'identity'
   readonly stage: IdentityStage
   readonly stateId: LabStateId
-  readonly presetId: CameraPresetId
+  readonly presetId: LabPresetId
   readonly date: string
   readonly minute: number
 }
@@ -26,8 +29,8 @@ function isLabState(value: string | null): value is LabStateId {
   return value !== null && LAB_STATE_IDS.includes(value as LabStateId)
 }
 
-function isPreset(value: string | null): value is CameraPresetId {
-  return value !== null && (CAMERA_PRESET_IDS as readonly string[]).includes(value)
+function isPreset(value: string | null): value is LabPresetId {
+  return value !== null && (value === 'overview' || (CAMERA_PRESET_IDS as readonly string[]).includes(value))
 }
 
 function isStage(value: string | null): value is IdentityStage {

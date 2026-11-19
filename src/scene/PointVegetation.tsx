@@ -8,6 +8,8 @@ import type { Vec2 } from '../lib/coordinates'
 import type { SitePackage } from '../features/sites/package'
 import { treeVariant } from './treeVariants'
 import { buildVegetationPoints, VEGETATION_COLOUR, type VegetationShape } from './vegetationPoints'
+import { applySceneFades } from './sceneFades'
+import type { DissolveParams } from './dissolve'
 
 /** Fixed seed: the same trees always give the same points (TF-VIS-029 determinism). */
 const SEED = 0x51f1c3
@@ -49,10 +51,12 @@ export function PointVegetation({
   sitePackage,
   exclude,
   colour = VEGETATION_COLOUR,
+  dissolve = null,
 }: {
   sitePackage: SitePackage
   exclude?: readonly (readonly Vec2[])[]
   colour?: string
+  dissolve?: DissolveParams | null
 }) {
   const { trees, terrain, landcover } = sitePackage
   const sprite = useMemo(makeRoundSprite, [])
@@ -85,16 +89,20 @@ export function PointVegetation({
       alphaTest: 0.05,
       depthWrite: false,
     })
-    // Clamp the attenuated point size so it never vanishes or bloats (DPR-stable: the drawing
-    // buffer scales with the device pixel ratio, so the CSS size is constant).
-    pointsMaterial.onBeforeCompile = (shader) => {
+    // Dissolve the points toward the tile edge (TF-VIS-02A Run 8), keeping the attenuated-size
+    // clamp (DPR-stable: the drawing buffer scales with the device pixel ratio, so CSS size is
+    // constant).
+    applySceneFades(pointsMaterial, { dissolve })
+    const fadeCompile = pointsMaterial.onBeforeCompile
+    pointsMaterial.onBeforeCompile = (shader, renderer) => {
       shader.vertexShader = shader.vertexShader.replace(
         'gl_PointSize *= ( scale / - mvPosition.z );',
         'gl_PointSize = clamp( gl_PointSize * ( scale / - mvPosition.z ), 1.0, 24.0 );',
       )
+      if (fadeCompile) fadeCompile(shader, renderer)
     }
     return pointsMaterial
-  }, [sprite])
+  }, [sprite, dissolve])
   useEffect(() => () => material.dispose(), [material])
 
   const geometry = useMemo(() => {
