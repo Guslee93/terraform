@@ -31,6 +31,11 @@ export type SceneStyle = {
   readonly grid: { readonly minor: string; readonly major: string; readonly terrain: LineStyle }
   /** Where contours come from: the 16 m terrain grid, or the 1 m tile (TF-VIS-053). */
   readonly contourSource: 'grid16' | 'tile1m'
+  /**
+   * Atmospheric dissolve radii (TF-VIS-02A). NORDIC is null (no dissolve); IDENTITY computes its
+   * band from `dissolveRange` at mount, so the static object keeps null as a placeholder.
+   */
+  readonly dissolve: { readonly start: number; readonly end: number } | null
   readonly lines: {
     readonly crease: LineStyle
     readonly silhouette: LineStyle | null
@@ -60,6 +65,7 @@ export const NORDIC: SceneStyle = {
     terrain: { color: '#7C8E7D', widthPx: 1, opacity: 0.22 },
   },
   contourSource: 'grid16',
+  dissolve: null,
   lines: {
     // Context edges via EdgesGeometry above EDGE_THRESHOLD_DEG; ≈ 140/255 on white walls.
     crease: { color: '#7E7D7A', widthPx: 1, opacity: 0.85 },
@@ -109,6 +115,8 @@ export const IDENTITY: SceneStyle = {
   },
   // The identity draws contours from the 1 m tile so they register with real topography.
   contourSource: 'tile1m',
+  // Filled from `dissolveRange` at mount (the static object keeps null); NORDIC has none.
+  dissolve: null,
   lines: {
     // Crease edges kept subtle on the white walls (a little quieter than NORDIC's).
     crease: { color: '#9DA49F', widthPx: 1, opacity: 0.6 },

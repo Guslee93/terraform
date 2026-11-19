@@ -56,6 +56,7 @@ import { ANALYSIS_OVERLAY_NAME, type PassImages } from './exportPasses'
 import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
 import { useRasterContours } from '../features/sites/useRasterContours'
+import { dissolveRange, type DissolveRange } from './dissolve'
 import { NORDIC, type SceneStyle } from './style'
 import { createWaterGeometry } from './waterGeometry'
 import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
@@ -169,6 +170,7 @@ function TerrainMesh({
   style,
   raster1m,
   minorFade,
+  dissolve,
 }: {
   terrain: SitePackage['terrain']
   landcover: SitePackage['landcover']
@@ -180,6 +182,8 @@ function TerrainMesh({
   raster1m: TerrainRaster | null
   /** World-space fade band for minor contours; null keeps them at full opacity. */
   minorFade: { readonly start: number; readonly end: number } | null
+  /** Atmospheric dissolve band; null keeps the terrain opaque. */
+  dissolve: DissolveRange | null
 } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain, style.groundTint), [terrain, style.groundTint])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
@@ -222,6 +226,14 @@ function TerrainMesh({
     () => new LineBasicMaterial({ color: style.lines.contourMajor.color, transparent: true, opacity: style.lines.contourMajor.opacity, depthWrite: false }),
     [style.lines.contourMajor],
   )
+  // The terrain material is rebuilt when `showGround` toggles (dropping `map` on a live material
+  // leaves the tint compiled in), and dissolves toward the background when the style asks.
+  const terrainMaterial = useMemo(() => {
+    const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.97, metalness: 0 })
+    if (showGround && landcoverTexture) material.map = landcoverTexture
+    if (dissolve) applyDissolve(material, dissolve)
+    return material
+  }, [showGround, landcoverTexture, dissolve])
 
   useEffect(
     () => () => {
@@ -232,14 +244,16 @@ function TerrainMesh({
       contours.major.dispose()
       minorMaterial.dispose()
       majorMaterial.dispose()
+      terrainMaterial.dispose()
     },
-    [geometry, grid, skirt, contours, minorMaterial, majorMaterial],
+    [geometry, grid, skirt, contours, minorMaterial, majorMaterial, terrainMaterial],
   )
 
   return (
     <group>
       <mesh
         geometry={geometry}
+        material={terrainMaterial}
         receiveShadow
         onClick={(event: ThreeEvent<MouseEvent>) => {
           if (!onGroundClick || event.delta > CLICK_TOLERANCE_PX) return
@@ -248,17 +262,7 @@ function TerrainMesh({
         onPointerMove={(event: ThreeEvent<PointerEvent>) =>
           onGroundMove?.([event.point.x, -event.point.z])
         }
-      >
-        <meshStandardMaterial
-          // three compiles the texture lookup into the shader, so dropping `map` on a live
-          // material leaves the tint on screen. A new material per state recompiles it.
-          key={showGround ? 'tinted' : 'plain'}
-          vertexColors
-          map={showGround ? landcoverTexture : undefined}
-          roughness={0.97}
-          metalness={0}
-        />
-      </mesh>
+      />
       {style.skirt !== null && (
         <mesh geometry={skirt} receiveShadow>
           <meshStandardMaterial color={style.skirt} roughness={1} metalness={0} side={DoubleSide} />
@@ -306,6 +310,30 @@ function fadeByDistance(material: LineBasicMaterial, start: number, end: number)
     )
   }
   material.customProgramCacheKey = () => `line-fade-${start}-${end}`
+  return material
+}
+
+/**
+ * Dissolve a material toward the background by the fragment's horizontal distance from the site
+ * origin (TF-VIS-02A). The alpha falls to 0 beyond `end`, so the flat background colour shows
+ * through and the terrain's rectangular edge disappears. Analysis overlays are separate meshes and
+ * never take this material, so they are not faded.
+ */
+function applyDissolve(material: MeshStandardMaterial, dissolve: DissolveRange) {
+  material.transparent = true
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uDissolveStart = { value: dissolve.start }
+    shader.uniforms.uDissolveEnd = { value: dissolve.end }
+    shader.vertexShader = 'varying vec3 vDissolveWorld;\n' + shader.vertexShader.replace(
+      '#include <begin_vertex>',
+      '#include <begin_vertex>\n{ vec4 dissolveWorldPos = modelMatrix * vec4(transformed, 1.0); vDissolveWorld = dissolveWorldPos.xyz; }',
+    )
+    shader.fragmentShader = 'varying vec3 vDissolveWorld;\nuniform float uDissolveStart;\nuniform float uDissolveEnd;\n' + shader.fragmentShader.replace(
+      'vec4 diffuseColor = vec4( diffuse, opacity );',
+      'vec4 diffuseColor = vec4( diffuse, opacity * (1.0 - smoothstep(uDissolveStart, uDissolveEnd, length(vDissolveWorld.xz))) );',
+    )
+  }
+  material.customProgramCacheKey = () => `dissolve-${dissolve.start}-${dissolve.end}`
   return material
 }
 
@@ -661,6 +689,11 @@ export function ViewportCanvas({
     const start = Math.hypot(position[0] - target[0], position[1] - target[1], position[2] - target[2]) * 1.5
     return { start, end: start * 1.35 }
   }, [style.contourSource, initialPreset])
+  // The identity's terrain dissolve is computed from the site (study area, terrain, wind circle).
+  const dissolve = useMemo(() => {
+    if (style.id !== 'identity') return null
+    return dissolveRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain)
+  }, [style.id, sitePackage, windSettings.radius])
   // The wind map, circle and particles follow the terrain at the chosen slice height (ADR-0028).
   // While the lift handle is dragged the disc follows the pointer; the map shows the nearest slice.
   const [liftDrag, setLiftDrag] = useState<number | null>(null)
@@ -770,6 +803,7 @@ export function ViewportCanvas({
                 style={style}
                 raster1m={terrain1m}
                 minorFade={minorFade}
+                dissolve={dissolve}
                 onGroundClick={onGroundClick}
                 onGroundMove={
                   drawing && editor.interaction.kind === 'drawing'
