@@ -4,7 +4,7 @@ import type { Vec2 } from '../../lib/coordinates'
 import { project } from '../import/projection'
 import { parseSiteManifest } from '../sites/manifest'
 import { siteLayers } from '../sites/provenance'
-import { decodeTerrainRaster, decimateRaster, elevationAt, hornSlopeDeg, parseTerrainRasterHeader, profileRange, sampleGrid, SLOPE_BANDS, slopeBandIndex, slopeShares, terrainProfile, TERRAIN_NO_DATA, type TerrainRaster } from './terrainTools'
+import { decodeTerrainRaster, elevationAt, hornSlopeDeg, parseTerrainRasterHeader, profileRange, SLOPE_BANDS, slopeBandIndex, slopeShares, terrainProfile, TERRAIN_NO_DATA, type TerrainRaster } from './terrainTools'
 
 /** A raster of 1 m cells whose cell-centre heights follow `z(east, north)`. */
 function surface(z: (x: number, y: number) => number, size = 200): TerrainRaster {
@@ -135,27 +135,5 @@ describe('shipped 1 m terrain (ADR-0037)', () => {
     expect(Math.abs(elevationAt(raster, 0, 0)!)).toBeLessThan(0.5)
     const manifest = parseSiteManifest(JSON.parse(readFileSync(`public/sites/${site}/manifest.json`, 'utf8')))
     expect(siteLayers(manifest).layers.find((layer) => layer.id === 'terrain1m')).toMatchObject({ owner: 'Kartverket', licence: 'CC BY 4.0' })
-  })
-})
-
-describe('decimateRaster and sampleGrid (Run 9 T4)', () => {
-  it('decimation keeps the bounds and samples every step cell', () => {
-    const raster = surface((x, y) => x + 2 * y, 64)
-    const coarse = decimateRaster(raster, 2)
-    expect([coarse.minX, coarse.maxX, coarse.minY, coarse.maxY]).toEqual([raster.minX, raster.maxX, raster.minY, raster.maxY])
-    expect(coarse.cols).toBe(32)
-    expect(coarse.rows).toBe(32)
-    // The coarse cell (r, c) is the fine cell (r*step, c*step).
-    expect(coarse.heights[0]).toBeCloseTo(raster.heights[0]!, 5)
-    expect(coarse.heights[1]).toBeCloseTo(raster.heights[2]!, 5)
-    expect(coarse.heights[32]).toBeCloseTo(raster.heights[2 * 64]!, 5)
-  })
-
-  it('sampleGrid is exact on a plane', () => {
-    const raster = surface((x, y) => x + 2 * y, 64)
-    const slopes = hornSlopeDeg(raster)
-    const value = sampleGrid(slopes, raster, 10.5, 20.25)
-    // A plane's slope is constant; compare against an interior cell, not an edge-clamped one.
-    expect(value).toBeCloseTo(slopes[32 * 64 + 32]!, 5)
   })
 })
