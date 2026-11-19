@@ -26,7 +26,7 @@ _(Filled at the end of the run.)_
 
 | # | Task | Status | Commit(s) | Checks (last lines) | Open items |
 |---|---|---|---|---|---|
-| T1 | Fix the Visual Lab's blank first view (TF-VIS-015 follow-up) | in progress | — | — | — |
+| T1 | Fix the Visual Lab's blank first view (TF-VIS-015 follow-up) | done | a1682ea | typecheck 0 · lint 0 · unit 1234 passed / 4 skipped / 1 todo · build OK (903 ms) · chunk 0 · LAB=1 e2e 3 passed | Root cause: min-height-only section (Safari %-height collapse); fixed per breakpoint in LabPage.tsx only |
 | T2 | TF-VIS-020 stage A: the `IDENTITY` style (Lab only) | todo | — | — | — |
 | T3 | TF-VIS-053: contours from the 1 m tile, selected by style | todo | — | — | — |
 | T4 | TF-VIS-02A: atmospheric terrain dissolve (Lab only) | todo | — | — | — |
@@ -46,6 +46,12 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T1 **done**. The Lab's viewport `<section>` had only `min-h-[480px]`, so
+  `ViewportCanvas`'s `h-full` root (and the R3F canvas) could collapse to 0 px in strict engines —
+  the blank first view. Fixed in `LabPage.tsx` only with a definite `h-[min(720px,70dvh)]`
+  (`lg:h-[calc(100dvh_-_1.5rem)]`), matching the studio's definite-height approach. Added two
+  opt-in `LAB=1` regressions (substantial canvas height; camera already at the isometric preset on
+  first mount). No `src/scene/` change, so production/NORDIC pixels are unaffected.
 - 2026-11-19 — Setup. Worktree `../Terraform-run7` created on `run7/identity-lab` (base
   `origin/run1/foundations` @ `fe43015`). `npm ci` clean (487 packages). Environment verified:
   headed Chromium uses the Metal GPU, so the pixel safety net is available. Started T1.
