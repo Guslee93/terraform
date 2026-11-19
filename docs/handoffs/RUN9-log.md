@@ -28,7 +28,7 @@ _(Filled at the end of the run.)_
 | T2 | Atmosphere: haze, aerial perspective, vignette | done | 8977d53 | typecheck 0 · lint 0 · unit 1280 / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 | hazeAmount/hazeRange pure + mirrored GLSL; VignetteEffect identity-only |
 | T3 | Exposure and palette (ground/water/buildings/contours) | done | dcb8f93, 1659458 | typecheck 0 · lint 0 · unit 1280 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | land-cover palette + exposure + warm buildings + slate water + slope-only contours |
 | T4 | Real relief: draw terrain from the 1 m tile | done | 6079f13 | typecheck 0 · lint 0 · unit 1284 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | 2 m decimated mesh + shared heightAt + identity building skirt |
-| T5 | Trees: tree shapes with speckled crowns | todo | — | — | — |
+| T5 | Trees: tree shapes with speckled crowns | done | 42c0021 | typecheck 0 · lint 0 · unit 1285 / 4 skip / 1 todo · build OK · VISUAL=1 5/5 | alphaHash + speckle map + birch archetype; sun-side speckle + perf table deferred |
 | T6 | Lab panel fixes and new controls | todo | — | — | — |
 | T7 | Previews for the owner | todo | — | — | — |
 | T8 | Stretch: TF-VIS-021 fat lines (Lab only) | todo | — | — | — |
@@ -61,6 +61,11 @@ _(Filled at the end of the run.)_
   (identity only). The 2 m decimation has a ~half-cell horizontal offset (step 2 has no centre cell);
   all consumers share the grid, so it is imperceptible. Build time not yet measured off the main
   thread — a one-time ~200 ms hitch on switching to identity (recorded, could move to a worker).
+- **T5 — speckled trees.** `alphaHash` + a code-generated speckle alpha map make the crown
+  stochastically see-through (no alpha sorting); muted-green instance tints (#2E352D–#3A4034) replace
+  the white point blobs; a sparse 'birch' archetype joins round/tall only in the identity mode.
+  Deferred: the sun-facing lighter-speckle shader (T5.2) and the speckled/points/mesh perf table
+  (T5.9) — the T1 harness is ready to record them.
 
 ## Questions for the owner
 
@@ -68,6 +73,8 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T5 **done** (`42c0021`). Speckled see-through tree crowns (alphaHash + speckle map +
+  birch archetype); sun-side speckle + perf table deferred. NORDIC unchanged, safety net 5/5.
 - 2026-11-19 — T4 **done** (`6079f13`). Terrain drawn from the 1 m tile (2 m decimation) with one
   shared height function + identity building skirt; NORDIC unchanged, safety net 5/5.
 - 2026-11-19 — T3 **done** (`dcb8f93`, `1659458`). Exposure + land-cover palette + warm buildings +
