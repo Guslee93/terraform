@@ -30,7 +30,7 @@ _(Filled at the end of the run.)_
 | T2 | Point-cloud trees that read as airy canopies (TF-VIS-029 tuning) | done | bacca4e, a9f2008 | typecheck 0 · lint 0 · unit 1271 / 4 skip / 1 todo · build OK · stage C renders | screen-stable 2.5 px (1.5–4 px) points, shell-biased, #D4DED4 (1.64:1); perf p95 C/B = 1.01×, draw calls 26 vs 84 |
 | T3 | Keep the 1 m contour worker out of production | done | e1a391f | typecheck 0 · lint 0 · unit 1271 / 4 skip / 1 todo · build OK · chunk 0 · VISUAL=1 5/5 | worker reachable only via lazy RasterContours chunk; studio never requests it |
 | T4 | Lab tuning controls for the owner (Lab only) | done | 1da6f9b | typecheck 0 · lint 0 · unit 1276 / 4 skip / 1 todo · build OK · chunk 0 · 13 sliders + Copy/Reset render | applyTuning pure + tested; ?tuning= URL round-trip |
-| T5 | Make the stale-result spec reliable or narrow it (TF-VIS-046) | todo | — | — | — |
+| T5 | Make the stale-result spec reliable or narrow it (TF-VIS-046) | partial | 19b227e | STALE=1: 2 passed / 2 skipped (fixme) in ~3.4 s, two consecutive passes | Sun-hours date/card cases marked fixme (worker too slow to assert deterministically) |
 | T6 | Stretch: TF-VIS-021 fat lines (Lab only) | todo | — | — | — |
 
 ## Decisions I made
@@ -69,6 +69,10 @@ _(Filled at the end of the run.)_
   dissolve site margin/max width) + "Copy values" (tuned IDENTITY object literal + URL) and "Reset".
   `applyTuning(IDENTITY, tuning)` is pure and carries the runtime params on `style.tuning`, which
   ViewportCanvas/PointVegetation/dissolveRange read. IDENTITY's committed defaults are untouched.
+- **T5 — stale-result spec narrowed.** The two Sun-hours cases are `test.fixme` (the sun-hours
+  worker takes ~10 s+ per recompute here, so "computing"/final-overlay can't be asserted
+  deterministically without app changes). The Water "computing" and analysis-circle cases stay
+  active; STALE=1 runs 2 passed / 2 skipped in ~3.4 s.
 
 ## Questions for the owner
 
@@ -76,6 +80,8 @@ _(Only real decisions, added as they arise.)_
 
 ## Session notes
 
+- 2026-11-19 — T5 **partial** (`19b227e`). Sun-hours stale-result cases marked fixme; the Water and
+  circle cases stay active (STALE=1: 2 passed / 2 skipped, two consecutive passes).
 - 2026-11-19 — T4 **done** (`1da6f9b`). Lab "Identity tuning" sliders + Copy/Reset + `?tuning=`
   URL; `applyTuning` is pure and threaded to the dissolve/fade/point runtime.
 - 2026-11-19 — T3 **done** (`e1a391f`). 1 m contour worker/loader moved behind `React.lazy`
