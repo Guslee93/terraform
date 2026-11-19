@@ -23,6 +23,7 @@ import { normalizeRing, ringCentroid } from '../lib/polygon'
 import type { SitePackage } from '../features/sites/package'
 import type { SiteSummary } from '../features/sites/siteCatalog'
 import { buildDemoMassEditor, buildEmptyEditor, type LabStateId } from './lab/states'
+import { LocalPhotoPanel, useLocalPhoto } from './lab/LocalPhotoPanel'
 import { LabTweakPanel, type LabQuality } from './lab/TweakPanel'
 import { parseLabParams, serializeTuning, type LabPresetId } from './lab/params'
 import { NORDIC, applyTuning, DEFAULT_TUNING, identityStage, type IdentityStage, type IdentityTuning } from '../scene/style'
@@ -71,6 +72,8 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
   const [tuning, setTuning] = useState<IdentityTuning>(initialParams.tuning)
 
   const style = styleId === 'identity' ? applyTuning(identityStage(stage), tuning) : NORDIC
+  // Visuals plan V2a: the owner's local aerial photo, identity only, never committed or published.
+  const localPhoto = useLocalPhoto(site.id, sitePackage.terrain.maxX - sitePackage.terrain.minX)
 
   const copyTuning = async () => {
     const tuned = applyTuning(identityStage(stage), tuning)
@@ -202,6 +205,7 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
           style={style}
           terrain1m={raster}
           overviewPreset={overviewPreset}
+          groundPhoto={styleId === 'identity' ? localPhoto.groundPhoto : null}
           sunHours={stateId === 'sun-hours' ? { circle: windCircle, result: circleSun.result, buildings: circleSun.buildings, computing: circleSun.computing } : null}
           climate={stateId === 'wind' && climateView ? climateView.overlay : null}
           windFlow={stateId === 'wind' ? windFlow : null}
@@ -216,6 +220,11 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
         {legend && (
           <div className="absolute left-3 top-3 z-20">
             <MapLegend model={legend} />
+          </div>
+        )}
+        {styleId === 'identity' && (
+          <div className="absolute bottom-3 left-3 z-20">
+            <LocalPhotoPanel siteId={site.id} photo={localPhoto} />
           </div>
         )}
       </section>

@@ -30,7 +30,7 @@ _(Filled at the end of the run.)_
 | T4 | Fix and move the raster helpers | done | 138c5c8 (DeepSeek) | terrainTools.ts identical to run1/foundations | — |
 | T5 | Contours: smooth lines on hills only | done | 3090064 (DeepSeek) | unit pass | owner judges in the Lab |
 | T6 | Keep identity code out of production | partial (decision) | DeepSeek: rasterTerrain lazy; Claude: edge-test hook mounted for identity only | studio chunks vs Run 8: StudioPage +1.3 kB, SceneComposer +0.5 kB | Not split further: under D23 the identity becomes the production look at V7, so this code will not stay dead; 1.8 kB is inside the 15 kB/gate budget (04 §7) |
-| T7 | Measure the finished identity scene | todo | — | — | — |
+| T7 | Measure the finished identity scene | done (Claude) | this commit; docs/perf/run10-identity.json | M1 Pro Metal, Chromium 156, 3 runs each; stage C vs NORDIC: p95 25.1 vs 24.6 (+2 %), p99 26.0 vs 25.5 (+2 %) Compact Infill; 25.0 vs 24.4, 25.3 vs 25.1 Sloped Edge | draw calls 97 vs 86 (+11, one over the +10 budget); first run discarded (other browser windows open) |
 | T8 | Previews and final checks | todo | — | — | — |
 
 ## Decisions I made
@@ -46,3 +46,4 @@ _(Only real decisions, added as they arise.)_
 - 2026-11-19 — Setup. Branch @ `3c33605`, clean (only untracked pixel-baseline snapshots). Recorded the
   production chunk baseline. Started T1.
 - 2026-11-19 — **DeepSeek stopped by the owner after T5 (commits unpushed); Claude Opus 5.5 took over** (visuals-first plan, D23). Reviewed T1–T5, fixed the edge test (it captured the whole page incl. the Lab panel, projected the outline at height 0, and counted buildings), set background = haze colour, hazed the building crease lines, mounted the edge-test hook for identity only. NORDIC safety net 5/5; unit 1292 pass.
+- 2026-11-19 — Visuals plan V2a (Claude): local aerial-photo preview in the Lab — git-ignored public/local-ortho/, greyed and draped on the terrain, alignment sliders remembered per browser, credit line; build check fails if a photo reaches dist/, and .vercelignore excludes the folder. Placement verified with a footprint test image (removed afterwards).

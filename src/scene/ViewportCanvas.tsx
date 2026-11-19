@@ -6,7 +6,8 @@ import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Grid, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, Float32BufferAttribute, LineBasicMaterial, MeshStandardMaterial, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
+import { CanvasTexture, ClampToEdgeWrapping, DoubleSide, EdgesGeometry, Float32BufferAttribute, LineBasicMaterial, MeshStandardMaterial, NeutralToneMapping, PMREMGenerator, SRGBColorSpace, Vector3 } from 'three'
+import { photoTextureTransform } from './photoPlacement'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { CameraPreset, CameraPresetId } from '../features/sites/manifest'
 import type { SitePackage, TerrainData } from '../features/sites/package'
@@ -144,6 +145,12 @@ type ViewportProps = {
   style?: SceneStyle
   /** The 1 m terrain tile, loaded once by the host when a style asks for 1 m contours (TF-VIS-053). */
   terrain1m?: TerrainRaster | null
+  /**
+   * Visual Lab only (visuals plan V2a): an already-greyed aerial photo and the ground rectangle it
+   * covers (local ENU metres). Replaces the land-cover colouring on the terrain. Never set by the
+   * studio; the photo is a local file that is not committed or published.
+   */
+  groundPhoto?: { readonly canvas: HTMLCanvasElement; readonly rect: { readonly minX: number; readonly maxX: number; readonly minY: number; readonly maxY: number } } | null
   /** A Lab-only "overview" camera that frames the whole tile; selected by presetId 'overview'. */
   overviewPreset?: CameraPreset | null
 }
@@ -175,6 +182,7 @@ function TerrainMesh({
   raster1m,
   minorFade,
   haze,
+  groundPhoto = null,
 }: {
   terrain: SitePackage['terrain']
   /** The 16 m grid, kept for the contour fallback, grid lines and skirt while `terrain` is 1 m. */
@@ -190,6 +198,8 @@ function TerrainMesh({
   minorFade: { readonly start: number; readonly end: number } | null
   /** Atmospheric dissolve band; null keeps the terrain opaque. */
   haze: HazeInput | null
+  /** Lab-only local aerial photo (see ViewportProps.groundPhoto). */
+  groundPhoto?: ViewportProps['groundPhoto']
 } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain, style.groundTint), [terrain, style.groundTint])
   const grid = useMemo(() => createTerrainGridGeometry(gridTerrain), [gridTerrain])
@@ -227,11 +237,27 @@ function TerrainMesh({
   }, [style.lines.contourMajor, haze])
   // The terrain material is rebuilt when `showGround` toggles (dropping `map` on a live material
   // leaves the tint compiled in), and dissolves toward the background when the style asks.
+  // Lab-only aerial photo: placed by repeat/offset on the terrain UVs (u east, v north). Outside the
+  // photo the edge pixels clamp; the haze carries the far ground anyway.
+  const photoTexture = useMemo(() => {
+    if (!groundPhoto) return null
+    const texture = new CanvasTexture(groundPhoto.canvas)
+    texture.colorSpace = SRGBColorSpace
+    texture.wrapS = texture.wrapT = ClampToEdgeWrapping
+    texture.anisotropy = 8
+    const { repeat, offset } = photoTextureTransform(terrain, groundPhoto.rect)
+    texture.repeat.set(repeat[0], repeat[1])
+    texture.offset.set(offset[0], offset[1])
+    return texture
+  }, [groundPhoto, terrain])
+  useEffect(() => () => photoTexture?.dispose(), [photoTexture])
   const terrainMaterial = useMemo(() => {
-    const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.97, metalness: 0 })
-    if (showGround && landcoverTexture) material.map = landcoverTexture
+    // With a photo the colour comes from the photo alone (no land-cover vertex tint).
+    const material = new MeshStandardMaterial({ vertexColors: !photoTexture, roughness: 0.97, metalness: 0 })
+    if (photoTexture) material.map = photoTexture
+    else if (showGround && landcoverTexture) material.map = landcoverTexture
     return applySceneFades(material, { haze })
-  }, [showGround, landcoverTexture, haze])
+  }, [showGround, landcoverTexture, haze, photoTexture])
 
   useEffect(
     () => () => {
@@ -644,6 +670,7 @@ export function ViewportCanvas({
   style = NORDIC,
   terrain1m = null,
   overviewPreset = null,
+  groundPhoto = null,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   useEffect(() => {
@@ -832,6 +859,7 @@ export function ViewportCanvas({
                 raster1m={terrain1m}
                 minorFade={minorFade}
                 haze={haze}
+                groundPhoto={groundPhoto}
                 onGroundClick={onGroundClick}
                 onGroundMove={
                   drawing && editor.interaction.kind === 'drawing'
