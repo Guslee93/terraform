@@ -10,7 +10,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['scripts/reference/runoff-whitebox/{export,compare,crop,tolerance,diagnose}.ts'],
+    include: ['scripts/reference/runoff-whitebox/{export,compare,crop,tolerance,diagnose,textbookFill}.ts'],
     testTimeout: 600_000,
     fileParallelism: false,
     hookTimeout: 600_000,

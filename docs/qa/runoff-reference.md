@@ -252,3 +252,48 @@ fixtures under `src/features/analysis/__fixtures__/runoff-reference/` (generated
 WhiteboxTools accumulation on main-path cells above a 0.6 floor (measured ≈ 64 % on the crop). It
 runs in `npm run test`.
 
+
+## Reference without the WhiteboxTools fill (Run 6)
+
+The reviewer independently checked a textbook Priority-Flood fill (Barnes et al. 2014, Algorithm 1:
+every grid-edge cell seeded at its own height, no epsilon) over the raw 1 m tile and found it
+"raises NONE of (626,81), (585,31), (508,3), (550,0), and no west-edge cell. So WhiteboxTools
+v2.4.0 FillDepressions (macOS) is the outlier in the south-west channel; Terraform and the textbook
+fill agree." Re-checked here: the committed `scripts/reference/runoff-whitebox/textbookFill.ts`
+fills each variant and writes `tmp/runoff-whitebox[/<variant>]/textbook.asc`; at those four cells the
+textbook fill equals the raw ground (raised = false in every case).
+
+Commands (WhiteboxTools **v2.4.0 (c) Dr. John Lindsay 2017-2023**, macOS arm64, the same platform as
+Run 3–5), routing only, no fill:
+
+```bash
+WBT=/tmp/wbt/WhiteboxTools_darwin_m_series/WBT/whitebox_tools
+"$WBT" -r=D8Pointer          --wd=tmp/runoff-whitebox -i=textbook.asc -o=textbook-pointer.tif
+"$WBT" -r=D8Pointer          --wd=tmp/runoff-whitebox -i=textbook.asc -o=textbook-pointer.asc
+"$WBT" -r=D8FlowAccumulation --wd=tmp/runoff-whitebox -i=textbook-pointer.tif -o=textbook-accum.asc --pntr --out_type=cells
+# repeated for bare and offset under tmp/runoff-whitebox/{bare,offset}
+```
+
+**The textbook fill leaves flats flat, so D8 routing stalls.** Filled (raised) cells per variant:
+standard **62,035**, bare **31,946**, offset **62,099**. D8Pointer assigns "no flow" (pointer 0) to
+**71,523 (15.6 %)** of the standard tile (bare 43,669 / 9.5 %, offset 71,679 / 15.6 %), and the
+resulting accumulation peaks at **3,845 cells** (bare 4,039, offset 3,750) — all below the 5,002-cell
+main-path threshold. The textbook reference therefore has **no main-path cells** and cannot be used
+to re-measure rule 1:
+
+| Variant | Terraform main cells | reference main cells | rule 1 at k = 2 (Terraform near reference) |
+|---|---:|---:|---|
+| standard | 4,842 | **0** | 0.0 % — **not measurable** (reference has no main path) |
+| bare | 4,680 | **0** | 0.0 % — **not measurable** |
+| offset | 4,828 | **0** | 0.0 % — **not measurable** |
+
+Flow-path agreement (≥ 500 m²) is likewise weak (standard: Terraform near reference 9.6 % at k = 0 →
+13.1 % at k = 3; reference near Terraform 88.8 % → 96.2 %), because the flat plateaus stop the flow.
+Class counts (diagnose.ts, all three variants): **0 divergence points** — H1 0, H2 0, H3 0, H4 0,
+edge 0, unexplained 0.
+
+Reading: removing WhiteboxTools' fill does remove the H4 channel-fill difference (H4 = 0), but at the
+cost of a reference whose D8 routing stalls on flats and produces no main path. That is because a
+flat-resolution step — Terraform's epsilon or WhiteboxTools' `--fix_flats` — is a prerequisite for D8
+routing, and that same step is what produces the Run 3 channel-fill difference. The Run 3
+WhiteboxTools-fill numbers remain the record; rule 1's disposition is the owner's call.

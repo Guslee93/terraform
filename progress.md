@@ -1441,3 +1441,14 @@ zoom in because the quads are small at the default site camera.
   the −18.68 m (west edge) vs −19.01 m (south edge, a different channel) statement. Rule-1 %s unchanged.
 - **Deliverable.** `docs/qa/runoff-divergence-diagnosis.md` §"H4 root cause (Run 5)".
 
+## 2026-11-19 — Run 6 T1: rule 1 vs a textbook-fill reference (TF-VIS-007)
+
+- **Task.** Re-measure rule 1 against a reference without the WhiteboxTools fill. Read-only.
+- **Result.** `textbookFill.ts` (Barnes 2014 Alg 1, no epsilon, edge-seeded) raises **none** of the
+  four H4 cells, confirming WhiteboxTools' fill is the outlier. But the textbook fill leaves flats
+  flat, so D8Pointer assigns "no flow" to 71,523 cells (15.6 %); the accumulation peaks at 3,845
+  cells (< 5,002) and the reference has **no main path**. Rule 1 reads 0.0 % — **not measurable**;
+  all divergence classes 0 (H4 = 0). A flat-resolution step (epsilon or `--fix_flats`) is a
+  prerequisite for D8 routing — removing it removes the H4 difference but also stops the flow.
+- **Deliverable.** `docs/qa/runoff-reference.md` §"Reference without the WhiteboxTools fill (Run 6)".
+

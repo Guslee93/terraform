@@ -31,6 +31,8 @@ const FIXTURES = 'src/features/analysis/__fixtures__/runoff-reference'
 const SITE = 'compact-infill'
 const SCOPE = (process.env.RUNOFF_TOLERANCE_SCOPE ?? 'crop') as 'crop' | 'tile'
 const VARIANT = (process.env.RUNOFF_VARIANT ?? 'standard') as RunoffVariant
+/** Which reference accumulation to read in tile scope: the WhiteboxTools fill (default) or the textbook fill. */
+const REFERENCE = (process.env.RUNOFF_REFERENCE ?? 'whitebox') as 'whitebox' | 'textbook'
 /** A Terraform hollow deeper than this is "in a filled hollow", not "on unfilled ground". */
 const HOLLOW_FILLED_M = 0.001
 
@@ -63,7 +65,7 @@ it('measures Terraform ↔ WhiteboxTools path agreement with a cell tolerance', 
     // Standard burns inside `computeRunoff`; bare/offset bake the input first, as compare.ts does.
     runoff = VARIANT === 'standard' ? computeRunoff(raster, footprints) : computeRunoff({ ...raster, heights: baked.heights }, [])
     const dir = VARIANT === 'standard' ? 'tmp/runoff-whitebox' : `tmp/runoff-whitebox/${VARIANT}`
-    const accum = readAsc(`${dir}/accum.asc`)
+    const accum = readAsc(`${dir}/${REFERENCE === 'textbook' ? 'textbook-accum' : 'accum'}.asc`)
     cols = accum.cols
     rows = accum.rows
     heights = baked.ground

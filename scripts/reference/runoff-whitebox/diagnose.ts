@@ -16,6 +16,8 @@ import { buildVariantGround, loadFootprints, loadTerrainRaster, readAsc, RUNOFF_
 const SITE = 'compact-infill'
 const VARIANT = (process.env.RUNOFF_VARIANT ?? 'standard') as RunoffVariant
 const DIR = VARIANT === 'standard' ? 'tmp/runoff-whitebox' : `tmp/runoff-whitebox/${VARIANT}`
+/** Which reference to read: the WhiteboxTools fill (default) or the textbook fill (Run 6). */
+const REFERENCE = (process.env.RUNOFF_REFERENCE ?? 'whitebox') as 'whitebox' | 'textbook'
 /** Mirror of runoff.ts's `EPSILON_M`. */
 const EPSILON_M = 1e-5
 
@@ -127,9 +129,9 @@ it('diagnoses the unfilled-ground divergence points', () => {
   }
   console.log(`mirror cross-check: ${hollowMismatch} hollow mismatches out of ${count} cells`)
 
-  const wbtFilled = readAsc(`${DIR}/filled.asc`).values
-  const wbtPointer = readAsc(`${DIR}/pointer.asc`).values
-  const wbtAccum = readAsc(`${DIR}/accum.asc`).values
+  const wbtFilled = readAsc(`${DIR}/${REFERENCE === 'textbook' ? 'textbook' : 'filled'}.asc`).values
+  const wbtPointer = readAsc(`${DIR}/${REFERENCE === 'textbook' ? 'textbook-pointer' : 'pointer'}.asc`).values
+  const wbtAccum = readAsc(`${DIR}/${REFERENCE === 'textbook' ? 'textbook-accum' : 'accum'}.asc`).values
   const raw = raster.heights // the raw (unburned) terrain
 
   // Divergence points: reference main-path cell where Terraform > 50 % flow, next to a downstream
