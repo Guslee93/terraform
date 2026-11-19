@@ -103,6 +103,23 @@ export function hornSlopeDeg(raster: TerrainRaster): Float32Array {
   return out
 }
 
+/**
+ * Bilinear sample of a per-cell grid (e.g. `hornSlopeDeg` output) at a local ENU position, mirroring
+ * `elevationAt`. Null outside the raster or beside a cell without data.
+ */
+export function sampleGrid(values: Float32Array, raster: TerrainRaster, x: number, y: number): number | null {
+  const c = (x - raster.minX) / cellX(raster) - 0.5
+  const r = (raster.maxY - y) / cellY(raster) - 0.5
+  const c0 = Math.min(raster.cols - 2, Math.max(0, Math.floor(c)))
+  const r0 = Math.min(raster.rows - 2, Math.max(0, Math.floor(r)))
+  if (c < -0.5 || r < -0.5 || c > raster.cols - 0.5 || r > raster.rows - 0.5) return null
+  const fc = Math.min(1, Math.max(0, c - c0))
+  const fr = Math.min(1, Math.max(0, r - r0))
+  const at = (row: number, col: number) => values[row * raster.cols + col]!
+  const value = at(r0, c0) * (1 - fc) * (1 - fr) + at(r0, c0 + 1) * fc * (1 - fr) + at(r0 + 1, c0) * (1 - fc) * fr + at(r0 + 1, c0 + 1) * fc * fr
+  return Number.isNaN(value) ? null : value
+}
+
 export type ProfilePoint = { readonly distance: number; readonly x: number; readonly y: number; /** Metres relative to the package origin; null off the raster. */ readonly elevation: number | null }
 
 /** Elevations along a polyline at `stepM` spacing, each vertex included. */

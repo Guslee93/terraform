@@ -11,16 +11,20 @@ import { CONTOUR_LIFT } from './siteGeometry'
 export function createRasterContourGeometry(
   flat: Float32Array,
   heightAt: (east: number, north: number) => number,
+  slopeAt: (east: number, north: number) => number = () => 0,
 ): BufferGeometry {
   const positions: number[] = []
+  const slopes: number[] = []
   for (let index = 0; index + 3 < flat.length; index += 4) {
     const ax = flat[index]!
     const ay = flat[index + 1]!
     const bx = flat[index + 2]!
     const by = flat[index + 3]!
     positions.push(ax, heightAt(ax, ay) + CONTOUR_LIFT, -ay, bx, heightAt(bx, by) + CONTOUR_LIFT, -by)
+    slopes.push(slopeAt(ax, ay), slopeAt(bx, by))
   }
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('slope', new Float32BufferAttribute(slopes, 1))
   return geometry
 }

@@ -53,10 +53,10 @@ function hexToRgb(hex: string): [number, number, number] {
  */
 export function applySceneFades(
   material: Material,
-  opts: { haze?: HazeInput | null; cameraFade?: { start: number; end: number } | null },
+  opts: { haze?: HazeInput | null; cameraFade?: { start: number; end: number } | null; slopeFade?: { min: number; max: number } | null },
 ): Material {
-  const { haze, cameraFade } = opts
-  if (!haze && !cameraFade) return material
+  const { haze, cameraFade, slopeFade } = opts
+  if (!haze && !cameraFade && !slopeFade) return material
   if (cameraFade) material.transparent = true
   material.onBeforeCompile = (shader) => {
     if (haze) {
@@ -71,19 +71,26 @@ export function applySceneFades(
       shader.uniforms.uFadeStart = { value: cameraFade.start }
       shader.uniforms.uFadeEnd = { value: cameraFade.end }
     }
-    shader.vertexShader = 'varying vec3 vSceneFadeWorld;\n' + shader.vertexShader.replace(
-      '#include <begin_vertex>',
-      '#include <begin_vertex>\n{ vec4 fadeWorldPos = modelMatrix * vec4(transformed, 1.0); vSceneFadeWorld = fadeWorldPos.xyz; }',
-    )
+    if (slopeFade) {
+      shader.uniforms.uSlopeMin = { value: slopeFade.min }
+      shader.uniforms.uSlopeMax = { value: slopeFade.max }
+    }
+    // Vertex: world position for the haze, plus the per-vertex slope attribute when the slope fade
+    // is on (the contour geometry carries it; other geometries default the attribute to 0).
+    const vertexHeader = (slopeFade ? 'attribute float slope;\nvarying float vSlope;\n' : '') + 'varying vec3 vSceneFadeWorld;\n'
+    const beginInjection = '{ vec4 fadeWorldPos = modelMatrix * vec4(transformed, 1.0); vSceneFadeWorld = fadeWorldPos.xyz; }' + (slopeFade ? '\nvSlope = slope;' : '')
+    shader.vertexShader = vertexHeader + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n' + beginInjection)
     const header = ['varying vec3 vSceneFadeWorld;']
+    if (slopeFade) header.push('varying float vSlope;', 'uniform float uSlopeMin;', 'uniform float uSlopeMax;')
     if (haze) header.push('uniform vec3 uHazeColor;', 'uniform vec4 uHazeBounds;', 'uniform float uHazeWidth;', 'uniform float uHazeStart;', 'uniform float uHazeEnd;', HAZE_GLSL)
     if (cameraFade) header.push('uniform float uFadeStart;', 'uniform float uFadeEnd;')
     let fragment = header.join('\n') + '\n' + shader.fragmentShader
-    if (cameraFade) {
-      fragment = fragment.replace(
-        'vec4 diffuseColor = vec4( diffuse, opacity );',
-        'vec4 diffuseColor = vec4( diffuse, opacity * (1.0 - smoothstep(uFadeStart, uFadeEnd, distance(vSceneFadeWorld, cameraPosition))) );',
-      )
+    // Opacity fades multiply together on the diffuseColor line.
+    const opacityFactors: string[] = []
+    if (cameraFade) opacityFactors.push('(1.0 - smoothstep(uFadeStart, uFadeEnd, distance(vSceneFadeWorld, cameraPosition)))')
+    if (slopeFade) opacityFactors.push('(1.0 - smoothstep(uSlopeMin, uSlopeMax, vSlope))')
+    if (opacityFactors.length) {
+      fragment = fragment.replace('vec4 diffuseColor = vec4( diffuse, opacity );', `vec4 diffuseColor = vec4( diffuse, opacity * ${opacityFactors.join(' * ')} );`)
     }
     if (haze) {
       fragment = fragment.replace(
@@ -93,7 +100,7 @@ export function applySceneFades(
     }
     shader.fragmentShader = fragment
   }
-  material.customProgramCacheKey = () => `scene-fade-${haze?.colour ?? 0}-${haze?.params.fadeWidth ?? 0}-${haze?.params.hazeStart ?? 0}-${haze?.params.hazeEnd ?? 0}-${cameraFade?.start ?? 0}-${cameraFade?.end ?? 0}`
+  material.customProgramCacheKey = () => `scene-fade-${haze?.colour ?? 0}-${haze?.params.fadeWidth ?? 0}-${haze?.params.hazeStart ?? 0}-${haze?.params.hazeEnd ?? 0}-${cameraFade?.start ?? 0}-${cameraFade?.end ?? 0}-${slopeFade?.min ?? 0}-${slopeFade?.max ?? 0}`
   return material
 }
 
