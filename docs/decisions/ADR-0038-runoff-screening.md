@@ -82,5 +82,7 @@ disclosed: the Water card's limits now say "Where the ground is flat, water may 
 route than shown, and some flow paths may not appear." The method is not tuned to the reference.
 Water stays Tier 2 screening. Rule 1 still has to be confirmed on the full tile.
 
+**Closed (owner, 2026-11-19).** On the full tile rule 1 measures 92.3–93.3 % within 2 cells (95.0 % within 3 cells, standard). Every divergence point is explained and none is a defect; 11–12 per variant come from a WhiteboxTools fill artefact that a textbook Priority-Flood does not reproduce. Rule 1 is kept as a documented measurement and a crop regression guard, not a pass/fail gate. Details: `docs/qa/runoff-reference.md` ("Closure") and `docs/qa/runoff-divergence-diagnosis.md`.
+
 This replaces the "No comparison with a reference tool" item under *Not done*.
 

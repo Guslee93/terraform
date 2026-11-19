@@ -22,10 +22,11 @@ const FIXTURES = 'src/features/analysis/__fixtures__/runoff-reference'
 const MAIN_PATH_AGREEMENT_MIN = 0.6
 
 /**
- * IT-7 acceptance adopted by the owner on 2026-11-18 (docs/qa/runoff-reference.md, "Proposed
- * acceptance"): no invented paths — at least 95 % of Terraform's main-path cells lie within
- * `NO_INVENTED_PATHS_CELLS` cells of a WhiteboxTools main path. Measured 97.0 % on this crop.
- * Missed reference paths are disclosed in RUNOFF_LIMITS, not asserted here.
+ * Regression guard from IT-7 (closed 2026-11-19, docs/qa/runoff-reference.md "Closure"): at least
+ * 95 % of Terraform's main-path cells on this crop lie within `NO_INVENTED_PATHS_CELLS` cells of a
+ * WhiteboxTools main path (measured 97.0 %). On the full tile the same measure is 92–93 %, with
+ * every divergence explained; this guard catches a change in behaviour, it is not an acceptance gate.
+ * Missed reference paths are disclosed in RUNOFF_LIMITS.
  */
 const NO_INVENTED_PATHS_MIN = 0.95
 const NO_INVENTED_PATHS_CELLS = 2

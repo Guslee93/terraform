@@ -132,7 +132,7 @@ committed.
 
 ### Acceptance for IT-7 — adopted by the owner, 2026-11-18
 
-**Status:** adopted. Rule 1 is enforced on the crop by `runoff.reference.test.ts` ("draws no main
+**Status:** superseded by "Closure" below (2026-11-19). Originally adopted. Rule 1 is enforced on the crop by `runoff.reference.test.ts` ("draws no main
 flow path the reference lacks"); rule 2's sentence is in `RUNOFF_LIMITS` and shown on the Water
 card. **Full-tile confirmation:** rule 1 is **not met** on the full tile (see "Full-tile
 confirmation (Run 3)" below) — the owner decides whether to keep the 2-cell rule.
@@ -243,6 +243,33 @@ values, not the locations (44 and 46 points):
 
 None of these is tuned or "fixed": they are a possible defect for a separate task, reviewed by a
 different model. The bare and offset lists are the same locations with their own flow values.
+
+## Closure — TF-VIS-007 closed by the owner, 2026-11-19
+
+**Verdict: no defect in `runoff.ts`.** IT-7 is closed on the evidence of Runs 0–6; no further
+reference run is planned.
+
+- **Full-tile result, kept as a documented measurement, not a pass/fail number:** Terraform main-path
+  cells within 2 cells of a WhiteboxTools main path — standard 92.8 %, bare 93.3 %, offset 92.3 %;
+  within 3 cells — 95.0 %, 94.9 %, 94.6 % (Run 3). Crop: 97.0 % within 2 cells.
+- **Every divergence point is explained** (`docs/qa/runoff-divergence-diagnosis.md`, Runs 4–5):
+  46 / 44 / 46 points per variant, 0 unexplained — flat routing (H1), D8 near-ties (H2), the
+  0.08 % non-square cell (H3), one edge outlet, and a WhiteboxTools fill artefact (H4, 11–12 points).
+- **H4 is on the reference side:** the exported input is identical to Terraform's ground, yet
+  WhiteboxTools v2.4.0 (macOS) raises the south-west outlet channel and its west-edge mouth to
+  −18.44 m. A textbook Priority-Flood (Barnes et al. 2014, Alg. 1), run independently by the reviewer
+  and again in Run 6, raises none of those cells — it agrees with Terraform.
+- **No independent reference reproduces Terraform cell for cell**, because every D8 router needs a
+  flat-resolution step and that step is exactly where methods legitimately differ (Run 6: without
+  one, the textbook-filled reference has no main path at all).
+- **Disclosure stays:** the Water card says "Where the ground is flat, water may take a different
+  route than shown, and some flow paths may not appear." Water remains a Tier 2 screening.
+- **Regression guards stay as they are:** `runoff.reference.test.ts` keeps the crop's exact-agreement
+  floor (0.6) and the 2-cell check (≥ 95 %, measured 97.0 %) as guards against a change in
+  behaviour; they are no longer described as the acceptance rule.
+
+Not done, by decision: a reference built on a published flat-resolution method (Barnes, Lehman &
+Mulla 2014); the Linux WhiteboxTools build for the H4 isolation.
 
 ## Regression guard
 
