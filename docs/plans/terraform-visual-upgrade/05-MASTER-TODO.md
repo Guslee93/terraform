@@ -216,6 +216,8 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
 
 ## Gate 2 — Identity rendering (revised 18 Nov 2026)
 
+*19 Nov: the visual target is `docs/design/identity-look-spec.md` (owner reference images). Runs 7–8 (PR #29) built stages A–C in the Lab with the land-cover fallback; the orthophoto (028a → 028) is the critical path.*
+
 *Was: "Scene rendering, material and lighting prototypes", exit "the owner has chosen a direction (A/B/C) from Lab captures". The approved identity replaces the direction choice; dependency graph in 09 §5.1.*
 
 **Exit:** the integrated prototype (TF-VIS-02B) passes 09 §7 at the analysis-off and wind-on states and the owner accepts it; the `IDENTITY` style ships (TF-VIS-027) only after **Gate 0 exit (TF-VIS-008)** and within 04 §7 budgets, or with budget exceptions the owner approves in writing. Lab work does not wait for Gate 0; production work does.
@@ -262,7 +264,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Acceptance: 04 §7 budgets; visual regression baselines re-approved by owner; ADR-0041 and ADR-0045 accepted; `NORDIC` retained as a selectable rollback for one release
   - Risk/rollback: switch the default style back to `NORDIC` (one-line revert)
 
-- [ ] **TF-VIS-028a** `[DOC]` — Orthophoto source and licence research *(New 18 Nov)*
+- [x] **TF-VIS-028a** `[DOC]` — Orthophoto source and licence research *(New 18 Nov; done 19 Nov: `docs/data/orthophoto-source.md` — Norge i bilder needs written permission; request drafted for the owner)*
   - Priority: P0 for TF-VIS-028 · Owner: Opus (`research-synthesist`) · Reviewer: Owner · Depends on: —
   - Scope/files: `docs/data/orthophoto-source.md` (new); no code
   - Output: for Norge i bilder (Kartverket/Geovekst) and fallbacks (Sentinel-2, others): licence text and URL, permitted use (public web display, caching, redistribution in a static package, export stills/clips), attribution wording, resolution, capture year for both curated sites, endpoint and CRS options
@@ -278,7 +280,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: optional layer + style flag → land-cover look. **No imagery committed or deployed before D13 clears**
   - Handoff: 06#tf-vis-028
 
-- [ ] **TF-VIS-029** `[EXP]` — Airy point-cloud vegetation prototype *(New 18 Nov)*
+- [ ] **TF-VIS-029** `[EXP]` — Airy point-cloud vegetation prototype *(New 18 Nov; revised 19 Nov: Runs 7–8 built round point clusters; the target is now tree-shaped instances with speckled, see-through crowns — `docs/design/identity-look-spec.md` §3, D22)*
   - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-015
   - Scope/files: new pure `src/scene/vegetationPoints.ts` (seeded cluster per mapped tree; optional forest fill inside land-cover `wood` polygons) + test; new `src/scene/PointVegetation.tsx` (`THREE.Points` or instanced sprites, DPR-stable size, distance LOD, green-grey from `style.ts`, static — never animated); `exportPasses.ts` handling for override passes; `Trees.tsx` untouched (Low tier and rollback)
   - Tests: same seed → same points; point count per LOD within the proposed budget; points excluded from raycasting (`camera-input.spec.ts` green); white and depth passes per D15
@@ -286,7 +288,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: style flag → `Trees.tsx`
   - Handoff: 06#tf-vis-029
 
-- [ ] **TF-VIS-02A** `[EXP]` → `[CAND]` — Atmospheric terrain dissolve *(New 18 Nov)*
+- [ ] **TF-VIS-02A** `[EXP]` → `[CAND]` — Atmospheric terrain dissolve *(New 18 Nov; Run 8 fades every edge; revised 19 Nov: fade to haze colour with a vignette, buildings and trees fade too — look spec §3, D22)*
   - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-020 stage A (028 or land-cover fallback)
   - Scope/files: `terrainMaterial.ts` (radial fade to the background colour beyond a radius ≥ the study halo), `style.ts` (fade start/end, fog colour), `ViewportCanvas.tsx` ⚠VC (hide skirt and floor grid in `IDENTITY`)
   - Tests: pure test that the fade start ≥ halo radius and ≥ analysis-circle radius for both sites; overlays drawn above the fade are unaffected; depth pass unchanged
