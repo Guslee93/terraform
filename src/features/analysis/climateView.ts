@@ -4,6 +4,7 @@ import { sampleGrid, type FootprintBuilding } from './grid'
 import type { FlowResult } from './flowRunner'
 import { FLOW_DISCLAIMER, sampleVelocity } from './lbm'
 import { LAWSON_NORCONSULT } from './comfort'
+import { bandsOf, rampOf } from './graphics'
 
 export type ClimateMode = 'off' | 'wind' | 'noise' | 'sun-hours'
 
@@ -107,11 +108,8 @@ export const SPEED_BANDS: ReadonlyArray<Band & { band: SpeedBand }> = [
 export const speedBand = (ratio: number) => pick(SPEED_BANDS, ratio)
 
 /** Continuous Direction ramp in m/s; interpolation is in display sRGB. */
-export const WIND_RAMP = [
-  { speed: 0, colour: '#F5F7FB' }, { speed: 2, colour: '#BFD3F2' },
-  { speed: 4, colour: '#5B8DEF' }, { speed: 6, colour: '#2F49D1' },
-  { speed: 8, colour: '#7B2FD1' }, { speed: 10, colour: '#C21FB3' },
-] as const
+export const WIND_RAMP: readonly { speed: number; colour: string }[] =
+  (rampOf('wind-speed')?.stops ?? []).map(({ at, colour }) => ({ speed: at, colour }))
 export function windSpeedColour(speed: number): string {
   const value = Math.max(0, Math.min(10, speed))
   const index = Math.min(4, Math.floor(value / 2))
@@ -140,11 +138,11 @@ export function windColour(ratio: number, wind: WindSettings, before?: number): 
 }
 
 export const DELTA_BANDS: readonly Band[] = [
-  { band: 'much-calmer', below: -0.3, label: 'Calmer (≤ −0.3)', colour: '#1E3A8A' },
-  { band: 'calmer', below: -0.1, label: 'Calmer (−0.3 to −0.1)', colour: '#93C5FD' },
-  { band: 'same', below: 0.1, label: 'No change (±0.1)', colour: '#E5E7EB' },
-  { band: 'windier', below: 0.3, label: 'Windier (+0.1 to +0.3)', colour: '#FCA5A5' },
-  { band: 'much-windier', below: Infinity, label: 'Windier (≥ +0.3)', colour: '#B91C1C' },
+  { band: 'much-calmer', below: -0.3, label: 'Calmer (≤ −0.3)', colour: bandsOf('wind-delta')[0]!.colour },
+  { band: 'calmer', below: -0.1, label: 'Calmer (−0.3 to −0.1)', colour: bandsOf('wind-delta')[1]!.colour },
+  { band: 'same', below: 0.1, label: 'No change (±0.1)', colour: bandsOf('wind-delta')[2]!.colour },
+  { band: 'windier', below: 0.3, label: 'Windier (+0.1 to +0.3)', colour: bandsOf('wind-delta')[3]!.colour },
+  { band: 'much-windier', below: Infinity, label: 'Windier (≥ +0.3)', colour: bandsOf('wind-delta')[4]!.colour },
 ]
 export const deltaBand = (delta: number) => DELTA_BANDS[delta <= -0.3 ? 0 : delta < -0.1 ? 1 : delta <= 0.1 ? 2 : delta < 0.3 ? 3 : 4]!
 export const DELTA_NOTE = 'Calmer / No change / Windier vs baseline'
@@ -152,13 +150,13 @@ export const DELTA_NOTE = 'Calmer / No change / Windier vs baseline'
 /** Momentary speed classes: the five Lawson thresholds (A–E), m/s at pedestrian level. */
 const [SIT, STAND, STROLL, WALK, UNCOMFORTABLE] = LAWSON_NORCONSULT.thresholds
 export const ACTIVITY_BANDS: readonly Band[] = [
-  { band: 'sit', below: SIT, label: `Sitting (< ${SIT} m/s)`, colour: '#3B6EA8' },
-  { band: 'stand', below: STAND, label: `Standing (${SIT}–${STAND} m/s)`, colour: '#4FA3A5' },
-  { band: 'stroll', below: STROLL, label: `Strolling (${STAND}–${STROLL} m/s)`, colour: '#E6DC9C' },
-  { band: 'walk', below: WALK, label: `Walking (${STROLL}–${WALK} m/s)`, colour: '#E39A4C' },
-  { band: 'uncomfortable', below: UNCOMFORTABLE, label: `Uncomfortable (${WALK}–${UNCOMFORTABLE} m/s)`, colour: '#C2452F' },
+  { band: 'sit', below: SIT, label: `Sitting (< ${SIT} m/s)`, colour: bandsOf('wind-comfort')[0]!.colour },
+  { band: 'stand', below: STAND, label: `Standing (${SIT}–${STAND} m/s)`, colour: bandsOf('wind-comfort')[1]!.colour },
+  { band: 'stroll', below: STROLL, label: `Strolling (${STAND}–${STROLL} m/s)`, colour: bandsOf('wind-comfort')[2]!.colour },
+  { band: 'walk', below: WALK, label: `Walking (${STROLL}–${WALK} m/s)`, colour: bandsOf('wind-comfort')[3]!.colour },
+  { band: 'uncomfortable', below: UNCOMFORTABLE, label: `Uncomfortable (${WALK}–${UNCOMFORTABLE} m/s)`, colour: bandsOf('wind-comfort')[4]!.colour },
   // No safety class: a 2D slice at one chosen wind cannot support one (feasibility 09 §5).
-  { band: 'very-uncomfortable', below: Infinity, label: `Very uncomfortable (> ${UNCOMFORTABLE} m/s)`, colour: '#962838' },
+  { band: 'very-uncomfortable', below: Infinity, label: `Very uncomfortable (> ${UNCOMFORTABLE} m/s)`, colour: bandsOf('wind-comfort')[5]!.colour },
 ]
 /** Direction legend: m/s bins coloured from the continuous ramp at each bin's midpoint. */
 export const DIRECTION_BANDS: readonly Band[] = [0, 2, 4, 6, 8, 10].map((lo) => ({

@@ -8,7 +8,7 @@ export const parameters = (page: Page) => page.getByRole('complementary', { name
  * Open an analysis card in the Parameters panel (ADR-0026). The open card is the analysis on the
  * map, and its controls live in the card. No-op when the card is already open.
  */
-export async function openAnalysis(page: Page, label: 'Sun' | 'Wind' | 'Noise') {
+export async function openAnalysis(page: Page, label: 'Sun' | 'Wind' | 'Noise' | 'Water' | 'Snow') {
   const card = page.getByTestId(`analysis-card-${label.toLowerCase()}`)
   if ((await card.getAttribute('aria-expanded')) !== 'true') await card.click()
   return parameters(page)

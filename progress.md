@@ -1392,3 +1392,194 @@ zoom in because the quads are small at the default site camera.
   planning advice" (`SiteChrome.tsx`), which now has no counterpart on the About page: the
   constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
   string, so it was left alone.
+
+## 2026-11-17 — Run 1 T0: runoff control runs vs WhiteboxTools (IT-7 follow-up)
+
+- **Task TF-VIS-007 follow-up (Run 1 T0).** Re-run the WhiteboxTools comparison twice more with
+  `runoff.ts` unchanged: bare terrain (no footprints) and per-building offsets (`+0.001 m × index`)
+  so building tops never tie. Same fill, D8 and thresholds.
+- **Result (main-flow-path agreement, Jaccard):** standard 67.0 % · bare 69.8 % · offset 66.0 %.
+  Building-free terrain is still far below the IT-7 95 % bar, so the building-enclosed-courtyard
+  explanation does **not** explain the gap.
+- **Verdict corrected.** The earlier "no bug" conclusion is withdrawn: `runoff.ts` is not yet
+  validated against WhiteboxTools, and the fill/flat-routing divergence is the leading suspect.
+  See `docs/qa/runoff-reference.md` and PR #23.
+- **Artifacts.** `RUNOFF_VARIANT=standard|bare|offset` support in
+  `scripts/reference/runoff-whitebox/{common,export,compare}.ts`, plus an updated README and
+  `docs/qa/runoff-reference.md`.
+- **Checks.** eslint (scripts) 0; full unit suite 1212 passed / 1 failed (`wind-validation.test.ts`
+  "case 4" timed out at 5 s — unrelated to this task, untouched); WhiteboxTools pipeline ran clean.
+
+## 2026-11-17 — Run 1 T1: analysis graphics registry (TF-VIS-014)
+
+- **Task TF-VIS-014.** Add `src/features/analysis/graphics.ts` (renderer-free): one source of truth for
+  every analysis colour and numeric band boundary, with `OutputClass`, `Band`, `Ramp`,
+  `AnalysisGraphic`, `GRAPHICS` and `sharedColours()`. Nine analyses: noise mapped; sun-hours and
+  slope calculated; roof-solar, VSC, wind-speed, wind-comfort, wind-delta and runoff screening.
+- **Legacy constants now derive from the registry** (no importer changes): `SUN_HOURS_RAMP`,
+  `WIND_RAMP`, `ACTIVITY_BANDS`, `DELTA_BANDS`, `SLOPE_BANDS`, `RUNOFF_LEGEND`, `NOISE_BAND_COLOUR`,
+  `ROOF_SOLAR_COLOUR`, `VSC_COLOUR`, and the streamlines' `SLOW`/`FAST`. Labels that embed thresholds
+  stay generated in their own modules (the registry carries colour + boundary only).
+- **No value changed.** `graphics.test.ts` pins the original colours (and the slope band labels)
+  against literals, and asserts every analysis has a class, banded scales ≤ 7 bands, and
+  `sharedColours()` — 11 hex values reused across analyses today, snapshot-committed so Gate 5 can
+  prove it empties.
+- **Checks.** typecheck 0 · lint 0 · full unit suite 1220 passed / 4 skipped / 0 failed · build OK.
+
+## 2026-11-17 — Run 1 T2: claim guardrail tests (TF-VIS-054)
+
+- **Task TF-VIS-054.** Add `src/features/analysis/claims.test.ts` (renderer-free): a test that fails
+  if any user-facing analysis caption, note, disclaimer or legend label makes a forbidden claim.
+- **Rule.** None may contain, case-insensitively: `safe` as a whole word, `verified`,
+  `compliant`/`compliance`, `accurate`, `certified`, `flood depth`, `snow load`, `water depth`,
+  `return period`, or `comfortable`/`uncomfortable` (unless the same string says `screening`).
+  Required disclaimers that *negate* a term ("not a statement that the site is safe", "not a snow
+  load") pass a negation check rather than being flagged.
+- **Collection.** Every wind caption per height and computing state, sun (sun-hours/roof-solar/VSC),
+  runoff, snow, noise, hazard facts, parcels, terrain, streamlines and constraints — including the
+  band labels (slope, wind delta/direction/speed, roof-solar, VSC, runoff).
+- **Known open item.** The wind activity legend's Lawson "Uncomfortable" labels are held out as an
+  `it.todo` (owner decision whether to keep the names), per run book §7 T2.
+- **Checks.** typecheck 0 · lint 0 · full unit suite 1223 passed / 4 skipped / 1 todo / 0 failed · build OK.
+
+## 2026-11-17 — Run 1 T3: legend model part A (TF-VIS-040)
+
+- **Task TF-VIS-040 part A.** Add a pure, renderer-free `legendFor(id, context)` to
+  `src/features/analysis/graphics.ts` describing the legend of whichever analysis is on the map; do
+  not wire it into any component.
+- **Model.** Returns `{ title, outputClass, classLabel, scale, claim, sources, state }`. `state` is
+  `ready | computing | not-mapped | unavailable-on-import`; `classLabel` uses plain words
+  (`Mapped data`, `Calculated`, `Screening`, `Illustrative`); `scale` is the registry's ramp or
+  bands; `sources` and the default state come from the context.
+- **Claim.** Passed in from the existing caption functions (`windCaption`, `sunHoursDisclaimer`,
+  `RUNOFF_NOTE`, `noiseSourceLine`, `ROOF_SOLAR_DISCLAIMER`, `VSC_DISCLAIMER`, `SLOPE_NOTE`).
+  Those modules import `graphics.ts`, so importing them here would create a cycle; `legendFor`
+  therefore supplies — never authors — the claim text.
+- **Checks.** typecheck 0 · lint 0 · full unit suite 1227 passed / 4 skipped / 1 todo / 0 failed · build OK · no component file changed.
+
+## 2026-11-18 — Run 1 T4: reference capture script (TF-VIS-010)
+
+- **Task TF-VIS-010.** Add `scripts/capture-reference.mjs` (reference captures of the built app)
+  and `scripts/compare-captures.mjs` (differing-pixel counts per image), following `06` § TF-VIS-010
+  with the run-book §6 corrections.
+- **Capture script.** Starts `vite preview` on the production build, headed Chromium at 1440×900
+  @2 with `reducedMotion: 'reduce'`, and screenshots every site (`compact-infill`, `sloped-edge`) ×
+  date (21 June 15:00, 21 December 12:00) × state (neutral, sun hours, wind direction view 2 m,
+  noise Lden, water, slope on, one drawn mass) across the three presets (isometric/3D, top/Plan,
+  eyeLevel/Street). For the isometric preset it also triggers the Image passes and re-homes the
+  `still`/`depth`/`white`/`analysis` downloads beside the viewport captures. Render quality is
+  **not** forced: the manifest records the app's fixed `renderPreference: 'auto'`.
+- **Compare script.** Compares two labels with Playwright's own `getComparator('image/png')`
+  (pixelmatch, the comparator `toHaveScreenshot` uses) — no new dependency — and prints the
+  differing-pixel count per image plus a summary.
+- **Proof run.** `--smoke` bounds the run to one site/date for a software-rendered check: 7 states
+  × 3 presets + the export passes completed with 0 failures and a written `manifest.json`. The
+  `analysis` pass is emitted only when an analysis layer is on the map (neutral/mass → still +
+  white + depth).
+- **Checks.** `node --check` OK · eslint (scripts) 0 · `npm run build` OK. The full matrix and the
+  two-run pixel comparison are the owner's run on the Apple M1 Pro (exact commands in the ledger).
+
+## 2026-11-18 — Run 1 T5: opt-in visual regression spec (TF-VIS-012)
+
+- **Task TF-VIS-012.** Add `e2e/visual-reference.spec.ts`, skipped unless `VISUAL=1`, so the normal
+  suite and CI are unaffected.
+- **Frame.** Same as `capture-reference.mjs` (TF-VIS-010): 1440×900 @2, `reducedMotion: 'reduce'`,
+  and the app's fixed `renderPreference="auto"` (never forced — run book §6). It pins the neutral,
+  Sun (sun hours), Wind (direction view, 2 m), Noise (Lden) and Water states at the isometric
+  preset, Compact Infill, 21 June 15:00, with
+  `expect(page.locator('canvas').first()).toHaveScreenshot(name, { scale: 'device', maxDiffPixelRatio: 0.02 })`.
+- **Helper.** `e2e/studio-helpers.ts` `openAnalysis` now accepts `Water` and `Snow` (run book §6).
+- **Checks.** typecheck 0 · eslint 0 · `npx playwright test e2e/visual-reference.spec.ts` reports
+  5 skipped without `VISUAL=1` · `VISUAL=1 … --headed` passes 5/5 twice. Snapshots are not
+  committed here; the owner writes them on the M1 Pro (`--update-snapshots` then a plain run, both
+  `--headed`) and tightens `MAX_DIFF_PIXEL_RATIO` from two clean runs. Headless SwiftShader stalls
+  the canvas screenshot, so the spec must run `--headed`.
+
+## 2026-11-18 — Run 1 T6: scene style module (TF-VIS-013)
+
+- **Task TF-VIS-013.** Move today's scene style constants into one module with no visual change.
+- **Model.** `src/scene/style.ts` exports the `SceneStyle` type and `NORDIC` (today's exact values).
+  `ViewportCanvas` gains a `style` prop (default `NORDIC`) threaded to `TerrainMesh`,
+  `ContextBuildings`, `Streets`, `Water`, `FloorGrid` and `SceneComposer`; `SceneComposer` reads
+  `style.ao` (intensity 1.6, radius 4 m, colour `#2B3138`). `WATER_COLOR`'s softened value
+  (`soften('#CBE1EE')` = `#D3E0E8`) is recorded as `NORDIC.water` and the export removed from
+  `landCoverTexture.ts`. `style.test.ts` pins every old literal.
+- **Notes.** `lines.parcel`/`lines.section` values are recorded in `NORDIC` but not wired
+  (`ParcelLines.tsx` is outside this task's file list); the `grid` field was added (contract 04 §3.1
+  omits it); `analysisFocus` was deferred (no value today).
+- **Checks.** typecheck 0 · lint 0 · full unit suite 1231 passed / 0 failed · build OK · pixel
+  identity proven — `VISUAL=1 npx playwright test e2e/visual-reference.spec.ts --headed` 5/5 passed
+  with zero differing pixels against pre-refactor baselines.
+
+## 2026-11-18 — Run 1 T7: camera and input characterisation tests (TF-VIS-030)
+
+- **Task TF-VIS-030.** Lock today's camera and editing behaviour with tests before anyone changes
+  the controller. No source change.
+- **Spec.** `e2e/camera-input.spec.ts` (not opt-in, 6 tests, serial):
+  1. each preset (3D/Plan/North/South/Street) changes the canvas (`canvasSignature`);
+  2. dragging a mass moves it — not the camera — and is one undo step (undo restores the frame);
+  3. Escape cancels a drag (no move, no undo entry);
+  4. a short ground click deselects; a long ground drag orbits without deselecting;
+  5. a preset change snaps without animation under reduced motion.
+- **Deviation recorded.** The run-book "complete within one frame" is not literal: `CameraRig`
+  skips its 0.75 s ease under reduced motion, but the view lands a few frames after the click
+  (React re-render). The spec tests the snap/no-animation behaviour, and runs the light preset
+  tests before the drag tests to avoid software-GL degradation.
+- **Checks.** typecheck 0 · lint 0 · `npx playwright test e2e/camera-input.spec.ts` 6 passed twice
+  in a row.
+
+## 2026-11-18 — Run 1 T10: Visual Lab route + ADR-0040 (TF-VIS-015)
+
+- **Task TF-VIS-015.** Add the local-only Visual Lab route and its ADR (04 §2, 06#tf-vis-015).
+- **Route.** `src/app/LabPage.tsx` is lazy and registered at `/lab/:siteId` only when
+  `import.meta.env.DEV || import.meta.env.VITE_LAB === '1'`. The direct `import.meta.env`
+  expression (not a function call) lets Rollup constant-fold the ternary, so the `LabPage` chunk
+  is tree-shaken out of the production build; `scripts/check-no-lab-chunk.mjs` asserts no shipped
+  JS/CSS references it.
+- **States.** `src/app/lab/states.ts` defines the seven fixed states (neutral, sun hours, wind 2 m
+  direction view, noise Lden, water, slope, one demo mass) and `buildEmptyEditor` /
+  `buildDemoMassEditor` (massing factories, no copied computation). `LabPage.tsx` runs the real
+  hooks (`useCircleSunHours`, `useWindFlow`, `useRunoff`) and assembles the `ViewportCanvas` props.
+  `TweakPanel.tsx` is plain HTML and lists `NORDIC` (with room for `IDENTITY`, TF-VIS-020).
+- **ADR.** `docs/decisions/ADR-0040-visual-lab.md`: purpose, build-flag isolation, what may/may not
+  live in the Lab, removal plan.
+- **Checks.** typecheck 0 · lint 0 · unit 1233 passed / 0 failed · build OK · build check 0 ·
+  `LAB=1 npx playwright test e2e/visual-lab.spec.ts` 1 passed (skipped without LAB=1) · production
+  chunks within ±14 bytes gzip of before (report: index.js +9, index.css +14, three.js −1,
+  SceneComposer.js −3, StudioPage.js −1; all others 0).
+
+## 2026-11-18 — Run 1 T8: ground-click arbitration (TF-VIS-034)
+
+- **Task TF-VIS-034.** Move the ground-click decision out of `ViewportCanvas` into a pure,
+  renderer-free function (04 §5.4), with no behaviour change.
+- **Model.** `src/features/editor/groundClick.ts` exports
+  `groundClickIntent({ picking, parcelLayerOn, drawing, editable }) → 'pick-point' |
+  'pick-parcel-and-deselect' | 'pick-parcel' | 'draw-vertex' | 'deselect' | 'none'`, preserving the
+  priority in `onGroundClick` (point pick wins; parcel pick — plus deselect when editable — while
+  not drawing; draw vertex; deselect; none without editing). `ViewportCanvas.tsx` dispatches on the
+  result in a switch.
+- **Checks.** typecheck 0 · lint 0 · unit 1234 passed / 0 failed (table test covers all 16 input
+  combinations) · build OK · `npx playwright test e2e/camera-input.spec.ts` 6 passed (the ground
+  click/deselect and orbit behaviours unchanged).
+
+## 2026-11-18 — Run 1 T9: design inventory (TF-VIS-016)
+
+- **Task TF-VIS-016.** Generate `docs/design/visual-inventory.md` from the code (docs only).
+- **Content.** Every scene colour, line, analysis ramp/band, legend, floating UI surface and UI
+  token with `file:line`, each marked **kept / changes / replaced** against the identity matrix
+  (`09-VISUAL-IDENTITY-INTEGRATION.md` §4 R1–R12). Values are quoted from `src/scene/style.ts`,
+  `src/features/analysis/graphics.ts`, `src/styles/tokens.css`, `src/scene/lighting.ts`,
+  `MassLayer.tsx`, `foliage.ts`, `CameraHud.tsx` and the overlay components — nothing invented.
+- **Checks.** lint 0 (docs only).
+
+## 2026-11-18 — Status report for the owner (`docs/status-report.md`)
+
+- **Ask.** A status report showing how far the project has come and what is left to be done.
+- **What.** `docs/status-report.md` rewritten from the superseded five-line stub into the current
+  status: the built product (M0–M5 and the foundation layers, ADR-0032–0039), the Run 1 table
+  (T0–T10 with commits), records and health (40 ADRs, 1 234 unit tests, CI green on PR #25), the
+  seven open draft PRs, the Gate 0 tail (production 404s; TF-VIS-005/008/009), the open owner
+  decisions (D0–D19), the remaining backlog by gate (≈ 45 of 58 items) and the known limitations
+  (the runoff screening not matched to a reference tool — verdict withdrawn; 11 shared hex values;
+  the Lawson labels; the Lab local-only).
+- **Checks.** Docs only; no code touched.

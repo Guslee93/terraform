@@ -1,4 +1,5 @@
 import type { Vec2 } from '../../lib/coordinates'
+import { bandsOf } from './graphics'
 
 /**
  * Tools on the 1 m terrain (Kartverket DTM1) of a package (ADR-0037): elevation, Horn slope and a
@@ -136,12 +137,11 @@ export function profileRange(profile: readonly ProfilePoint[]): { min: number; m
  * Slope bands. Colours: a neutral-to-warm ramp from existing studio swatches; to be revisited in
  * the design phase (the plan pauses visual work).
  */
-export const SLOPE_BANDS = [
-  { below: 5, label: 'Under 5°', colour: '#E5E7EB' },
-  { below: 15, label: '5–15°', colour: '#E6DC9C' },
-  { below: 30, label: '15–30°', colour: '#E39A4C' },
-  { below: Infinity, label: 'Over 30°', colour: '#962838' },
-] as const
+export const SLOPE_BANDS = bandsOf('slope').map((entry, index) => ({
+  below: entry.below,
+  label: (['Under 5°', '5–15°', '15–30°', 'Over 30°'] as const)[index]!,
+  colour: entry.colour,
+}))
 export const slopeBandIndex = (degrees: number) => SLOPE_BANDS.findIndex((band) => degrees < band.below)
 
 /** Share of the raster's cells in each slope band (cells without data left out). */

@@ -27,6 +27,7 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
+      - run: node scripts/check-no-lab-chunk.mjs
       # The e2e job tests exactly this build.
       - uses: actions/upload-artifact@v4
         with:

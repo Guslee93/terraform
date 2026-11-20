@@ -1,6 +1,7 @@
 import type { Vec2 } from '../../lib/coordinates'
 import { pointInPolygon, ringCentroid } from '../../lib/polygon'
 import { footprintTester, sampleGrid, type FootprintBuilding } from './grid'
+import { bandsOf } from './graphics'
 
 /**
  * The official strategic road-noise map (Statens vegvesen, CNOSSOS-EU), as mapped 5 dB bands
@@ -48,8 +49,9 @@ export const bandLabel = (bandLow: number) => (bandLow >= TOP_BAND_DB ? `${TOP_B
  * Band colours: the studio's existing noise swatches, one per 5 dB band, low to high.
  * To be revisited in the design phase (the plan pauses visual work).
  */
+const noiseColours = bandsOf('noise').map((entry) => entry.colour)
 export const NOISE_BAND_COLOUR: Readonly<Record<number, string>> = {
-  45: '#C4D3C6', 50: '#9DB8A0', 55: '#D4D08A', 60: '#E0B25C', 65: '#CC7340', 70: '#9C2F2F', 75: '#6E1A2A',
+  45: noiseColours[0]!, 50: noiseColours[1]!, 55: noiseColours[2]!, 60: noiseColours[3]!, 65: noiseColours[4]!, 70: noiseColours[5]!, 75: noiseColours[6]!,
 }
 export const bandColour = (bandLow: number) => NOISE_BAND_COLOUR[Math.min(TOP_BAND_DB, Math.max(45, bandLow))] ?? '#9C2F2F'
 

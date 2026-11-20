@@ -15,6 +15,7 @@ import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geome
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
 import { EMPTY_SELECTION } from '../features/massing/types'
 import { cameraLocked, displayedDocument, type EditorEvent, type EditorState } from '../features/editor/interaction'
+import { groundClickIntent } from '../features/editor/groundClick'
 import { CameraRig, type OrbitControlsHandle } from './CameraRig'
 import { HudProbe } from './HudProbe'
 import { fitShadowFrustum, lightRig, sunPosition } from './lighting'
@@ -53,7 +54,8 @@ import { detectWebGL } from './webglSupport'
 import { PassExporter } from './PassExporter'
 import { ANALYSIS_OVERLAY_NAME, type PassImages } from './exportPasses'
 import { CameraHud } from './CameraHud'
-import { createLandCoverTexture, WATER_COLOR } from './landCoverTexture'
+import { createLandCoverTexture } from './landCoverTexture'
+import { NORDIC, type SceneStyle } from './style'
 import { createWaterGeometry } from './waterGeometry'
 import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
 import { SceneErrorBoundary, SceneUnavailable } from './SceneErrorBoundary'
@@ -134,20 +136,13 @@ type ViewportProps = {
   /** Attribution lines burned into the exported images (ADR-0032). */
   exportCredits?: readonly string[]
   onExport?: (result: PassImages | Error) => void
+  /** The scene style; defaults to NORDIC (today's look). */
+  style?: SceneStyle
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
 const CLICK_TOLERANCE_PX = 4
 
-const VIEWPORT_BACKGROUND = '#F1F1EF'
-/** Ground plane one step below the background; fog fades it into the horizon. */
-const GROUND_COLOR = '#EBEBE8'
-const GRID_MINOR_COLOR = '#DDDDD9'
-const GRID_MAJOR_COLOR = '#D8D8D3'
-const CONTEXT_COLOR = '#FAF9F6'
-const EDGE_COLOR = '#7E7D7A'
-/** One line-weight knob. 0.85 matches Hektar's thin mid-grey outline (≈ 140/255 on white walls). */
-const EDGE_OPACITY = 0.85
 /** Crease angle (degrees) above which a context edge is drawn; hides coplanar triangle seams. */
 const EDGE_THRESHOLD_DEG = 30
 /** Contours every 1 m, emphasised every 5 m; skipped on sites with less relief than that. */
@@ -167,12 +162,14 @@ function TerrainMesh({
   showGround,
   onGroundClick,
   onGroundMove,
+  style,
 }: {
   terrain: SitePackage['terrain']
   landcover: SitePackage['landcover']
   showGrid: boolean
   /** The land cover tint rides on the terrain mesh, so the toggle drops the texture, not the mesh. */
   showGround: boolean
+  style: SceneStyle
 } & GroundHandlers) {
   const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
   const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
@@ -227,16 +224,16 @@ function TerrainMesh({
         />
       </mesh>
       <mesh geometry={skirt} receiveShadow>
-        <meshStandardMaterial color="#DCD8D1" roughness={1} metalness={0} side={DoubleSide} />
+        <meshStandardMaterial color={style.skirt} roughness={1} metalness={0} side={DoubleSide} />
       </mesh>
       <lineSegments geometry={contours.minor}>
-        <lineBasicMaterial color={EDGE_COLOR} transparent opacity={0.14} depthWrite={false} />
+        <lineBasicMaterial color={style.lines.contourMinor.color} transparent opacity={style.lines.contourMinor.opacity} depthWrite={false} />
       </lineSegments>
       <lineSegments geometry={contours.major}>
-        <lineBasicMaterial color={EDGE_COLOR} transparent opacity={0.32} depthWrite={false} />
+        <lineBasicMaterial color={style.lines.contourMajor.color} transparent opacity={style.lines.contourMajor.opacity} depthWrite={false} />
       </lineSegments>
       <lineSegments geometry={grid} visible={showGrid}>
-        <lineBasicMaterial color="#7C8E7D" transparent opacity={0.22} depthWrite={false} />
+        <lineBasicMaterial color={style.grid.terrain.color} transparent opacity={style.grid.terrain.opacity} depthWrite={false} />
       </lineSegments>
     </group>
   )
@@ -256,7 +253,7 @@ function fadeShader(material: MeshStandardMaterial, keep: 0 | 1) {
   return material
 }
 
-function ContextBuildings({ buildings, faded = NO_FADE }: { buildings: SitePackage['buildings']['buildings']; faded?: ReadonlySet<number> }) {
+function ContextBuildings({ buildings, faded = NO_FADE, style }: { buildings: SitePackage['buildings']['buildings']; faded?: ReadonlySet<number>; style: SceneStyle }) {
   // Built once. While the wind disc is lifted (ADR-0028 phase 3) the buildings it passes over are
   // flagged in a per-vertex attribute: the solid material skips them and a faint material draws
   // them. Rebuilding the merged mesh instead cost 65–100 ms per height step on Compact Infill
@@ -267,8 +264,8 @@ function ContextBuildings({ buildings, faded = NO_FADE }: { buildings: SitePacka
     return merged
   }, [buildings])
   const edges = useMemo(() => new EdgesGeometry(geometry, EDGE_THRESHOLD_DEG), [geometry])
-  const solidMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: CONTEXT_COLOR, roughness: 0.9, metalness: 0, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), 0), [])
-  const fadedMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: CONTEXT_COLOR, roughness: 0.9, metalness: 0, flatShading: true, transparent: true, opacity: FADED_OPACITY, depthWrite: false }), 1), [])
+  const solidMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), 0), [style.context])
+  const fadedMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, transparent: true, opacity: FADED_OPACITY, depthWrite: false }), 1), [style.context])
 
   useEffect(() => {
     const attribute = geometry.getAttribute('faded') as Float32BufferAttribute
@@ -293,7 +290,7 @@ function ContextBuildings({ buildings, faded = NO_FADE }: { buildings: SitePacka
       {/* The solid mesh's shadow pass still includes faded buildings: they still shade the ground. */}
       <mesh geometry={geometry} material={solidMaterial} castShadow receiveShadow />
       <lineSegments geometry={edges}>
-        <lineBasicMaterial color={EDGE_COLOR} transparent opacity={EDGE_OPACITY} depthWrite={false} />
+        <lineBasicMaterial color={style.lines.crease.color} transparent opacity={style.lines.crease.opacity} depthWrite={false} />
       </lineSegments>
       {faded.size > 0 && <mesh geometry={geometry} material={fadedMaterial} />}
     </group>
@@ -304,9 +301,7 @@ function ContextBuildings({ buildings, faded = NO_FADE }: { buildings: SitePacka
  * Warm mid-grey, without a hue. The lit ribbon renders much paler than this value, so it has to
  * sit well below the ground colour to read as a street at site scale.
  */
-const ROAD_COLOR = '#C1BEB7'
-
-function Streets({ roads, terrain }: { roads: SitePackage['roads']; terrain: SitePackage['terrain'] }) {
+function Streets({ roads, terrain, style }: { roads: SitePackage['roads']; terrain: SitePackage['terrain']; style: SceneStyle }) {
   const geometry = useMemo(
     () => createRoadGeometry(roads, terrain),
     [roads, terrain],
@@ -316,7 +311,7 @@ function Streets({ roads, terrain }: { roads: SitePackage['roads']; terrain: Sit
   return (
     <mesh geometry={geometry} receiveShadow>
       <meshStandardMaterial
-        color={ROAD_COLOR}
+        color={style.road}
         roughness={1}
         metalness={0}
         polygonOffset
@@ -334,13 +329,13 @@ function Streets({ roads, terrain }: { roads: SitePackage['roads']; terrain: Sit
  * relief of the ground underneath it. The ground inside a mapped water body is cut down to the
  * water surface, so the water lies in the landscape instead of on top of it.
  */
-function Water({ surfaces }: { surfaces: readonly WaterSurface[] }) {
+function Water({ surfaces, style }: { surfaces: readonly WaterSurface[]; style: SceneStyle }) {
   const geometry = useMemo(() => createWaterGeometry(surfaces), [surfaces])
   useEffect(() => () => geometry.dispose(), [geometry])
   if (!surfaces.length) return null
   return (
     <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color={WATER_COLOR} roughness={0.55} metalness={0} />
+      <meshStandardMaterial color={style.water} roughness={0.55} metalness={0} />
     </mesh>
   )
 }
@@ -356,13 +351,13 @@ const SKIRT_DROP_M = 2
  * 10 m lines fade out around the site; 1 m lines exist only within ~140 m of the camera, i.e.
  * once you zoom in, where they are several pixels apart.
  */
-function FloorGrid({ terrain, viewScale }: { terrain: SitePackage['terrain']; viewScale: number }) {
+function FloorGrid({ terrain, viewScale, style }: { terrain: SitePackage['terrain']; viewScale: number; style: SceneStyle }) {
   const floor = terrainHeightRange(terrain).min - SKIRT_DROP_M
   return (
     <>
       <mesh rotation-x={-Math.PI / 2} position={[0, floor - 0.6, 0]}>
         <circleGeometry args={[3000 * viewScale, 64]} />
-        <meshBasicMaterial color={GROUND_COLOR} toneMapped={false} />
+        <meshBasicMaterial color={style.ground} toneMapped={false} />
       </mesh>
       <Grid
         position={[0, floor, 0]}
@@ -371,7 +366,7 @@ function FloorGrid({ terrain, viewScale }: { terrain: SitePackage['terrain']; vi
         cellThickness={0}
         sectionSize={10}
         sectionThickness={0.8}
-        sectionColor={GRID_MAJOR_COLOR}
+        sectionColor={style.grid.major}
         fadeDistance={460 * viewScale}
         fadeStrength={2.2}
         fadeFrom={0}
@@ -384,7 +379,7 @@ function FloorGrid({ terrain, viewScale }: { terrain: SitePackage['terrain']; vi
         cellThickness={0}
         sectionSize={1}
         sectionThickness={0.6}
-        sectionColor={GRID_MINOR_COLOR}
+        sectionColor={style.grid.minor}
         fadeDistance={140}
         fadeStrength={1.5}
         fadeFrom={1}
@@ -477,7 +472,7 @@ const SceneComposer = lazy(() => import('./SceneComposer'))
 const AO_MIN_WIDTH_PX = 640
 
 /** Ambient occlusion on wide canvases at the resolved profile's resolution; off on Low. */
-function AmbientOcclusion({ profile, busy }: { profile: RenderProfile; busy: boolean }) {
+function AmbientOcclusion({ profile, busy, style }: { profile: RenderProfile; busy: boolean; style: SceneStyle }) {
   const wide = useThree((state) => state.size.width >= AO_MIN_WIDTH_PX)
   const ao = RENDER_PROFILES[profile].ambientOcclusion
   if (!wide || !ao) return null
@@ -485,7 +480,7 @@ function AmbientOcclusion({ profile, busy }: { profile: RenderProfile; busy: boo
   return (
     <SceneErrorBoundary fallback={null}>
       <Suspense fallback={null}>
-        <SceneComposer ao={ao} busy={busy} />
+        <SceneComposer ao={ao} busy={busy} style={style} />
       </Suspense>
     </SceneErrorBoundary>
   )
@@ -565,6 +560,7 @@ export function ViewportCanvas({
   section,
   onPickParcel,
   onExport,
+  style = NORDIC,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   useEffect(() => {
@@ -619,12 +615,26 @@ export function ViewportCanvas({
   )
 
   const onGroundClick = (point: Vec2, elevation: number) => {
-    if (onPickPoint) return onPickPoint(point)
-    // While drawing, a click places a corner; otherwise it also selects the parcel under it.
-    if (onPickParcel && !drawing) onPickParcel(point)
-    if (!editable) return
-    if (drawing) dispatch({ type: 'pointerDown', point, elevation })
-    else dispatch({ type: 'select', selection: EMPTY_SELECTION })
+    switch (groundClickIntent({ picking: onPickPoint !== undefined, parcelLayerOn: onPickParcel !== undefined, drawing, editable })) {
+      case 'pick-point':
+        onPickPoint?.(point)
+        return
+      case 'pick-parcel':
+        onPickParcel?.(point)
+        return
+      case 'pick-parcel-and-deselect':
+        onPickParcel?.(point)
+        dispatch({ type: 'select', selection: EMPTY_SELECTION })
+        return
+      case 'draw-vertex':
+        dispatch({ type: 'pointerDown', point, elevation })
+        return
+      case 'deselect':
+        dispatch({ type: 'select', selection: EMPTY_SELECTION })
+        return
+      case 'none':
+        return
+    }
   }
 
   return (
@@ -679,10 +689,10 @@ export function ViewportCanvas({
               far: 2600 * viewScale,
             }}
           >
-            <color attach="background" args={[VIEWPORT_BACKGROUND]} />
-            <fog attach="fog" args={[VIEWPORT_BACKGROUND, 600 * viewScale, 1400 * viewScale]} />
+            <color attach="background" args={[style.background]} />
+            <fog attach="fog" args={[style.background, 600 * viewScale, 1400 * viewScale]} />
             <SiteLights sitePackage={sitePackage} sun={sun} profile={profile} />
-            {grid && <FloorGrid terrain={terrain} viewScale={viewScale} />}
+            {grid && <FloorGrid terrain={terrain} viewScale={viewScale} style={style} />}
 
             {/* Hidden, not unmounted, when the Terrain layer is off: it is the ground the draw tool,
                 deselect and Move circle click on (three's raycaster ignores visibility). */}
@@ -692,6 +702,7 @@ export function ViewportCanvas({
                 landcover={sitePackage.landcover}
                 showGrid={presetId === 'top' || drawing}
                 showGround={layers.ground}
+                style={style}
                 onGroundClick={onGroundClick}
                 onGroundMove={
                   drawing && editor.interaction.kind === 'drawing'
@@ -700,12 +711,12 @@ export function ViewportCanvas({
                 }
               />
             </group>
-            {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} />}
-            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} />}
+            {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} style={style} />}
+            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} />}
             {/* The streets keep the ground the package was built on, so they bridge the cut the
                 water makes in the ground beneath them (ADR-0025). */}
             {layers.streets && layers.terrain && (
-              <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} />
+              <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} style={style} />
             )}
             {layers.parcels && layers.terrain && sitePackage.parcels.length > 0 && <ParcelLines parcels={sitePackage.parcels} selected={selectedParcel} heightAt={heightAt} />}
             {section && section.length > 0 && layers.terrain && <SectionLine points={section} heightAt={heightAt} />}
@@ -761,7 +772,7 @@ export function ViewportCanvas({
             <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />
             {/* Wait for renderer detection so Auto never starts AO on software GL. */}
-            {rendererName !== null && <AmbientOcclusion profile={profile} busy={cameraLocked(editor)} />}
+            {rendererName !== null && <AmbientOcclusion profile={profile} busy={cameraLocked(editor)} style={style} />}
             {rendererName !== null && renderPreference === 'auto' && profile !== 'low' && <FrameBudgetWatch key={profile} onSlow={onSlow} />}
 
             <OrbitControls
