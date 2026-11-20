@@ -1571,3 +1571,15 @@ zoom in because the quads are small at the default site camera.
   `src/features/analysis/graphics.ts`, `src/styles/tokens.css`, `src/scene/lighting.ts`,
   `MassLayer.tsx`, `foliage.ts`, `CameraHud.tsx` and the overlay components — nothing invented.
 - **Checks.** lint 0 (docs only).
+
+## 2026-11-18 — Status report for the owner (`docs/status-report.md`)
+
+- **Ask.** A status report showing how far the project has come and what is left to be done.
+- **What.** `docs/status-report.md` rewritten from the superseded five-line stub into the current
+  status: the built product (M0–M5 and the foundation layers, ADR-0032–0039), the Run 1 table
+  (T0–T10 with commits), records and health (40 ADRs, 1 234 unit tests, CI green on PR #25), the
+  seven open draft PRs, the Gate 0 tail (production 404s; TF-VIS-005/008/009), the open owner
+  decisions (D0–D19), the remaining backlog by gate (≈ 45 of 58 items) and the known limitations
+  (the runoff screening not matched to a reference tool — verdict withdrawn; 11 shared hex values;
+  the Lawson labels; the Lab local-only).
+- **Checks.** Docs only; no code touched.
