@@ -1,6 +1,7 @@
 import { CanvasTexture, SRGBColorSpace } from 'three'
 import type { LandCoverArea, LandCoverKind, TerrainData } from '../features/sites/package'
 import { soften } from './palette'
+import { tintGroundColour, type GroundTint } from './styleColour'
 
 /**
  * Plan colours, multiplied with the near-white terrain vertex colours, so the rendered result
@@ -54,6 +55,8 @@ export function createLandCoverTexture(
   areas: readonly LandCoverArea[],
   terrain: TerrainData,
   size = 2048,
+  tint: GroundTint | null = null,
+  palette: Record<LandCoverKind, string> | null = null,
 ): CanvasTexture | null {
   if (areas.length === 0) return null
   const canvas = document.createElement('canvas')
@@ -62,10 +65,13 @@ export function createLandCoverTexture(
   const context = canvas.getContext('2d')
   if (!context) return null
 
-  context.fillStyle = '#FFFFFF'
+  // The identity style paints each kind its palette colour (Run 9 T3); NORDIC re-tints the white
+  // base and every paint swatch (groundTint) and stays byte-identical to today.
+  const paint = (kind: LandCoverKind): string => palette?.[kind] ?? tintGroundColour(LANDCOVER_PAINT[kind], tint)
+  context.fillStyle = palette ? palette.bare : tintGroundColour('#FFFFFF', tint)
   context.fillRect(0, 0, size, size)
   for (const kind of PAINT_ORDER) {
-    context.fillStyle = LANDCOVER_PAINT[kind]
+    context.fillStyle = paint(kind)
     for (const area of areas) {
       if (area.kind !== kind) continue
       context.beginPath()

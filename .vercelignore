@@ -4,3 +4,4 @@ docs/*
 tmp
 test-results
 dist
+public/local-ortho/*

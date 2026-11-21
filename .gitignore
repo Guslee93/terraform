@@ -15,3 +15,7 @@ __pycache__/
 *.pyc
 tmp/
 .vercel
+
+# Visuals plan V2a: the owner's local aerial screenshots (Norge i bilder). Never committed or published.
+public/local-ortho/*
+!public/local-ortho/README.md

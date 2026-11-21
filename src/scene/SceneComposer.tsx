@@ -7,6 +7,7 @@ import {
   RenderPass,
   ToneMappingEffect,
   ToneMappingMode,
+  VignetteEffect,
 } from 'postprocessing'
 import { Color, HalfFloatType } from 'three'
 import type { SceneStyle } from './style'
@@ -14,7 +15,7 @@ import type { SceneStyle } from './style'
 /** Polish fades back in over this after a drag ends (rendering spec). */
 const FADE_IN_S = 0.3
 
-type Passes = { composer: EffectComposer; ao: N8AOPostPass }
+type Passes = { composer: EffectComposer; ao: N8AOPostPass; toneMapping: ToneMappingEffect }
 
 /**
  * Render → N8AO ambient occlusion → neutral tone mapping (ADR-0005, ADR-0018). AO runs in
@@ -50,15 +51,29 @@ export default function SceneComposer({ ao, busy, style }: { ao: 'full' | 'half'
     // Cool dark grey, matching the blue-grey hemisphere shade instead of black.
     aoPass.configuration.color = new Color(style.ao.color)
     composer.addPass(aoPass)
-    composer.addPass(new EffectPass(camera, new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL })))
-    setPasses({ composer, ao: aoPass })
+    const toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL })
+    composer.addPass(new EffectPass(camera, toneMapping))
+    // Identity vignette (Run 9 T2): darken the frame edges toward the frame-edge green, after tone
+    // mapping. Only the composer applies it, so the depth / white / analysis export passes — which
+    // render the scene directly — never see it. Provisional strength, Lab-tunable in T6.
+    if (style.id === 'identity') {
+      const darkness = style.tuning?.vignetteStrength ?? 0.55
+      composer.addPass(new EffectPass(camera, new VignetteEffect({ eskil: false, offset: 0.35, darkness })))
+    }
+    setPasses({ composer, ao: aoPass, toneMapping })
     return () => {
       setPasses(null)
       composer.dispose()
     }
-  }, [gl, scene, camera, ao, style.ao])
+  }, [gl, scene, camera, ao, style.ao, style.id, style.tuning?.vignetteStrength])
 
   useEffect(() => passes?.composer.setSize(size.width, size.height), [passes, size.width, size.height, dpr])
+
+  // Live exposure (Lab slider): update the tone-mapping uniform without rebuilding the composer.
+  useEffect(() => {
+    const uniform = passes?.toneMapping.uniforms.get('toneMappingExposure')
+    if (uniform) uniform.value = style.toneMappingExposure
+  }, [passes, style.toneMappingExposure])
 
   // A priority-1 frame callback switches off R3F's own render, so draw directly until ready.
   useFrame((_, delta) => {

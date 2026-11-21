@@ -6,10 +6,11 @@ import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Grid, OrbitControls } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { DoubleSide, EdgesGeometry, Float32BufferAttribute, MeshStandardMaterial, NeutralToneMapping, PMREMGenerator, Vector3 } from 'three'
+import { CanvasTexture, ClampToEdgeWrapping, DoubleSide, EdgesGeometry, Float32BufferAttribute, LineBasicMaterial, MeshStandardMaterial, NeutralToneMapping, PMREMGenerator, SRGBColorSpace, Vector3 } from 'three'
+import { photoTextureTransform } from './photoPlacement'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
-import type { CameraPresetId } from '../features/sites/manifest'
-import type { SitePackage } from '../features/sites/package'
+import type { CameraPreset, CameraPresetId } from '../features/sites/manifest'
+import type { SitePackage, TerrainData } from '../features/sites/package'
 import { contourSegments } from '../features/sites/contours'
 import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import { enuToThreeXyz, type Vec2 } from '../lib/coordinates'
@@ -47,6 +48,7 @@ import type { RoofSolarValue } from '../features/analysis/roofSolar'
 import { DEFAULT_WIND, displayAt, flowAtHeight, windCaption, windDrawLift, type WindSettings, type WindBaseline, type ClimateOverlay } from '../features/analysis/climateView'
 import { MassLayer, type MassAnnotation } from './MassLayer'
 import { Trees } from './Trees'
+import { PointVegetation } from './PointVegetation'
 import { visibleTierFootprints } from './massFootprints'
 import { webglRendererName } from './rendererTier'
 import { createFrameBudget, downgrade, RENDER_PROFILES, resolveProfile, type RenderPreference, type RenderProfile } from './renderQuality'
@@ -55,7 +57,10 @@ import { PassExporter } from './PassExporter'
 import { ANALYSIS_OVERLAY_NAME, type PassImages } from './exportPasses'
 import { CameraHud } from './CameraHud'
 import { createLandCoverTexture } from './landCoverTexture'
+import { hazeRange } from './dissolve'
+import { applySceneFades, hazeMixLine, hazeShaderChunk, hazeUniforms, type HazeInput } from './sceneFades'
 import { NORDIC, type SceneStyle } from './style'
+import { sceneColourForDisplay } from './styleColour'
 import { createWaterGeometry } from './waterGeometry'
 import { carveTerrainForWater, computeWaterSurfaces, type WaterSurface } from '../features/sites/waterSurface'
 import { SceneErrorBoundary, SceneUnavailable } from './SceneErrorBoundary'
@@ -83,7 +88,7 @@ type ViewportProps = {
   sitePackage: SitePackage
   sun: SunDirection
   layers: SceneLayers
-  presetId: CameraPresetId
+  presetId: CameraPresetId | 'overview'
   cameraNonce: number
   editor: EditorState
   dispatch: (event: EditorEvent) => void
@@ -138,6 +143,16 @@ type ViewportProps = {
   onExport?: (result: PassImages | Error) => void
   /** The scene style; defaults to NORDIC (today's look). */
   style?: SceneStyle
+  /** The 1 m terrain tile, loaded once by the host when a style asks for 1 m contours (TF-VIS-053). */
+  terrain1m?: TerrainRaster | null
+  /**
+   * Visual Lab only (visuals plan V2a): an already-greyed aerial photo and the ground rectangle it
+   * covers (local ENU metres). Replaces the land-cover colouring on the terrain. Never set by the
+   * studio; the photo is a local file that is not committed or published.
+   */
+  groundPhoto?: { readonly canvas: HTMLCanvasElement; readonly rect: { readonly minX: number; readonly maxX: number; readonly minY: number; readonly maxY: number } } | null
+  /** A Lab-only "overview" camera that frames the whole tile; selected by presetId 'overview'. */
+  overviewPreset?: CameraPreset | null
 }
 
 /** Pointer travel (px) below which a press-and-release counts as a click, not an orbit. */
@@ -157,37 +172,92 @@ type GroundHandlers = {
 
 function TerrainMesh({
   terrain,
+  gridTerrain,
   landcover,
   showGrid,
   showGround,
   onGroundClick,
   onGroundMove,
   style,
+  raster1m,
+  minorFade,
+  haze,
+  groundPhoto = null,
 }: {
   terrain: SitePackage['terrain']
+  /** The 16 m grid, kept for the contour fallback, grid lines and skirt while `terrain` is 1 m. */
+  gridTerrain: SitePackage['terrain']
   landcover: SitePackage['landcover']
   showGrid: boolean
   /** The land cover tint rides on the terrain mesh, so the toggle drops the texture, not the mesh. */
   showGround: boolean
   style: SceneStyle
+  /** The 1 m tile, when the style draws contours from it (TF-VIS-053). */
+  raster1m: TerrainRaster | null
+  /** World-space fade band for minor contours; null keeps them at full opacity. */
+  minorFade: { readonly start: number; readonly end: number } | null
+  /** Atmospheric dissolve band; null keeps the terrain opaque. */
+  haze: HazeInput | null
+  /** Lab-only local aerial photo (see ViewportProps.groundPhoto). */
+  groundPhoto?: ViewportProps['groundPhoto']
 } & GroundHandlers) {
-  const geometry = useMemo(() => createTerrainGeometry(terrain), [terrain])
-  const grid = useMemo(() => createTerrainGridGeometry(terrain), [terrain])
-  const skirt = useMemo(() => createTerrainSkirtGeometry(terrain), [terrain])
+  const geometry = useMemo(() => createTerrainGeometry(terrain, style.groundTint), [terrain, style.groundTint])
+  const grid = useMemo(() => createTerrainGridGeometry(gridTerrain), [gridTerrain])
+  const skirt = useMemo(() => createTerrainSkirtGeometry(gridTerrain), [gridTerrain])
   // Parks green, water blue, painted in plan and draped by the terrain UVs (ADR-0005 §5).
   const landcoverTexture = useMemo(
-    () => createLandCoverTexture(landcover, terrain),
-    [landcover, terrain],
+    () => createLandCoverTexture(landcover, terrain, 2048, style.groundTint, style.landCoverPalette),
+    [landcover, terrain, style.groundTint, style.landCoverPalette],
   )
   useEffect(() => () => landcoverTexture?.dispose(), [landcoverTexture])
+
+  // Contours: the 16 m grid always exists (and is the fallback while the 1 m worker runs). A
+  // `tile1m` style additionally mounts the lazy 1 m contours (TF-VIS-053; Run 8 keeps that code out
+  // of production).
+  const tile1m = style.contourSource === 'tile1m'
+
   const contours = useMemo(() => {
-    const { min, max } = terrainHeightRange(terrain)
+    const { min, max } = terrainHeightRange(gridTerrain)
     const { minor, major } =
       max - min < CONTOUR_MIN_RELIEF_M
         ? { minor: [], major: [] }
-        : contourSegments(terrain, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M)
+        : contourSegments(gridTerrain, CONTOUR_INTERVAL_M, CONTOUR_MAJOR_INTERVAL_M)
     return { minor: createContourGeometry(minor), major: createContourGeometry(major) }
-  }, [terrain])
+  }, [gridTerrain])
+
+  // Minor contours fade by camera distance in the identity style; majors keep full opacity. Both
+  // also dissolve toward the tile edge (Run 8).
+  const minorMaterial = useMemo(() => {
+    const material = new LineBasicMaterial({ color: style.lines.contourMinor.color, transparent: true, opacity: style.lines.contourMinor.opacity, depthWrite: false })
+    return applySceneFades(material, { cameraFade: minorFade, haze })
+  }, [style.lines.contourMinor, minorFade, haze])
+  const majorMaterial = useMemo(() => {
+    const material = new LineBasicMaterial({ color: style.lines.contourMajor.color, transparent: true, opacity: style.lines.contourMajor.opacity, depthWrite: false })
+    return applySceneFades(material, { haze })
+  }, [style.lines.contourMajor, haze])
+  // The terrain material is rebuilt when `showGround` toggles (dropping `map` on a live material
+  // leaves the tint compiled in), and dissolves toward the background when the style asks.
+  // Lab-only aerial photo: placed by repeat/offset on the terrain UVs (u east, v north). Outside the
+  // photo the edge pixels clamp; the haze carries the far ground anyway.
+  const photoTexture = useMemo(() => {
+    if (!groundPhoto) return null
+    const texture = new CanvasTexture(groundPhoto.canvas)
+    texture.colorSpace = SRGBColorSpace
+    texture.wrapS = texture.wrapT = ClampToEdgeWrapping
+    texture.anisotropy = 8
+    const { repeat, offset } = photoTextureTransform(terrain, groundPhoto.rect)
+    texture.repeat.set(repeat[0], repeat[1])
+    texture.offset.set(offset[0], offset[1])
+    return texture
+  }, [groundPhoto, terrain])
+  useEffect(() => () => photoTexture?.dispose(), [photoTexture])
+  const terrainMaterial = useMemo(() => {
+    // With a photo the colour comes from the photo alone (no land-cover vertex tint).
+    const material = new MeshStandardMaterial({ vertexColors: !photoTexture, roughness: 0.97, metalness: 0 })
+    if (photoTexture) material.map = photoTexture
+    else if (showGround && landcoverTexture) material.map = landcoverTexture
+    return applySceneFades(material, { haze })
+  }, [showGround, landcoverTexture, haze, photoTexture])
 
   useEffect(
     () => () => {
@@ -196,14 +266,18 @@ function TerrainMesh({
       skirt.dispose()
       contours.minor.dispose()
       contours.major.dispose()
+      minorMaterial.dispose()
+      majorMaterial.dispose()
+      terrainMaterial.dispose()
     },
-    [geometry, grid, skirt, contours],
+    [geometry, grid, skirt, contours, minorMaterial, majorMaterial, terrainMaterial],
   )
 
   return (
     <group>
       <mesh
         geometry={geometry}
+        material={terrainMaterial}
         receiveShadow
         onClick={(event: ThreeEvent<MouseEvent>) => {
           if (!onGroundClick || event.delta > CLICK_TOLERANCE_PX) return
@@ -212,26 +286,18 @@ function TerrainMesh({
         onPointerMove={(event: ThreeEvent<PointerEvent>) =>
           onGroundMove?.([event.point.x, -event.point.z])
         }
-      >
-        <meshStandardMaterial
-          // three compiles the texture lookup into the shader, so dropping `map` on a live
-          // material leaves the tint on screen. A new material per state recompiles it.
-          key={showGround ? 'tinted' : 'plain'}
-          vertexColors
-          map={showGround ? landcoverTexture : undefined}
-          roughness={0.97}
-          metalness={0}
-        />
-      </mesh>
-      <mesh geometry={skirt} receiveShadow>
-        <meshStandardMaterial color={style.skirt} roughness={1} metalness={0} side={DoubleSide} />
-      </mesh>
-      <lineSegments geometry={contours.minor}>
-        <lineBasicMaterial color={style.lines.contourMinor.color} transparent opacity={style.lines.contourMinor.opacity} depthWrite={false} />
-      </lineSegments>
-      <lineSegments geometry={contours.major}>
-        <lineBasicMaterial color={style.lines.contourMajor.color} transparent opacity={style.lines.contourMajor.opacity} depthWrite={false} />
-      </lineSegments>
+      />
+      {style.skirt !== null && (
+        <mesh geometry={skirt} receiveShadow>
+          <meshStandardMaterial color={style.skirt} roughness={1} metalness={0} side={DoubleSide} />
+        </mesh>
+      )}
+      <lineSegments geometry={contours.minor} material={minorMaterial} />
+      <lineSegments geometry={contours.major} material={majorMaterial} />
+      {tile1m && raster1m && (
+        <Suspense fallback={null}>
+          <RasterContoursLazy raster={raster1m} terrain={terrain} style={style} minorFade={minorFade} haze={haze} />        </Suspense>
+      )}
       <lineSegments geometry={grid} visible={showGrid}>
         <lineBasicMaterial color={style.grid.terrain.color} transparent opacity={style.grid.terrain.opacity} depthWrite={false} />
       </lineSegments>
@@ -242,30 +308,47 @@ function TerrainMesh({
 const NO_FADE: ReadonlySet<number> = new Set()
 /** Buildings below the lifted wind disc no longer block the wind there; they are drawn faint. */
 const FADED_OPACITY = 0.22
+/** Identity building skirt depth (m) below the base, so walls reach a lower 1 m surface. */
+const CONTEXT_SKIRT_M = 4
 
 /** One shader switch per material: draw only the faded (`keep` 1) or only the solid (`keep` 0) buildings. */
-function fadeShader(material: MeshStandardMaterial, keep: 0 | 1) {
+function fadeShader(material: MeshStandardMaterial, keep: 0 | 1, haze: HazeInput | null) {
   material.onBeforeCompile = (shader) => {
-    shader.vertexShader = 'attribute float faded;\nvarying float vFaded;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvFaded = faded;')
-    shader.fragmentShader = 'varying float vFaded;\n' + shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nif (${keep === 1 ? 'vFaded < 0.5' : 'vFaded > 0.5'}) discard;`)
+    if (haze) {
+      // Wind-lift fade + aerial-perspective haze, combined.
+      Object.assign(shader.uniforms, hazeUniforms(haze))
+      shader.vertexShader = 'attribute float faded;\nvarying float vFaded;\nvarying vec3 vSceneFadeWorld;\n' + shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvFaded = faded;\n{ vec4 fadeWorldPos = modelMatrix * vec4(transformed, 1.0); vSceneFadeWorld = fadeWorldPos.xyz; }',
+      )
+      shader.fragmentShader = 'varying float vFaded;\nvarying vec3 vSceneFadeWorld;\n' + hazeShaderChunk() + shader.fragmentShader
+        .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nif (${keep === 1 ? 'vFaded < 0.5' : 'vFaded > 0.5'}) discard;`)
+        .replace('#include <fog_fragment>', `#include <fog_fragment>\n${hazeMixLine}`)
+    } else {
+      // Wind-lift only — byte-identical to Run 7 so NORDIC stays pixel-identical.
+      shader.vertexShader = 'attribute float faded;\nvarying float vFaded;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvFaded = faded;')
+      shader.fragmentShader = 'varying float vFaded;\n' + shader.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nif (${keep === 1 ? 'vFaded < 0.5' : 'vFaded > 0.5'}) discard;`)
+    }
   }
-  material.customProgramCacheKey = () => `context-fade-${keep}`
+  material.customProgramCacheKey = () => `context-fade-${keep}-${haze?.params.fadeWidth ?? 0}`
   return material
 }
 
-function ContextBuildings({ buildings, faded = NO_FADE, style }: { buildings: SitePackage['buildings']['buildings']; faded?: ReadonlySet<number>; style: SceneStyle }) {
+function ContextBuildings({ buildings, faded = NO_FADE, style, haze }: { buildings: SitePackage['buildings']['buildings']; faded?: ReadonlySet<number>; style: SceneStyle; haze: HazeInput | null }) {
   // Built once. While the wind disc is lifted (ADR-0028 phase 3) the buildings it passes over are
   // flagged in a per-vertex attribute: the solid material skips them and a faint material draws
   // them. Rebuilding the merged mesh instead cost 65–100 ms per height step on Compact Infill
   // (code review 2026-11-13, finding 6); writing the flags is a fill over a few vertex ranges.
   const geometry = useMemo(() => {
-    const merged = createContextGeometry(buildings)
+    // Identity extends the walls below the base (a skirt) so buildings never float over a lower 1 m
+    // surface; NORDIC keeps the base-exact walls (skirtDepth 0).
+    const merged = createContextGeometry(buildings, style.id === 'identity' ? CONTEXT_SKIRT_M : 0)
     merged.setAttribute('faded', new Float32BufferAttribute(new Float32Array(merged.getAttribute('position').count), 1))
     return merged
-  }, [buildings])
+  }, [buildings, style.id])
   const edges = useMemo(() => new EdgesGeometry(geometry, EDGE_THRESHOLD_DEG), [geometry])
-  const solidMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), 0), [style.context])
-  const fadedMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, transparent: true, opacity: FADED_OPACITY, depthWrite: false }), 1), [style.context])
+  const solidMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }), 0, haze), [style.context, haze])
+  const fadedMaterial = useMemo(() => fadeShader(new MeshStandardMaterial({ color: style.context.color, roughness: style.context.roughness, metalness: 0, flatShading: true, transparent: true, opacity: FADED_OPACITY, depthWrite: false }), 1, haze), [style.context, haze])
 
   useEffect(() => {
     const attribute = geometry.getAttribute('faded') as Float32BufferAttribute
@@ -283,15 +366,25 @@ function ContextBuildings({ buildings, faded = NO_FADE, style }: { buildings: Si
     },
     [geometry, edges],
   )
-  useEffect(() => () => { solidMaterial.dispose(); fadedMaterial.dispose() }, [solidMaterial, fadedMaterial])
+  // Identity: the crease lines take the same haze as the faces, or distant buildings float as white
+  // wire outlines once their faces have dissolved. NORDIC keeps the plain JSX material below.
+  const hazedEdgeMaterial = useMemo(
+    () => (haze ? applySceneFades(new LineBasicMaterial({ color: style.lines.crease.color, transparent: true, opacity: style.lines.crease.opacity, depthWrite: false }), { haze }) : null),
+    [haze, style.lines.crease],
+  )
+  useEffect(() => () => { solidMaterial.dispose(); fadedMaterial.dispose(); hazedEdgeMaterial?.dispose() }, [solidMaterial, fadedMaterial, hazedEdgeMaterial])
 
   return (
     <group>
       {/* The solid mesh's shadow pass still includes faded buildings: they still shade the ground. */}
       <mesh geometry={geometry} material={solidMaterial} castShadow receiveShadow />
-      <lineSegments geometry={edges}>
-        <lineBasicMaterial color={style.lines.crease.color} transparent opacity={style.lines.crease.opacity} depthWrite={false} />
-      </lineSegments>
+      {hazedEdgeMaterial ? (
+        <lineSegments geometry={edges} material={hazedEdgeMaterial} />
+      ) : (
+        <lineSegments geometry={edges}>
+          <lineBasicMaterial color={style.lines.crease.color} transparent opacity={style.lines.crease.opacity} depthWrite={false} />
+        </lineSegments>
+      )}
       {faded.size > 0 && <mesh geometry={geometry} material={fadedMaterial} />}
     </group>
   )
@@ -301,24 +394,17 @@ function ContextBuildings({ buildings, faded = NO_FADE, style }: { buildings: Si
  * Warm mid-grey, without a hue. The lit ribbon renders much paler than this value, so it has to
  * sit well below the ground colour to read as a street at site scale.
  */
-function Streets({ roads, terrain, style }: { roads: SitePackage['roads']; terrain: SitePackage['terrain']; style: SceneStyle }) {
+function Streets({ roads, terrain, style, haze }: { roads: SitePackage['roads']; terrain: SitePackage['terrain']; style: SceneStyle; haze: HazeInput | null }) {
   const geometry = useMemo(
     () => createRoadGeometry(roads, terrain),
     [roads, terrain],
   )
   useEffect(() => () => geometry.dispose(), [geometry])
+  const material = useMemo(() => applySceneFades(new MeshStandardMaterial({ color: style.road, roughness: 1, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), { haze }), [style.road, haze])
+  useEffect(() => () => material.dispose(), [material])
 
   return (
-    <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial
-        color={style.road}
-        roughness={1}
-        metalness={0}
-        polygonOffset
-        polygonOffsetFactor={-2}
-        polygonOffsetUnits={-2}
-      />
-    </mesh>
+    <mesh geometry={geometry} receiveShadow material={material} />
   )
 }
 
@@ -329,14 +415,14 @@ function Streets({ roads, terrain, style }: { roads: SitePackage['roads']; terra
  * relief of the ground underneath it. The ground inside a mapped water body is cut down to the
  * water surface, so the water lies in the landscape instead of on top of it.
  */
-function Water({ surfaces, style }: { surfaces: readonly WaterSurface[]; style: SceneStyle }) {
+function Water({ surfaces, style, haze }: { surfaces: readonly WaterSurface[]; style: SceneStyle; haze: HazeInput | null }) {
   const geometry = useMemo(() => createWaterGeometry(surfaces), [surfaces])
   useEffect(() => () => geometry.dispose(), [geometry])
+  const material = useMemo(() => applySceneFades(new MeshStandardMaterial({ color: style.water, roughness: style.waterRoughness, metalness: 0, envMapIntensity: style.waterEnvIntensity }), { haze }), [style.water, style.waterRoughness, style.waterEnvIntensity, haze])
+  useEffect(() => () => material.dispose(), [material])
   if (!surfaces.length) return null
   return (
-    <mesh geometry={geometry} receiveShadow>
-      <meshStandardMaterial color={style.water} roughness={0.55} metalness={0} />
-    </mesh>
+    <mesh geometry={geometry} receiveShadow material={material} />
   )
 }
 
@@ -467,6 +553,7 @@ function SiteLights({ sitePackage, sun, profile }: {
 }
 
 const SceneComposer = lazy(() => import('./SceneComposer'))
+const RasterContoursLazy = lazy(() => import('./RasterContours'))
 
 /** Below this canvas width the scene renders without ambient occlusion (ADR-0005 §3). */
 const AO_MIN_WIDTH_PX = 640
@@ -495,8 +582,28 @@ function FrameBudgetWatch({ onSlow }: { onSlow: () => void }) {
   return null
 }
 
-function WindDemoCamera({ orbitDeg, controlsRef }: { orbitDeg: number | null; controlsRef: RefObject<OrbitControlsHandle | null> }) {
-  const { camera } = useThree()
+/** Lab-only test hook (Run 10 T1): projects ENU points to screen pixels for the edge test. */
+function EdgeTestHook({ terrain }: { terrain: SitePackage['terrain'] }) {
+  const camera = useThree((state) => state.camera)
+  const size = useThree((state) => state.size)
+  useEffect(() => {
+    const hook = {
+      bounds: { minX: terrain.minX, maxX: terrain.maxX, minY: terrain.minY, maxY: terrain.maxY },
+      // Ground height (16 m grid) so the projected tile outline sits on the drawn terrain edge.
+      heightAt: (east: number, north: number): number => sampleTerrainHeight(terrain, east, north),
+      project: (east: number, north: number, elevation: number): [number, number] => {
+        camera.updateMatrixWorld()
+        const p = new Vector3(east, elevation, -north).project(camera)
+        return [((p.x + 1) / 2) * size.width, ((1 - p.y) / 2) * size.height]
+      },
+    }
+    ;(window as Window & { __terraformEdgeTest?: typeof hook }).__terraformEdgeTest = hook
+    return () => { delete (window as Window & { __terraformEdgeTest?: typeof hook }).__terraformEdgeTest }
+  }, [camera, size, terrain])
+  return null
+}
+
+function WindDemoCamera({ orbitDeg, controlsRef }: { orbitDeg: number | null; controlsRef: RefObject<OrbitControlsHandle | null> }) {  const { camera } = useThree()
   const saved = useRef<{ position: Vector3; target: Vector3 } | null>(null)
   const playing = orbitDeg !== null
   useLayoutEffect(() => {
@@ -561,6 +668,9 @@ export function ViewportCanvas({
   onPickParcel,
   onExport,
   style = NORDIC,
+  terrain1m = null,
+  overviewPreset = null,
+  groundPhoto = null,
 }: ViewportProps) {
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   useEffect(() => {
@@ -576,18 +686,36 @@ export function ViewportCanvas({
   const [slow, setSlow] = useState({ preference: renderPreference, steps: 0 })
   const steps = renderPreference === 'auto' && slow.preference === 'auto' ? slow.steps : 0
   const profile = downgrade(resolveProfile(renderPreference, rendererName ?? ''), steps)
+  // Expose the resolved tier for the Lab perf harness (Run 9 T1); pixel-neutral.
+  useEffect(() => {
+    ;(window as Window & { __terraformRenderTier?: string }).__terraformRenderTier = profile
+  }, [profile])
   const onSlow = useCallback(() => setSlow((current) => ({ preference: 'auto', steps: current.preference === 'auto' ? current.steps + 1 : 1 })), [])
   const { manifest, buildings } = sitePackage
   // Water is a surface of its own (ADR-0025): the ground inside a mapped water body is cut down
   // to the water surface, and the water is then drawn flat on top of it.
+  // Real relief (Run 9 T4): the identity draws the terrain from the 1 m tile (decimated to a 2 m
+  // step) on curated sites. Water, roads, trees and contours all sample this drawn surface. The
+  // raster helpers are dynamic-imported so they stay out of the studio bundle (Run 10 T6).
+  const [drawnTerrain, setDrawnTerrain] = useState<TerrainData | null>(null)
+  useEffect(() => {
+    if (style.contourSource !== 'tile1m' || !terrain1m) { setDrawnTerrain(null); return }
+    let cancelled = false
+    import('./rasterTerrain').then(({ decimateRaster, rasterToTerrainData }) => {
+      if (!cancelled) setDrawnTerrain(rasterToTerrainData(decimateRaster(terrain1m, 2), sitePackage.terrain))
+    })
+    return () => { cancelled = true }
+  }, [style.contourSource, terrain1m, sitePackage.terrain])
   const waterSurfaces = useMemo(
-    () => computeWaterSurfaces(sitePackage.terrain, sitePackage.landcover),
-    [sitePackage],
+    () => computeWaterSurfaces(drawnTerrain ?? sitePackage.terrain, sitePackage.landcover),
+    [drawnTerrain, sitePackage],
   )
   const terrain = useMemo(
-    () => carveTerrainForWater(sitePackage.terrain, waterSurfaces),
-    [sitePackage, waterSurfaces],
+    () => carveTerrainForWater(drawnTerrain ?? sitePackage.terrain, waterSurfaces),
+    [drawnTerrain, sitePackage, waterSurfaces],
   )
+  // Trees/points sample the drawn surface's height; buildings keep their package base elevations.
+  const visualPackage = useMemo(() => (drawnTerrain ? { ...sitePackage, terrain } : sitePackage), [drawnTerrain, sitePackage, terrain])
   const initialPreset = manifest.cameraPresets.isometric
   // Fog, orbit limit and far plane were tuned for the curated sites (farthest preset ≈ 870 m).
   // Large imports put presets farther out: scale up so they stay reachable and out of the fog.
@@ -596,6 +724,30 @@ export function ViewportCanvas({
   const initialPosition = enuToThreeXyz(initialPreset.position)
   const initialTarget = enuToThreeXyz(initialPreset.target)
   const heightAt = useCallback((east: number, north: number) => sampleTerrainHeight(terrain, east, north), [terrain])
+  // Minor contours fade beyond ~1.5× the isometric preset distance (TF-VIS-053 zoom density;
+  // provisional). Majors keep full opacity.
+  const minorFade = useMemo(() => {
+    if (style.contourSource !== 'tile1m') return null
+    const { position, target } = initialPreset
+    const factor = style.tuning?.minorFadeDistanceM ?? 1.5
+    const start = Math.hypot(position[0] - target[0], position[1] - target[1], position[2] - target[2]) * factor
+    return { start, end: start * 1.35 }
+  }, [style.contourSource, initialPreset, style.tuning?.minorFadeDistanceM])
+  // The identity's aerial haze is computed from the site (study area, terrain, wind circle).
+  const haze = useMemo(() => {
+    if (style.dissolve !== 'auto') return null
+    const params = hazeRange(sitePackage.studyArea.polygon, windSettings.radius, sitePackage.terrain, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM)
+    // Pre-compensated for exposure + neutral tone mapping, so the haze DISPLAYS as the chosen colour.
+    return { params, colour: sceneColourForDisplay(style.hazeColour, style.toneMappingExposure) }
+  }, [style.dissolve, sitePackage, windSettings.radius, style.tuning?.dissolveSiteMarginM, style.tuning?.dissolveMaxFadeWidthM, style.hazeColour, style.toneMappingExposure])
+  // The background (and fog) of the identity displays as the chosen colour, matching the haze
+  // exactly; NORDIC keeps its colour as is.
+  const backgroundColour = style.id === 'identity' ? sceneColourForDisplay(style.background, style.toneMappingExposure) : style.background
+  // The camera presets, with the Lab-only "overview" preset merged in (falls back to isometric).
+  const cameraPresets = useMemo(() => ({
+    ...manifest.cameraPresets,
+    overview: overviewPreset ?? manifest.cameraPresets.isometric,
+  }), [manifest.cameraPresets, overviewPreset])
   // The wind map, circle and particles follow the terrain at the chosen slice height (ADR-0028).
   // While the lift handle is dragged the disc follows the pointer; the map shows the nearest slice.
   const [liftDrag, setLiftDrag] = useState<number | null>(null)
@@ -689,20 +841,25 @@ export function ViewportCanvas({
               far: 2600 * viewScale,
             }}
           >
-            <color attach="background" args={[style.background]} />
-            <fog attach="fog" args={[style.background, 600 * viewScale, 1400 * viewScale]} />
+            <color attach="background" args={[backgroundColour]} />
+            <fog attach="fog" args={[backgroundColour, 600 * viewScale, 1400 * viewScale]} />
             <SiteLights sitePackage={sitePackage} sun={sun} profile={profile} />
-            {grid && <FloorGrid terrain={terrain} viewScale={viewScale} style={style} />}
+            {grid && style.floorGrid && <FloorGrid terrain={terrain} viewScale={viewScale} style={style} />}
 
             {/* Hidden, not unmounted, when the Terrain layer is off: it is the ground the draw tool,
                 deselect and Move circle click on (three's raycaster ignores visibility). */}
             <group visible={layers.terrain}>
               <TerrainMesh
                 terrain={terrain}
+                gridTerrain={sitePackage.terrain}
                 landcover={sitePackage.landcover}
                 showGrid={presetId === 'top' || drawing}
                 showGround={layers.ground}
                 style={style}
+                raster1m={terrain1m}
+                minorFade={minorFade}
+                haze={haze}
+                groundPhoto={groundPhoto}
                 onGroundClick={onGroundClick}
                 onGroundMove={
                   drawing && editor.interaction.kind === 'drawing'
@@ -711,12 +868,12 @@ export function ViewportCanvas({
                 }
               />
             </group>
-            {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} style={style} />}
-            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} />}
+            {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} style={style} haze={haze} />}
+            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} haze={haze} />}
             {/* The streets keep the ground the package was built on, so they bridge the cut the
                 water makes in the ground beneath them (ADR-0025). */}
             {layers.streets && layers.terrain && (
-              <Streets roads={sitePackage.roads} terrain={sitePackage.terrain} style={style} />
+              <Streets roads={sitePackage.roads} terrain={terrain} style={style} haze={haze} />
             )}
             {layers.parcels && layers.terrain && sitePackage.parcels.length > 0 && <ParcelLines parcels={sitePackage.parcels} selected={selectedParcel} heightAt={heightAt} />}
             {section && section.length > 0 && layers.terrain && <SectionLine points={section} heightAt={heightAt} />}
@@ -745,12 +902,9 @@ export function ViewportCanvas({
             </group>
 
             <group name="live-scenario">
-            {layers.trees && (
-              <Trees
-                sitePackage={sitePackage}
-                exclude={treeExclude}
-                detail={profile === 'low' ? 'simple' : 'full'}
-              />
+            {layers.trees && (style.vegetation === 'points'
+              ? <PointVegetation sitePackage={visualPackage} exclude={treeExclude} colour={style.vegetationColour} haze={haze} pointSizeMinPx={style.tuning?.pointSizeMinPx} pointSizeMaxPx={style.tuning?.pointSizeMaxPx} density={style.tuning?.treeDensity} />
+              : <Trees sitePackage={visualPackage} exclude={treeExclude} detail={profile === 'low' ? 'simple' : 'full'} speckled={style.vegetation === 'speckled'} haze={haze} />
             )}
             <MassLayer
               editor={editor}
@@ -765,9 +919,10 @@ export function ViewportCanvas({
             <CameraRig
               presetId={presetId}
               nonce={cameraNonce}
-              presets={manifest.cameraPresets}
+              presets={cameraPresets}
               controlsRef={controlsRef}
             />
+            {style.id === 'identity' && <EdgeTestHook terrain={sitePackage.terrain} />}
             {onExport && <PassExporter request={exportRequest} controls={controlsRef} onDone={onExport} credits={exportCredits} />}
             <WindDemoCamera orbitDeg={demoOrbitDeg} controlsRef={controlsRef} />
             <HudProbe controlsRef={controlsRef} />

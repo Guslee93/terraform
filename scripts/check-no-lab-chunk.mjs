@@ -33,4 +33,12 @@ if (offenders.length > 0) {
   console.error(`LabPage found in the production build:\n  ${offenders.join('\n  ')}`)
   process.exit(1)
 }
+
+// The owner's local aerial screenshots (public/local-ortho/, visuals plan V2a) must never ship:
+// Kartverket's permission covers neither publishing nor redistribution yet.
+const photos = files.filter((file) => file.includes('/local-ortho/') && /\.(png|jpe?g|webp)$/i.test(file))
+if (photos.length > 0) {
+  console.error(`Local aerial photos found in the production build:\n  ${photos.join('\n  ')}`)
+  process.exit(1)
+}
 console.log(`No LabPage reference in ${files.length} production files.`)
