@@ -1588,3 +1588,31 @@ zoom in because the quads are small at the default site camera.
     reverted (2.05 / 8.00), so the regression comes from that fix.
 - **Open.** RUN10-log owner question 1 (do buildings fade with the ground) and question 2 (default
   photo colour).
+
+## 2026-11-24 — ADR-0041: free Sentinel-2 ground and the mist vignette (Claude Opus 5.5)
+
+- **Ground image.**
+  - Kartverket's Sentinel-2 cloudless mosaic: open data, CC BY 4.0, 10 m, live WMS, north-up in
+    EPSG:3857.
+  - The Lab's Ground card chooses between the local photo, Sentinel-2 and the map colours. Streets stay
+    drawn over Sentinel-2.
+  - The bbox maths is tested against an independent computation.
+- **Mist.**
+  - `MistVignetteEffect`: the edges blur (24-tap disc) and mix into the haze colour after tone mapping.
+    New Lab sliders: Mist, Mist blur, Clear centre.
+  - The aerial haze starts at the tile corner, so only the tile edge dissolves. The massing is back on
+    the haze, fading with its ground (D22).
+- **Checks.**
+  - lint 0 · unit 1313 passed / 0 failed · build OK · NORDIC safety net 5 passed.
+  - IDENTITY_EDGE: both sites pass (compact-infill 2.12 / 8.00, sloped-edge 0.83 / 2.00).
+- **Previews:** `docs/screenshots/vis/adr-0041/`.
+
+## 2026-11-24 — ADR-0041 §3: MapTiler satellite ground (Claude Opus 5.5)
+
+- **The choice.** A fourth Ground choice, *MapTiler*: z17 satellite-v2 tiles (about 0.3 m/px, 30 tiles
+  per site), stitched and cropped to the terrain tile. "© MapTiler" is linked in the card.
+- **The key.** It sits in `.env.local` (git-ignored), restricted to localhost and 127.0.0.1 in the
+  MapTiler dashboard.
+- **A fix found while verifying.** One tile timed out once, so each tile now gets two retries.
+- **Checks.** lint 0 · typecheck 0 · unit pass. Headed Metal captures of both sites are local only:
+  MapTiler's terms forbid saved copies.

@@ -82,3 +82,15 @@ passed / 0 failed · build OK.
   published.
 - 2026-11-24 — T8 (Claude): committed the pending Lab work in two author-scoped commits; captured the five
   run 9 views headed on Metal with the photo off; ran the checks (see the T8 row); filled in this ledger.
+- 2026-11-24 — **After Run 10: ADR-0041 (Claude, at the owner's request).** It answers owner question 1
+  (option A, by a different route).
+  - **Free Sentinel-2 ground:** Kartverket's cloudless mosaic, open data, CC BY 4.0, 10 m. The Ground
+    card offers the local photo, Sentinel-2 or the map colours.
+  - **Screen-space mist vignette:** the edges blur and mix into the mist. It replaces the darkening
+    vignette.
+  - **World haze only at the tile edge:** the aerial band now starts at the tile corner.
+  - **Massing back on the haze:** the D41 line is reverted, so buildings fade with their ground. D22 holds.
+  - **Checks:**
+    - IDENTITY_EDGE passes again: compact-infill 2.12 / 8.00 / 0.50, sloped-edge 0.83 / 2.00 / 1.07;
+    - NORDIC safety net 5/5; lint 0; unit 1313/0; build OK;
+    - previews in `docs/screenshots/vis/adr-0041/`.
