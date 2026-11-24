@@ -49,7 +49,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: read-only; any redeploy is an owner action
   - Handoff prompt: `06#tf-vis-001`
 
-- [ ] **TF-VIS-002** `[TEST]` — Independent code review of the runoff and snow work (ADR-0038, ADR-0039)
+- [x] **TF-VIS-002** `[TEST]` — Independent code review of the runoff and snow work (ADR-0038, ADR-0039) — *2026-11-24: PR #26 (pass with follow-ups) and follow-ups PR #28 merged*
   - Priority: P0
   - Owner/model: Opus (`engineering-code-reviewer`)
   - Reviewer: Fable (accepts or rejects findings)
@@ -61,7 +61,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: fixes are small PRs on `build/foundation`
   - Handoff prompt: `06#tf-vis-002`
 
-- [ ] **TF-VIS-003** `[TEST]` — Independent re-run of foundation numbers (feasibility RV-1)
+- [x] **TF-VIS-003** `[TEST]` — Independent re-run of foundation numbers (feasibility RV-1) — *2026-11-24: PR #27 merged, every number reproduced*
   - Priority: P1
   - Owner/model: Codex
   - Reviewer: Fable
