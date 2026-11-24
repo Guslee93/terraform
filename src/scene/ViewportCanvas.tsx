@@ -150,7 +150,12 @@ type ViewportProps = {
    * covers (local ENU metres). Replaces the land-cover colouring on the terrain. Never set by the
    * studio; the photo is a local file that is not committed or published.
    */
-  groundPhoto?: { readonly canvas: HTMLCanvasElement; readonly rect: { readonly minX: number; readonly maxX: number; readonly minY: number; readonly maxY: number } } | null
+  groundPhoto?: {
+    readonly canvas: HTMLCanvasElement
+    readonly rect: { readonly minX: number; readonly maxX: number; readonly minY: number; readonly maxY: number }
+    /** The image shows the streets itself (a sharp photo), so the drawn street ribbons are hidden. */
+    readonly hidesStreets: boolean
+  } | null
   /** A Lab-only "overview" camera that frames the whole tile; selected by presetId 'overview'. */
   overviewPreset?: CameraPreset | null
 }
@@ -869,13 +874,13 @@ export function ViewportCanvas({
               />
             </group>
             {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} style={style} haze={haze} />}
-            {/* Massing stays off the territory haze: the white context boxes are the subject, not the
-                ground, so they must read while the tile edge dissolves (ADR-0023). Wind-lift is separate. */}
-            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} haze={null} />}
+            {/* Massing fades exactly where its ground fades — at the tile edge only, since the aerial band
+                starts beyond the tile (ADR-0041; look spec D22). This replaces the D41 haze={null}. */}
+            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} haze={haze} />}
             {/* The streets keep the ground the package was built on, so they bridge the cut the
                 water makes in the ground beneath them (ADR-0025). */}
-            {/* With a Lab ground photo the photo shows the streets itself (visuals plan V2). */}
-            {layers.streets && layers.terrain && !groundPhoto && (
+            {/* A sharp Lab ground photo shows the streets itself (visuals plan V2); 10 m Sentinel-2 cannot (ADR-0041). */}
+            {layers.streets && layers.terrain && !groundPhoto?.hidesStreets && (
               <Streets roads={sitePackage.roads} terrain={terrain} style={style} haze={haze} />
             )}
             {layers.parcels && layers.terrain && sitePackage.parcels.length > 0 && <ParcelLines parcels={sitePackage.parcels} selected={selectedParcel} heightAt={heightAt} />}

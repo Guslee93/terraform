@@ -105,7 +105,9 @@ export function LabTweakPanel({
           <p className={labelClass}>Identity tuning</p>
           <div className="space-y-2">
             {slider('exposure', 'Exposure', 0.5, 2, 0.05, '×')}
-            {slider('vignetteStrength', 'Vignette', 0, 1, 0.05)}
+            {slider('vignetteStrength', 'Mist', 0, 1, 0.05)}
+            {slider('mistBlurPx', 'Mist blur', 0, 40, 1, ' px')}
+            {slider('mistClearRadius', 'Clear centre', 0, 0.95, 0.05)}
             {slider('waterSheen', 'Water sheen', 0, 1, 0.05)}
             {slider('roadLightness', 'Road lightness', 0, 2, 0.05, '×')}
             {slider('waterLightness', 'Water lightness', 0, 2, 0.05, '×')}

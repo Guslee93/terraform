@@ -23,7 +23,7 @@ import { normalizeRing, ringCentroid } from '../lib/polygon'
 import type { SitePackage } from '../features/sites/package'
 import type { SiteSummary } from '../features/sites/siteCatalog'
 import { buildDemoMassEditor, buildEmptyEditor, type LabStateId } from './lab/states'
-import { LocalPhotoPanel, useLocalPhoto } from './lab/LocalPhotoPanel'
+import { LocalPhotoPanel, useGround } from './lab/LocalPhotoPanel'
 import { LabTweakPanel, type LabQuality } from './lab/TweakPanel'
 import { parseLabParams, serializeTuning, type LabPresetId } from './lab/params'
 import { NORDIC, applyTuning, DEFAULT_TUNING, identityStage, type IdentityStage, type IdentityTuning } from '../scene/style'
@@ -72,8 +72,17 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
   const [tuning, setTuning] = useState<IdentityTuning>(initialParams.tuning)
 
   const style = styleId === 'identity' ? applyTuning(identityStage(stage), tuning) : NORDIC
-  // Visuals plan V2a: the owner's local aerial photo, identity only, never committed or published.
-  const localPhoto = useLocalPhoto(site.id, sitePackage.terrain.maxX - sitePackage.terrain.minX)
+  // The ground image (ADR-0041): the owner's local aerial photo (never committed or published), the
+  // free Sentinel-2 mosaic, or the map colours. Identity only.
+  const groundOrigin = useMemo(
+    () => ({ latitude: sitePackage.manifest.crs.originLatitude, longitude: sitePackage.manifest.crs.originLongitude }),
+    [sitePackage],
+  )
+  const groundTile = useMemo(() => {
+    const { minX, maxX, minY, maxY } = sitePackage.terrain
+    return { minX, maxX, minY, maxY }
+  }, [sitePackage])
+  const ground = useGround(site.id, groundOrigin, groundTile)
 
   const copyTuning = async () => {
     const tuned = applyTuning(identityStage(stage), tuning)
@@ -205,7 +214,7 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
           style={style}
           terrain1m={raster}
           overviewPreset={overviewPreset}
-          groundPhoto={styleId === 'identity' ? localPhoto.groundPhoto : null}
+          groundPhoto={styleId === 'identity' ? ground.groundPhoto : null}
           sunHours={stateId === 'sun-hours' ? { circle: windCircle, result: circleSun.result, buildings: circleSun.buildings, computing: circleSun.computing } : null}
           climate={stateId === 'wind' && climateView ? climateView.overlay : null}
           windFlow={stateId === 'wind' ? windFlow : null}
@@ -224,7 +233,7 @@ function LabScene({ site, sitePackage }: { site: SiteSummary; sitePackage: SiteP
         )}
         {styleId === 'identity' && (
           <div className="absolute bottom-3 left-3 z-20">
-            <LocalPhotoPanel siteId={site.id} photo={localPhoto} />
+            <LocalPhotoPanel siteId={site.id} ground={ground} />
           </div>
         )}
       </section>

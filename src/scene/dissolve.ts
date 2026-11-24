@@ -60,9 +60,9 @@ export function hazeAmount(east: number, north: number, params: HazeParams): num
 }
 
 /**
- * Derive the full haze band for a site. Aerial perspective starts just past the crisp zone — the
- * farthest study corner + margin (per-axis) and the analysis circle + margin — and reaches full at
- * twice that radius (provisional), while the edge fade guarantees the tile edge is fully hazed.
+ * Derive the full haze band for a site. The tile-edge fade dissolves the tile into the background;
+ * aerial perspective starts only beyond the tile corner (and the analysis circle + margin), so
+ * everything on the tile — ground and massing alike — stays crisp up to the edge fade (ADR-0041).
  */
 export function hazeRange(
   studyArea: readonly (readonly [number, number])[],
@@ -72,15 +72,10 @@ export function hazeRange(
   maxFadeWidthM = MAX_FADE_WIDTH_M,
 ): HazeParams {
   const params = dissolveRange(studyArea, analysisCircleRadiusM, terrain, siteMarginM, maxFadeWidthM)
-  let maxAbsX = 0
-  let maxAbsY = 0
-  for (const [east, north] of studyArea) {
-    maxAbsX = Math.max(maxAbsX, Math.abs(east))
-    maxAbsY = Math.max(maxAbsY, Math.abs(north))
-  }
-  const studyCorner = Math.hypot(maxAbsX + siteMarginM, maxAbsY + siteMarginM)
-  const circleReach = analysisCircleRadiusM + siteMarginM
-  const hazeStart = Math.max(studyCorner, circleReach)
+  // The view's mist is the screen-space mist vignette now; the aerial band is kept only so context
+  // beyond the tile still sinks into the mist.
+  const tileCorner = Math.hypot(Math.max(-terrain.minX, terrain.maxX), Math.max(-terrain.minY, terrain.maxY))
+  const hazeStart = Math.max(tileCorner, analysisCircleRadiusM + siteMarginM)
   // A long band (2.6×) so things sink into the mist gradually instead of meeting a wall. Provisional.
   return { ...params, hazeStart, hazeEnd: hazeStart * 2.6 }
 }

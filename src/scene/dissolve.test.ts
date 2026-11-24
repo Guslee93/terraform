@@ -130,7 +130,7 @@ describe('hazeAmount (Run 9 T2, aerial perspective + edge fade)', () => {
     }
   })
 
-  it('is monotonic outward and grows from aerial perspective before the edge', () => {
+  it('is monotonic outward, and inside the tile only the edge fade acts (ADR-0041)', () => {
     const params = withHaze(COMPACT)
     const centreX = (params.minX + params.maxX) / 2
     const centreY = (params.minY + params.maxY) / 2
@@ -141,12 +141,11 @@ describe('hazeAmount (Run 9 T2, aerial perspective + edge fade)', () => {
       expect(amount).toBeGreaterThanOrEqual(previous)
       previous = amount
     }
-    // Between hazeStart and hazeEnd the amount is driven by aerial perspective (already > 0 well
-    // inside the tile, before the edge fade takes over).
-    const inside = hazeAmount(params.hazeStart + 10, 0, params)
-    expect(inside).toBeGreaterThan(0)
-    expect(inside).toBeLessThan(1)
-    expect(hazeAmount(0, 0, params)).toBe(0)
+    // The aerial band starts beyond the tile corner, so inside the tile the haze IS the edge fade.
+    expect(params.hazeStart).toBeGreaterThanOrEqual(Math.hypot(params.maxX, params.maxY) - 1e-9)
+    for (const [east, north] of [[0, 0], [200, 250], [-250, 300], [300, -100]] as const) {
+      expect(hazeAmount(east, north, params)).toBeCloseTo(dissolveAmount(east, north, params), 12)
+    }
   })
 
   it('is bounded to [0, 1]', () => {
@@ -156,24 +155,22 @@ describe('hazeAmount (Run 9 T2, aerial perspective + edge fade)', () => {
   })
 })
 
-describe('territory haze keeps clear of the context massing (ADR-0023)', () => {
-  it('sloped-edge context ring sits inside the fully-opaque haze band, so massing must not be hazed', () => {
+describe('massing fades with its ground, at the tile edge only (ADR-0041, replaces the D41 rule)', () => {
+  it('sloped-edge: every building inside the crisp zone is fully crisp; outside the tile it dissolves', () => {
     const params = hazeRange(SLOPED.studyArea, 100, SLOPED.terrain)
     const { buildings } = parseBuildings(slopedBuildings)
-
-    // The study-area massing is always crisp under the territory haze; nothing in the fix relies on it.
-    for (const building of buildings.filter((b) => b.withinStudyArea)) {
-      for (const [east, north] of building.footprint) {
-        expect(hazeAmount(east, north, params)).toBeLessThan(0.9)
-      }
+    const insideCrisp = (east: number, north: number) =>
+      Math.abs(east) <= params.maxX - params.fadeWidth && Math.abs(north) <= params.maxY - params.fadeWidth
+    const crisp = buildings.filter((b) => b.footprint.every(([east, north]) => insideCrisp(east, north)))
+    // Context houses on the tile, not only the study area, are in the crisp zone (D41's symptom).
+    expect(crisp.filter((b) => !b.withinStudyArea).length).toBeGreaterThan(0)
+    for (const building of crisp) {
+      for (const [east, north] of building.footprint) expect(hazeAmount(east, north, params)).toBe(0)
     }
-
-    // The context halo reaches the fully-dissolved band: a whole roof at haze ≥ 0.9 would be painted
-    // the background colour and vanish against the greyed aerial photo. This is exactly why the
-    // renderer keeps the white massing off the territory haze (ViewportCanvas passes `haze=null`).
-    const erased = buildings.filter(
-      (building) => !building.withinStudyArea && building.footprint.every(([east, north]) => hazeAmount(east, north, params) >= 0.9),
-    )
-    expect(erased.length).toBeGreaterThan(0)
+    // Context beyond the tile edge (ADR-0023's halo) still sinks into the mist with the ground.
+    const beyond = buildings.filter((b) => b.footprint.every(([east, north]) => Math.abs(east) > params.maxX || Math.abs(north) > params.maxY))
+    for (const building of beyond) {
+      for (const [east, north] of building.footprint) expect(hazeAmount(east, north, params)).toBe(1)
+    }
   })
 })

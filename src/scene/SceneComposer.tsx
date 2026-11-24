@@ -7,9 +7,9 @@ import {
   RenderPass,
   ToneMappingEffect,
   ToneMappingMode,
-  VignetteEffect,
 } from 'postprocessing'
 import { Color, HalfFloatType } from 'three'
+import { MistVignetteEffect } from './mistVignette'
 import type { SceneStyle } from './style'
 
 /** Polish fades back in over this after a drag ends (rendering spec). */
@@ -53,19 +53,23 @@ export default function SceneComposer({ ao, busy, style }: { ao: 'full' | 'half'
     composer.addPass(aoPass)
     const toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL })
     composer.addPass(new EffectPass(camera, toneMapping))
-    // Identity vignette (Run 9 T2): darken the frame edges toward the frame-edge green, after tone
-    // mapping. Only the composer applies it, so the depth / white / analysis export passes — which
-    // render the scene directly — never see it. Provisional strength, Lab-tunable in T6.
+    // Identity mist vignette (ADR-0041): the frame edges blur and mix into the mist colour, after
+    // tone mapping. Only the composer applies it, so the depth / white / analysis export passes — which
+    // render the scene directly — never see it. Provisional values, Lab-tunable.
     if (style.id === 'identity') {
-      const darkness = style.tuning?.vignetteStrength ?? 0.55
-      composer.addPass(new EffectPass(camera, new VignetteEffect({ eskil: false, offset: 0.35, darkness })))
+      composer.addPass(new EffectPass(camera, new MistVignetteEffect({
+        colour: style.hazeColour,
+        strength: style.tuning?.vignetteStrength ?? 0.6,
+        clearRadius: style.tuning?.mistClearRadius ?? 0.45,
+        blurPx: style.tuning?.mistBlurPx ?? 14,
+      })))
     }
     setPasses({ composer, ao: aoPass, toneMapping })
     return () => {
       setPasses(null)
       composer.dispose()
     }
-  }, [gl, scene, camera, ao, style.ao, style.id, style.tuning?.vignetteStrength])
+  }, [gl, scene, camera, ao, style.ao, style.id, style.hazeColour, style.tuning?.vignetteStrength, style.tuning?.mistClearRadius, style.tuning?.mistBlurPx])
 
   useEffect(() => passes?.composer.setSize(size.width, size.height), [passes, size.width, size.height, dpr])
 

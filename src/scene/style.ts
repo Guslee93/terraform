@@ -216,8 +216,12 @@ export type IdentityTuning = {
   readonly dissolveMaxFadeWidthM: number
   /** Overall exposure (toneMappingExposure). */
   readonly exposure: number
-  /** Vignette darkness (postprocessing). */
+  /** Mist vignette strength: how far the frame edges mix into the mist colour, 0–1 (ADR-0041). */
   readonly vignetteStrength: number
+  /** Mist vignette blur radius at the corners, px. */
+  readonly mistBlurPx: number
+  /** Mist vignette clear centre, 0–1 of the centre-to-corner distance. */
+  readonly mistClearRadius: number
   /** Water environment-reflection strength (envMapIntensity). */
   readonly waterSheen: number
   /** Contour slope fade: hidden below, full above (degrees). */
@@ -241,7 +245,9 @@ export const DEFAULT_TUNING: IdentityTuning = {
   dissolveSiteMarginM: 40,
   dissolveMaxFadeWidthM: 160,
   exposure: 1.35,
-  vignetteStrength: 0.1,
+  vignetteStrength: 0.6,
+  mistBlurPx: 14,
+  mistClearRadius: 0.45,
   waterSheen: 0.6,
   contourSlopeMinDeg: 3,
   contourSlopeMaxDeg: 12,
