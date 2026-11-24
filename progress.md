@@ -1571,3 +1571,20 @@ zoom in because the quads are small at the default site camera.
   `src/features/analysis/graphics.ts`, `src/styles/tokens.css`, `src/scene/lighting.ts`,
   `MassLayer.tsx`, `foliage.ts`, `CameraHud.tsx` and the overlay components — nothing invented.
 - **Checks.** lint 0 (docs only).
+
+## 2026-11-24 — Run 10 T8: previews and final checks (Claude Opus 5.5)
+
+- **Aerial photo (local only).** The Lab's local photos are now 0.165 m/px captures from a single
+  viewer, warped to ENU true north. Full colour by default (`62e918b`). Streets are hidden under the photo.
+  The photos stay git-ignored.
+- **D41 (DeepSeek V4 Pro via Cline, `0887e00`).** The sloped-edge context houses are visible again:
+  the massing is off the territory haze. Reviewed and kept; its cost is recorded as RUN10-log owner question 1.
+- **T8.**
+  - Committed the pending Lab work: `8674904` (light-grey mist and the edge test), `62e918b`.
+  - Five previews in `docs/screenshots/vis/run10/`, headed on Metal, photo off.
+- **Checks.**
+  - lint 0 · unit 1310 passed / 0 failed · build OK · NORDIC safety net 5 passed.
+  - IDENTITY_EDGE: sloped-edge passed; compact-infill failed (3.15 / 15.0). It passes with the D41 line
+    reverted (2.05 / 8.00), so the regression comes from that fix.
+- **Open.** RUN10-log owner question 1 (do buildings fade with the ground) and question 2 (default
+  photo colour).
