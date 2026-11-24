@@ -16,7 +16,8 @@ type EdgeResult = {
   site: string
   edgeMean: number
   edgeP95: number
-  maxRise: number
+  /** Largest outward step AWAY from the background colour (luminance, 0–255). */
+  maxAway: number
   profile: number[]
 }
 
@@ -55,11 +56,16 @@ async function measure(page: Page, site: string): Promise<EdgeResult> {
     // Project on the ground (not at height 0) so the outline is where the terrain edge is drawn.
     const project = (e: number, n: number) => hook.project(e, n, hook.heightAt(e, n))
     const onCanvas = (x: number, y: number) => x >= 8 && y >= 8 && x < img.width - 8 && y < img.height - 8
-    // White massing is not ground: skip samples that land on a building (or any very bright pixel).
-    const BUILDING_LUM = 140
+    // White massing is not ground: skip samples that land on a building. The threshold sits above
+    // the background, which the overview's empty top band shows (a light mist is itself bright).
+    const topBand: number[] = []
+    for (let x = Math.floor(img.width * 0.25); x < img.width * 0.75; x += 4) for (let y = 10; y < 30; y += 4) topBand.push(lum(x, y))
+    topBand.sort((p, q) => p - q)
+    const BUILDING_LUM = Math.max(140, topBand[Math.floor(topBand.length / 2)]! + 20)
 
     // 1. Edge visibility: sample along the four tile edges (≥ 200 points), 6 px inside vs outside.
     const edgeDiffs: number[] = []
+    const backgroundSamples: number[] = []
     const centre = project(centreX, centreY)
     const corners = [
       project(bounds.minX, bounds.minY),
@@ -90,6 +96,7 @@ async function measure(page: Page, site: string): Promise<EdgeResult> {
         const outside = lum(x + nx * 6, y + ny * 6)
         if (inside > BUILDING_LUM || outside > BUILDING_LUM) continue
         edgeDiffs.push(Math.abs(inside - outside))
+        backgroundSamples.push(outside)
       }
     }
     if (edgeDiffs.length < 100) throw new Error(`only ${edgeDiffs.length} usable edge samples`)
@@ -119,9 +126,13 @@ async function measure(page: Page, site: string): Promise<EdgeResult> {
       samples.sort((p, q) => p - q)
       profile.push(samples[Math.floor(samples.length / 2)]!)
     }
-    let maxRise = 0
-    for (let i = 1; i < profile.length; i += 1) maxRise = Math.max(maxRise, profile[i]! - profile[i - 1]!)
-    return { site: '', edgeMean, edgeP95, maxRise, profile }
+    // The ground must move steadily toward the background colour (dark or light mist alike): its
+    // distance from the background never grows by more than a few levels from one ring to the next.
+    backgroundSamples.sort((p, q) => p - q)
+    const background = backgroundSamples[Math.floor(backgroundSamples.length / 2)]!
+    let maxAway = 0
+    for (let i = 1; i < profile.length; i += 1) maxAway = Math.max(maxAway, Math.abs(profile[i]! - background) - Math.abs(profile[i - 1]! - background))
+    return { site: '', edgeMean, edgeP95, maxAway, profile }
   }, screenshot.toString('base64')).then((r) => ({ ...r, site }))
 }
 
@@ -129,10 +140,10 @@ for (const site of SITES) {
   test(`${site}: edge difference and outward profile`, async ({ page }) => {
     await openView(page, site)
     const result = await measure(page, site)
-    console.log(`[IDENTITY_EDGE ${site}] edgeMean ${result.edgeMean.toFixed(2)} edgeP95 ${result.edgeP95.toFixed(2)} maxRise ${result.maxRise.toFixed(2)}`)
+    console.log(`[IDENTITY_EDGE ${site}] edgeMean ${result.edgeMean.toFixed(2)} edgeP95 ${result.edgeP95.toFixed(2)} maxAway ${result.maxAway.toFixed(2)}`)
     // Acceptance targets (T1): edge ≤ 3 avg, ≤ 8 p95; profile never rises > 4 between steps.
     expect(result.edgeMean).toBeLessThanOrEqual(3)
     expect(result.edgeP95).toBeLessThanOrEqual(8)
-    expect(result.maxRise).toBeLessThanOrEqual(4)
+    expect(result.maxAway).toBeLessThanOrEqual(4)
   })
 }
