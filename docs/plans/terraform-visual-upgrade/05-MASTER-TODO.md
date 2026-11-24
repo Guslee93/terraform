@@ -37,7 +37,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
 
 **Exit:** production serves the studio; PR #18's open decisions are answered; Water and Snow have had an independent review; the runoff reference comparison has a result (pass, or a written explanation).
 
-- [ ] **TF-VIS-001** `[FIX]` — Diagnose why production 404s on `/studio/*` and `/about`
+- [x] **TF-VIS-001** `[FIX]` — Diagnose why production 404s on `/studio/*` and `/about` — *2026-11-24: no longer reproduces, `docs/reviews/production-404-diagnosis.md`*
   - Priority: P0
   - Owner/model: Owner with Fable (needs Vercel access)
   - Reviewer: Opus (reads the finding)
@@ -97,7 +97,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: docs only
   - Handoff prompt: `06#tf-vis-005`
 
-- [ ] **TF-VIS-006** `[DOC]` — Owner answers PR #18's open decisions
+- [x] **TF-VIS-006** `[DOC]` — Owner answers PR #18's open decisions — *2026-11-24: all answered, `progress.md`*
   - Priority: P0
   - Owner/model: Owner; Fable prepares a one-page decision sheet
   - Reviewer: —

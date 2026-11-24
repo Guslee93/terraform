@@ -1392,3 +1392,27 @@ zoom in because the quads are small at the default site camera.
   planning advice" (`SiteChrome.tsx`), which now has no counterpart on the About page: the
   constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
   string, so it was left alone.
+
+## 2026-11-24 — Owner decisions on PR #18 (TF-VIS-006) and Gate 0 status
+
+The owner accepted all eight recommendations (`docs/reviews/build-foundation-report.md` §8):
+
+| # | Decision | Answer | Applied |
+|---|---|---|---|
+| 1 | Push and PR | Done earlier (PR #18, draft) | — |
+| 2 | Heuristic noise layer deleted (ADR-0034) | Accepted: stays deleted; the official map is shown | — |
+| 3 | Lawson activity names in the wind legend | Dropped: speed ranges and colours only (feasibility 07) | `climateView.ts`, tests |
+| 4 | Weekly source health check (ADR-0036) | Yes | `.github/workflows/source-health.yml` (runs once on `main`) |
+| 5 | Raw caches in git | Keep for now; revisit if the repository gets slow | — |
+| 6 | Sloped Edge at 95.7 % measured heights | Accepted | — |
+| 7 | WP-9 cut/fill | Postponed | — |
+| 8 | Parcels off by default | Keep off | — |
+| 9 | Plan file outside the repository | Committed: `docs/plans/fable-build-plan.md` | — |
+
+- **TF-VIS-001:** the production 404s no longer reproduce (`docs/reviews/production-404-diagnosis.md`).
+- **Health check run once locally:** 20 sources, 0 failed, 3 changed. Both parcel layers report
+  "changed" at an identical byte size, so a per-request field is probably not filtered yet (follow-up).
+- **Gate 0 left:**
+  - TF-VIS-002/003, review PRs #26–#28 into `build/foundation`;
+  - TF-VIS-005, docs up to date;
+  - TF-VIS-008, merge PR #18 to `main`, which is the owner's go-ahead because it changes production.
