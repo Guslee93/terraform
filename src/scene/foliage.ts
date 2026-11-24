@@ -19,6 +19,20 @@ const RADII: Record<TreeShape, readonly [number, number, number]> = {
   tall: [0.65, 1.45, 0.65],
   // Sparse birch: taller and thinner, a looser crown (look spec §3).
   birch: [0.5, 1.75, 0.5],
+  // Conifer (identity only): a cone, widest at the bottom (look spec §3, ref-05).
+  conifer: [0.75, 1.6, 0.75],
+}
+
+/**
+ * Identity crowns (visuals plan V4): their own muted greens instead of the pastel palette, smaller
+ * and more spread-out clumps so the ground shows between them, and a share of lighter "fleck" faces
+ * for the speckled look of the references (ref-02, ref-04). Absent = today's crowns, byte-identical.
+ */
+export type CanopyLook = {
+  /** sRGB greens; each clump picks one. */
+  readonly palette: readonly string[]
+  /** Share of faces lightened into flecks, 0–1. */
+  readonly flecks: number
 }
 
 function mulberry32(seed: number): () => number {
@@ -50,7 +64,8 @@ function mergeAndDispose(parts: BufferGeometry[]): BufferGeometry {
 }
 
 /** Illustrative leaf clumps, centred at the origin in canopy-radius units. */
-export function createCanopyGeometry(shape: TreeShape, seed: number): BufferGeometry {
+export function createCanopyGeometry(shape: TreeShape, seed: number, look?: CanopyLook): BufferGeometry {
+  if (look) return createAiryCanopyGeometry(shape, seed, look)
   const random = mulberry32(seed)
   const count = 18 + Math.floor(random() * 11)
   const radii = new Vector3(...RADII[shape])
@@ -86,6 +101,46 @@ export function createCanopyGeometry(shape: TreeShape, seed: number): BufferGeom
     const colors: number[] = []
     for (let face = 0; face < positions.count / 3; face += 1) {
       const color = base.clone().multiplyScalar(0.94 + random() * 0.12)
+      for (let corner = 0; corner < 3; corner += 1) colors.push(color.r, color.g, color.b)
+    }
+    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
+    parts.push(geometry)
+  }
+  return mergeAndDispose(parts)
+}
+
+/**
+ * The identity's airy crown: 30–40 clumps pushed toward the crown's shell (so the centre is
+ * sparse and gaps open between clumps), a cone for conifers, own palette and light flecks.
+ */
+function createAiryCanopyGeometry(shape: TreeShape, seed: number, look: CanopyLook): BufferGeometry {
+  const random = mulberry32(seed ^ 0x5eed)
+  const count = 30 + Math.floor(random() * 11)
+  const radii = new Vector3(...RADII[shape])
+  const parts: BufferGeometry[] = []
+  for (let clump = 0; clump < count; clump += 1) {
+    const radius = 0.22 + random() * 0.16
+    let centre: Vector3
+    if (shape === 'conifer') {
+      // t = 0 at the base, 1 at the tip; the cone narrows linearly.
+      const t = random()
+      const ring = (1 - t) * Math.sqrt(random())
+      const azimuth = random() * Math.PI * 2
+      centre = new Vector3(Math.cos(azimuth) * ring * radii.x, (t * 2 - 1) * radii.y, Math.sin(azimuth) * ring * radii.z)
+    } else {
+      // Bias toward the shell (power < 1/3 of a uniform ball) so the crown reads porous.
+      centre = direction(random).multiplyScalar(random() ** 0.4).multiply(radii)
+    }
+    const geometry = new IcosahedronGeometry(radius, 0)
+    geometry.rotateX(random() * Math.PI * 2)
+    geometry.rotateY(random() * Math.PI * 2)
+    geometry.translate(centre.x, centre.y, centre.z)
+    const base = new Color(look.palette[Math.floor(random() * look.palette.length)] ?? look.palette[0]) // sRGB → linear
+    const positions = geometry.getAttribute('position')
+    const colors: number[] = []
+    for (let face = 0; face < positions.count / 3; face += 1) {
+      const fleck = random() < look.flecks
+      const color = base.clone().multiplyScalar(fleck ? 1.7 + random() * 0.4 : 0.85 + random() * 0.3)
       for (let corner = 0; corner < 3; corner += 1) colors.push(color.r, color.g, color.b)
     }
     geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
@@ -141,7 +196,7 @@ export function createBranchGeometry(shape: TreeShape, seed: number): BufferGeom
     const start = new Vector3(0, 2 / 3 + random() * 0.23, 0)
     const angle = ((25 + random() * 20) * Math.PI) / 180
     const azimuth = rotation + (branch / count) * Math.PI * 2 + (random() - 0.5) * 0.4
-    const length = (shape === 'tall' ? 0.6 : 0.5) + random() * 0.1
+    const length = (shape === 'tall' || shape === 'conifer' ? 0.6 : 0.5) + random() * 0.1
     const end = new Vector3(
       Math.sin(angle) * Math.cos(azimuth),
       Math.cos(angle),

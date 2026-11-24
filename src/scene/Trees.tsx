@@ -3,7 +3,7 @@ import { Color, MeshStandardMaterial, Object3D, type BufferGeometry, type Instan
 import { sampleTerrainHeight } from '../features/sites/geometry'
 import type { SitePackage } from '../features/sites/package'
 import { dropTreesOnWater } from '../features/sites/treePlacement'
-import { createBranchGeometry, createCanopyGeometry, createSimpleCanopyGeometry, FOLIAGE_VARIANTS } from './foliage'
+import { createBranchGeometry, createCanopyGeometry, createSimpleCanopyGeometry, FOLIAGE_VARIANTS, type CanopyLook } from './foliage'
 import { TREE_TINTS, treeVariant, type TreeShape, type TreeVariant } from './treeVariants'
 import { pointsOutsideRings } from '../lib/cullPoints'
 import { createSpeckleAlphaTexture } from './speckleTexture'
@@ -14,9 +14,26 @@ import type { Vec2 } from '../lib/coordinates'
 const CANOPY_RADIUS = 2.3
 const TRUNK_HEIGHT = 2.8
 const SHAPES: readonly TreeShape[] = ['round', 'tall', 'birch']
+/** The identity's mix (visuals plan V4): rounded deciduous, conifers and sparse birches. */
+const SPECKLED_SHAPES: readonly TreeShape[] = ['round', 'conifer', 'birch']
 
-/** Muted identity greens (look spec §3) that multiply the canopy's per-face greens. */
-const SPECKLE_TINTS = ['#3A4034', '#2E352D', '#353B34'] as const
+/**
+ * Identity crown colours (visuals plan V4, look spec §2–3), used directly — Run 9 multiplied the
+ * pastel crowns by dark greens and they turned near-black. Muted mid greens, conifers darker,
+ * birches lighter; ≈ 12 % of faces become lighter flecks. Provisional.
+ */
+const IDENTITY_LOOKS: Record<TreeShape, CanopyLook> = {
+  round: { palette: ['#5B6852', '#4F5C48', '#66725C', '#47533F'], flecks: 0.12 },
+  tall: { palette: ['#5B6852', '#4F5C48'], flecks: 0.12 },
+  birch: { palette: ['#6E7A62', '#7A856C', '#646F5A'], flecks: 0.16 },
+  conifer: { palette: ['#3F4B3C', '#465243', '#3A4538'], flecks: 0.06 },
+}
+/** Near-white per-tree variation on top of the identity colours. */
+const SPECKLE_TINTS = ['#FFFFFF', '#F1F4EC', '#F8FAF3'] as const
+/** Dark trunks (references), identity only. */
+const IDENTITY_TRUNK = '#3C3E39'
+/** Identity crowns are larger, closer to mature city trees in the references (illustrative; OSM gives positions only). Provisional. */
+const IDENTITY_SIZE = 1.3
 
 type Placed = TreeVariant & { east: number; north: number; ground: number }
 type GeometryPair = {
@@ -115,7 +132,7 @@ function TreeInstances({
       <instancedMesh ref={canopyRef} args={[geometry.canopy, undefined, trees.length]} castShadow receiveShadow material={canopyMaterial} />
       {withBranches && (
         <instancedMesh ref={branchRef} args={[geometry.branches, undefined, trees.length]} castShadow>
-          <meshStandardMaterial color="#A39A8C" roughness={1} metalness={0} />
+          <meshStandardMaterial color={speckled ? IDENTITY_TRUNK : '#A39A8C'} roughness={1} metalness={0} />
         </instancedMesh>
       )}
     </group>
@@ -141,19 +158,19 @@ export function Trees({
   const { trees, terrain, landcover } = sitePackage
   const geometries = useMemo(
     () => (detail === 'simple'
-      ? SHAPES.map((shape) => ({
+      ? (speckled ? SPECKLED_SHAPES : SHAPES).map((shape) => ({
         shape,
         variant: 0,
         canopy: createSimpleCanopyGeometry(shape),
         branches: createBranchGeometry(shape, 0),
       }))
-      : SHAPES.flatMap((shape) => Array.from({ length: FOLIAGE_VARIANTS }, (_, variant) => ({
+      : (speckled ? SPECKLED_SHAPES : SHAPES).flatMap((shape) => Array.from({ length: FOLIAGE_VARIANTS }, (_, variant) => ({
         shape,
         variant,
-        canopy: createCanopyGeometry(shape, variant),
+        canopy: createCanopyGeometry(shape, variant, speckled ? IDENTITY_LOOKS[shape] : undefined),
         branches: createBranchGeometry(shape, variant),
       })))),
-    [detail],
+    [detail, speckled],
   )
   useEffect(() => () => {
     for (const geometry of geometries) {
@@ -168,12 +185,16 @@ export function Trees({
     // the rule existed and still saved in the browser.
     const onGround = dropTreesOnWater(trees, landcover)
     const visible = exclude ? pointsOutsideRings(onGround, exclude) : onGround
-    const placed: Placed[] = visible.map(([east, north]) => ({
-      east,
-      north,
-      ground: sampleTerrainHeight(terrain, east, north),
-      ...treeVariant(east, north, speckled),
-    }))
+    const placed: Placed[] = visible.map(([east, north]) => {
+      const variant = treeVariant(east, north, speckled)
+      return {
+        east,
+        north,
+        ground: sampleTerrainHeight(terrain, east, north),
+        ...variant,
+        scale: speckled ? variant.scale * IDENTITY_SIZE : variant.scale,
+      }
+    })
     return geometries.map((geometry) => ({
       geometry,
       // The simple tier has one canopy per shape, so every tree of that shape joins it.

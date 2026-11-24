@@ -71,3 +71,42 @@ describe.each(shapes)('%s foliage', (shape) => {
     }
   })
 })
+
+describe('identity crowns (visuals plan V4)', () => {
+  const look = { palette: ['#5B6852'], flecks: 0.12 }
+
+  it('narrows toward the top for conifers', () => {
+    const geometry = createCanopyGeometry('conifer', 3, look)
+    const position = geometry.getAttribute('position')
+    const low: number[] = []
+    const high: number[] = []
+    for (let i = 0; i < position.count; i += 1) {
+      const y = position.getY(i)
+      const r = Math.hypot(position.getX(i), position.getZ(i))
+      if (y < -0.5) low.push(r)
+      if (y > 0.5) high.push(r)
+    }
+    const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length
+    expect(mean(high)).toBeLessThan(mean(low) * 0.6)
+    geometry.dispose()
+  })
+
+  it('uses the given palette (plus lighter flecks), not the pastel greens', () => {
+    const geometry = createCanopyGeometry('round', 3, look)
+    const color = geometry.getAttribute('color')
+    let flecks = 0
+    // Colour attributes store (r, g, b) as (x, y, z).
+    for (let i = 0; i < color.count; i += 1) if (color.getY(i) > 0.2) flecks += 1
+    // The base green is dark in linear space (≈ 0.13 G); only flecks are lifted above 0.2.
+    expect(flecks / color.count).toBeGreaterThan(0.03)
+    expect(flecks / color.count).toBeLessThan(0.3)
+    geometry.dispose()
+  })
+
+  it('leaves the default crowns untouched (no look → the pastel path)', () => {
+    const plain = createCanopyGeometry('round', 3)
+    const again = createCanopyGeometry('round', 3, undefined)
+    expect(Array.from(again.getAttribute('position').array)).toEqual(Array.from(plain.getAttribute('position').array))
+    plain.dispose(); again.dispose()
+  })
+})

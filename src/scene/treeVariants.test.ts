@@ -23,9 +23,9 @@ describe('treeVariant', () => {
     }
   })
 
-  it('adds the sparse birch archetype only in the speckled mode', () => {
+  it('uses the identity mix (round, conifer, birch) only in the speckled mode (visuals plan V4)', () => {
     const shapes = new Set(Array.from({ length: 500 }, (_, index) => treeVariant(index * 3.7 - 400, index * -2.9 + 120, true).shape))
-    expect(shapes).toEqual(new Set(['round', 'tall', 'birch']))
+    expect(shapes).toEqual(new Set(['round', 'conifer', 'birch']))
   })
 
   it('actually varies across a row of street trees', () => {
