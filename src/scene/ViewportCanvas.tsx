@@ -869,7 +869,9 @@ export function ViewportCanvas({
               />
             </group>
             {layers.terrain && layers.ground && <Water surfaces={waterSurfaces} style={style} haze={haze} />}
-            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} haze={haze} />}
+            {/* Massing stays off the territory haze: the white context boxes are the subject, not the
+                ground, so they must read while the tile edge dissolves (ADR-0023). Wind-lift is separate. */}
+            {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} haze={null} />}
             {/* The streets keep the ground the package was built on, so they bridge the cut the
                 water makes in the ground beneath them (ADR-0025). */}
             {layers.streets && layers.terrain && (

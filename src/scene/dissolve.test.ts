@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { dissolveAmount, dissolveRange, hazeAmount, hazeRange, MAX_FADE_WIDTH_M, MIN_FADE_WIDTH_M, SITE_MARGIN_M, type DissolveParams } from './dissolve'
+import slopedBuildings from '../../public/sites/sloped-edge/buildings.json'
+import { parseBuildings } from '../features/sites/package'
 
 const COMPACT = {
   studyArea: [[-95, -120], [95, -120], [95, 120], [-95, 120], [-95, -120]] as const,
@@ -151,5 +153,27 @@ describe('hazeAmount (Run 9 T2, aerial perspective + edge fade)', () => {
     const params = withHaze(COMPACT)
     expect(hazeAmount(1000, 1000, params)).toBe(1)
     expect(hazeAmount(0, 0, params)).toBe(0)
+  })
+})
+
+describe('territory haze keeps clear of the context massing (ADR-0023)', () => {
+  it('sloped-edge context ring sits inside the fully-opaque haze band, so massing must not be hazed', () => {
+    const params = hazeRange(SLOPED.studyArea, 100, SLOPED.terrain)
+    const { buildings } = parseBuildings(slopedBuildings)
+
+    // The study-area massing is always crisp under the territory haze; nothing in the fix relies on it.
+    for (const building of buildings.filter((b) => b.withinStudyArea)) {
+      for (const [east, north] of building.footprint) {
+        expect(hazeAmount(east, north, params)).toBeLessThan(0.9)
+      }
+    }
+
+    // The context halo reaches the fully-dissolved band: a whole roof at haze ≥ 0.9 would be painted
+    // the background colour and vanish against the greyed aerial photo. This is exactly why the
+    // renderer keeps the white massing off the territory haze (ViewportCanvas passes `haze=null`).
+    const erased = buildings.filter(
+      (building) => !building.withinStudyArea && building.footprint.every(([east, north]) => hazeAmount(east, north, params) >= 0.9),
+    )
+    expect(erased.length).toBeGreaterThan(0)
   })
 })
