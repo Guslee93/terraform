@@ -1455,3 +1455,15 @@ The owner accepted all eight recommendations (`docs/reviews/build-foundation-rep
   - TF-VIS-002/003, review PRs #26–#28 into `build/foundation`;
   - TF-VIS-005, docs up to date;
   - TF-VIS-008, merge PR #18 to `main`, which is the owner's go-ahead because it changes production.
+
+## 2026-11-24 — TF-VIS-005: docs up to date (Claude Opus 5.5)
+
+- **Resolved:** every stale item in `01-CODEBASE-AUDIT.md` §10.1.
+  - The §1.11 scope note, the §3 map (import path, the five workers, `scripts/site-assets`), the M2–M5
+    briefs (Done) and the superseded status report were already current on this branch, and are
+    verified.
+  - Updated now: the AGENTS.md header line, and §10. §10 now records the owner decisions, the
+    Gate 0 status, the Lab's place (PR #29, ADR-0040/0041) and the next steps (TF-VIS-008, then
+    PR #25/#29 onto `main`, then TF-VIS-02B/026).
+  - The status report's line on open decisions is updated.
+- **Gate 0:** TF-VIS-001 to 007 done; only TF-VIS-008 (the merge of PR #18, owner's go-ahead) remains.

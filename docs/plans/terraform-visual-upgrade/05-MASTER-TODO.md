@@ -85,7 +85,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: copy only
   - Handoff prompt: `06#tf-vis-004`
 
-- [ ] **TF-VIS-005** `[DOC]` — Bring AGENTS.md, milestone briefs and status report up to date
+- [x] **TF-VIS-005** `[DOC]` — Bring AGENTS.md, milestone briefs and status report up to date — *2026-11-24: every 01 §10.1 item resolved; AGENTS.md §10 and the status report updated*
   - Priority: P1
   - Owner/model: Cline + small model
   - Reviewer: Fable
