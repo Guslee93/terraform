@@ -1393,6 +1393,18 @@ zoom in because the quads are small at the default site camera.
   constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
   string, so it was left alone.
 
+## 2026-11-18 — Run 2 T2: independent foundation RV-1 re-run (TF-VIS-003)
+
+- **Task TF-VIS-003.** Reproduce the `build-foundation-report.md` §3 acceptance numbers from the
+  committed packages and domain functions, independently of the report. Read-only.
+- **Results (all within tolerance).** Parcel 0301-228/255 **464.4 m²**; measured heights **520/520**
+  (Compact Infill) and **220/230** (Sloped Edge); W–E section **8.97–21.45 m NN2000 over 578.8 m**;
+  noise registration **100.0 %** (142 samples, gate 90 %); source-health **20 sources / 20 unchanged
+  / 0 failed**.
+- **Section note.** The section reproduces only through the app's `project()` (WGS84 tangent plane);
+  the UTM33 grid is rotated from true north, so a naive easting/northing offset lands ~0.85 m high
+  on the minimum. This matches the report's deviation 6 (exact, no reprojection library).
+- **Deliverable.** `docs/reviews/foundation-rv1.md`, draft PR `review/foundation-rv1`.
 ## 2026-11-18 — Run 2 T1: independent water/snow review (TF-VIS-002)
 
 - **Task TF-VIS-002.** Read-only review of commit `01c514b` (runoff + snow), Gate 0 P0.
