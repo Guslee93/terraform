@@ -26,7 +26,7 @@ export const DEFAULT_ALIGNMENT = (tileWidthM: number): PhotoAlignment => ({
   offsetE: 0,
   offsetN: 0,
   widthM: Math.round(tileWidthM),
-  keepColour: 0.2,
+  keepColour: 1,
   brightness: 1,
   enabled: true,
 })

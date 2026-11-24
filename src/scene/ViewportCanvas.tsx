@@ -874,7 +874,8 @@ export function ViewportCanvas({
             {layers.context && <ContextBuildings buildings={buildings.buildings} faded={fadedContext} style={style} haze={null} />}
             {/* The streets keep the ground the package was built on, so they bridge the cut the
                 water makes in the ground beneath them (ADR-0025). */}
-            {layers.streets && layers.terrain && (
+            {/* With a Lab ground photo the photo shows the streets itself (visuals plan V2). */}
+            {layers.streets && layers.terrain && !groundPhoto && (
               <Streets roads={sitePackage.roads} terrain={terrain} style={style} haze={haze} />
             )}
             {layers.parcels && layers.terrain && sitePackage.parcels.length > 0 && <ParcelLines parcels={sitePackage.parcels} selected={selectedParcel} heightAt={heightAt} />}
