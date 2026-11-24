@@ -1393,6 +1393,17 @@ zoom in because the quads are small at the default site camera.
   constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
   string, so it was left alone.
 
+## 2026-11-18 — Run 3 T2: PR #26 comment-only follow-ups (TF-VIS-002)
+
+- **Task.** Apply the water/snow review's three minor comment follow-ups, zero behaviour change.
+- **Files (comments only).** `src/features/analysis/runoff.ts` (D8 tie-break: strict `>`, north-west
+  first on an exact tie); `src/features/analysis/useRunoff.ts` (`footprints` compared by identity —
+  caller must memoise); `src/features/analysis/snowClimate.ts` (monthly means use every day,
+  including partial winters the per-winter stats drop; equals whole winters only on a 1 Sep→31 Aug
+  series).
+- **Checks.** `git diff -U0` has no non-comment code line · typecheck 0 · lint 0 · full suite
+  1,211 passed / 4 skipped / 0 failed · build OK. No user-visible text changed.
+- **Deliverable.** Draft PR `fix/water-snow-followups`.
 ## 2026-11-18 — Run 2 T2: independent foundation RV-1 re-run (TF-VIS-003)
 
 - **Task TF-VIS-003.** Reproduce the `build-foundation-report.md` §3 acceptance numbers from the
