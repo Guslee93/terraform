@@ -152,13 +152,15 @@ export const DELTA_NOTE = 'Calmer / No change / Windier vs baseline'
 /** Momentary speed classes: the five Lawson thresholds (A–E), m/s at pedestrian level. */
 const [SIT, STAND, STROLL, WALK, UNCOMFORTABLE] = LAWSON_NORCONSULT.thresholds
 export const ACTIVITY_BANDS: readonly Band[] = [
-  { band: 'sit', below: SIT, label: `Sitting (< ${SIT} m/s)`, colour: '#3B6EA8' },
-  { band: 'stand', below: STAND, label: `Standing (${SIT}–${STAND} m/s)`, colour: '#4FA3A5' },
-  { band: 'stroll', below: STROLL, label: `Strolling (${STAND}–${STROLL} m/s)`, colour: '#E6DC9C' },
-  { band: 'walk', below: WALK, label: `Walking (${STROLL}–${WALK} m/s)`, colour: '#E39A4C' },
-  { band: 'uncomfortable', below: UNCOMFORTABLE, label: `Uncomfortable (${WALK}–${UNCOMFORTABLE} m/s)`, colour: '#C2452F' },
+  // Speed ranges only: the activity names (sitting … walking) are dropped (owner decision 3,
+  // 2026-11-24; feasibility 07): a slice at one chosen wind is not a weighted comfort rating.
+  { band: 'sit', below: SIT, label: `< ${SIT} m/s`, colour: '#3B6EA8' },
+  { band: 'stand', below: STAND, label: `${SIT}–${STAND} m/s`, colour: '#4FA3A5' },
+  { band: 'stroll', below: STROLL, label: `${STAND}–${STROLL} m/s`, colour: '#E6DC9C' },
+  { band: 'walk', below: WALK, label: `${STROLL}–${WALK} m/s`, colour: '#E39A4C' },
+  { band: 'uncomfortable', below: UNCOMFORTABLE, label: `${WALK}–${UNCOMFORTABLE} m/s`, colour: '#C2452F' },
   // No safety class: a 2D slice at one chosen wind cannot support one (feasibility 09 §5).
-  { band: 'very-uncomfortable', below: Infinity, label: `Very uncomfortable (> ${UNCOMFORTABLE} m/s)`, colour: '#962838' },
+  { band: 'very-uncomfortable', below: Infinity, label: `> ${UNCOMFORTABLE} m/s`, colour: '#962838' },
 ]
 /** Direction legend: m/s bins coloured from the continuous ramp at each bin's midpoint. */
 export const DIRECTION_BANDS: readonly Band[] = [0, 2, 4, 6, 8, 10].map((lo) => ({

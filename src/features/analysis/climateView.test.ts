@@ -36,11 +36,14 @@ describe('audit fixes', () => {
   })
   it('#5 Comfort splits at the Lawson 10 m/s threshold', () => {
     const at = (ms: number) => ACTIVITY_BANDS.find((b) => ms < b.below)!.label
-    expect(at(9)).toMatch(/^Uncomfortable \(8–10/)
-    expect(at(12)).toMatch(/^Very uncomfortable \(> 10/)
+    expect(at(9)).toBe('8–10 m/s')
+    expect(at(12)).toBe('> 10 m/s')
     // No safety class: 16 m/s reads as the top speed class (feasibility 09 §5).
-    expect(at(16)).toMatch(/^Very uncomfortable/)
+    expect(at(16)).toBe('> 10 m/s')
     expect(ACTIVITY_BANDS.some((b) => /unsafe/i.test(b.label) || /unsafe/i.test(b.band))).toBe(false)
+    // Owner decision 3 (2026-11-24): speed ranges only, no Lawson activity names in the legend.
+    expect(ACTIVITY_BANDS.map((b) => b.label)).toEqual(['< 2 m/s', '2–4 m/s', '4–6 m/s', '6–8 m/s', '8–10 m/s', '> 10 m/s'])
+    expect(ACTIVITY_BANDS.some((b) => /sit|stand|stroll|walk|comfort/i.test(b.label))).toBe(false)
   })
 })
 
@@ -50,8 +53,8 @@ describe('worst-case view (ADR-0015)', () => {
     const worst = { cells: new Float32Array([0, 0, 4, 0, 8, 0]), maxRatio: new Float32Array([0.3, 1.2, Number.NaN]) }
     const view = buildClimateView('wind', [], [], [], null, { ...DEFAULT_WIND, display: 'worst' }, 10, null, worst)
     expect(view.assessed).toBe(2)
-    expect(view.legend.find((e) => e.label.startsWith('Sitting'))?.share).toBe(0.5)
-    expect(view.legend.find((e) => e.label.startsWith('Strolling'))?.share).toBe(0.5)
+    expect(view.legend.find((e) => e.label === '< 2 m/s')?.share).toBe(0.5)
+    expect(view.legend.find((e) => e.label === '4–6 m/s')?.share).toBe(0.5)
     expect(view.disclaimer).toContain(WORST_NOTE)
     expect(view.disclaimer).not.toContain('Partial')
     const partial = buildClimateView('wind', [[0, 0], [8, 0], [8, 8]], [], [], null, { ...DEFAULT_WIND, display: 'worst' }, 10, null, { ...worst, solved: 3 })
