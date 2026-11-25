@@ -53,6 +53,10 @@ export function winterStatistics(daily: readonly (number | null)[], firstDay: st
   const start = Date.parse(`${firstDay}T00:00:00Z`)
   if (Number.isNaN(start)) throw new Error('snow: the first day is not a date')
   const seasons = new Map<number, { days: number; snowDays: number; max: number; missing: number }>()
+  // Monthly means sum every day in the series, including any partial winters at the ends that the
+  // per-winter statistics below then drop. This equals "means over whole winters only" only when
+  // the series starts on 1 September and ends on 31 August — as scripts/site-assets/snow.build.ts
+  // requests it.
   const monthly = MONTHS.map(() => ({ sum: 0, count: 0 }))
   daily.forEach((depth, index) => {
     const date = new Date(start + index * 86_400_000)

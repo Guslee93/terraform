@@ -1,6 +1,6 @@
 # Terraform — Agent Operating Guide
 
-**Status:** Simplified to search → analyse → export (ADR-0020, tag `pre-simplify` for the old scope) · Wind simulator ADR-0014/0015 · rendering spec ADR-0017–0019 · foundation layers ADR-0032–0037 on branch `build/foundation` · ADRs on record: ADR-0001–ADR-0039, all accepted but ADR-0011 (proposed)
+**Status:** Simplified to search → analyse → export (ADR-0020, tag `pre-simplify` for the old scope) · Wind simulator ADR-0014/0015 · rendering spec ADR-0017–0019 · foundation layers ADR-0032–0039 on branch `build/foundation` (PR #18; owner decisions applied 2026-11-24) · ADRs on record: ADR-0001–ADR-0039, all accepted but ADR-0011 (proposed); the Visual Lab's ADR-0040/0041 live on `run7/identity-lab` (PR #29)
 **Source of truth:** `Terraform_Comprehensive_PRD_v1.md` (v1.0, 26 Oct 2026)
 **Product type:** architectural portfolio prototype, not a commercial SaaS
 
@@ -288,6 +288,23 @@ ADR-0039 adds the Snow card: the neighbourhood's winter climate from NVE's snow 
 
 The wind view lost its safety class and sun hours read in half-hour steps (feasibility 09 §5). CI runs lint, unit tests, build and the Playwright suite in three shards on every pull request; `main` accepts changes only through a pull request with green checks, and every e2e time budget scales with the runner (`e2e/budget.ts`).
 
-**Next:** Gate 0 of `docs/plans/terraform-visual-upgrade/05-MASTER-TODO.md` — production 404 diagnosis, the Water/Snow code review, the runoff reference comparison, and the owner's decisions on PR #18.
+**Owner decisions on PR #18 (2026-11-24, `progress.md`):** all eight recommendations accepted. The heuristic noise layer stays deleted. The wind legend shows speed ranges only, with no Lawson activity names. A weekly source health check runs (`.github/workflows/source-health.yml`, scheduled once on `main`). The raw caches stay in git. Sloped Edge's 95.7 % measured heights are accepted. WP-9 cut/fill is postponed. Parcels are off by default. The build plan is committed (`docs/plans/fable-build-plan.md`).
+
+**Gate 0 status (`docs/plans/terraform-visual-upgrade/05-MASTER-TODO.md`):**
+- TF-VIS-001: the production 404s no longer reproduce (`docs/reviews/production-404-diagnosis.md`).
+- TF-VIS-002 (PR #26, with the follow-ups in #28) and TF-VIS-003 (PR #27): merged. Water/snow passes with follow-ups; every foundation number reproduced.
+- TF-VIS-004 and TF-VIS-007 are done; TF-VIS-006 is answered; TF-VIS-005 is this update.
+
+**Visual identity (Gate 2, Lab only):** PR #29 (`run7/identity-lab`, stacked on PR #25 `run1/foundations`) holds the Visual Lab (ADR-0040) and the IDENTITY look through Run 10. ADR-0041 gives the Lab ground images:
+- the owner's local Kartverket photo, never committed while the licence is pending (D13);
+- MapTiler satellite tiles with the owner's key;
+- the open Sentinel-2 mosaic;
+- a misty, blurred vignette, with the haze acting at the tile edge only.
+
+**Next:**
+1. TF-VIS-008: merge PR #18 into `main` and verify production. Only with the owner's explicit go-ahead: `main` deploys production.
+2. Then rebase or merge PR #25 and PR #29 onto the new `main`.
+3. In the Lab: TF-VIS-02B (the integrated prototype, analysis off and wind on) and TF-VIS-026 (the decision board against the owner's references).
+4. Open: PR #23 (the WhiteboxTools runoff comparison, TF-VIS-007) is still a draft. The parcel layers report "changed" in the health check at an identical byte size (probably an unfiltered per-request field). Kartverket's answer on orthophoto permission is awaited.
 
 **Watch for:** authority data has terms. The noise map is bands only, never a level for a building; a hazard absence is "not mapped", never "safe"; a parcel outline is not a surveyed boundary (feasibility 09 §2a, 08 §1). Curated assets are built by `scripts/site-assets/` from raw caches; rerun those steps after `build_site_packages.py`, and run `node scripts/check-sources.mjs` to see whether a publisher changed its data. Density is a complexity change. Every analysis that scales with the building count has to be re-measured — the roof-solar scan and the noise screening both did (ADR-0023 §8). A live source is a moving target: read the answer, do not trust a name — Kartverket's source names and OpenStreetMap's endpoints both changed under the studio (ADR-0027).

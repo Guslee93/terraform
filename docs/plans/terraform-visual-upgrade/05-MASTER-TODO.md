@@ -21,9 +21,11 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
 
 **Visual identity (18 Nov 2026).** The approved art direction (`Terraform_Visual_Identity_FINAL.md`, owner's copy) closes the A/B/C direction search. Gate 2 below is revised for it; changed tasks say *Revised 18 Nov*. Reconciliation, evidence and the compatibility matrix are in `09-VISUAL-IDENTITY-INTEGRATION.md`.
 
+**Visuals first (19 Nov 2026, D23).** Work now follows `10-VISUALS-FIRST.md` (steps V1–V8). Gate 3–7 tasks are parked, not cancelled.
+
 ## Verified status (18 Nov 2026)
 
-From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004 (#19, #20), 011 (#21). **In draft PR #25, unmerged:** 010 and 012 (owner GPU run and baselines outstanding), 013, 014, 030, 040 part A (model only), 054. **In progress:** 005 (part 1, #22); 007 (PR #23 — 67 % main-path agreement, below the 95 % bar). **Blocked:** 008 (on 001, 002, 006). **Still open:** 001 (production still 404s on 18 Nov), 002, 003, 006, 009, 015, 016, 034 and every later task.
+From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004 (#19, #20), 011 (#21). **In draft PR #25, unmerged:** 010 and 012 (owner GPU run and baselines outstanding), 013, 014, 030, 040 part A (model only), 054. **In progress:** 005 (part 1, #22). **Closed, awaiting merge:** 007 (PR #23 — no defect; closed 19 Nov). **In draft PR, reviewed:** 002 (PR #26, pass with minor follow-ups, second review added), 003 (PR #27, all rows reproduced). **Also in PR #25 since Run 1 T8–T10:** 015, 016, 034 (reviewed). **Blocked:** 008 (on 001, 006, and merging #23/#26/#27). **Still open:** 001 (production still 404s on 18 Nov), 006, 009 and every later task.
 
 ## File ownership
 
@@ -35,7 +37,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
 
 **Exit:** production serves the studio; PR #18's open decisions are answered; Water and Snow have had an independent review; the runoff reference comparison has a result (pass, or a written explanation).
 
-- [ ] **TF-VIS-001** `[FIX]` — Diagnose why production 404s on `/studio/*` and `/about`
+- [x] **TF-VIS-001** `[FIX]` — Diagnose why production 404s on `/studio/*` and `/about` — *2026-11-24: no longer reproduces, `docs/reviews/production-404-diagnosis.md`*
   - Priority: P0
   - Owner/model: Owner with Fable (needs Vercel access)
   - Reviewer: Opus (reads the finding)
@@ -47,7 +49,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: read-only; any redeploy is an owner action
   - Handoff prompt: `06#tf-vis-001`
 
-- [ ] **TF-VIS-002** `[TEST]` — Independent code review of the runoff and snow work (ADR-0038, ADR-0039)
+- [x] **TF-VIS-002** `[TEST]` — Independent code review of the runoff and snow work (ADR-0038, ADR-0039) — *2026-11-24: PR #26 (pass with follow-ups) and follow-ups PR #28 merged*
   - Priority: P0
   - Owner/model: Opus (`engineering-code-reviewer`)
   - Reviewer: Fable (accepts or rejects findings)
@@ -59,7 +61,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: fixes are small PRs on `build/foundation`
   - Handoff prompt: `06#tf-vis-002`
 
-- [ ] **TF-VIS-003** `[TEST]` — Independent re-run of foundation numbers (feasibility RV-1)
+- [x] **TF-VIS-003** `[TEST]` — Independent re-run of foundation numbers (feasibility RV-1) — *2026-11-24: PR #27 merged, every number reproduced*
   - Priority: P1
   - Owner/model: Codex
   - Reviewer: Fable
@@ -83,7 +85,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: copy only
   - Handoff prompt: `06#tf-vis-004`
 
-- [ ] **TF-VIS-005** `[DOC]` — Bring AGENTS.md, milestone briefs and status report up to date
+- [x] **TF-VIS-005** `[DOC]` — Bring AGENTS.md, milestone briefs and status report up to date — *2026-11-24: every 01 §10.1 item resolved; AGENTS.md §10 and the status report updated*
   - Priority: P1
   - Owner/model: Cline + small model
   - Reviewer: Fable
@@ -95,7 +97,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: docs only
   - Handoff prompt: `06#tf-vis-005`
 
-- [ ] **TF-VIS-006** `[DOC]` — Owner answers PR #18's open decisions
+- [x] **TF-VIS-006** `[DOC]` — Owner answers PR #18's open decisions — *2026-11-24: all answered, `progress.md`*
   - Priority: P0
   - Owner/model: Owner; Fable prepares a one-page decision sheet
   - Reviewer: —
@@ -105,7 +107,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Acceptance: all eight answered (a deferral is an answer)
   - Handoff prompt: none (owner)
 
-- [ ] **TF-VIS-007** `[TEST]` — Runoff reference comparison against WhiteboxTools (feasibility IT-7)
+- [x] **TF-VIS-007** `[TEST]` — Runoff reference comparison against WhiteboxTools (feasibility IT-7)
   - Priority: P0 (must not wait for visual work)
   - Owner/model: DeepSeek (runs) with Opus (reviews the method)
   - Reviewer: Opus
@@ -113,7 +115,9 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Scope/files: new `scripts/reference/runoff-whitebox/` (README, export script, comparison script); fixtures under `src/features/analysis/__fixtures__/runoff-reference/`; no change to `runoff.ts`
   - Output: `docs/qa/runoff-reference.md` with agreement on main paths, figures and the tool version
   - Tests: a Vitest test comparing `computeRunoff` on the fixture tile to the stored reference within the stated tolerance
-  - Acceptance: ≥ 95 % main-path cell agreement, or a written explanation of every disagreement class accepted by Opus
+  - ~~Acceptance: ≥ 95 % main-path cell agreement, or a written explanation of every disagreement class accepted by Opus~~
+  - *Revised 18 Nov (owner decision):* acceptance is (1) no invented paths — ≥ 95 % of Terraform main-path cells within 2 cells of a WhiteboxTools main path (crop 97.0 %, enforced in `runoff.reference.test.ts`), and (2) missed paths disclosed in the Water card's limits. Full-tile confirmation of (1) still open. Recorded in ADR-0038 amendment and `docs/qa/runoff-reference.md` (PR #23)
+  - *Closed 19 Nov (owner decision):* no defect in `runoff.ts`. Full tile 92.3–93.3 % within 2 cells (95.0 % within 3, standard); every divergence explained (Runs 3–6), 11–12 per variant a WhiteboxTools fill artefact. Rule 1 kept as a documented measurement and crop regression guard. Done on PR #23, awaiting merge
   - Risk/rollback: WhiteboxTools is not added to `package.json`; RichDEM output only if used (GPL, 02 §2.5)
   - Handoff prompt: `06#tf-vis-007`
 
@@ -214,6 +218,8 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
 
 ## Gate 2 — Identity rendering (revised 18 Nov 2026)
 
+*19 Nov: the visual target is `docs/design/identity-look-spec.md` (owner reference images). Runs 7–8 (PR #29) built stages A–C in the Lab with the land-cover fallback; the orthophoto (028a → 028) is the critical path.*
+
 *Was: "Scene rendering, material and lighting prototypes", exit "the owner has chosen a direction (A/B/C) from Lab captures". The approved identity replaces the direction choice; dependency graph in 09 §5.1.*
 
 **Exit:** the integrated prototype (TF-VIS-02B) passes 09 §7 at the analysis-off and wind-on states and the owner accepts it; the `IDENTITY` style ships (TF-VIS-027) only after **Gate 0 exit (TF-VIS-008)** and within 04 §7 budgets, or with budget exceptions the owner approves in writing. Lab work does not wait for Gate 0; production work does.
@@ -260,7 +266,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Acceptance: 04 §7 budgets; visual regression baselines re-approved by owner; ADR-0041 and ADR-0045 accepted; `NORDIC` retained as a selectable rollback for one release
   - Risk/rollback: switch the default style back to `NORDIC` (one-line revert)
 
-- [ ] **TF-VIS-028a** `[DOC]` — Orthophoto source and licence research *(New 18 Nov)*
+- [x] **TF-VIS-028a** `[DOC]` — Orthophoto source and licence research *(New 18 Nov; done 19 Nov: `docs/data/orthophoto-source.md` — Norge i bilder needs written permission; request drafted for the owner)*
   - Priority: P0 for TF-VIS-028 · Owner: Opus (`research-synthesist`) · Reviewer: Owner · Depends on: —
   - Scope/files: `docs/data/orthophoto-source.md` (new); no code
   - Output: for Norge i bilder (Kartverket/Geovekst) and fallbacks (Sentinel-2, others): licence text and URL, permitted use (public web display, caching, redistribution in a static package, export stills/clips), attribution wording, resolution, capture year for both curated sites, endpoint and CRS options
@@ -276,7 +282,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: optional layer + style flag → land-cover look. **No imagery committed or deployed before D13 clears**
   - Handoff: 06#tf-vis-028
 
-- [ ] **TF-VIS-029** `[EXP]` — Airy point-cloud vegetation prototype *(New 18 Nov)*
+- [ ] **TF-VIS-029** `[EXP]` — Airy point-cloud vegetation prototype *(New 18 Nov; revised 19 Nov: Runs 7–8 built round point clusters; the target is now tree-shaped instances with speckled, see-through crowns — `docs/design/identity-look-spec.md` §3, D22)*
   - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-015
   - Scope/files: new pure `src/scene/vegetationPoints.ts` (seeded cluster per mapped tree; optional forest fill inside land-cover `wood` polygons) + test; new `src/scene/PointVegetation.tsx` (`THREE.Points` or instanced sprites, DPR-stable size, distance LOD, green-grey from `style.ts`, static — never animated); `exportPasses.ts` handling for override passes; `Trees.tsx` untouched (Low tier and rollback)
   - Tests: same seed → same points; point count per LOD within the proposed budget; points excluded from raycasting (`camera-input.spec.ts` green); white and depth passes per D15
@@ -284,7 +290,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: style flag → `Trees.tsx`
   - Handoff: 06#tf-vis-029
 
-- [ ] **TF-VIS-02A** `[EXP]` → `[CAND]` — Atmospheric terrain dissolve *(New 18 Nov)*
+- [ ] **TF-VIS-02A** `[EXP]` → `[CAND]` — Atmospheric terrain dissolve *(New 18 Nov; Run 8 fades every edge; revised 19 Nov: fade to haze colour with a vignette, buildings and trees fade too — look spec §3, D22)*
   - Priority: P1 · Owner: Opus · Reviewer: Codex · Depends on: TF-VIS-020 stage A (028 or land-cover fallback)
   - Scope/files: `terrainMaterial.ts` (radial fade to the background colour beyond a radius ≥ the study halo), `style.ts` (fade start/end, fog colour), `ViewportCanvas.tsx` ⚠VC (hide skirt and floor grid in `IDENTITY`)
   - Tests: pure test that the fade start ≥ halo radius and ≥ analysis-circle radius for both sites; overlays drawn above the fade are unaffected; depth pass unchanged

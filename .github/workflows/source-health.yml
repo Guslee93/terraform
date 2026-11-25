@@ -1,0 +1,24 @@
+# Weekly health check of the live services behind the curated site assets (ADR-0036, owner
+# decision 4, 2026-11-24). Read-only: repeats each recorded request and fails when a service no
+# longer answers. Drift (changed data) is reported, not failed. Scheduled runs only start once
+# this file is on the default branch (main).
+name: Source health
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-sources.mjs --strict

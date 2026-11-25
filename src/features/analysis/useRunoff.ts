@@ -31,5 +31,8 @@ export function useRunoff(raster: TerrainRaster | null, footprints: Footprints, 
     return () => { cancelled = true; clearTimeout(timer); active?.terminate() }
   }, [enabled, raster, footprints])
   if (!enabled || !state || state.raster !== raster) return { runoff: null, computing: enabled && !!raster }
+  // `footprints` is compared by identity, not by content: the caller must memoise it (StudioShell
+  // does, via useMemo on analysisBuildings) or every render would restart the worker and show the
+  // previous result as "computing".
   return { runoff: state.runoff, computing: state.footprints !== footprints }
 }

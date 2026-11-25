@@ -207,3 +207,15 @@ Unchanged from 08 and still open: D0–D3, D5, D7–D12.
 ## 9. Recommended next executable task
 
 **TF-VIS-015 — Visual Lab route scaffold + ADR-0040**, on top of PR #25 (`run1/foundations`), owner/implementer Opus, independent reviewer Codex. Every identity prototype in this document needs the Lab; it changes no production pixels; it is already specified (06#tf-vis-015) and its dependency (013) is implemented in PR #25. In parallel and without code, start **TF-VIS-028a** (orthophoto licence research), because it is the only item that can block the identity outright.
+
+## 10. Amendment — owner reference images (2026-11-19)
+
+The owner supplied six reference images (`docs/design/references/identity/`). They are distilled into `docs/design/identity-look-spec.md`, which is now the visual target for the identity style. Changes to this document, recorded as decision D22 in 08:
+
+- **Brightness:** mid-to-low key with the white buildings as the brightest element and haze lifting the distance — not a black world; overall exposure is an owner-tuned Lab control.
+- **Atmosphere (R6, TF-VIS-02A):** distance fades to a grey-green haze plus a vignette; terrain, trees **and buildings** fade together.
+- **Trees (R4, TF-VIS-029):** tree-shaped instances (deciduous, conifer, birch) with speckled, see-through crowns — not abstract point blobs.
+- **Relief (R2):** draw the terrain from the 1 m tile on curated sites.
+- **Water:** static sheen allowed (amends 03 §3.6); no animation or reflections.
+- **Ground (R1):** the orthophoto carries most of the look, so TF-VIS-028a/028 is the critical path; the land-cover fallback is a stand-in, not a tuning target.
+

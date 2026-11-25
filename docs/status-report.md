@@ -1,6 +1,6 @@
 # Terraform v1 — Status report
 
-**Date:** 18 November 2026 · **Working branch:** `run1/foundations` (draft **PR #25** → `build/foundation`)
+**Date:** 18 November 2026 · **Working branch:** `run1/foundations` (draft **PR #25** → `main`; PR #18 merged 2026-11-25)
 **Prepared from the repository state:** the Run 1 ledger (`docs/handoffs/RUN1-log.md`), the visual-upgrade plan (`docs/plans/terraform-visual-upgrade/`), the ADRs, the review records and the CI record on PR #25. This file replaces the superseded stub that previously stood here; the full narrative background is `docs/reports/terraform-project-report.md` (16 November 2026).
 
 **What Terraform is.** An architectural site-planning **portfolio prototype** — not a commercial product and not planning advice. A Vite + React + TypeScript studio over two curated Oslo site packages (OSM footprints, Kartverket DTM1 terrain and measured heights, the official road-noise map, hazard and parcel layers), plus an address-import path, five analyses (Sun, Wind, Noise, Water, Snow), scenario storage with autosave, and measured export passes. Everything on screen is labelled for what it is — mapped authority data, a calculation, or a screening — and no panel or caption claims compliance, safety or a verified result.
@@ -83,7 +83,7 @@ VISUAL=1 npx playwright test e2e/visual-reference.spec.ts --headed
 
 ### 2.4 Owner decisions still open (`08-OPEN-QUESTIONS-AND-DECISIONS.md`)
 
-The ones that block work: **D0** (fix production first — recommended), **D1** (merge #18 after the Gate 0 checks), **D2** (drop the Lawson "Uncomfortable" names from the wind legend — the Run 1 `it.todo` waits on this), **D13** (orthophoto source and licence — blocks the identity's terrain and keeps the Lab local-only under D19), **D3** (the remaining PR #18 points). Then the design-phase ones: **D7** (noise band colours), **D8** (white-pass edges), **D9** (orthographic plan), **D10** (deterministic MP4 dependency), **D11** (landing still), **D14–D18** (ADR amendments, accent, type).
+**Answered 2026-11-24/25:** **D0** (production 404s no longer reproduce, `docs/reviews/production-404-diagnosis.md`), **D1** (PR #18 merged into `main` on 2026-11-25), **D2** (the wind legend shows speed ranges only), **D3** (the eight PR #18 points, `progress.md`). Still open: **D13** (orthophoto source and licence — blocks the identity's terrain and keeps the Lab local-only under D19; the Kartverket request is sent). Then the design-phase ones: **D7** (noise band colours), **D8** (white-pass edges), **D9** (orthographic plan), **D10** (deterministic MP4 dependency), **D11** (landing still), **D14–D18** (ADR amendments, accent, type).
 
 ### 2.5 The remaining backlog, by gate (≈ 45 items)
 
@@ -128,7 +128,7 @@ node scripts/check-sources.mjs          # has a publisher changed its data?
 git -C . log --oneline -12              # the Run 1 commit series
 ```
 
-The one-line version: **the product is built and honest, the plan's groundwork is measured and merged-ready on PR #25, the visual direction is approved — what remains is the owner's merge decisions, the production 404 diagnosis, the GPU-only capture and baseline runs, and then the identity work of Gates 2–5.**
+The one-line version: **the product is built and honest, the plan's groundwork is measured and merged-ready on PR #25, the visual direction is approved — what remains is the GPU-only capture and baseline runs, and then the identity work of Gates 2–5.**
 
 
 
