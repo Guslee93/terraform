@@ -20,7 +20,7 @@ const FORBIDDEN_CLAIMS = ['compliant', 'verified', 'bim-ready', 'bim ready', 'of
 
 /** ADR-0021 §"Claim wording (exact)": the only honest sun-hours sentence the studio may show. */
 const SANCTIONED_SUN_HOURS_NOTE =
-  'Indicative sun hours — geometric, clear sky, buildings only. Not a daylight assessment.'
+  'Indicative sun hours — geometric, clear sky, buildings only (heights from Kartverket surface model); terrain and trees do not shade. Not a daylight assessment.'
 
 /** The Sun card's analysis-mode label (ADR-0021; ADR-0031: `Shadows | Sun hours | Roof solar | VSC`). */
 const SANCTIONED_SUN_HOURS_LABEL = 'Sun hours'

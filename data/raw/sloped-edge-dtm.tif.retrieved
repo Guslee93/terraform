@@ -1,0 +1,2 @@
+2026-11-16
+https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm-nhm-25833?service=WCS&version=1.0.0&request=GetCoverage&coverage=nhm_dtm_topo_25833&crs=EPSG:4326&bbox=10.76792665,59.89470482,10.77957335,59.90179518&width=652&height=790&format=GeoTIFF

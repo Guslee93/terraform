@@ -15,12 +15,10 @@ const area: Vec2[] = [[0, 0], [40, 0], [40, 40], [0, 40]]
 const road = { highway: 'primary', centreline: [[-100, 0], [100, 0]] as Vec2[] }
 
 describe('buildClimateView', () => {
-  it('shares sum to 1 and exclude building cells', () => {
+  it('builds nothing for noise: the official map draws its own layer (ADR-0034)', () => {
     const block = { height: 10, footprint: [[0, 0], [20, 0], [20, 20], [0, 20]] as Vec2[] }
     const view = buildClimateView('noise', area, [block], [road], null)
-    expect(view.assessed).toBe(12) // 16 cells − 4 inside the block
-    expect(view.overlay.cells).toHaveLength(12)
-    expect(view.legend.reduce((sum, entry) => sum + entry.share, 0)).toBeCloseTo(1, 9)
+    expect(view).toMatchObject({ assessed: 0, legend: [], overlay: { cells: [] } })
   })
   it('colours wind cells from the flow field, skipping building cells', () => {
     const block = { height: 10, footprint: [[0, 0], [20, 0], [20, 20], [0, 20]] as Vec2[] }
@@ -36,11 +34,11 @@ describe('buildClimateView', () => {
     const runner = createFlowRunner()
     runner.request({ id: 1, frame: flowFrame(area, 270, 32, 32), buildings: [], reset: true })
     const flow = runner.tick(0)!
-    // Open ground: ratio ≈ 1, so 3 m/s → standing (2–4), 7 m/s → walking (6–8).
+    // Open ground: ratio ≈ 1, so 3 m/s → the 2–4 m/s class.
     const at = (refSpeed: number) => buildClimateView('wind', area, [], [], flow, { ...DEFAULT_WIND, display: 'activity', refSpeed })
-    expect(at(3).legend.find((e) => e.share === 1)?.label).toMatch(/^Standing/)
-    expect(at(7).legend.find((e) => e.share === 1)?.label).toMatch(/^Strolling/) // 7 m/s at 10 m ≈ 4.9 m/s at 2 m
-    expect(at(10).legend.find((e) => e.share === 1)?.label).toMatch(/^Walking/) // ≈ 7.0 m/s
+    expect(at(3).legend.find((e) => e.share === 1)?.label).toBe('2–4 m/s')
+    expect(at(7).legend.find((e) => e.share === 1)?.label).toBe('4–6 m/s') // 7 m/s at 10 m ≈ 4.9 m/s at 2 m
+    expect(at(10).legend.find((e) => e.share === 1)?.label).toBe('6–8 m/s') // ≈ 7.0 m/s
     expect(at(7).disclaimer).toContain(ACTIVITY_NOTE)
   })
   it('clips the wind view to the analysis circle', () => {
@@ -84,7 +82,7 @@ describe('ClimatePanel', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /Downwash rule/ }))
     expect(onFrom).toHaveBeenLastCalledWith({ ...DEFAULT_WIND, downwash: false })
     expect(screen.getByLabelText('Wind at 10 m height')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Speed classes' })).toHaveAttribute('aria-pressed', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Direction' }))
     expect(onFrom).toHaveBeenLastCalledWith({ ...DEFAULT_WIND, display: 'ratio' })
     fireEvent.change(screen.getByLabelText('Analysis circle'), { target: { value: '150' } })
@@ -94,10 +92,11 @@ describe('ClimatePanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Noise' }))
     expect(onMode).toHaveBeenCalledWith('noise')
   })
-  it('explains an empty noise result instead of showing a blank legend', () => {
+  it('shows no legend of its own for noise: the Noise card has its own body (ADR-0034)', () => {
     const view = buildClimateView('noise', area, [], [], null)
     render(<ClimatePanel mode="noise" onModeChange={() => {}} wind={DEFAULT_WIND} onWindChange={() => {}} view={view} />)
-    expect(screen.getByText(/nothing to estimate/)).toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.queryByText(/dB/)).not.toBeInTheDocument()
   })
 })
 
@@ -271,14 +270,14 @@ it('disables upper controls until slices exist and exposes Direction reference s
 it('above 2 m the map shows m/s: Comfort is disabled and says why (ADR-0028)', () => {
   const props = { mode: 'wind' as const, onModeChange: vi.fn(), onWindChange: vi.fn(), view: null, availableHeights: Array.from({ length: 29 }, (_, i) => i + 2), slicesComplete: true }
   const { rerender } = render(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, display: 'activity', heightM: 20 }} />)
-  const comfort = screen.getByRole('button', { name: 'Comfort' })
+  const comfort = screen.getByRole('button', { name: 'Speed classes' })
   expect(comfort).toBeDisabled()
-  expect(comfort).toHaveAccessibleDescription(/Comfort classes apply at 2 m only/)
+  expect(comfort).toHaveAccessibleDescription(/Speed classes apply at 2 m only/)
   expect(screen.getByRole('button', { name: 'Direction' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getByText(/Wind speed at 20 m above terrain, in m\/s/)).toBeInTheDocument()
   rerender(<ClimatePanel {...props} wind={{ ...DEFAULT_WIND, display: 'activity', heightM: 2 }} />)
-  expect(screen.getByRole('button', { name: 'Comfort' })).toBeEnabled()
-  expect(screen.getByRole('button', { name: 'Comfort' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: 'Speed classes' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Speed classes' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.queryByText(/above terrain, in m\/s/)).toBeNull()
 })
 

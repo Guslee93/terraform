@@ -1,0 +1,11 @@
+Oslo Grünerløkka (site) | {'Strategiskstoykart_lden': (104, ['2021'], ['301'], ['V']), 'Strategiskstoykart_lnight': (27, ['2021'], ['301'], ['V']), 'Stoyvarselkart': (0, [], [], [])}
+Oslo Nordstrand (suburb) | {'Strategiskstoykart_lden': (21, ['2021'], ['301'], ['V']), 'Strategiskstoykart_lnight': (23, ['2021'], ['301'], ['V']), 'Stoyvarselkart': (2, ['2040'], ['301'], ['V'])}
+Oslo Holmenkollen | {'Strategiskstoykart_lden': (17, ['2021'], ['301'], ['V']), 'Strategiskstoykart_lnight': (5, ['2021'], ['301'], ['V']), 'Stoyvarselkart': (0, [], [], [])}
+Bærum Sandvika | {'Strategiskstoykart_lden': (66, ['2021'], ['3024'], ['V']), 'Strategiskstoykart_lnight': (37, ['2021'], ['3024'], ['V']), 'Stoyvarselkart': (11, ['2040'], ['3201'], ['V'])}
+Bergen sentrum | {'Strategiskstoykart_lden': (118, ['2021'], ['4601'], ['V']), 'Strategiskstoykart_lnight': (58, ['2021'], ['4601'], ['V']), 'Stoyvarselkart': (14, ['2040'], ['1201'], ['V'])}
+Trondheim sentrum | {'Strategiskstoykart_lden': (114, ['2021'], ['5001'], ['V']), 'Strategiskstoykart_lnight': (54, ['2021'], ['5001'], ['V']), 'Stoyvarselkart': (0, [], [], [])}
+Stavanger sentrum | {'Strategiskstoykart_lden': (79, ['2021'], ['1103'], ['V']), 'Strategiskstoykart_lnight': (41, ['2021'], ['1103'], ['V']), 'Stoyvarselkart': (9, ['2040'], ['1103'], ['V'])}
+Kristiansand sentrum | {'Strategiskstoykart_lden': (53, ['2021'], ['4204'], ['V']), 'Strategiskstoykart_lnight': (19, ['2021'], ['4204'], ['V']), 'Stoyvarselkart': (5, ['2040'], ['4204'], ['V'])}
+Lillehammer sentrum | {'Strategiskstoykart_lden': (15, ['2021'], ['3405'], ['V']), 'Strategiskstoykart_lnight': (15, ['2021'], ['3405'], ['V']), 'Stoyvarselkart': (8, ['2040'], ['3405', '3411'], ['V'])}
+Tromsø sentrum | {'Strategiskstoykart_lden': (10, ['2021'], ['5401'], ['V']), 'Strategiskstoykart_lnight': (5, ['2021'], ['5401'], ['V']), 'Stoyvarselkart': (4, ['2040'], ['5401'], ['V'])}
+Rural E6 Dombås | {'Strategiskstoykart_lden': (0, [], [], []), 'Strategiskstoykart_lnight': (0, [], [], []), 'Stoyvarselkart': (4, ['2040'], ['3431'], ['V'])}

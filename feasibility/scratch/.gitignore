@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.tif
+dtm_enu.bin
+dom_enu.bin
+registration/scene.json
+# PVGIS raw responses: redistribution terms unconfirmed (02 §3); re-fetch with the URLs in 04
+evidence/pvgis-tmy-oslo.json
+evidence/pvgis-mrcalc-oslo.json

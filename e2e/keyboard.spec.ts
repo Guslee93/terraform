@@ -62,7 +62,7 @@ test('Tab reaches top bar, tools, viewport and the Parameters panel in visual or
 
   // Named stops within the groups, in order.
   const labels = stops.map((s) => s.label)
-  const expected = ['Back', 'Add a block', 'Export', 'Fit site', 'About', 'Sun', 'Wind', 'Noise', 'Layers', '3D', 'Plan', 'North', 'South', 'Street']
+  const expected = ['Back', 'Add a block', 'Export', 'Fit site', 'About', 'Sun', 'Wind', 'Noise', 'Water', 'Snow', 'Layers', '3D', 'Plan', 'North', 'South', 'Street']
   const at = expected.map((name) => labels.findIndex((l) => l.startsWith(name)))
   for (const [i, name] of expected.entries()) {
     expect(at[i], `stop "${name}" not reached: ${JSON.stringify(labels)}`).toBeGreaterThanOrEqual(0)

@@ -1,0 +1,1958 @@
+{
+  "commit": "570546718d7c4158fa49f60be0d5377b83b40cc2",
+  "machine": {
+    "value": "Apple M1 Pro"
+  },
+  "os": {
+    "platform": "darwin",
+    "release": "24.6.0",
+    "arch": "arm64"
+  },
+  "browserVersion": "156.0.8078.4",
+  "recordedAt": "2026-11-17T01:40:47.636Z",
+  "settings": {
+    "runs": 3,
+    "window-ms": 6000,
+    "label": "baseline-build-foundation",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "deviceScaleFactor": 2,
+    "renderPreference": "auto (fixed by StudioShell; resolves to High on a hardware GPU, see downgradeRisk)",
+    "fixedHigh": {
+      "value": null,
+      "reason": "Not verifiable: StudioShell.tsx hardcodes renderPreference=\"auto\" and a downgrade between windows is not sampled. Forcing High needs an app change."
+    },
+    "headless": false,
+    "timeoutMs": 60000,
+    "sites": [
+      "compact-infill",
+      "sloped-edge"
+    ]
+  },
+  "results": [
+    {
+      "site": "compact-infill",
+      "run": 1,
+      "windows": {
+        "idle": {
+          "value": {
+            "durationMs": {
+              "value": 6007
+            },
+            "fps": {
+              "value": 61.001016683611404
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.80949720670391
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.699999999999818
+            },
+            "frameMsP95": {
+              "value": 17.59999999999991
+            },
+            "frameMsP99": {
+              "value": 25.399999999999636
+            },
+            "frameMsMax": {
+              "value": 25.90000000000009
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 16.226824
+            },
+            "heapMbAfter": {
+              "value": 19.233768
+            }
+          }
+        },
+        "orbit": {
+          "value": {
+            "durationMs": {
+              "value": 6032.400000035763
+            },
+            "fps": {
+              "value": 60.83271004736973
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.575138121546964
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999891
+            },
+            "frameMsP95": {
+              "value": 17.5
+            },
+            "frameMsP99": {
+              "value": 25.100000000000364
+            },
+            "frameMsMax": {
+              "value": 25.100000000000364
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 19.261172
+            },
+            "heapMbAfter": {
+              "value": 25.432956
+            }
+          }
+        },
+        "sun": {
+          "value": {
+            "durationMs": {
+              "value": 6002.899999976158
+            },
+            "fps": {
+              "value": 58.833333333333336
+            },
+            "max3sMeanFrameMs": {
+              "value": 17.14342857142856
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.700000000000728
+            },
+            "frameMsP95": {
+              "value": 25
+            },
+            "frameMsP99": {
+              "value": 25.5
+            },
+            "frameMsMax": {
+              "value": 27.200000000000728
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 103
+            },
+            "drawCallsPerFrameMax": {
+              "value": 103
+            },
+            "heapMbBefore": {
+              "value": 22.53554
+            },
+            "heapMbAfter": {
+              "value": 29.35502
+            }
+          }
+        },
+        "wind": {
+          "value": {
+            "durationMs": {
+              "value": 6003.5
+            },
+            "fps": {
+              "value": 61.67062205435039
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.43934426229507
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 17.400000000001455
+            },
+            "frameMsP99": {
+              "value": 24.599999999998545
+            },
+            "frameMsMax": {
+              "value": 75
+            },
+            "longTasksCount": {
+              "value": 1
+            },
+            "longTaskMsMax": {
+              "value": 68
+            },
+            "drawCallsPerFrameP50": {
+              "value": 99
+            },
+            "drawCallsPerFrameMax": {
+              "value": 99
+            },
+            "heapMbBefore": {
+              "value": 20.563696
+            },
+            "heapMbAfter": {
+              "value": 69.254408
+            }
+          }
+        },
+        "water": {
+          "value": {
+            "durationMs": {
+              "value": 6002
+            },
+            "fps": {
+              "value": 61.08786610878661
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.619230769230754
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 17.5
+            },
+            "frameMsP99": {
+              "value": 25.099999999998545
+            },
+            "frameMsMax": {
+              "value": 25.900000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 30.26098
+            },
+            "heapMbAfter": {
+              "value": 25.556036
+            }
+          }
+        },
+        "slope": {
+          "value": {
+            "durationMs": {
+              "value": 6004.199999988079
+            },
+            "fps": {
+              "value": 61.67165276686783
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.39781420765025
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 17.5
+            },
+            "frameMsP99": {
+              "value": 25.200000000004366
+            },
+            "frameMsMax": {
+              "value": 33.30000000000291
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 94
+            },
+            "drawCallsPerFrameMax": {
+              "value": 94
+            },
+            "heapMbBefore": {
+              "value": 31.284064
+            },
+            "heapMbAfter": {
+              "value": 33.337912
+            }
+          }
+        }
+      },
+      "pageErrors": [],
+      "load": {
+        "fcpMs": {
+          "value": 168
+        },
+        "timeToCanvasMs": {
+          "value": 1016.7999999523163
+        },
+        "timeToDefaultCardMs": {
+          "value": 1016.8999999761581
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+      "softwareRenderer": false,
+      "export": {
+        "count": {
+          "value": 4
+        },
+        "ms": {
+          "value": 2056.1597919999986
+        },
+        "downloads": [
+          {
+            "filename": "terraform-compact-infill-depth.png",
+            "ms": 1454.6789999999964
+          },
+          {
+            "filename": "terraform-compact-infill-analysis.png",
+            "ms": 1765.5146249999962
+          },
+          {
+            "filename": "terraform-compact-infill-white.png",
+            "ms": 1841.765542000001
+          },
+          {
+            "filename": "terraform-compact-infill-still.png",
+            "ms": 2056.1597919999986
+          }
+        ]
+      },
+      "pointerLatencyMs": {
+        "value": null,
+        "reason": "Block drawn, but a canvas change cannot reliably identify the block drag response rather than camera damping or analysis animation. Pixel readback also perturbs frame timing; no reliable pointer-to-scene latency measurement is available without app instrumentation."
+      }
+    },
+    {
+      "site": "compact-infill",
+      "run": 2,
+      "windows": {
+        "idle": {
+          "value": {
+            "durationMs": {
+              "value": 6001.900000035763
+            },
+            "fps": {
+              "value": 60.999047412136306
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.714444444444442
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.699999999999818
+            },
+            "frameMsP95": {
+              "value": 24.900000000000546
+            },
+            "frameMsP99": {
+              "value": 25.40000000000009
+            },
+            "frameMsMax": {
+              "value": 25.899999999999636
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 18.509716
+            },
+            "heapMbAfter": {
+              "value": 29.233452
+            }
+          }
+        },
+        "orbit": {
+          "value": {
+            "durationMs": {
+              "value": 6008.899999976158
+            },
+            "fps": {
+              "value": 59.41552480931955
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.951977401129945
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999891
+            },
+            "frameMsP95": {
+              "value": 25
+            },
+            "frameMsP99": {
+              "value": 25.600000000000364
+            },
+            "frameMsMax": {
+              "value": 25.69999999999891
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 29.39188
+            },
+            "heapMbAfter": {
+              "value": 20.571564
+            }
+          }
+        },
+        "sun": {
+          "value": {
+            "durationMs": {
+              "value": 6002.100000023842
+            },
+            "fps": {
+              "value": 57.994752059900065
+            },
+            "max3sMeanFrameMs": {
+              "value": 17.490116279069763
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.700000000000728
+            },
+            "frameMsP95": {
+              "value": 25
+            },
+            "frameMsP99": {
+              "value": 25.700000000000728
+            },
+            "frameMsMax": {
+              "value": 25.899999999997817
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 103
+            },
+            "drawCallsPerFrameMax": {
+              "value": 103
+            },
+            "heapMbBefore": {
+              "value": 21.212992
+            },
+            "heapMbAfter": {
+              "value": 31.7408
+            }
+          }
+        },
+        "wind": {
+          "value": {
+            "durationMs": {
+              "value": 6002
+            },
+            "fps": {
+              "value": 58.49516997025101
+            },
+            "max3sMeanFrameMs": {
+              "value": 18.293292682926843
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 25
+            },
+            "frameMsP99": {
+              "value": 25.799999999999272
+            },
+            "frameMsMax": {
+              "value": 65.80000000000291
+            },
+            "longTasksCount": {
+              "value": 1
+            },
+            "longTaskMsMax": {
+              "value": 55
+            },
+            "drawCallsPerFrameP50": {
+              "value": 99
+            },
+            "drawCallsPerFrameMax": {
+              "value": 99
+            },
+            "heapMbBefore": {
+              "value": 19.86368
+            },
+            "heapMbAfter": {
+              "value": 40.751072
+            }
+          }
+        },
+        "water": {
+          "value": {
+            "durationMs": {
+              "value": 6002.600000023842
+            },
+            "fps": {
+              "value": 49.37899635097589
+            },
+            "max3sMeanFrameMs": {
+              "value": 20.408163265306122
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 17.5
+            },
+            "frameMsP95": {
+              "value": 25.39999999999418
+            },
+            "frameMsP99": {
+              "value": 25.900000000001455
+            },
+            "frameMsMax": {
+              "value": 32.400000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 21.77306
+            },
+            "heapMbAfter": {
+              "value": 36.74292
+            }
+          }
+        },
+        "slope": {
+          "value": {
+            "durationMs": {
+              "value": 6002.399999976158
+            },
+            "fps": {
+              "value": 49.14087049542024
+            },
+            "max3sMeanFrameMs": {
+              "value": 20.605479452054805
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 17.30000000000291
+            },
+            "frameMsP95": {
+              "value": 25.599999999998545
+            },
+            "frameMsP99": {
+              "value": 25.900000000001455
+            },
+            "frameMsMax": {
+              "value": 33.400000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 94
+            },
+            "drawCallsPerFrameMax": {
+              "value": 94
+            },
+            "heapMbBefore": {
+              "value": 19.793868
+            },
+            "heapMbAfter": {
+              "value": 37.241292
+            }
+          }
+        }
+      },
+      "pageErrors": [],
+      "load": {
+        "fcpMs": {
+          "value": 140
+        },
+        "timeToCanvasMs": {
+          "value": 886.3000000119209
+        },
+        "timeToDefaultCardMs": {
+          "value": 886.4000000357628
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+      "softwareRenderer": false,
+      "export": {
+        "count": {
+          "value": 4
+        },
+        "ms": {
+          "value": 1793.1345000000001
+        },
+        "downloads": [
+          {
+            "filename": "terraform-compact-infill-depth.png",
+            "ms": 1416.4221670000115
+          },
+          {
+            "filename": "terraform-compact-infill-white.png",
+            "ms": 1546.5475000000006
+          },
+          {
+            "filename": "terraform-compact-infill-analysis.png",
+            "ms": 1615.9697920000035
+          },
+          {
+            "filename": "terraform-compact-infill-still.png",
+            "ms": 1793.1345000000001
+          }
+        ]
+      },
+      "pointerLatencyMs": {
+        "value": null,
+        "reason": "Block drawn, but a canvas change cannot reliably identify the block drag response rather than camera damping or analysis animation. Pixel readback also perturbs frame timing; no reliable pointer-to-scene latency measurement is available without app instrumentation."
+      }
+    },
+    {
+      "site": "compact-infill",
+      "run": 3,
+      "windows": {
+        "idle": {
+          "value": {
+            "durationMs": {
+              "value": 6003
+            },
+            "fps": {
+              "value": 60.2510460251046
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.853932584269664
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.699999999999818
+            },
+            "frameMsP95": {
+              "value": 24.100000000000364
+            },
+            "frameMsP99": {
+              "value": 25.09999999999991
+            },
+            "frameMsMax": {
+              "value": 25.900000000000546
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 18.527992
+            },
+            "heapMbAfter": {
+              "value": 17.902332
+            }
+          }
+        },
+        "orbit": {
+          "value": {
+            "durationMs": {
+              "value": 6015.399999976158
+            },
+            "fps": {
+              "value": 60.253029342056934
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.76480446927374
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999891
+            },
+            "frameMsP95": {
+              "value": 24.899999999999636
+            },
+            "frameMsP99": {
+              "value": 25.100000000000364
+            },
+            "frameMsMax": {
+              "value": 26
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 18.062428
+            },
+            "heapMbAfter": {
+              "value": 25.71506
+            }
+          }
+        },
+        "sun": {
+          "value": {
+            "durationMs": {
+              "value": 6001.899999976158
+            },
+            "fps": {
+              "value": 59.164675012117065
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.95028248587571
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.700000000000728
+            },
+            "frameMsP95": {
+              "value": 25
+            },
+            "frameMsP99": {
+              "value": 25.5
+            },
+            "frameMsMax": {
+              "value": 25.900000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 103
+            },
+            "drawCallsPerFrameMax": {
+              "value": 103
+            },
+            "heapMbBefore": {
+              "value": 32.712364
+            },
+            "heapMbAfter": {
+              "value": 17.314348
+            }
+          }
+        },
+        "wind": {
+          "value": {
+            "durationMs": {
+              "value": 6003.899999976158
+            },
+            "fps": {
+              "value": 63.72089911693871
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.836842105263157
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.600000000002183
+            },
+            "frameMsP95": {
+              "value": 17.599999999998545
+            },
+            "frameMsP99": {
+              "value": 17.700000000000728
+            },
+            "frameMsMax": {
+              "value": 50
+            },
+            "longTasksCount": {
+              "value": 1
+            },
+            "longTaskMsMax": {
+              "value": 51
+            },
+            "drawCallsPerFrameP50": {
+              "value": 99
+            },
+            "drawCallsPerFrameMax": {
+              "value": 99
+            },
+            "heapMbBefore": {
+              "value": 35.746864
+            },
+            "heapMbAfter": {
+              "value": 32.310348
+            }
+          }
+        },
+        "water": {
+          "value": {
+            "durationMs": {
+              "value": 6002.5
+            },
+            "fps": {
+              "value": 50.87780957640877
+            },
+            "max3sMeanFrameMs": {
+              "value": 20.32229729729728
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.900000000001455
+            },
+            "frameMsP95": {
+              "value": 25.30000000000291
+            },
+            "frameMsP99": {
+              "value": 25.799999999995634
+            },
+            "frameMsMax": {
+              "value": 26
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 41.754036
+            },
+            "heapMbAfter": {
+              "value": 61.41752
+            }
+          }
+        },
+        "slope": {
+          "value": {
+            "durationMs": {
+              "value": 6001.199999988079
+            },
+            "fps": {
+              "value": 55.997592939288566
+            },
+            "max3sMeanFrameMs": {
+              "value": 18.460736196319008
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 25.10000000000582
+            },
+            "frameMsP99": {
+              "value": 25.900000000001455
+            },
+            "frameMsMax": {
+              "value": 26
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 94
+            },
+            "drawCallsPerFrameMax": {
+              "value": 94
+            },
+            "heapMbBefore": {
+              "value": 23.0171
+            },
+            "heapMbAfter": {
+              "value": 19.999564
+            }
+          }
+        }
+      },
+      "pageErrors": [],
+      "load": {
+        "fcpMs": {
+          "value": 132
+        },
+        "timeToCanvasMs": {
+          "value": 872.5999999642372
+        },
+        "timeToDefaultCardMs": {
+          "value": 872.6999999880791
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+      "softwareRenderer": false,
+      "export": {
+        "count": {
+          "value": 4
+        },
+        "ms": {
+          "value": 1568.0672499999928
+        },
+        "downloads": [
+          {
+            "filename": "terraform-compact-infill-depth.png",
+            "ms": 1207.4052089999896
+          },
+          {
+            "filename": "terraform-compact-infill-white.png",
+            "ms": 1318.9574589999975
+          },
+          {
+            "filename": "terraform-compact-infill-analysis.png",
+            "ms": 1397.1797499999811
+          },
+          {
+            "filename": "terraform-compact-infill-still.png",
+            "ms": 1568.0672499999928
+          }
+        ]
+      },
+      "pointerLatencyMs": {
+        "value": null,
+        "reason": "Block drawn, but a canvas change cannot reliably identify the block drag response rather than camera damping or analysis animation. Pixel readback also perturbs frame timing; no reliable pointer-to-scene latency measurement is available without app instrumentation."
+      }
+    },
+    {
+      "site": "sloped-edge",
+      "run": 1,
+      "windows": {
+        "idle": {
+          "value": {
+            "durationMs": {
+              "value": 6002.300000011921
+            },
+            "fps": {
+              "value": 65.34746130962328
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.508762886597943
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.600000000000364
+            },
+            "frameMsP95": {
+              "value": 17.5
+            },
+            "frameMsP99": {
+              "value": 25
+            },
+            "frameMsMax": {
+              "value": 25.5
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 19.045516
+            },
+            "heapMbAfter": {
+              "value": 20.366356
+            }
+          }
+        },
+        "orbit": {
+          "value": {
+            "durationMs": {
+              "value": 6015.300000011921
+            },
+            "fps": {
+              "value": 65.32571200026663
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.31319796954315
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.600000000000364
+            },
+            "frameMsP95": {
+              "value": 17.399999999999636
+            },
+            "frameMsP99": {
+              "value": 25.5
+            },
+            "frameMsMax": {
+              "value": 25.799999999999272
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 20.39312
+            },
+            "heapMbAfter": {
+              "value": 19.34808
+            }
+          }
+        },
+        "sun": {
+          "value": {
+            "durationMs": {
+              "value": 6005.399999976158
+            },
+            "fps": {
+              "value": 64.42460151881832
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.789473684210526
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.600000000002183
+            },
+            "frameMsP95": {
+              "value": 17.69999999999709
+            },
+            "frameMsP99": {
+              "value": 25.5
+            },
+            "frameMsMax": {
+              "value": 25.900000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 103
+            },
+            "drawCallsPerFrameMax": {
+              "value": 103
+            },
+            "heapMbBefore": {
+              "value": 23.612288
+            },
+            "heapMbAfter": {
+              "value": 36.276164
+            }
+          }
+        },
+        "wind": {
+          "value": {
+            "durationMs": {
+              "value": 6001.399999976158
+            },
+            "fps": {
+              "value": 58.82942808436673
+            },
+            "max3sMeanFrameMs": {
+              "value": 17.29310344827586
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.700000000000728
+            },
+            "frameMsP95": {
+              "value": 24.399999999997817
+            },
+            "frameMsP99": {
+              "value": 26
+            },
+            "frameMsMax": {
+              "value": 66.70000000000073
+            },
+            "longTasksCount": {
+              "value": 2
+            },
+            "longTaskMsMax": {
+              "value": 54
+            },
+            "drawCallsPerFrameP50": {
+              "value": 99
+            },
+            "drawCallsPerFrameMax": {
+              "value": 102
+            },
+            "heapMbBefore": {
+              "value": 29.153536
+            },
+            "heapMbAfter": {
+              "value": 31.905684
+            }
+          }
+        },
+        "water": {
+          "value": {
+            "durationMs": {
+              "value": 6001.799999952316
+            },
+            "fps": {
+              "value": 60.2510460251046
+            },
+            "max3sMeanFrameMs": {
+              "value": 18.072289156626507
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 25
+            },
+            "frameMsP99": {
+              "value": 25.69999999999709
+            },
+            "frameMsMax": {
+              "value": 26
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 29.763032
+            },
+            "heapMbAfter": {
+              "value": 34.725004
+            }
+          }
+        },
+        "slope": {
+          "value": {
+            "durationMs": {
+              "value": 6001.699999988079
+            },
+            "fps": {
+              "value": 65.01428977320212
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.716145833333334
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.599999999998545
+            },
+            "frameMsP95": {
+              "value": 17.599999999998545
+            },
+            "frameMsP99": {
+              "value": 25.099999999998545
+            },
+            "frameMsMax": {
+              "value": 25.900000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 94
+            },
+            "drawCallsPerFrameMax": {
+              "value": 94
+            },
+            "heapMbBefore": {
+              "value": 45.941284
+            },
+            "heapMbAfter": {
+              "value": 24.185948
+            }
+          }
+        }
+      },
+      "pageErrors": [],
+      "load": {
+        "fcpMs": {
+          "value": 112
+        },
+        "timeToCanvasMs": {
+          "value": 849.5
+        },
+        "timeToDefaultCardMs": {
+          "value": 849.5999999642372
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+      "softwareRenderer": false,
+      "export": {
+        "value": null,
+        "reason": "Only measured on Compact Infill"
+      },
+      "pointerLatencyMs": {
+        "value": null,
+        "reason": "Only measured on Compact Infill"
+      }
+    },
+    {
+      "site": "sloped-edge",
+      "run": 2,
+      "windows": {
+        "idle": {
+          "value": {
+            "durationMs": {
+              "value": 6002.699999988079
+            },
+            "fps": {
+              "value": 65.94142259414227
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.586528497409326
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.600000000000364
+            },
+            "frameMsP95": {
+              "value": 17.599999999999454
+            },
+            "frameMsP99": {
+              "value": 25
+            },
+            "frameMsMax": {
+              "value": 25.100000000000364
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 18.94604
+            },
+            "heapMbAfter": {
+              "value": 20.627832
+            }
+          }
+        },
+        "orbit": {
+          "value": {
+            "durationMs": {
+              "value": 6011.800000011921
+            },
+            "fps": {
+              "value": 63.009451417712654
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.068617021276594
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.600000000000364
+            },
+            "frameMsP95": {
+              "value": 25
+            },
+            "frameMsP99": {
+              "value": 25.5
+            },
+            "frameMsMax": {
+              "value": 25.900000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 20.654536
+            },
+            "heapMbAfter": {
+              "value": 22.354096
+            }
+          }
+        },
+        "sun": {
+          "value": {
+            "durationMs": {
+              "value": 6001.899999976158
+            },
+            "fps": {
+              "value": 65.73665194700922
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.531443298969084
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.599999999998545
+            },
+            "frameMsP95": {
+              "value": 17.599999999998545
+            },
+            "frameMsP99": {
+              "value": 25.099999999998545
+            },
+            "frameMsMax": {
+              "value": 25.599999999998545
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 103
+            },
+            "drawCallsPerFrameMax": {
+              "value": 103
+            },
+            "heapMbBefore": {
+              "value": 18.034192
+            },
+            "heapMbAfter": {
+              "value": 17.178616
+            }
+          }
+        },
+        "wind": {
+          "value": {
+            "durationMs": {
+              "value": 6002
+            },
+            "fps": {
+              "value": 66.36132655790317
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.465463917525788
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.599999999998545
+            },
+            "frameMsP95": {
+              "value": 17.599999999998545
+            },
+            "frameMsP99": {
+              "value": 17.700000000000728
+            },
+            "frameMsMax": {
+              "value": 66.79999999999927
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 99
+            },
+            "drawCallsPerFrameMax": {
+              "value": 102
+            },
+            "heapMbBefore": {
+              "value": 36.917156
+            },
+            "heapMbAfter": {
+              "value": 34.455668
+            }
+          }
+        },
+        "water": {
+          "value": {
+            "durationMs": {
+              "value": 6002.300000011921
+            },
+            "fps": {
+              "value": 60.74398835321875
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.57955801104973
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 24.099999999998545
+            },
+            "frameMsP99": {
+              "value": 25.700000000004366
+            },
+            "frameMsMax": {
+              "value": 26
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 34.599876
+            },
+            "heapMbAfter": {
+              "value": 26.014392
+            }
+          }
+        },
+        "slope": {
+          "value": {
+            "durationMs": {
+              "value": 6003.099999964237
+            },
+            "fps": {
+              "value": 61.41829530851014
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.57734806629834
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 24.89999999999418
+            },
+            "frameMsP99": {
+              "value": 25.80000000000291
+            },
+            "frameMsMax": {
+              "value": 26
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 94
+            },
+            "drawCallsPerFrameMax": {
+              "value": 94
+            },
+            "heapMbBefore": {
+              "value": 39.191984
+            },
+            "heapMbAfter": {
+              "value": 41.262556
+            }
+          }
+        }
+      },
+      "pageErrors": [],
+      "load": {
+        "fcpMs": {
+          "value": 72
+        },
+        "timeToCanvasMs": {
+          "value": 822.5
+        },
+        "timeToDefaultCardMs": {
+          "value": 822.5999999642372
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+      "softwareRenderer": false,
+      "export": {
+        "value": null,
+        "reason": "Only measured on Compact Infill"
+      },
+      "pointerLatencyMs": {
+        "value": null,
+        "reason": "Only measured on Compact Infill"
+      }
+    },
+    {
+      "site": "sloped-edge",
+      "run": 3,
+      "windows": {
+        "idle": {
+          "value": {
+            "durationMs": {
+              "value": 6003
+            },
+            "fps": {
+              "value": 61.83361743373776
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.444262295081963
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.600000000000364
+            },
+            "frameMsP95": {
+              "value": 24.199999999999818
+            },
+            "frameMsP99": {
+              "value": 25.399999999999636
+            },
+            "frameMsMax": {
+              "value": 26.40000000000009
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 19.136864
+            },
+            "heapMbAfter": {
+              "value": 16.965792
+            }
+          }
+        },
+        "orbit": {
+          "value": {
+            "durationMs": {
+              "value": 6015.399999976158
+            },
+            "fps": {
+              "value": 62.333333333333336
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.130107526881723
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999891
+            },
+            "frameMsP95": {
+              "value": 18
+            },
+            "frameMsP99": {
+              "value": 25.100000000000364
+            },
+            "frameMsMax": {
+              "value": 25.899999999999636
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 16.992516
+            },
+            "heapMbAfter": {
+              "value": 18.66026
+            }
+          }
+        },
+        "sun": {
+          "value": {
+            "durationMs": {
+              "value": 6004.399999976158
+            },
+            "fps": {
+              "value": 63.60790746723354
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.957978723404267
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.600000000002183
+            },
+            "frameMsP95": {
+              "value": 17.600000000002183
+            },
+            "frameMsP99": {
+              "value": 25
+            },
+            "frameMsMax": {
+              "value": 25.900000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 103
+            },
+            "drawCallsPerFrameMax": {
+              "value": 103
+            },
+            "heapMbBefore": {
+              "value": 19.19668
+            },
+            "heapMbAfter": {
+              "value": 17.171716
+            }
+          }
+        },
+        "wind": {
+          "value": {
+            "durationMs": {
+              "value": 6002.399999976158
+            },
+            "fps": {
+              "value": 67.17689916780856
+            },
+            "max3sMeanFrameMs": {
+              "value": 15.117085427135676
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.599999999998545
+            },
+            "frameMsP95": {
+              "value": 17.599999999998545
+            },
+            "frameMsP99": {
+              "value": 17.700000000000728
+            },
+            "frameMsMax": {
+              "value": 66.70000000000073
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 99
+            },
+            "drawCallsPerFrameMax": {
+              "value": 102
+            },
+            "heapMbBefore": {
+              "value": 24.058516
+            },
+            "heapMbAfter": {
+              "value": 52.379016
+            }
+          }
+        },
+        "water": {
+          "value": {
+            "durationMs": {
+              "value": 6003.099999964237
+            },
+            "fps": {
+              "value": 61.92468619246862
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.39999999999999
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 24.19999999999709
+            },
+            "frameMsP99": {
+              "value": 25.099999999998545
+            },
+            "frameMsMax": {
+              "value": 25.900000000001455
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 90
+            },
+            "drawCallsPerFrameMax": {
+              "value": 90
+            },
+            "heapMbBefore": {
+              "value": 29.536384
+            },
+            "heapMbAfter": {
+              "value": 35.633964
+            }
+          }
+        },
+        "slope": {
+          "value": {
+            "durationMs": {
+              "value": 6002.799999952316
+            },
+            "fps": {
+              "value": 61.252420054743325
+            },
+            "max3sMeanFrameMs": {
+              "value": 16.671823204419923
+            },
+            "downgradeRisk": {
+              "value": false
+            },
+            "frameMsP50": {
+              "value": 16.69999999999709
+            },
+            "frameMsP95": {
+              "value": 24.900000000001455
+            },
+            "frameMsP99": {
+              "value": 25.599999999998545
+            },
+            "frameMsMax": {
+              "value": 26
+            },
+            "longTasksCount": {
+              "value": 0
+            },
+            "longTaskMsMax": {
+              "value": null,
+              "reason": "No long tasks greater than 50 ms observed"
+            },
+            "drawCallsPerFrameP50": {
+              "value": 94
+            },
+            "drawCallsPerFrameMax": {
+              "value": 94
+            },
+            "heapMbBefore": {
+              "value": 23.208
+            },
+            "heapMbAfter": {
+              "value": 24.983908
+            }
+          }
+        }
+      },
+      "pageErrors": [],
+      "load": {
+        "fcpMs": {
+          "value": 112
+        },
+        "timeToCanvasMs": {
+          "value": 858.5
+        },
+        "timeToDefaultCardMs": {
+          "value": 858.5
+        }
+      },
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+      "softwareRenderer": false,
+      "export": {
+        "value": null,
+        "reason": "Only measured on Compact Infill"
+      },
+      "pointerLatencyMs": {
+        "value": null,
+        "reason": "Only measured on Compact Infill"
+      }
+    }
+  ]
+}

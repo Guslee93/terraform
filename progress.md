@@ -987,3 +987,483 @@ zoom in because the quads are small at the default site camera.
   production build: wind (including the handle drag and Esc), wind-a11y, sun-hours and simplified-studio
   all pass, 7 of 7.
 - Captures: `docs/screenshots/wind-lift-centre-handle-{2m,15m}-1440x900.png`.
+
+## 2026-11-15 — build/foundation WP-0: setup and baseline
+
+- Plan: `docs/plans/fable-build-plan.md` (written from the closed feasibility study). Branch
+  `build/foundation` in the worktree `../Terraform-build`, cut from `feasibility/audit` (fc7cf04).
+- Baseline at fc7cf04: `npm run test` 113 files passed, 1 skipped; **1078 passed, 4 skipped**.
+  `npm run build` OK (three-vendor 246 kB gzip, `/new` 317 kB gzip, studio 74 kB gzip).
+- `npm run lint` **failed at the baseline: 16 errors, all in `feasibility/scratch/`** (browser
+  globals in the throwaway prototypes). Product code was clean. Fixed by ignoring
+  `feasibility/scratch/**` in `eslint.config.js`: it is scratch evidence, outside `src/`.
+- Perf baseline: `feasibility/scratch/evidence/perf-build-baseline.json` (headed Chromium, 1440 × 900
+  @2x, 3 runs per site). Orbit drag: Compact Infill 53.7–56.1 fps, frame p95 25.1 ms, 0 long tasks;
+  Sloped Edge 58.3–59.6 fps, p95 24.9–26.8 ms, 0 long tasks. Gate for later packages: orbit p95
+  ≤ 27.6 ms (Compact Infill), no new long task > 50 ms.
+  Caveat: a 5 s unit-test run overlapped the Compact Infill runs, so its fps reads about 4 fps under
+  the feasibility run (57.9–58.5); the p95 is the same in both.
+- The app's default open card is Noise, so the baseline's idle and orbit windows already draw the
+  noise layer.
+
+## 2026-11-15 — build/foundation WP-1: label and claim corrections (feasibility 09 §5)
+
+- Wind: the "Unsafe (> 15 m/s)" class is gone; the top class is "Very uncomfortable (> 10 m/s)".
+  The view is named "Indicative wind speed classes at the chosen wind" (legend name and note; the
+  switch reads "Speed classes"). The card reads "of open ground ≥ 4 m/s, at W 6 m/s (your input)"
+  instead of "worst Walking". The circle note says "Grid spacing 1.8 m (not accuracy)".
+- Sun: card headline and the three medians round to 0.5 h. The disclaimer adds "(heights estimated
+  from storeys); terrain and trees do not shade".
+- Roof solar: "about 30 % above typical measured weather (PVGIS 2014–2023)".
+- Layers: the Trees row says "Trees are shown, not analysed".
+- Tests: `claims.test.tsx` gained five claim tests (no safety class in any wind legend among them);
+  `analysisValues`, `climateView`, `ClimatePanel` unit tests and the e2e strings follow the new labels.
+- Not changed: the Lawson activity names (Sitting … Very uncomfortable) stay in the legend. 07 says to
+  drop them unless a climate rose weights them; the plan's WP-1 asks only for the safety class. Owner
+  decision, listed in the report. `comfort.ts` still has the unused `lawsonClass`/`unsafe` domain code.
+- lint 0; **1083 unit tests pass**, 4 skipped; build OK. e2e not run (strings updated by hand).
+- Captures: `docs/screenshots/build-labels-{sun,wind,noise}.png` (1440 × 900), via the new
+  `scripts/capture-build.mjs`.
+
+## 2026-11-15 — build/foundation WP-2: layer provenance and attribution (ADR-0032)
+
+- Domain `src/features/sites/provenance.ts`: `LayerProvenance`, strict parser, synthesis from the
+  older `sources`, visible-layer credits, export lines. Manifest gains optional `layers`.
+- Panel: Site → Data attribution lists one line per source among the layers on screen (linked
+  attribution, dataset and year, linked licence, retrieval date, use limitation).
+- Exports: the still, white-model pass, analysis pass and every clip frame carry the visible layers'
+  credits in a bottom band. The depth pass stays clean (deviation from "PNG and video frames": a
+  text band would corrupt a depth signal; recorded in the ADR).
+- One test failed on the first run: my own expectation of the list order (declared layers come
+  first). Fixed the test.
+- Browser check on the production build (Compact Infill): the panel listed OpenStreetMap and
+  Kartverket; switching Terrain off removed the Kartverket line; Image passes saved 4 files and the
+  3840 px still carries both credit lines. No page errors.
+- lint 0; **1099 unit tests pass**, 4 skipped; build OK.
+- Captures: `docs/screenshots/build-provenance-panel.png`, `build-provenance-export-still.png`.
+- Not verified: the recorded clip's band (code path shares `drawCredits`; not played back), Safari.
+
+## 2026-11-15 — build/foundation WP-3: measured heights for the curated sites (ADR-0033)
+
+- Build step `scripts/site-assets/heights.build.ts` (run through Vitest, no new dependency): one 1 m
+  surface-model raster per site from the open NHM WCS, cached in `data/raw/` with checksum and
+  request; the app's own roof fit; `heights.json` per package, registered in the manifest with a
+  `heights` provenance entry and a section in `attribution.md`.
+- Compact Infill 520 of 520 measured (282 gabled, 161 flat, 77 other). Sloped Edge 220 of 230
+  (95.7 %): ten small buildings are not in the surface model. The plan's ≥ 99 % was Compact Infill
+  only; the test asserts 99 % and 95 %. Recorded as a deviation in the ADR.
+- Registration peaks at zero shift on both sites. Sun-hours effect reproduces feasibility: 14.6 % of
+  Compact Infill's midsummer ground cells move ≥ 1 h.
+- Loader merges heights; `buildings.json` untouched. The sun-hours claim names the height source of
+  the package on screen, which also fixes the WP-1 review finding (imports were already measured).
+- Failed attempts: (1) seven tests failed after the manifest listed `heights.json` (the loader test's
+  fetch mock did not serve it; one studio test expected the old claim): updated. (2) On a cache hit
+  the raw-cache helper returned the date plus the request URL as `retrieved`; caught when the
+  attribution file showed it, fixed to the first line. (3) `console.info` from a Vitest build step
+  did not reach the terminal; the one-off effect measurement wrote to a file instead.
+- No DTM tile fetched in this package (not needed for the fit); it moves to WP-7.
+- lint 0; **1109 unit tests pass**, 4 skipped; build OK. e2e on the dev server: sun-hours,
+  m3-disclaimers and wind, 6 of 6. Python builder tests pass (shipped packages match the caches).
+- Capture: `docs/screenshots/build-heights-sun.png` (8.5 h median ground; gables visible).
+
+## 2026-11-15 — build/foundation WP-4: the official road-noise map replaces the heuristic (ADR-0034)
+
+- Data: Statens vegvesen WFS (Lden, Lnight) asked for **WGS84**, every vertex through the app's own
+  projection; rings clipped to the extent (features run for km past a site), holes kept, simplified
+  at 0.4 m. Curated: `scripts/site-assets/noise.build.ts`, raw GeoJSON cached with checksum,
+  `noise.json` 133 kB (Compact Infill) and 39 kB (Sloped Edge), year 2021 from `BEREGNETÅR`.
+  Imports: the same converter live (`statensVegvesenNoise`), stored with the package.
+- Domain `officialNoise.ts` (band lookup, shares over open ground, "not mapped"); scene
+  `NoiseBands.tsx` (one 2048 px canvas texture draped on a copy of the terrain mesh); card
+  `NoisePanel.tsx` (Lden/Lnight, band shares, source/year/limitation, the T-1442 sentence for a
+  drawn block in a band ≥ 55). Headline is the band with the largest share; "61 dB" is gone.
+- Heuristic retired: `noise.ts` deleted with its tests, legend, card figure and ground layer.
+- Gates: registration 100 % of 142 major-road samples in the ≥ 65 band at zero shift (≥ 90 %
+  required; 9–22 % at ±20 m). Perf: orbit p95 25.1–27.0 ms on Compact Infill against a 27.6 ms
+  limit, 0 long tasks idle and orbiting, draw calls unchanged at 90
+  (`feasibility/scratch/evidence/perf-build-wp4-noise.json`). The margin is one refresh step.
+- Failed attempts and corrections:
+  - Both asset writers pretty-printed their JSON (a default parameter swallowed `undefined`):
+    `noise.json` was 586 kB. Now compact; `heights.json` regenerated compact too (117 → 54 kB).
+  - A second half of the registration gate (building centres fall in the map's holes) measured only
+    50 %: the vertex mean of a courtyard block lies in its courtyard. Dropped; the road gate is the
+    plan's gate.
+  - The registration test assumed more than 200 road samples; there are 142.
+  - Full e2e run: 48 passed, 12 skipped, 1 failed (m3-analysis D32). Cause: I edited files while
+    the dev server served the run and the page reloaded mid-test. The spec passes alone (3 of 3).
+- Live check on the production build: importing Grünerløkka (400 m) fetched both WFS layers (200),
+  the card read "60–65 dB · Lden 2021" with band shares, and the attribution listed the NLOD line
+  and the limitation. No page errors.
+- lint 0; **1125 unit tests pass**, 4 skipped; build OK (studio chunk 74.3 kB gzip).
+- Captures: `docs/screenshots/build-noise-noise.png`, `build-noise-noise-sloped-edge.png`,
+  `build-noise-import-grunerlokka.png`.
+- Not done: rail and aircraft noise; a worker for the texture (not needed: no long task).
+
+## 2026-11-15 — build/foundation WP-5: parcel layer (ADR-0035)
+
+- Data: Kartverket eiendomskart teig WFS (GML 3.2, asked for WGS84, latitude first), one request
+  for the whole extent, parcels kept whole. Curated: `scripts/site-assets/parcels.build.ts`,
+  375 parcels on Compact Infill and 160 on Sloped Edge; imports fetch live.
+- Domain `parcels.ts` (`parcelAt`, `parcelArea`); scene `ParcelLines.tsx`; panel `ParcelFacts.tsx`;
+  a Parcels row in Layers, off by default.
+- Done-when met: the parcel at Compact Infill's origin is 0301-228/255, 464.4 m² from the polygon
+  (register 464.6, feasibility 465.1). Clicked in the production build: same number, "464 m²".
+- Corrections on the way:
+  - I had written a dataset uuid for the parcel layer from memory. It was not verified, so it is
+    removed; `datasetUuid` is optional.
+  - The first capture showed almost no outlines: ground lines are hidden under the buildings of a
+    dense block. They are now drawn over the model.
+  - The loader test's fetch mock failed again on the new asset (third time). It now serves any
+    shipped asset from disk.
+- lint 0; **1138 unit tests pass**, 4 skipped; build OK.
+- Captures: `docs/screenshots/build-parcels-{plan,3d}.png`.
+- Not verified: a live import showing parcels; e2e suite not re-run after this package.
+
+## 2026-11-16 — build/foundation WP-6: mapped hazard facts and source health check (ADR-0036)
+
+- Four maps as presence facts: NVE flood zones, NVE flood susceptibility (from the WFS
+  `wfs.flomaktsomhetsomrader`, not point GetFeatureInfo), NVE quick-clay susceptibility, Kartverket
+  storm surge (200-year, 2100 climate). Curated build step, live on import, panel list in Site.
+- Compact Infill: flood zones "Not mapped by NVE"; flood susceptibility and storm surge "Mapped
+  nearby"; quick clay "Mapped here". Sloped Edge: only quick clay is mapped.
+- Shared `gml.ts` polygon reader; the parcel converter now uses it.
+- `scripts/check-sources.mjs`: 16 sources, all unchanged. No CI workflow touched; a weekly schedule
+  is proposed in the ADR for the owner.
+- Failed attempts:
+  - My first probe loop used zsh word-splitting that zsh does not do; every request was malformed.
+    Redone in Python.
+  - The health check first reported 14 of 16 sources as changed: WFS answers carry a request
+    timestamp. After ignoring it, the four noise answers still differed: the server generates
+    feature ids per request. Verified the features are identical (13 of 13 by properties and
+    geometry), then ignored those ids too.
+  - The first panel layout overflowed sideways with the long storm-surge label; label and
+    statement are now stacked (overflow measured 0 px).
+- lint 0; **1151 unit tests pass**, 4 skipped; build OK.
+- Capture: `docs/screenshots/build-hazards-panel.png`.
+- Not verified: a live import with hazard facts; e2e not re-run after WP-5 and WP-6.
+
+## 2026-11-16 — build/foundation WP-7: 1 m terrain tools (ADR-0037)
+
+- Data: DTM1 tile per curated site from the open NHM terrain WCS, asked for in WGS84, stored as
+  Int16 centimetres above the package origin (`terrain1m.bin` + `terrain1m.json`). Compact Infill
+  624 × 734 cells, 484 kB gzip; Sloped Edge 652 × 790, 586 kB gzip. Loaded on demand, not with the
+  package (checked in the browser: no tile request until Slope is switched on).
+- Domain `terrainTools.ts`: bilinear elevation, Horn slope, profile along a line, slope bands.
+- UI: Layers → Terrain tools: Slope switch with legend and shares, Draw a section (two clicks, Esc
+  cancels) with a profile chart; the section line and the slope texture in the scene.
+- Done-when met: the feasibility W–E section reads 8.97–21.45 m over 578.8 m (reference
+  8.98–21.44 m over 579 m), within 0.014 m.
+- Corrections on the way:
+  - Slope colours came out dark: three's `Color` converts a hex string to linear values. The band
+    colours are now read as sRGB bytes.
+  - Two of my test expectations were wrong (Horn's 3 × 3 window at the edges of a ramp; a section
+    end point half a cell off). The code was right; the expectations are corrected and explained.
+- Deviations: no terrain tools on imported sites; no contours from the 1 m raster (ADR-0037).
+- e2e: the full suite on the production build before this package: 49 passed, 12 opt-in skipped,
+  0 failed. After it (layers, keyboard, simplified-studio, m5-a11y, m3-disclaimers): 33 passed,
+  2 skipped.
+- lint 0; **1171 unit tests pass**, 4 skipped; build OK (studio chunk 78.5 kB gzip, was 73.8 kB at
+  the baseline). Health check: 18 sources unchanged.
+- Captures: `docs/screenshots/build-terrain-{slope,section}.png`.
+
+## 2026-11-16 — build/foundation: close-out
+
+- Stopped after WP-7, at a package boundary. WP-8 and WP-9 (stretch) not started.
+- Final perf run (`feasibility/scratch/evidence/perf-build-final.json`): orbit 64.9–70.2 fps, p95
+  17.7–24.3 ms, 0 long tasks idle and orbiting, 90 draw calls. Faster than the baseline run, which
+  the build does not explain: the machine paced frames differently on the second day. Read as no
+  measurable cost.
+- Report: `docs/reviews/build-foundation-report.md`. AGENTS.md §10 and `task_plan.md` updated.
+- Nothing pushed, merged or deployed; no pull request; no CI workflow changed; no dependency added.
+
+## 2026-11-16 — build/foundation: review of WP-5 to WP-7 and fixes
+
+- Owner asked for the review before any push. `/code-review` over `204a03b..b05454a`: 8 findings
+  (3 correctness, 4 efficiency, 1 convention), all fixed; table in
+  `docs/reviews/build-foundation-report.md` §10.
+- Two of my suspicions were checked and dropped: stored imports do keep the new layers (the store
+  revalidates through `parseSitePackage`), and the studio is remounted per site, so a selected
+  parcel cannot leak to another site.
+- lint 0; **1172 unit tests pass**, 4 skipped; build OK. e2e (production build): layers, keyboard,
+  m5-a11y: 30 passed, 2 skipped.
+- Live in the browser after the fixes: a Grünerløkka import with noise, parcels and hazard facts
+  (3.6 s; first live check of parcels and hazards on the import path); quick Slope toggle leaves no
+  "Loading…"; a section still draws.
+
+## 2026-11-16 — Stormwater runoff screening and winter climate context
+
+- **The request.** The owner asked for a stormwater analysis and a snow analysis. Neither was in
+  the plan: the plan's stretch package was WP-8 (runoff), and snow was on the out-of-scope list.
+  Both are now built, on top of the foundation layers (ADR-0037's 1 m tile, ADR-0036's hazards).
+- **Runoff (ADR-0038).** `src/features/analysis/runoff.ts` is a renderer-free port of the
+  feasibility `terrain_bench.py`: Priority-Flood+Epsilon fills the hollows, D8 routes each cell
+  to its steepest downhill neighbour, and every building — context and drawn — is raised 10 m so
+  the flow goes around it. It runs in a worker (`runoffWorker.ts`, `useRunoff.ts`, 250 ms
+  debounce) because half a million cells are filled and routed. `RunoffOverlay.tsx` drapes the
+  result by the same texture path as the noise bands.
+  - **The one figure** is the share of open ground lying in depressions or enclosed courtyards:
+    16 % on Compact Infill, most of it courtyards. No depth, no volume, no rainfall, no return
+    period anywhere.
+  - **The wording says what the model cannot do.** The tile's edge is an outlet, so water from
+    outside is not included; kerbs, culverts, drains and pipes are not in the model; and a
+    courtyard closed in by buildings shows as a depression because the model has no gateways or
+    drains. That last one is the honest reading of the picture: the courtyards are a property of
+    the block structure, not flood risk.
+  - **Not compared with a reference tool** (WhiteboxTools or TauDEM; feasibility IT-7). The
+    method is checked for conservation and on analytic cases, not against another
+    implementation. It stays a Tier 2 screening.
+  - Curated sites only: the screening needs the 1 m tile. On an imported site the card says so.
+- **Snow (ADR-0039).** Before writing anything I checked the source and the licence, because
+  feasibility had left snow at "researched only" with the licence unconfirmed.
+  - NVE's grid time-series API (`gts.nve.no/api/GridTimeSeries/{x}/{y}/{from}/{to}/sd.json`,
+    EPSG:25833) returns daily snow depth in cm back to 1957, with the cell's altitude, and
+    needs no credentials. MET's Frost was not used: it needs a client ID the project has not got.
+  - The licence: NVE states «Data som ligger på api.nve.no er lisensiert under Norsk lisens for
+    offentlige data (NLOD) …» and names no version. So the provenance contract gains the value
+    `NLOD` without a version, and the hazard layers' "NLOD 1.0" is corrected to "NLOD" for the
+    same reason. **Owner: confirm with NVE before any commercial use.**
+  - **No CORS header**, so this is a build step only. An imported site has no snow context, and
+    its card says so.
+  - The build step reads the `sd` theme only. The same API offers `snowload`, which is an
+    engineering value (NS-EN 1991-1-3): never used, and the reason is recorded in the ADR.
+  - The figures: Compact Infill 30 snow days in a median winter, deepest 16 cm; Sloped Edge
+    52 days and 20 cm. February is the snowiest month on average. The model is for open terrain
+    on a 1 km grid, so a city centre is warmer and its snow is cleared: this describes the
+    neighbourhood's winters, not the site's surfaces.
+- **Checks.** lint 0; **1196 unit tests pass**, 4 skipped; build OK (Studio chunk 81.2 kB gzip).
+  Playwright, full suite, production build: **49 passed, 12 opt-in skipped, 0 failed** — the same
+  counts as the baseline before the change, with the keyboard spec now expecting the Water and
+  Snow tab stops.
+- **Captures.** `docs/screenshots/build-water-{compact-infill,sloped-edge}.png` and
+  `docs/screenshots/build-snow-{compact-infill,sloped-edge}.png`.
+- **Still open.** The `engineering-code-reviewer` and `design-ui-finish-gate-reviewer` passes over
+  this change; the NVE licence confirmation; WP-9 (cut/fill); and the owner's own decisions on
+  `build/foundation` (draft PR #18).
+
+
+## 2026-11-16 — About page: the official noise map, the wind lift, Water and Snow
+
+- **The request.** TF-VIS-004, a copy change only: the About page still described the road-noise
+  heuristic that ADR-0034 deleted, and said nothing about the wind lift, the Water card or the
+  Snow card.
+- **The contradiction.** "What this is not" already said "Road noise is Statens vegvesen's
+  published strategic noise map, shown as mapped bands and not for assessing individual
+  buildings", while the "How the model stays honest" paragraph said "Noise uses road class and
+  distance, with a fixed reduction behind buildings". The second sentence described the
+  highway-class heuristic, which ADR-0034 deleted rather than kept as a fallback.
+- **What changed.** Four sentences in one paragraph; every other sentence on the page is
+  untouched.
+  - **Wind.** "Wind is a 2D screening flow inside an analysis circle, and the map can be read at
+    any whole metre above the ground." From ADR-0028 (the circle and the single height control)
+    and ADR-0029 (every whole metre, from 2 m up to the lift top). No comfort and no safety
+    claim.
+  - **Noise.** "Noise is Statens vegvesen's published strategic road-noise map for 2021, shown as
+    published and not for assessing individual buildings." The year is the map's own (Lden 2021,
+    ADR-0034); "shown as published" is the studio's wording for looking the bands up rather than
+    computing a level.
+  - **Water.** "Water is a runoff screening on the 1 m terrain, showing flow paths and hollows,
+    with no drains, rainfall or water depth." From ADR-0038: Priority-Flood+Epsilon plus D8 on
+    the 1 m tile, with buildings as blocks. The card's own limits — the tile edge is an outlet,
+    kerbs, culverts, drains and pipes are not in the model — are summarised here.
+  - **Snow.** "Snow is winter climate context from NVE's 1 km snow model for open terrain, not a
+    measurement at the site and not a snow load." From ADR-0039's own claim wording, including
+    the refusal to read the `snowload` theme.
+  - The old wind clause "for a direction the visitor chooses" went with the sentence. The
+    direction sweep (ADR-0015) is still real; it is simply no longer described here.
+- **Checks.** lint 0; `npx vitest run src/app` — **30 of 31 pass**, 1 failed; build OK
+  (Studio chunk 81.2 kB gzip). New `src/app/AboutPage.test.tsx` (6 tests) pins the six sentences
+  and asserts that "road class and distance" is gone, that "Statens vegvesen" is present, and
+  that Water and Snow are each named.
+  - **The one failure is not this change.** `App.test.tsx` → "shows a recoverable state for an
+    unknown site package" allows 5 s for the lazy studio chunk; this sandbox needs 6.9 s to
+    resolve the error state. It fails identically on `build/foundation` with this change
+    reverted, and the owner's machine and GitHub CI are inside the budget.
+  - **The full unit suite was not run in the sandbox** (the wind solver and the noise budget
+    tests are CPU-bound and time out here under load). GitHub CI on the draft PR is the check
+    for the whole suite.
+- **Open for the owner.** NVE is named without being expanded or linked in "Data sources", and
+  the Scope list still names only wind, sun, figures and layers. Neither was in the request.
+
+## 2026-11-17 — TF-VIS-011 performance harness
+
+- Implemented frozen work order in this checkout: `scripts/measure-perf.mjs` and `docs/perf/README.md`.
+- Added six ordered sampling states, fresh contexts for both sites, browser/GPU/host metadata,
+  download-arrival timing, per-run JSON checkpoints and per-site median/min/max tables.
+- Pointer helper draws a block but returns null with its reliability limitation; no numeric
+  pointer latency or baseline evidence is claimed. This fallback is authorized by the plan.
+- `node --check scripts/measure-perf.mjs`: exit 0, no output.
+- First `npm run lint`: exit 1, two `no-redeclare` errors for Node-provided globals
+  `performance` and `PerformanceObserver`. Removed redundant declarations.
+- Subsequent `npm run lint`: exit 0, `> terraform@0.1.0 lint` / `> eslint .`, no diagnostics.
+- Headed benchmark, build and tests not run, per frozen validation scope. No commit, push,
+  publication or edits to `src/`, package files or `feasibility/scratch/perf.mjs`.
+- No denied actions. Browser execution remains unverified until the coordinator runs it;
+  independent review pending. No work-order deviations beyond its explicit null fallback.
+
+## 2026-11-17 — TF-VIS-005 (part 1): the operating documents brought up to date
+
+- Read before writing: `AGENTS.md`; `docs/reports/terraform-project-report.md` (16 Nov 2026);
+  `docs/reviews/build-foundation-report.md` §1 and §11; the title and Decision section of ADR-0028
+  to ADR-0039; `docs/milestones/M0`–`M6`; `docs/status-report.md`; `docs/reviews/M1-code-review.md`
+  to `M5-perf.md`; `docs/agent-log.md`; `progress.md`.
+- `AGENTS.md`:
+  - header Status — added the ADR range in force: ADR-0001–ADR-0039, every one accepted but
+    ADR-0011, which is still proposed.
+  - §1 item 11 and §6 — the out-of-scope text is unchanged; each gains
+    "(Superseded in part: ADR-0006 brought live address import and MapLibre on /new.)".
+  - §3 repository map — added `src/features/import/`, the five analysis workers
+    (`circleSunWorker`, `roofSolarWorker`, `flowWorker`, `runoffWorker`, `sweepWorker`),
+    `scripts/site-assets/`, `scripts/measure-perf.mjs`, `docs/perf/`, `docs/feasibility/` and
+    `docs/plans/terraform-visual-upgrade/`; removed the (M2), (M3) and (M4) markers from the
+    modules that are built; marked `src/features/scenarios/` as domain kept, UI removed
+    (ADR-0020).
+  - §10 — "Done" rewritten as one line per ADR from ADR-0028 to ADR-0039, keeping the earlier
+    history; "Next" set to Gate 0 of `docs/plans/terraform-visual-upgrade/05-MASTER-TODO.md`.
+- `docs/milestones/M2`–`M5` — status lines set to Done with the date and the review file that
+  closed each: M2 `M2-code-review.md` (2026-10-28), M3 `M3-code-review.md` (2026-10-29),
+  M4 `M4-code-review.md` (2026-11-02), M5 `M5-a11y.md` and `M5-perf.md` (2026-11-02, no separate
+  M5 gate review on file).
+- `docs/status-report.md` — body replaced by three lines: superseded by
+  `docs/reports/terraform-project-report.md`, current work in `docs/plans/terraform-visual-upgrade/`,
+  open decisions on PR #18.
+- `docs/agent-log.md` — one row for this engagement.
+- Documentation only: no ADR, no code, no PRD file was touched.
+- `npm run lint`: exit 0, no diagnostics.
+- Not supported by a file in the repository: `docs/plans/terraform-visual-upgrade/` is not present
+  on any branch, so §10's new "Next" line and the status report point at a plan that is not
+  committed yet.
+
+## 2026-11-17 — About page: the rest of the copy, in line with the product as built
+
+- **The request.** The second half of the About page still described a product that no longer
+  exists: the removed area and coverage figures, the removed envelope checks, a study area the
+  visitor no longer chooses, a dashed boundary that is drawn nowhere, and a Data sources section
+  that claimed no live GIS is queried at runtime.
+- **The introduction.** It read "reads sun and shadow, wind exposure, road noise and area
+  figures" and said the visitor "chooses the study area".
+  - The five analysis cards are Sun, Wind, Noise, Water and Snow (`AnalysisCards.tsx`), so the
+    sentence now names them, plus the slope overlay and the section tool (ADR-0037).
+  - The study area is not a control any more: `StudioShell.test.tsx` asserts that the label
+    "Study area" is absent, and ADR-0020 removed the study-boundary layer. For an import the
+    study area is the chosen frame inset by 15 % on every side
+    (`src/features/import/assemble.ts`). The clause is gone.
+  - The area and coverage figures went with ADR-0020 ("the study-area facts and the area/GFA
+    tile").
+- **Parcels.** "All site constraints are explicitly illustrative" is replaced by what is true
+  now: parcel outlines come from Kartverket's Eiendomskart, shown as published and not as a
+  surveyed boundary, and the studio holds no zoning or regulation data and makes no statement
+  about what a plan allows (ADR-0035).
+- **Context building heights.** "Area, coverage and height come from building footprints
+  clipped to the study boundary" became "Context building heights on the curated sites come
+  from Kartverket's surface model, measured rather than estimated" (ADR-0033). The rest of the
+  paragraph is untouched.
+- **The Scope list.** "Study-area figures and coverage" became "Terrain slope and sections from
+  the 1 m terrain", and two items were added — the runoff screening and the winter climate
+  context — worded as in the paragraph above. The `water` and `snow` icons already exist in
+  `Icon.tsx`; no icon was invented.
+- **The constraints box.** "Envelope checks are demonstration logic" described the design
+  check that ADR-0020 removed. The box is now "Indicative and as published": screening results
+  (wind flow, runoff) are indicative; mapped facts (road noise, hazard maps, parcels) are shown
+  as their publishers issue them, with the publisher and the year the data describe.
+- **Data sources.** "No live GIS service is queried at runtime" was false: an imported address
+  queries public map and elevation services in the browser (ADR-0006). The section now says the
+  two sample sites are static packages built offline and that an imported address is different.
+  - Every source in the manifest is listed with its owner, licence and link, taken from
+    `provenance.ts` and `public/sites/compact-infill/manifest.json` as written: OpenStreetMap
+    contributors (ODbL 1.0), Kartverket (CC BY 4.0), Statens vegvesen (NLOD 1.0, calculated for
+    2021), NVE (NLOD), plus the storm-surge map under its own NLOD licence and the
+    flood-susceptibility (2025) and quick-clay (2026) years.
+  - The "Study boundary" entry claimed a dashed boundary. Nothing in `src/scene` draws one; the
+    study area is an authored rectangle that scopes the readings, so the entry now says that and
+    names the 15 % inset for an imported address.
+- **Tests.** `src/app/AboutPage.test.tsx` grew from 6 to 15 tests. It now asserts that "No live
+  GIS service is queried at runtime", "Envelope checks" and "Study-area figures" are absent,
+  that each source owner appears in the Data sources section, and that none of the banned claim
+  words appears anywhere on the page.
+- **Checks.** lint 0; `npx vitest run src/app` — **40 of 40 pass** on an idle machine; build OK.
+  `App.test.tsx`, which asserts on the About page's links and headings, passes unchanged: 7 of 7.
+  - **The suite is flaky here, not broken.** `NewSitePage.test.tsx` → "explains when an imported
+    site is gone after a reload" allows 5 s for the lazy studio chunk, which this sandbox needs
+    6.9 s to resolve; under load it fails here. It fails identically on `build/foundation`
+    without this change.
+  - **The full unit suite was not run in the sandbox.** GitHub CI on the draft PR is the check
+    for the whole suite.
+- **Open for the owner.** The site footer still says "constraints are illustrative and not
+  planning advice" (`SiteChrome.tsx`), which now has no counterpart on the About page: the
+  constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
+  string, so it was left alone.
+
+## 2026-11-18 — Run 3 T2: PR #26 comment-only follow-ups (TF-VIS-002)
+
+- **Task.** Apply the water/snow review's three minor comment follow-ups, zero behaviour change.
+- **Files (comments only).** `src/features/analysis/runoff.ts` (D8 tie-break: strict `>`, north-west
+  first on an exact tie); `src/features/analysis/useRunoff.ts` (`footprints` compared by identity —
+  caller must memoise); `src/features/analysis/snowClimate.ts` (monthly means use every day,
+  including partial winters the per-winter stats drop; equals whole winters only on a 1 Sep→31 Aug
+  series).
+- **Checks.** `git diff -U0` has no non-comment code line · typecheck 0 · lint 0 · full suite
+  1,211 passed / 4 skipped / 0 failed · build OK. No user-visible text changed.
+- **Deliverable.** Draft PR `fix/water-snow-followups`.
+## 2026-11-18 — Run 2 T2: independent foundation RV-1 re-run (TF-VIS-003)
+
+- **Task TF-VIS-003.** Reproduce the `build-foundation-report.md` §3 acceptance numbers from the
+  committed packages and domain functions, independently of the report. Read-only.
+- **Results (all within tolerance).** Parcel 0301-228/255 **464.4 m²**; measured heights **520/520**
+  (Compact Infill) and **220/230** (Sloped Edge); W–E section **8.97–21.45 m NN2000 over 578.8 m**;
+  noise registration **100.0 %** (142 samples, gate 90 %); source-health **20 sources / 20 unchanged
+  / 0 failed**.
+- **Section note.** The section reproduces only through the app's `project()` (WGS84 tangent plane);
+  the UTM33 grid is rotated from true north, so a naive easting/northing offset lands ~0.85 m high
+  on the minimum. This matches the report's deviation 6 (exact, no reprojection library).
+- **Deliverable.** `docs/reviews/foundation-rv1.md`, draft PR `review/foundation-rv1`.
+## 2026-11-18 — Run 2 T1: independent water/snow review (TF-VIS-002)
+
+- **Task TF-VIS-002.** Read-only review of commit `01c514b` (runoff + snow), Gate 0 P0.
+- **Verdict.** Pass with follow-ups; no correctness bug.
+- **Check 1.** Priority-Flood+Epsilon and D8 are correct. Five adversarial grids (flat, single
+  pit, NaN centre, building over a pit, flat 5×5) all conserve and leave 0 pits. The 67 %
+  main-path disagreement with WhiteboxTools is the documented method difference (epsilon vs
+  `--fix_flats` fill, NW-first tie-break, edge outlets) — a modelling choice, not a defect.
+- **Other checks.** Worker lifecycle correct (debounce, cancel, terminate, buffer transfer);
+  claims clean (no depth/volume/rainfall/return-period/snow-load); snow statistics correct for the
+  30-whole-winter build and `snowload` never read; provenance `NLOD` (no version); heavy work is in
+  the worker, main-thread is one memoised O(cells) pass.
+- **Follow-ups (minor).** Document the D8 tie-break and no-data-as-outlet; `winterStatistics`
+  monthly means use all days while `winters` drop partial winters; `useRunoff` compares
+  `footprints` by reference (caller must memoise).
+- **Deliverable.** `docs/reviews/water-snow-code-review.md`, draft PR `review/water-snow`.
+## 2026-11-24 — Owner decisions on PR #18 (TF-VIS-006) and Gate 0 status
+
+The owner accepted all eight recommendations (`docs/reviews/build-foundation-report.md` §8):
+
+| # | Decision | Answer | Applied |
+|---|---|---|---|
+| 1 | Push and PR | Done earlier (PR #18, draft) | — |
+| 2 | Heuristic noise layer deleted (ADR-0034) | Accepted: stays deleted; the official map is shown | — |
+| 3 | Lawson activity names in the wind legend | Dropped: speed ranges and colours only (feasibility 07) | `climateView.ts`, tests |
+| 4 | Weekly source health check (ADR-0036) | Yes | `.github/workflows/source-health.yml` (runs once on `main`) |
+| 5 | Raw caches in git | Keep for now; revisit if the repository gets slow | — |
+| 6 | Sloped Edge at 95.7 % measured heights | Accepted | — |
+| 7 | WP-9 cut/fill | Postponed | — |
+| 8 | Parcels off by default | Keep off | — |
+| 9 | Plan file outside the repository | Committed: `docs/plans/fable-build-plan.md` | — |
+
+- **TF-VIS-001:** the production 404s no longer reproduce (`docs/reviews/production-404-diagnosis.md`).
+- **Health check run once locally:** 20 sources, 0 failed, 3 changed. Both parcel layers report
+  "changed" at an identical byte size, so a per-request field is probably not filtered yet (follow-up).
+- **Gate 0 left:**
+  - TF-VIS-002/003, review PRs #26–#28 into `build/foundation`;
+  - TF-VIS-005, docs up to date;
+  - TF-VIS-008, merge PR #18 to `main`, which is the owner's go-ahead because it changes production.
+
+## 2026-11-24 — TF-VIS-005: docs up to date (Claude Opus 5.5)
+
+- **Resolved:** every stale item in `01-CODEBASE-AUDIT.md` §10.1.
+  - The §1.11 scope note, the §3 map (import path, the five workers, `scripts/site-assets`), the M2–M5
+    briefs (Done) and the superseded status report were already current on this branch, and are
+    verified.
+  - Updated now: the AGENTS.md header line, and §10. §10 now records the owner decisions, the
+    Gate 0 status, the Lab's place (PR #29, ADR-0040/0041) and the next steps (TF-VIS-008, then
+    PR #25/#29 onto `main`, then TF-VIS-02B/026).
+  - The status report's line on open decisions is updated.
+- **Gate 0:** TF-VIS-001 to 007 done; only TF-VIS-008 (the merge of PR #18, owner's go-ahead) remains.

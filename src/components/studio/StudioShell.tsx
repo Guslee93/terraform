@@ -40,11 +40,24 @@ import { SunBand, SunDetails, clockLabel, useSunPlayback, type SunAnalysis } fro
 import { ToolRail, type ToolId } from './ToolRail'
 import { AnalysisCards, type AnalysisCard, type AnalysisId } from './AnalysisCards'
 import { LayersCard } from './LayersCard'
-import { circleSunStat, noiseStat, roofSolarStat, sunStat, vscStat, windStat } from './analysisValues'
+import { circleSunStat, noiseStat, roofSolarStat, snowStat, sunStat, vscStat, waterStat, windStat } from './analysisValues'
 import { FULL_DAY, SunHoursControls, type SunWindow } from './SunHoursControls'
-import { computeNoise, NOISE_DISCLAIMER } from '../../features/analysis/noise'
+import { bandLookup, bandShares, footprintInSensitiveBand, NOISE_LIMITATION, noiseSourceLine, OFFICIAL_NOISE_NOTE, type NoiseMetric } from '../../features/analysis/officialNoise'
+import { NoisePanel } from './NoisePanel'
+import { ParcelFacts } from './ParcelFacts'
+import { HazardFacts } from './HazardFacts'
+import { WaterPanel } from './WaterPanel'
+import { SnowPanel } from './SnowPanel'
+import { RUNOFF_NOTE, runoffSummary } from '../../features/analysis/runoff'
+import { useRunoff } from '../../features/analysis/useRunoff'
+import { SNOW_LIMITS, SNOW_NOTE } from '../../features/analysis/snowClimate'
+import { TerrainTools, type TerrainToolsState } from './TerrainTools'
+import { hornSlopeDeg, terrainProfile, type TerrainRaster } from '../../features/analysis/terrainTools'
+import { loadTerrainRaster } from '../../features/sites/terrain1m'
+import { parcelAt, type Parcel } from '../../features/analysis/parcels'
 import { daySunSamples } from '../../features/analysis/shadowRay'
-import { SUN_HOURS_DISCLAIMER } from '../../features/analysis/sunHours'
+import { sunHoursDisclaimer } from '../../features/analysis/sunHours'
+import { measuredCount } from '../../features/sites/heights'
 import { windowSunSamples } from '../../features/analysis/circleSunHours'
 import { useCircleSunHours } from '../../features/analysis/useCircleSunHours'
 import { roofSolarLegend, roofSolarYieldKwh, ROOF_SOLAR_DISCLAIMER } from '../../features/analysis/roofSolar'
@@ -53,6 +66,7 @@ import { facadeSamples } from '../../features/analysis/facadeSamples'
 import { computeVsc, vscLegend, VSC_COLOUR, VSC_DISCLAIMER } from '../../features/analysis/vsc'
 import { FLOW_DISCLAIMER } from '../../features/analysis/lbm'
 import { removeVolume } from '../../features/editor/commands'
+import { exportCreditLines, hasMeasuredHeights, visibleLayerIds } from '../../features/sites/provenance'
 
 type PackageStatus = 'loading' | 'ready' | 'error'
 
@@ -126,6 +140,8 @@ export function StudioShell({
     context: true,
     streets: true,
     trees: true,
+    // Off until asked for: several hundred outlines are context, not the first thing to read.
+    parcels: false,
   })
   // The open analysis card is the analysis on the map (ADR-0026): Wind, Noise and Sun hours colour the ground.
   const [activeCard, setActiveCard] = useState<AnalysisId | null>('noise')
@@ -295,7 +311,66 @@ export function StudioShell({
     return buildClimateView(climateMode, climateMode === 'wind' ? windArea : studyArea, analysisBuildings, sitePackage.roads, windFlow, { ...wind, centre: windCentre }, 10, baseline, worstCase)
   }, [sitePackage, studyArea, windArea, climateMode, windFlow, analysisBuildings, wind, windCentre, baseline, worstCase])
   // Dock figures (ADR-0016): every value comes from the same analysis the layers draw.
-  const noiseCells = useMemo(() => (sitePackage && studyArea ? computeNoise(studyArea, sitePackage.roads, analysisBuildings, 10) : []), [sitePackage, studyArea, analysisBuildings])
+  // The official road-noise map (ADR-0034): static context. Shares are over the open ground of the
+  // study area between the existing buildings, so nothing here moves when a block is drawn.
+  const [noiseMetric, setNoiseMetric] = useState<NoiseMetric>('Lden')
+  const noise = sitePackage?.noise ?? null
+  const noiseShares = useMemo(() => bandShares(noise, noiseMetric, studyArea ?? [], sitePackage?.buildings.buildings ?? []), [noise, noiseMetric, studyArea, sitePackage])
+  // The one thing a drawn block triggers: the publisher's sentence, never a level (feasibility 09 §2a).
+  const blockInNoiseBand = useMemo(() => {
+    if (!noise) return false
+    const lookup = bandLookup(noise.polygons, 'Lden')
+    return analysisDocument.volumes.some((volume) => volume.tiers.some((tier) => footprintInSensitiveBand(lookup, tier.footprint.vertices)))
+  }, [noise, analysisDocument])
+  const noiseOnMap = climateMode === 'noise' && !!noise
+  // Terrain tools on the 1 m tile (ADR-0037). The tile is fetched the first time a tool needs it.
+  const terrain1mPath = sitePackage?.manifest.assetPaths.terrain1m
+  const [slopeOn, setSlopeOn] = useState(false)
+  const [sectionPicking, setSectionPicking] = useState(false)
+  const [sectionPoints, setSectionPoints] = useState<readonly Vec2[]>([])
+  const [terrainRaster, setTerrainRaster] = useState<{ siteId: string; raster: TerrainRaster } | null>(null)
+  const [terrainState, setTerrainState] = useState<TerrainToolsState>('idle')
+  const waterActive = activeCard === 'water'
+  const terrainWanted = !!terrain1mPath && (slopeOn || sectionPicking || sectionPoints.length > 0 || waterActive)
+  const raster = terrainRaster && terrainRaster.siteId === site.id ? terrainRaster.raster : null
+  useEffect(() => {
+    if (!terrainWanted || !terrain1mPath || raster) return
+    const controller = new AbortController()
+    setTerrainState('loading')
+    loadTerrainRaster(site.id, terrain1mPath, controller.signal)
+      .then((loaded) => { setTerrainRaster({ siteId: site.id, raster: loaded }); setTerrainState('ready') })
+      .catch(() => { if (!controller.signal.aborted) setTerrainState('error') })
+    // An aborted request is not "loading" any more: the status line must not outlive the tool.
+    return () => { controller.abort(); setTerrainState((state) => (state === 'loading' ? 'idle' : state)) }
+  }, [terrainWanted, terrain1mPath, raster, site.id])
+  // One Horn pass per tile, shared by the panel's shares and the scene's overlay.
+  const slopeDegrees = useMemo(() => (raster && slopeOn ? hornSlopeDeg(raster) : null), [raster, slopeOn])
+  const sectionProfile = useMemo(() => (raster && sectionPoints.length === 2 ? terrainProfile(raster, sectionPoints, 1) : null), [raster, sectionPoints])
+  useEffect(() => {
+    if (!sectionPicking) return
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); setSectionPicking(false); setSectionPoints((points) => (points.length === 2 ? points : [])) } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [sectionPicking])
+  const pickSectionPoint = useCallback((point: Vec2) => {
+    setSectionPoints((points) => {
+      // A third click starts a new section; the second completes one.
+      const next = points.length === 1 ? [points[0]!, point] : [point]
+      if (next.length === 2) setSectionPicking(false)
+      return next
+    })
+  }, [])
+  // Stormwater runoff screening (ADR-0038): the 1 m terrain with every building, context and drawn,
+  // as a block. Runs in a worker while the Water card is open.
+  const runoffFootprints = useMemo(() => analysisBuildings.map((building) => building.footprint), [analysisBuildings])
+  const { runoff, computing: runoffComputing } = useRunoff(raster, runoffFootprints, waterActive)
+  const runoffFigures = useMemo(() => (runoff ? runoffSummary(runoff) : null), [runoff])
+  // One pick mode at a time: placing the analysis circle ends a section that is waiting for points.
+  useEffect(() => { if (placingCircle) setSectionPicking(false) }, [placingCircle])
+  const terrainOnMap = !!raster && (slopeOn || sectionPoints.length > 0 || waterActive)
+  // The parcel under the last ground click, while the parcel layer is on (ADR-0035).
+  const [selectedParcel, setSelectedParcel] = useState<Parcel | null>(null)
+  const parcelsOn = layers.parcels && (sitePackage?.parcels.length ?? 0) > 0
   const windComfortView = useMemo(() => {
     if (!sitePackage || !windArea || climateMode !== 'wind' || !windFlow) return null
     // A comfort figure is a pedestrian figure: always at 2 m, whatever height the map shows.
@@ -385,12 +460,26 @@ export function StudioShell({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [dispatch, requestCamera, editable])
 
+  // The layers on screen name the sources the panel and the exports credit (ADR-0032).
+  // The hazard facts are always in the Site group, so their sources are always credited.
+  const hazardKinds = useMemo(() => sitePackage?.hazards?.layers.map((layer) => layer.kind) ?? [], [sitePackage])
+  const snowOpen = activeCard === 'snow' && !!sitePackage?.snow
+  const visibleLayers = useMemo(() => visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...(terrainOnMap ? ['terrain1m' as const] : []), ...(snowOpen ? ['snow' as const] : []), ...hazardKinds]), [layers, noiseOnMap, terrainOnMap, snowOpen, hazardKinds])
+  // With the noise map on screen the export also carries its limitation (feasibility 09 §2a.5).
+  const exportCredits = useMemo(() => (sitePackage ? [...exportCreditLines(sitePackage.manifest, visibleLayerIds(layers, [...(noiseOnMap ? ['noise' as const] : []), ...(terrainOnMap ? ['terrain1m' as const] : [])])), ...(noiseOnMap ? [`Road noise: ${NOISE_LIMITATION}`] : [])] : []), [sitePackage, layers, noiseOnMap, terrainOnMap])
+  const sunHoursNote = sunHoursDisclaimer(!!sitePackage && hasMeasuredHeights(sitePackage.manifest))
+  // The legend says how many context heights are measured (ADR-0033).
+  const layerNotes = useMemo(() => {
+    const context = sitePackage?.buildings.buildings ?? []
+    const measured = measuredCount(context)
+    return measured > 0 ? { context: `${measured} of ${context.length} heights from Kartverket surface model` } : {}
+  }, [sitePackage])
   const annotations = useMemo(() => new Map<string, MassAnnotation>(analysisDocument.volumes.map((volume) => [volume.id, {
     title: 'Block',
     detail: `${volume.tiers[0]?.storeys ?? 0} fl · ${formatMetres(volume.tiers[0] ? tierHeight(volume.tiers[0]) : 0)}`,
   }])), [analysisDocument])
   const selectedDeletable = !!selectedVolume && !selectedVolume.locked
-  const climatePanel = (only: 'wind' | 'noise') => sitePackage ? (
+  const climatePanel = (only: 'wind') => sitePackage ? (
     <ClimatePanel terrainReliefM={windCentre ? terrainRelief(sitePackage.terrain, windCentre, wind.radius) : 0} showModes={false} showQuick availableHeights={readyHeights} slicesComplete={!!freshFlow?.slicesComplete} heights={allHeights} demoPlaying={windDemo.playing} onToggleDemo={windDemo.toggle} onDemoEdit={windDemo.stopWith} sweepOn={sweepOn} onSweepChange={setSweepOn} sweep={sweepSummary ? { sectors: sweepSummary.perDirection, worstFrom: sweepSummary.worst?.from ?? null, total: SWEEP_DIRECTIONS.length } : null} mode={only} onModeChange={setClimateMode} wind={wind} onWindChange={setWind} placingCircle={placingCircle} onPlaceCircle={setPlacingCircle} view={climateMode === only ? climateView : null}
       streamlines={streamlines} onStreamlinesChange={setStreamlines}
       baseline={baseline} baselineMismatch={baselineMismatch} canSetBaseline={!!freshFlow?.settled && !!freshFlow?.slicesComplete}
@@ -416,7 +505,7 @@ export function StudioShell({
               ? vscStat(vscValues)
               : sunStat(solar.state, clockLabel(sunTime.minuteOfDay))
         : { value: null, unit: '', hint: 'Site loading', secondary: [] },
-      note: sunAnalysis === 'sun-hours' ? SUN_HOURS_DISCLAIMER : sunAnalysis === 'roof-solar' ? ROOF_SOLAR_DISCLAIMER : sunAnalysis === 'vsc' ? VSC_DISCLAIMER : 'Geometric sun direction — not a daylight assessment',
+      note: sunAnalysis === 'sun-hours' ? sunHoursNote : sunAnalysis === 'roof-solar' ? ROOF_SOLAR_DISCLAIMER : sunAnalysis === 'vsc' ? VSC_DISCLAIMER : 'Geometric sun direction — not a daylight assessment',
       body: solar && sitePackage ? (
         <div className="space-y-4">
           {/* The time band: the day profile, the time slider and playback. The analysis switch lives in SunDetails. */}
@@ -431,7 +520,7 @@ export function StudioShell({
           {vscActive && vscValues.length > 0 && (
             <ShareBar entries={vscLegend(vscValues)} label="Share of your façades by band" />
           )}
-          <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} analysis={sunAnalysis} onAnalysisChange={setSunAnalysis} roofSolar={sunAnalysis === 'roof-solar' ? roofSolarSummary : null} />
+          <SunDetails time={sunTime} onChange={setSunTime} state={solar.state} resolved={solar.resolved} location={sitePackage.manifest.location} playback={playback} analysis={sunAnalysis} onAnalysisChange={setSunAnalysis} sunHoursNote={sunHoursNote} roofSolar={sunAnalysis === 'roof-solar' ? roofSolarSummary : null} />
         </div>
       ) : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },
@@ -447,9 +536,31 @@ export function StudioShell({
       id: 'noise',
       label: 'Noise',
       icon: 'noise',
-      stat: noiseStat(noiseCells, sitePackage?.roads ?? []),
-      note: NOISE_DISCLAIMER,
-      body: climatePanel('noise') ?? <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
+      stat: noiseStat(noiseShares, noiseMetric, noise?.dataYear ?? null),
+      note: OFFICIAL_NOISE_NOTE,
+      body: sitePackage
+        ? <NoisePanel noise={noise} metric={noiseMetric} onMetricChange={setNoiseMetric} shares={noiseShares} blockInBand={blockInNoiseBand} />
+        : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
+    },
+    {
+      id: 'water',
+      label: 'Water',
+      icon: 'water',
+      stat: waterStat(runoffFigures, !!terrain1mPath, waterActive, runoffComputing),
+      note: RUNOFF_NOTE,
+      body: sitePackage
+        ? <WaterPanel available={!!terrain1mPath} computing={runoffComputing || (waterActive && !runoff)} summary={runoffFigures} hazards={sitePackage.hazards} area={studyArea ?? []} />
+        : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
+    },
+    {
+      id: 'snow',
+      label: 'Snow',
+      icon: 'snow',
+      stat: snowStat(sitePackage?.snow ?? null),
+      note: `${SNOW_NOTE} ${SNOW_LIMITS}`,
+      body: sitePackage
+        ? <SnowPanel snow={sitePackage.snow} siteAltitudeM={sitePackage.manifest.crs.originElevation} />
+        : <p className="text-body-sm text-ink-secondary">The site package is loading.</p>,
     },
   ]
   // The open card is the analysis on the map; closing it turns the layer off.
@@ -510,7 +621,8 @@ export function StudioShell({
                 editable={editable}
                 annotations={annotations}
                 renderPreference="auto"
-                climate={climateView?.overlay ?? null}
+                climate={climateMode === 'wind' ? climateView?.overlay ?? null : null}
+                noise={noiseOnMap && noise ? { polygons: noise.polygons, metric: noiseMetric, caption: noiseSourceLine(noiseMetric, noise.dataYear) } : null}
                 roofSolar={roofSolarActive ? roofSolarValues : null}
                 facade={vscActive ? facadeOverlay : null}
                 sunHours={climateMode === 'sun-hours' && windCircle ? { circle: windCircle, result: circleSun.result, buildings: circleSun.buildings, computing: circleSun.computing } : null}
@@ -526,8 +638,14 @@ export function StudioShell({
                 windHeights={readyHeights}
                 // A lift is an edit like any panel edit: during the demo it stops the demo and keeps the lift.
                 onWindHeightChange={(heightM) => (windDemo.playing ? windDemo.stopWith({ heightM }) : setWind((w) => ({ ...w, heightM })))}
-                onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : undefined}
+                onPickPoint={placingCircle ? (point) => { setWind((w) => ({ ...w, centre: point })); setPlacingCircle(false) } : sectionPicking ? pickSectionPoint : undefined}
+                slope={raster && slopeDegrees ? { raster, degrees: slopeDegrees } : null}
+                runoff={waterActive && terrain1mPath ? { result: runoff, caption: runoffComputing || !runoff ? 'Tracing where the water runs…' : RUNOFF_NOTE } : null}
+                section={sectionPoints}
                 exportRequest={exportRequest}
+                exportCredits={exportCredits}
+                selectedParcel={parcelsOn ? selectedParcel : null}
+                onPickParcel={parcelsOn && sitePackage ? (point) => setSelectedParcel(parcelAt(sitePackage.parcels, point[0], point[1])) : undefined}
                 onExport={onExport}
               />
             </>
@@ -589,12 +707,18 @@ export function StudioShell({
         ) : <Inspector
           analysisCards={<AnalysisCards cards={analysisCards} active={activeCard} onSelect={selectAnalysisCard} />}
           analysisOnly={analysisOnly}
-          layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} />}
+          layers={<LayersCard manifest={sitePackage?.manifest ?? null} layers={layers} onToggleLayer={toggleLayer} notes={layerNotes} />}
+          parcel={parcelsOn && sitePackage ? <ParcelFacts parcel={selectedParcel} showPlanLink={sitePackage.parcels.some((parcel) => parcel.matrikkel?.startsWith('0301-'))} /> : null}
+          visibleLayers={visibleLayers}
+          terrainTools={terrain1mPath ? <TerrainTools state={terrainState} raster={raster} slopeDegrees={slopeDegrees} slopeOn={slopeOn} onSlopeChange={setSlopeOn} picking={sectionPicking}
+            onPick={(picking) => { setSectionPicking(picking); if (picking) { setPlacingCircle(false); setSectionPoints([]) } }}
+            profile={sectionProfile} onClear={() => setSectionPoints([])} /> : null}
+          hazards={sitePackage?.hazards && studyArea ? <HazardFacts hazards={sitePackage.hazards} area={studyArea} /> : null}
           site={site}
           manifest={sitePackage?.manifest ?? null}
           packageStatus={packageStatus}
           views={ready ? <CameraPresets active={cameraPreset} onSelect={requestCamera} /> : null}
-          visuals={ready ? <ExportVisuals siteId={site.id} exporting={exportRequest !== null} message={exportMessage}
+          visuals={ready ? <ExportVisuals siteId={site.id} credits={exportCredits} exporting={exportRequest !== null} message={exportMessage}
             onExportPasses={() => {
               // The exporter lives inside the canvas; without one nothing would ever clear the request.
               if (!document.querySelector('section[aria-label="Studio viewport"] canvas')) return setExportMessage('Viewport not ready.')

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "siteId": "compact-infill",
+  "cols": 624,
+  "rows": 734,
+  "minX": -311.86,
+  "minY": -367.12,
+  "maxX": 311.86,
+  "maxY": 367.12,
+  "originElevation": 20.28,
+  "verticalDatum": "NN2000"
+}

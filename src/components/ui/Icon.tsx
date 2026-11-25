@@ -22,6 +22,8 @@ export type IconName =
   | 'ruler'
   | 'sun'
   | 'warn'
+  | 'water'
+  | 'snow'
 
 type IconProps = Omit<SVGProps<SVGSVGElement>, 'name'> & {
   name: IconName
@@ -53,6 +55,9 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   noise: <path d="M2 8h1.5M5 5v6M8 2.5v11M11 5v6M13.5 8H14" />,
+  // A drop, and a six-armed snow crystal: the same line family as the rest.
+  water: <path d="M8 2.5c2.3 2.9 3.8 5 3.8 6.9a3.8 3.8 0 0 1-7.6 0C4.2 7.5 5.7 5.4 8 2.5z" />,
+  snow: <path d="M8 2v12M2.8 5l10.4 6M13.2 5 2.8 11M6.4 3.2 8 4.6l1.6-1.4M6.4 12.8 8 11.4l1.6 1.4" />,
   pen: (
     <>
       <path d="M10.8 2.7 13.3 5.2 5.5 13H3v-2.5z" />

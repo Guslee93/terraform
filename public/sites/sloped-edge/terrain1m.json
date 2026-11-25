@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "siteId": "sloped-edge",
+  "cols": 652,
+  "rows": 790,
+  "minX": -325.94,
+  "minY": -394.97,
+  "maxX": 325.94,
+  "maxY": 394.97,
+  "originElevation": 136.67,
+  "verticalDatum": "NN2000"
+}

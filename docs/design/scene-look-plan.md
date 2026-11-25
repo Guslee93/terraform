@@ -1,5 +1,7 @@
 # Scene look plan — "white model" site analysis
 
+> **Superseded for the identity style (2026-11-19)** by `identity-look-spec.md`. Kept as the record of the `NORDIC` (production) look.
+
 **Status:** Phases 1–3 implemented (2026-10-28) · ADR-0005 accepted
 **Owner:** `gis-3d-scene-developer` (implementation), `design-ui-designer` (palette sign-off), `design-ui-finish-gate-reviewer` (G3)
 **Touches:** `src/scene/ViewportCanvas.tsx`, `src/scene/siteGeometry.ts`, `src/scene/MassLayer.tsx`, `docs/design/design-contract.md` §8

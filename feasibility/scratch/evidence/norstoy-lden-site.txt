@@ -1,0 +1,19 @@
+Results for FeatureType 'http://norstoy_1_0:Strategiskstoykart_lden':
+--------------------------------------------
+STØYINTERVALL = 55
+STØYENHET = LDEN
+STØYKILDENAVN = "ERF-veger med ÅDT over 8200, i storbyområdene alle ERF-veger og kommunale veger med ÅDT over 500"
+STØYKILDE = V
+STØYMETODE = "NorStøy versjon 3.4, beregningsmetode Cnossos"
+
+OPPHAV = "Statens vegvesen, beregnet med grunnlagsdata fra fkb-kartlegging og NVDB-data"
+
+MÅLEMETODE = 69
+DATAFANGSTDATO = 20221128
+BEREGNETÅR = 2021
+OBJTYPE = Støy
+KOMM = 301
+BEREGNINGSID = e5a8a3a8-058a-4564-9011-2c60971779eb
+BEREGNINGSDATO = 20221128
+GEOM = [GEOMETRY (Polygon) with 202 points]
+--------------------------------------------
