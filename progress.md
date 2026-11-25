@@ -1393,6 +1393,80 @@ zoom in because the quads are small at the default site camera.
   constraints are gone and the footer sentence describes nothing. `App.test.tsx` pins that
   string, so it was left alone.
 
+## 2026-11-18 — Run 3 T2: PR #26 comment-only follow-ups (TF-VIS-002)
+
+- **Task.** Apply the water/snow review's three minor comment follow-ups, zero behaviour change.
+- **Files (comments only).** `src/features/analysis/runoff.ts` (D8 tie-break: strict `>`, north-west
+  first on an exact tie); `src/features/analysis/useRunoff.ts` (`footprints` compared by identity —
+  caller must memoise); `src/features/analysis/snowClimate.ts` (monthly means use every day,
+  including partial winters the per-winter stats drop; equals whole winters only on a 1 Sep→31 Aug
+  series).
+- **Checks.** `git diff -U0` has no non-comment code line · typecheck 0 · lint 0 · full suite
+  1,211 passed / 4 skipped / 0 failed · build OK. No user-visible text changed.
+- **Deliverable.** Draft PR `fix/water-snow-followups`.
+## 2026-11-18 — Run 2 T2: independent foundation RV-1 re-run (TF-VIS-003)
+
+- **Task TF-VIS-003.** Reproduce the `build-foundation-report.md` §3 acceptance numbers from the
+  committed packages and domain functions, independently of the report. Read-only.
+- **Results (all within tolerance).** Parcel 0301-228/255 **464.4 m²**; measured heights **520/520**
+  (Compact Infill) and **220/230** (Sloped Edge); W–E section **8.97–21.45 m NN2000 over 578.8 m**;
+  noise registration **100.0 %** (142 samples, gate 90 %); source-health **20 sources / 20 unchanged
+  / 0 failed**.
+- **Section note.** The section reproduces only through the app's `project()` (WGS84 tangent plane);
+  the UTM33 grid is rotated from true north, so a naive easting/northing offset lands ~0.85 m high
+  on the minimum. This matches the report's deviation 6 (exact, no reprojection library).
+- **Deliverable.** `docs/reviews/foundation-rv1.md`, draft PR `review/foundation-rv1`.
+## 2026-11-18 — Run 2 T1: independent water/snow review (TF-VIS-002)
+
+- **Task TF-VIS-002.** Read-only review of commit `01c514b` (runoff + snow), Gate 0 P0.
+- **Verdict.** Pass with follow-ups; no correctness bug.
+- **Check 1.** Priority-Flood+Epsilon and D8 are correct. Five adversarial grids (flat, single
+  pit, NaN centre, building over a pit, flat 5×5) all conserve and leave 0 pits. The 67 %
+  main-path disagreement with WhiteboxTools is the documented method difference (epsilon vs
+  `--fix_flats` fill, NW-first tie-break, edge outlets) — a modelling choice, not a defect.
+- **Other checks.** Worker lifecycle correct (debounce, cancel, terminate, buffer transfer);
+  claims clean (no depth/volume/rainfall/return-period/snow-load); snow statistics correct for the
+  30-whole-winter build and `snowload` never read; provenance `NLOD` (no version); heavy work is in
+  the worker, main-thread is one memoised O(cells) pass.
+- **Follow-ups (minor).** Document the D8 tie-break and no-data-as-outlet; `winterStatistics`
+  monthly means use all days while `winters` drop partial winters; `useRunoff` compares
+  `footprints` by reference (caller must memoise).
+- **Deliverable.** `docs/reviews/water-snow-code-review.md`, draft PR `review/water-snow`.
+## 2026-11-24 — Owner decisions on PR #18 (TF-VIS-006) and Gate 0 status
+
+The owner accepted all eight recommendations (`docs/reviews/build-foundation-report.md` §8):
+
+| # | Decision | Answer | Applied |
+|---|---|---|---|
+| 1 | Push and PR | Done earlier (PR #18, draft) | — |
+| 2 | Heuristic noise layer deleted (ADR-0034) | Accepted: stays deleted; the official map is shown | — |
+| 3 | Lawson activity names in the wind legend | Dropped: speed ranges and colours only (feasibility 07) | `climateView.ts`, tests |
+| 4 | Weekly source health check (ADR-0036) | Yes | `.github/workflows/source-health.yml` (runs once on `main`) |
+| 5 | Raw caches in git | Keep for now; revisit if the repository gets slow | — |
+| 6 | Sloped Edge at 95.7 % measured heights | Accepted | — |
+| 7 | WP-9 cut/fill | Postponed | — |
+| 8 | Parcels off by default | Keep off | — |
+| 9 | Plan file outside the repository | Committed: `docs/plans/fable-build-plan.md` | — |
+
+- **TF-VIS-001:** the production 404s no longer reproduce (`docs/reviews/production-404-diagnosis.md`).
+- **Health check run once locally:** 20 sources, 0 failed, 3 changed. Both parcel layers report
+  "changed" at an identical byte size, so a per-request field is probably not filtered yet (follow-up).
+- **Gate 0 left:**
+  - TF-VIS-002/003, review PRs #26–#28 into `build/foundation`;
+  - TF-VIS-005, docs up to date;
+  - TF-VIS-008, merge PR #18 to `main`, which is the owner's go-ahead because it changes production.
+
+## 2026-11-24 — TF-VIS-005: docs up to date (Claude Opus 5.5)
+
+- **Resolved:** every stale item in `01-CODEBASE-AUDIT.md` §10.1.
+  - The §1.11 scope note, the §3 map (import path, the five workers, `scripts/site-assets`), the M2–M5
+    briefs (Done) and the superseded status report were already current on this branch, and are
+    verified.
+  - Updated now: the AGENTS.md header line, and §10. §10 now records the owner decisions, the
+    Gate 0 status, the Lab's place (PR #29, ADR-0040/0041) and the next steps (TF-VIS-008, then
+    PR #25/#29 onto `main`, then TF-VIS-02B/026).
+  - The status report's line on open decisions is updated.
+- **Gate 0:** TF-VIS-001 to 007 done; only TF-VIS-008 (the merge of PR #18, owner's go-ahead) remains.
 ## 2026-11-17 — Run 1 T0: runoff control runs vs WhiteboxTools (IT-7 follow-up)
 
 - **Task TF-VIS-007 follow-up (Run 1 T0).** Re-run the WhiteboxTools comparison twice more with
@@ -1572,6 +1646,17 @@ zoom in because the quads are small at the default site camera.
   `MassLayer.tsx`, `foliage.ts`, `CameraHud.tsx` and the overlay components — nothing invented.
 - **Checks.** lint 0 (docs only).
 
+## 2026-11-18 — Status report for the owner (`docs/status-report.md`)
+
+- **Ask.** A status report showing how far the project has come and what is left to be done.
+- **What.** `docs/status-report.md` rewritten from the superseded five-line stub into the current
+  status: the built product (M0–M5 and the foundation layers, ADR-0032–0039), the Run 1 table
+  (T0–T10 with commits), records and health (40 ADRs, 1 234 unit tests, CI green on PR #25), the
+  seven open draft PRs, the Gate 0 tail (production 404s; TF-VIS-005/008/009), the open owner
+  decisions (D0–D19), the remaining backlog by gate (≈ 45 of 58 items) and the known limitations
+  (the runoff screening not matched to a reference tool — verdict withdrawn; 11 shared hex values;
+  the Lawson labels; the Lab local-only).
+- **Checks.** Docs only; no code touched.
 ## 2026-11-24 — Run 10 T8: previews and final checks (Claude Opus 5.5)
 
 - **Aerial photo (local only).** The Lab's local photos are now 0.165 m/px captures from a single

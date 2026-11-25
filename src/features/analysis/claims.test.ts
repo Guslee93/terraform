@@ -96,6 +96,7 @@ const texts: readonly string[] = [
   ...DELTA_BANDS.map((b) => b.label),
   ...DIRECTION_BANDS.map((b) => b.label),
   ...SPEED_BANDS.map((b) => b.label),
+  ...ACTIVITY_BANDS.map((b) => b.label),
   // Sun
   SUN_HOURS_DISCLAIMER,
   SUN_HOURS_DISCLAIMER_MEASURED,
@@ -152,15 +153,9 @@ describe('claims guardrail (TF-VIS-054)', () => {
     expect(SNOW_LIMITS).toMatch(/not\b[^.!?]*\bsnow load\b/i)
   })
 
-  it('documents the Lawson wind-activity labels held out of the guardrail (owner decision)', () => {
-    // These are the labels that still read "Uncomfortable". Held out of the guardrail because the
-    // run book leaves whether to keep the Lawson names to the owner; if they are relabelled, fold
-    // ACTIVITY_BANDS labels back into `texts`.
-    expect(ACTIVITY_BANDS.filter((b) => /uncomfortable/i.test(b.label)).length).toBeGreaterThan(0)
+  it('the wind legend names speed ranges only, no activity (owner decision D2, 2026-11-24)', () => {
+    for (const b of ACTIVITY_BANDS) expect(b.label).toMatch(/^[<>]? ?[\d–]+ m\/s$|^\d+–\d+ m\/s$/)
+    expect(ACTIVITY_BANDS.some((b) => /sit|stand|stroll|walk|comfort/i.test(b.label))).toBe(false)
   })
-
-  // Owner decision (run book §7 T2): keep the Lawson "Uncomfortable" names or relabel. Not a
-  // guardrail failure to fix here.
-  it.todo('wind activity legend: "Uncomfortable" Lawson labels are an open owner decision')
 })
 

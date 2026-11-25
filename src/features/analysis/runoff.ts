@@ -153,6 +153,9 @@ export function computeRunoff(raster: Pick<TerrainRaster, 'cols' | 'rows' | 'min
           const outside = r < 0 || c < 0 || r >= rows || c >= cols
           const distance = dr !== 0 && dc !== 0 ? diagonal : dr !== 0 ? dy : dx
           const drop = (filled[index]! - (outside ? -1e9 : filled[r * cols + c]!)) / distance
+          // Strict `>` is the tie-break: on an exact tie the first neighbour in row-major order
+          // (north-west first) keeps the receiver, so a flat with equal drops routes to the
+          // north-western-most steepest neighbour.
           if (drop > best) { best = drop; receiver[index] = outside || outlet[r * cols + c] ? -2 : r * cols + c }
         }
       }

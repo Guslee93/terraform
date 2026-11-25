@@ -21,6 +21,8 @@ Gate-ordered, dependency-driven, no calendar estimates. Each task names its owne
 
 **Visual identity (18 Nov 2026).** The approved art direction (`Terraform_Visual_Identity_FINAL.md`, owner's copy) closes the A/B/C direction search. Gate 2 below is revised for it; changed tasks say *Revised 18 Nov*. Reconciliation, evidence and the compatibility matrix are in `09-VISUAL-IDENTITY-INTEGRATION.md`.
 
+**Visuals first (19 Nov 2026, D23).** Work now follows `10-VISUALS-FIRST.md` (steps V1–V8). Gate 3–7 tasks are parked, not cancelled.
+
 ## Verified status (18 Nov 2026)
 
 From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004 (#19, #20), 011 (#21). **In draft PR #25, unmerged:** 010 and 012 (owner GPU run and baselines outstanding), 013, 014, 030, 040 part A (model only), 054. **In progress:** 005 (part 1, #22). **Closed, awaiting merge:** 007 (PR #23 — no defect; closed 19 Nov). **In draft PR, reviewed:** 002 (PR #26, pass with minor follow-ups, second review added), 003 (PR #27, all rows reproduced). **Also in PR #25 since Run 1 T8–T10:** 015, 016, 034 (reviewed). **Blocked:** 008 (on 001, 006, and merging #23/#26/#27). **Still open:** 001 (production still 404s on 18 Nov), 006, 009 and every later task.
@@ -35,7 +37,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
 
 **Exit:** production serves the studio; PR #18's open decisions are answered; Water and Snow have had an independent review; the runoff reference comparison has a result (pass, or a written explanation).
 
-- [ ] **TF-VIS-001** `[FIX]` — Diagnose why production 404s on `/studio/*` and `/about`
+- [x] **TF-VIS-001** `[FIX]` — Diagnose why production 404s on `/studio/*` and `/about` — *2026-11-24: no longer reproduces, `docs/reviews/production-404-diagnosis.md`*
   - Priority: P0
   - Owner/model: Owner with Fable (needs Vercel access)
   - Reviewer: Opus (reads the finding)
@@ -47,7 +49,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: read-only; any redeploy is an owner action
   - Handoff prompt: `06#tf-vis-001`
 
-- [ ] **TF-VIS-002** `[TEST]` — Independent code review of the runoff and snow work (ADR-0038, ADR-0039)
+- [x] **TF-VIS-002** `[TEST]` — Independent code review of the runoff and snow work (ADR-0038, ADR-0039) — *2026-11-24: PR #26 (pass with follow-ups) and follow-ups PR #28 merged*
   - Priority: P0
   - Owner/model: Opus (`engineering-code-reviewer`)
   - Reviewer: Fable (accepts or rejects findings)
@@ -59,7 +61,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: fixes are small PRs on `build/foundation`
   - Handoff prompt: `06#tf-vis-002`
 
-- [ ] **TF-VIS-003** `[TEST]` — Independent re-run of foundation numbers (feasibility RV-1)
+- [x] **TF-VIS-003** `[TEST]` — Independent re-run of foundation numbers (feasibility RV-1) — *2026-11-24: PR #27 merged, every number reproduced*
   - Priority: P1
   - Owner/model: Codex
   - Reviewer: Fable
@@ -83,7 +85,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: copy only
   - Handoff prompt: `06#tf-vis-004`
 
-- [ ] **TF-VIS-005** `[DOC]` — Bring AGENTS.md, milestone briefs and status report up to date
+- [x] **TF-VIS-005** `[DOC]` — Bring AGENTS.md, milestone briefs and status report up to date — *2026-11-24: every 01 §10.1 item resolved; AGENTS.md §10 and the status report updated*
   - Priority: P1
   - Owner/model: Cline + small model
   - Reviewer: Fable
@@ -95,7 +97,7 @@ From code, PRs and the Run 1 ledger, not from checkboxes (09 §2). **Done:** 004
   - Risk/rollback: docs only
   - Handoff prompt: `06#tf-vis-005`
 
-- [ ] **TF-VIS-006** `[DOC]` — Owner answers PR #18's open decisions
+- [x] **TF-VIS-006** `[DOC]` — Owner answers PR #18's open decisions — *2026-11-24: all answered, `progress.md`*
   - Priority: P0
   - Owner/model: Owner; Fable prepares a one-page decision sheet
   - Reviewer: —
