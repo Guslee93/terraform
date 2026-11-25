@@ -3,7 +3,7 @@ import { FOLIAGE_VARIANTS } from './foliage'
 /** Near-white multipliers preserve the canopy's per-face greens. */
 export const TREE_TINTS = ['#FFFFFF', '#F2F7EE', '#FAFFF5', '#EAF2E6'] as const
 
-export type TreeShape = 'round' | 'tall'
+export type TreeShape = 'round' | 'tall' | 'birch' | 'conifer'
 
 export type TreeVariant = {
   /** Multiplier on the illustrative tree size. */
@@ -24,13 +24,18 @@ function hash(east: number, north: number, salt: number): number {
 
 /**
  * Deterministic visual variety for an OSM tree point. OSM gives positions only, so size,
- * shape and tint are illustrative and only break up repetition.
+ * shape and tint are illustrative and only break up repetition. The sparse birch archetype only
+ * appears in the identity 'speckled' mode so NORDIC stays byte-identical.
  */
-export function treeVariant(east: number, north: number): TreeVariant {
+export function treeVariant(east: number, north: number, speckled = false): TreeVariant {
+  const shapeRoll = hash(east, north, 3)
+  const shape: TreeShape = speckled
+    ? (shapeRoll < 0.2 ? 'birch' : shapeRoll < 0.45 ? 'conifer' : 'round')
+    : (shapeRoll < 0.35 ? 'tall' : 'round')
   return {
     scale: 0.75 + hash(east, north, 1) * 0.6,
     tint: Math.floor(hash(east, north, 2) * TREE_TINTS.length),
-    shape: hash(east, north, 3) < 0.35 ? 'tall' : 'round',
+    shape,
     rotation: hash(east, north, 4) * Math.PI * 2,
     variant: Math.floor(hash(east, north, 5) * FOLIAGE_VARIANTS),
   }

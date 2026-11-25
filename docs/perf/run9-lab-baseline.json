@@ -1,0 +1,142 @@
+{
+  "machine": "Apple M1 Pro",
+  "os": {
+    "platform": "darwin",
+    "release": "24.6.0",
+    "arch": "arm64"
+  },
+  "browser": "156.0.8078.4",
+  "commit": "47641e8a7bb952a2e7fc8be77641b5ec1c657b8b",
+  "recordedAt": "2026-11-19T13:07:10.563Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "deviceScaleFactor": 2
+  },
+  "windowMs": 4000,
+  "stages": {
+    "NORDIC": {
+      "runs": [
+        {
+          "fps": 60.24996265498182,
+          "frameMsP50": 16.69999999999891,
+          "frameMsP95": 25,
+          "frameMsP99": 25.299999999999272,
+          "drawCallsPerFrameP50": 86,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        },
+        {
+          "fps": 59.37593163072641,
+          "frameMsP50": 16.69999999999891,
+          "frameMsP95": 25,
+          "frameMsP99": 25.100000000000364,
+          "drawCallsPerFrameP50": 86,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        },
+        {
+          "fps": 57.638319544856024,
+          "frameMsP50": 16.69999999999891,
+          "frameMsP95": 25.099999999998545,
+          "frameMsP99": 25.899999999999636,
+          "drawCallsPerFrameP50": 86,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        }
+      ],
+      "median": {
+        "fps": 59.37593163072641,
+        "frameMsP50": 16.69999999999891,
+        "frameMsP95": 25,
+        "frameMsP99": 25.299999999999272,
+        "drawCallsPerFrameP50": 86
+      }
+    },
+    "B": {
+      "runs": [
+        {
+          "fps": 57.24810832337714,
+          "frameMsP50": 16.69999999999891,
+          "frameMsP95": 25.099999999998545,
+          "frameMsP99": 25.700000000000728,
+          "drawCallsPerFrameP50": 87,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        },
+        {
+          "fps": 58.747386239171576,
+          "frameMsP50": 16.69999999999891,
+          "frameMsP95": 25,
+          "frameMsP99": 25.799999999999272,
+          "drawCallsPerFrameP50": 87,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        },
+        {
+          "fps": 58.641513200578935,
+          "frameMsP50": 16.700000000000728,
+          "frameMsP95": 25,
+          "frameMsP99": 25.100000000000364,
+          "drawCallsPerFrameP50": 87,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        }
+      ],
+      "median": {
+        "fps": 58.641513200578935,
+        "frameMsP50": 16.69999999999891,
+        "frameMsP95": 25,
+        "frameMsP99": 25.700000000000728,
+        "drawCallsPerFrameP50": 87
+      }
+    },
+    "C": {
+      "runs": [
+        {
+          "fps": 65.50327516375818,
+          "frameMsP50": 16.600000000000364,
+          "frameMsP95": 17.600000000000364,
+          "frameMsP99": 25,
+          "drawCallsPerFrameP50": 29,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        },
+        {
+          "fps": 65.33999155300492,
+          "frameMsP50": 16.69999999999891,
+          "frameMsP95": 17.5,
+          "frameMsP99": 25.099999999998545,
+          "drawCallsPerFrameP50": 29,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        },
+        {
+          "fps": 65.38403727641666,
+          "frameMsP50": 16.600000000000364,
+          "frameMsP95": 17.600000000000364,
+          "frameMsP99": 25,
+          "drawCallsPerFrameP50": 29,
+          "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+          "renderTier": "high",
+          "devicePixelRatio": 2
+        }
+      ],
+      "median": {
+        "fps": 65.38403727641666,
+        "frameMsP50": 16.600000000000364,
+        "frameMsP95": 17.600000000000364,
+        "frameMsP99": 25,
+        "drawCallsPerFrameP50": 29
+      }
+    }
+  }
+}

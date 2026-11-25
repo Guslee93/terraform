@@ -9,12 +9,13 @@ import {
   ToneMappingMode,
 } from 'postprocessing'
 import { Color, HalfFloatType } from 'three'
+import { MistVignetteEffect } from './mistVignette'
 import type { SceneStyle } from './style'
 
 /** Polish fades back in over this after a drag ends (rendering spec). */
 const FADE_IN_S = 0.3
 
-type Passes = { composer: EffectComposer; ao: N8AOPostPass }
+type Passes = { composer: EffectComposer; ao: N8AOPostPass; toneMapping: ToneMappingEffect }
 
 /**
  * Render → N8AO ambient occlusion → neutral tone mapping (ADR-0005, ADR-0018). AO runs in
@@ -50,15 +51,33 @@ export default function SceneComposer({ ao, busy, style }: { ao: 'full' | 'half'
     // Cool dark grey, matching the blue-grey hemisphere shade instead of black.
     aoPass.configuration.color = new Color(style.ao.color)
     composer.addPass(aoPass)
-    composer.addPass(new EffectPass(camera, new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL })))
-    setPasses({ composer, ao: aoPass })
+    const toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL })
+    composer.addPass(new EffectPass(camera, toneMapping))
+    // Identity mist vignette (ADR-0041): the frame edges blur and mix into the mist colour, after
+    // tone mapping. Only the composer applies it, so the depth / white / analysis export passes — which
+    // render the scene directly — never see it. Provisional values, Lab-tunable.
+    if (style.id === 'identity') {
+      composer.addPass(new EffectPass(camera, new MistVignetteEffect({
+        colour: style.hazeColour,
+        strength: style.tuning?.vignetteStrength ?? 0.6,
+        clearRadius: style.tuning?.mistClearRadius ?? 0.45,
+        blurPx: style.tuning?.mistBlurPx ?? 14,
+      })))
+    }
+    setPasses({ composer, ao: aoPass, toneMapping })
     return () => {
       setPasses(null)
       composer.dispose()
     }
-  }, [gl, scene, camera, ao, style.ao])
+  }, [gl, scene, camera, ao, style.ao, style.id, style.hazeColour, style.tuning?.vignetteStrength, style.tuning?.mistClearRadius, style.tuning?.mistBlurPx])
 
   useEffect(() => passes?.composer.setSize(size.width, size.height), [passes, size.width, size.height, dpr])
+
+  // Live exposure (Lab slider): update the tone-mapping uniform without rebuilding the composer.
+  useEffect(() => {
+    const uniform = passes?.toneMapping.uniforms.get('toneMappingExposure')
+    if (uniform) uniform.value = style.toneMappingExposure
+  }, [passes, style.toneMappingExposure])
 
   // A priority-1 frame callback switches off R3F's own render, so draw directly until ready.
   useFrame((_, delta) => {

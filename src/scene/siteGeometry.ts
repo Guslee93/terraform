@@ -10,18 +10,22 @@ import { ringWithRidgeVertices, roofHeightAt } from '../features/sites/roof'
 import { roofTriangles } from './roofGeometry'
 import { sampleTerrainHeight, terrainHeightRange } from '../features/sites/geometry'
 import type { ContourSegment } from '../features/sites/contours'
+import { tintGroundColour, type GroundTint } from './styleColour'
 
-// Near-white ground; elevation tint stays under 4% so separation comes from light, not hue.
-const LOW_TERRAIN = new Color('#F7F4EF')
-const HIGH_TERRAIN = new Color('#EEEAE3')
+// Near-white ground; elevation tint stays under 4% so separation comes from light, not hue. The
+// identity style re-tints these through `tintGroundColour` (groundTint) to a dark, desaturated fallback.
+const LOW_TERRAIN_HEX = '#F7F4EF'
+const HIGH_TERRAIN_HEX = '#EEEAE3'
 
-export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
+export function createTerrainGeometry(terrain: TerrainData, tint: GroundTint | null = null): BufferGeometry {
   const positions: number[] = []
   const colors: number[] = []
   const uvs: number[] = []
   const indices: number[] = []
   const { min, max } = terrainHeightRange(terrain)
   const span = max - min || 1
+  const low = new Color(tintGroundColour(LOW_TERRAIN_HEX, tint))
+  const high = new Color(tintGroundColour(HIGH_TERRAIN_HEX, tint))
   const color = new Color()
 
   for (let row = 0; row < terrain.rows; row += 1) {
@@ -32,7 +36,7 @@ export function createTerrainGeometry(terrain: TerrainData): BufferGeometry {
       positions.push(east, height, -north)
       // u runs east, v runs north, so a plan-view texture (north up) drapes without flipping.
       uvs.push(col / (terrain.cols - 1), row / (terrain.rows - 1))
-      color.copy(LOW_TERRAIN).lerp(HIGH_TERRAIN, (height - min) / span)
+      color.copy(low).lerp(high, (height - min) / span)
       colors.push(color.r, color.g, color.b)
     }
   }
@@ -146,12 +150,27 @@ function pushVertex(positions: number[], east: number, up: number, north: number
   positions.push(east, up, -north)
 }
 
+/** Side walls around a footprint contour from `fromY` up to `toY` (a skirt band or the walls). */
+function pushWalls(positions: number[], contour: readonly Vector2[], fromY: number, toY: number) {
+  for (let index = 0; index < contour.length; index += 1) {
+    const a = contour[index]
+    const b = contour[(index + 1) % contour.length]
+    if (!a || !b) continue
+    pushVertex(positions, a.x, fromY, a.y)
+    pushVertex(positions, b.x, fromY, b.y)
+    pushVertex(positions, b.x, toY, b.y)
+    pushVertex(positions, a.x, fromY, a.y)
+    pushVertex(positions, b.x, toY, b.y)
+    pushVertex(positions, a.x, toY, a.y)
+  }
+}
+
 /**
  * The context buildings as one merged, non-indexed mesh. `userData.buildingStarts[i]` is the first
  * vertex of building `i` (its vertices run to `buildingStarts[i + 1]`), so per-building state such
  * as the wind lift's fading (ADR-0028) can be written into an attribute without rebuilding.
  */
-export function createContextGeometry(buildings: readonly ContextBuilding[]): BufferGeometry {
+export function createContextGeometry(buildings: readonly ContextBuilding[], skirtDepth = 0): BufferGeometry {
   const positions: number[] = []
   const starts = new Int32Array(buildings.length + 1)
 
@@ -176,6 +195,9 @@ export function createContextGeometry(buildings: readonly ContextBuilding[]): Bu
         ),
     )
     if (signedArea(contour) < 0) contour.reverse()
+    // Identity skirt (Run 9 T4): extend the walls a few metres below the base so a building never
+    // floats over a lower 1 m surface. No skirt by default (NORDIC unchanged).
+    if (skirtDepth > 0) pushWalls(positions, contour, base - skirtDepth, base)
 
     if (building.roof) {
       // Measured gable (ADR-0022): walls rise to the roof surface, which is split along the ridge.
@@ -242,7 +264,7 @@ export function createContextGeometry(buildings: readonly ContextBuilding[]): Bu
 }
 
 /** Lift (m) that keeps contour lines just above the terrain surface they lie on. */
-const CONTOUR_LIFT = 0.15
+export const CONTOUR_LIFT = 0.15
 
 export function createContourGeometry(segments: readonly ContourSegment[]): BufferGeometry {
   const positions: number[] = []

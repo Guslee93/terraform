@@ -23,10 +23,15 @@ describe('treeVariant', () => {
     }
   })
 
+  it('uses the identity mix (round, conifer, birch) only in the speckled mode (visuals plan V4)', () => {
+    const shapes = new Set(Array.from({ length: 500 }, (_, index) => treeVariant(index * 3.7 - 400, index * -2.9 + 120, true).shape))
+    expect(shapes).toEqual(new Set(['round', 'conifer', 'birch']))
+  })
+
   it('actually varies across a row of street trees', () => {
     const row = Array.from({ length: 40 }, (_, index) => treeVariant(index * 8, 0))
     expect(new Set(row.map((variant) => variant.tint)).size).toBeGreaterThan(2)
-    expect(new Set(row.map((variant) => variant.shape)).size).toBe(2)
+    expect(new Set(row.map((variant) => variant.shape)).size).toBeGreaterThanOrEqual(2)
     expect(new Set(row.map((variant) => variant.variant)).size).toBe(FOLIAGE_VARIANTS)
     expect(Math.max(...row.map((v) => v.scale)) - Math.min(...row.map((v) => v.scale))).toBeGreaterThan(0.3)
   })

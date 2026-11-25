@@ -16,6 +16,19 @@
 | Kartverket news, *Norge i bilder er oppgradert* (July 2026) | Everyone can explore orthophotos in the viewer; Norge digitalt members have extended rights, including WMS/WMTS in their own systems |
 | Web search summary (secondary, not relied on) | The WMS and WMTS services use token access (GeoID); the old WMS endpoint is being retired in favour of services.norgeibilder.no. Not verified first-hand |
 
+### Update 2026-11-24 — a free Norway-wide source exists (ADR-0041)
+
+| Source | Finding |
+|---|---|
+| Geonorge, *Satellittdata - Sentinel-2 - Skyfri mosaikk WMS* (`38a52b73-2ffb-47cc-9ecd-147ee18f62be`), `https://wms.geonorge.no/skwms1/wms.sentinel2`, layer `sentinel2` | Access "Åpne data", no restrictions; EPSG:3857 among its projections; `access-control-allow-origin: *` |
+| Geonorge, *Skyfritt opptak Norge 2015-2017 … 2025* (e.g. 2025: `a4b61196-c2a3-4b19-834a-07aef20377f2`) | Access "Åpne data", licence **CC BY 4.0**; the required credit is a Norwegian sentence naming the year, Copernicus (EU), Kartverket, CESBIO and CNES |
+
+| Copernicus Data Space, *Optical VHR coverage over Europe 2021* (`dataspace.copernicus.eu/node/1308`) and the CSCDA/ESA User Licence (`cscda_esa_user_license.pdf`, read 2026-11-24) | 2–4 m, covering EEA-39. The **general public may only VIEW it** (download is limited to Copernicus services, EU institutions, EU research projects and public authorities). Licence §3.4.2: a VIEW user may not use the products "through any means other than those provided in the VIEW Service". Publishing on websites and in web mapping (§3.5.1.6) is a DOWNLOAD-service right. **Not usable in Terraform** without being an eligible user. The EEA's 2 m CLMS mosaic of the same data is "WMS only … due to licence restrictions"; its own terms could not be read (the EEA and land.copernicus.eu hosts did not answer) |
+
+The Sentinel-2 WMS serves 10 m per pixel: soft, but free to show on the public site, and it covers all of Norway.
+The Visual Lab uses it as the default ground image when no local photo exists (ADR-0041). It does not
+replace the request for Norge i bilder (option A); it removes the need to wait for one.
+
 ## What this rules out
 
 - Fetching tiles from the Norge i bilder WMS/WMTS (needs membership and a token).
