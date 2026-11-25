@@ -2,6 +2,7 @@ import type { FootprintBuilding } from './grid'
 import type { FacadeSample } from './facadeSamples'
 import { blockedAlong, prepareScene } from './shadowRay'
 import type { LegendEntry } from './climateView'
+import { bandsOf } from './graphics'
 
 /**
  * Vertical Sky Component on user-drawn façades (ADR-0021). A fixed 5° hemisphere integration under
@@ -25,10 +26,11 @@ export const VSC_BAND_LABEL: Record<VscBand, string> = {
 }
 
 /** Low sky access is warm/dark; high access is pale, matching the sun-hour ramp's direction. */
+const vscColours = bandsOf('vsc').map((entry) => entry.colour)
 export const VSC_COLOUR: Record<VscBand, string> = {
-  'under-15': '#9C2F2F',
-  '15-27': '#E0B25C',
-  '27-plus': '#E8D48A',
+  'under-15': vscColours[0]!,
+  '15-27': vscColours[1]!,
+  '27-plus': vscColours[2]!,
 }
 
 export function vscBand(vsc: number): VscBand {

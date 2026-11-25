@@ -4,6 +4,7 @@ import { ridgeOffset, roofHeightAt } from '../sites/roof'
 import { footprintTouchesCircle, insideCircle, type AnalysisCircle } from './circle'
 import type { FootprintBuilding } from './grid'
 import { blockedAlong, prepareScene, type PreparedScene, type SunSample } from './shadowRay'
+import { rampColours } from './graphics'
 
 /**
  * Sun hours on every surface in the analysis circle (ADR-0031): the open ground, every roof and
@@ -214,7 +215,7 @@ export function computeCircleSunHours(
  * end disappears into them. After ColorBrewer YlOrBr (Cynthia Brewer, Apache-2.0), reversed and without
  * its near-white first step. Lightness rises monotonically.
  */
-export const SUN_HOURS_RAMP: readonly string[] = ['#662506', '#993404', '#CC4C02', '#EC7014', '#FE9929', '#FEC44F', '#FEE391']
+export const SUN_HOURS_RAMP: readonly string[] = rampColours('sun-hours')
 
 const RAMP_RGB = SUN_HOURS_RAMP.map((hex) => [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number])
 

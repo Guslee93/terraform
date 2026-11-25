@@ -5,6 +5,7 @@ import { blockedAlong, prepareScene, type SunLocation } from './shadowRay'
 import { sunDirection, sunDirectionEnu } from './sun'
 import { localDayMinuteToInstant } from './time'
 import type { LegendEntry } from './climateView'
+import { bandsOf } from './graphics'
 
 /**
  * Clear-sky annual irradiation on flat roofs (ADR-0021). An upper bound from a clear-sky model:
@@ -165,12 +166,13 @@ export const ROOF_SOLAR_BAND_LABEL: Record<RoofSolarBand, string> = {
   '1200+': '1200 kWh/m²·yr and above',
 }
 
+const roofSolarColours = bandsOf('roof-solar').map((entry) => entry.colour)
 export const ROOF_SOLAR_COLOUR: Record<RoofSolarBand, string> = {
-  '0-300': '#E7E1D2',
-  '300-600': '#E8D48A',
-  '600-900': '#E0B25C',
-  '900-1200': '#CC7340',
-  '1200+': '#9C2F2F',
+  '0-300': roofSolarColours[0]!,
+  '300-600': roofSolarColours[1]!,
+  '600-900': roofSolarColours[2]!,
+  '900-1200': roofSolarColours[3]!,
+  '1200+': roofSolarColours[4]!,
 }
 
 export function roofSolarBand(kwhPerM2: number): RoofSolarBand {
