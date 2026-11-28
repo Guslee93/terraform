@@ -1467,3 +1467,26 @@ The owner accepted all eight recommendations (`docs/reviews/build-foundation-rep
     PR #25/#29 onto `main`, then TF-VIS-02B/026).
   - The status report's line on open decisions is updated.
 - **Gate 0:** TF-VIS-001 to 007 done; only TF-VIS-008 (the merge of PR #18, owner's go-ahead) remains.
+## 2026-11-28 — fast-anything wind solver profile
+
+- Profiled one 270° wind stack per curated site using the production solver and a temporary Node harness. The esbuild executable was absent, so the harness was bundled with the installed Rolldown CLI. The first scan was interrupted because its completion loop kept polling after pending work ended. The retry used the runner's pending-work API.
+- fast-anything v0.9.0 recorded an 18.11 s run. The harness measured 11.657 s for Compact Infill and 6.426 s for Sloped Edge under profiling. The CLI printed an empty ranking, but its raw V8 CPU profile attributed 98.86% of sampled time (17.903 s) to `stepLbm`.
+- This measures Node solver CPU time for one wind direction. No production code or dependencies changed. Cargo was unavailable for Rust port verification.
+
+### Port feasibility
+
+- Re-ran fast-anything from the canonical macOS temporary path, which resolved the empty ranking. The first ranked scan rejected the bundled entry point because it executed on import. A separate launcher let fast-anything rank `stepLbm` at 98.9% self time.
+- `fast-anything port --samples 2 solver.stepLbm` then rejected the candidate during recording because it mutates its arguments. The installed verifier compares return values, and `stepLbm` returns void while updating and swapping the solver buffers. The documented JS bridge targets Node, while the studio runs the solver in browser workers. The investigation used a temporary harness. No solver changes or toolchain installation.
+
+## 2026-11-28 — Wind WebAssembly prototype
+
+- Compiled a standalone Rust D2Q9 step kernel and compared it with TypeScript in Chromium on both curated sites. Both population arrays and velocities matched bit-for-bit in four fixed-step cases. A follow-up through the existing flow runner matched the ground and all lifted velocity fields and masks, with roughly 1.9–2.1× faster full stacks at 270°.
+- Rust was installed under a temporary directory. Chromium's first launch hit a macOS Mach port denial inside the filesystem sandbox and succeeded with escalation. Corrected the harness's ESLint browser global and TypeScript's exported-function typing.
+- Lint, strict harness type-check, production build and 382 analysis tests passed. The whole suite had 12 import failures due to absent PBF fixtures already deleted in this working tree. See `docs/reviews/wind-wasm-prototype.md` for measurements and limitations.
+
+### Shared wind acceleration
+
+- Wired the Rust/WebAssembly step into the live wind and direction sweep workers for curated and imported sites. JavaScript starts immediately and continues if loading or executing Wasm fails. Rebuilding with the pinned Rust toolchain reproduced the bundled bytes.
+- Chromium confirmed bit-equivalent stack fields at both curated sites and on synthetic geometry with 2,000 buildings. The 31-slice synthetic stack took 12.68 s in TypeScript and 6.26 s in Wasm. Its eight-direction sweep took 10.17 s and 5.18 s respectively. The sweep matched finite sample bits and missing-cell positions.
+- Lint, the production build and all three production Chromium wind specs passed. The checkout-wide Vitest run had 12 import failures from the same missing PBF fixtures. The first analysis run exposed three tests that spy on the TypeScript kernel after constructing their runner. Fixed the default step to resolve the TypeScript function on each call, preserving those tests and the original default behavior.
+- Re-ran the full suite in an isolated copy of the current checkout with the three missing fixtures copied from HEAD. All 1,080 enabled tests passed, with four opt-in cases skipped. The original fixture deletions were preserved.

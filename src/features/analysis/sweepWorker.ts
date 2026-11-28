@@ -1,7 +1,8 @@
 /// <reference lib="webworker" />
 import { createSweepRunner, type SweepRequest } from './directionSweep'
+import { createWorkerWindStep } from './windWasm'
 
-const runner = createSweepRunner()
+const runner = createSweepRunner(undefined, createWorkerWindStep())
 let pending: SweepRequest | null = null
 let timer: ReturnType<typeof setTimeout> | undefined
 

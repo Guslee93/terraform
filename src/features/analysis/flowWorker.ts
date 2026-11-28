@@ -1,12 +1,13 @@
 /// <reference lib="webworker" />
 import { createFlowRunner, type FlowResult, type FlowRequest } from './flowRunner'
+import { createWorkerWindStep } from './windWasm'
 
 /** Ground ticks change the field; settled ticks only warrant posting a newly completed slice. */
 export function shouldPostFlow(previous: Pick<FlowResult, 'id' | 'settled' | 'slices' | 'slicesComplete'> | null, next: FlowResult): boolean {
   return !previous || previous.id !== next.id || !previous.settled || (previous.slices?.length ?? 0) !== (next.slices?.length ?? 0) || previous.slicesComplete !== next.slicesComplete
 }
 let lastPosted: Pick<FlowResult, 'id' | 'settled' | 'slices' | 'slicesComplete'> | null = null
-const runner = createFlowRunner()
+const runner = createFlowRunner(undefined, createWorkerWindStep())
 let timer: ReturnType<typeof setTimeout> | undefined
 
 let pending: FlowRequest | null = null
