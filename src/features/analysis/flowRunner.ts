@@ -70,7 +70,10 @@ const copySlice = (slice: FlowSlice): FlowSlice => ({
 })
 
 /** Solver state behind the worker; pure so it can be tested without a Worker. */
-export function createFlowRunner(now: () => number = () => performance.now()) {
+export function createFlowRunner(
+  now: () => number = () => performance.now(),
+  step: typeof stepLbm = (state, steps) => stepLbm(state, steps),
+) {
   let lbm: Lbm | null = null
   let frame: FlowFrame | null = null
   let id = 0
@@ -178,7 +181,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
       const start = now()
       if (!settled && lbm) {
         do {
-          stepLbm(lbm, STEPS_PER_CHUNK)
+          step(lbm, STEPS_PER_CHUNK)
           steps += STEPS_PER_CHUNK
           settled = steps >= MAX_STEPS || (steps % CONVERGENCE_INTERVAL === 0 && checkGround!())
         } while (!settled && now() - start < budgetMs)
@@ -200,7 +203,7 @@ export function createFlowRunner(now: () => number = () => performance.now()) {
         }
         let upperSettled: boolean
         do {
-          stepLbm(upper, STEPS_PER_CHUNK)
+          step(upper, STEPS_PER_CHUNK)
           upperSteps += STEPS_PER_CHUNK
           upperSettled = upperSteps >= MAX_STEPS || (upperSteps % CONVERGENCE_INTERVAL === 0 && checkUpper!())
         } while (!upperSettled && now() - start < budgetMs)

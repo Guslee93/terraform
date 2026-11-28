@@ -58,7 +58,10 @@ export function summariseSweep(result: SweepResult, thresholdRatio: number): Swe
 }
 
 /** Cooperative sequential solves; outbound buffers never alias cache or unfinished work. */
-export function createSweepRunner(now: () => number = () => performance.now()) {
+export function createSweepRunner(
+  now: () => number = () => performance.now(),
+  step: typeof stepLbm = (state, steps) => stepLbm(state, steps),
+) {
   let request: SweepRequest | null = null
   let cells: Float32Array = new Float32Array(0)
   let ratios: Float32Array[] = []
@@ -112,7 +115,7 @@ export function createSweepRunner(now: () => number = () => performance.now()) {
       }
       let settled: boolean
       do {
-        stepLbm(solver, 10)
+        step(solver, 10)
         steps += 10
         settled = steps >= MAX_STEPS || (steps % CONVERGENCE_INTERVAL === 0 && check!())
       } while (!settled && now() - start < budgetMs)
